@@ -289,8 +289,11 @@ describe('Connect marketplace catalog', () => {
     assert.match(zedJson, /"context_servers"/);
     assert.match(zedJson, /Authorization/);
     assert.doesNotMatch(zedJson, /mcpServers/);
-    assert.match(zed.intro, /OAuth/);
+    assert.match(zed.intro, /context_servers/);
+    assert.doesNotMatch(zed.intro, /OAuth/);
+    assert.match(zed.info || '', /OAuth/);
     assert.match(zed.info || '', /not that flow/);
+    assert.match(zed.info || '', /not enough on its own/);
 
     const other = byId('other-mcp');
     assert.match(other.note || '', /Cline, Continue, Goose/);
@@ -298,6 +301,83 @@ describe('Connect marketplace catalog', () => {
     assert.equal(resolveConnectorId('vs-code'), 'vscode');
     assert.equal(resolveConnectorId('cascade'), 'windsurf');
     assert.equal(resolveConnectorId('zed'), 'zed');
+  });
+
+  it('matches chat-channel docs: CLI first, then per-app pairing', () => {
+    const whatsapp = byId('whatsapp');
+    const telegram = byId('telegram');
+    const slack = byId('slack-chat');
+    const discord = byId('discord-chat');
+    const whatsappText = whatsapp.steps
+      .map((s) => `${s.detail || ''} ${s.code || ''}`)
+      .join('\n');
+    const telegramText = telegram.steps
+      .map((s) => `${s.detail || ''} ${s.code || ''}`)
+      .join('\n');
+    const slackText = slack.steps
+      .map((s) => `${s.detail || ''} ${s.code || ''}`)
+      .join('\n');
+    const discordText = discord.steps
+      .map((s) => `${s.detail || ''} ${s.code || ''}`)
+      .join('\n');
+
+    assert.match(whatsappText, /npm install -g postqueen/);
+    assert.match(whatsappText, /channels add --channel whatsapp/);
+    assert.match(whatsappText, /channels login --channel whatsapp/);
+    assert.match(telegramText, /BotFather/);
+    assert.match(telegramText, /TELEGRAM_BOT_TOKEN/);
+    assert.match(slackText, /@openclaw\/slack/);
+    assert.match(discordText, /Message Content Intent/);
+    assert.match(discordText, /@openclaw\/discord/);
+    assert.equal(discord.examples?.[0]?.tool, undefined);
+    assert.match(discord.examples?.[0]?.code || '', /posts:create/);
+  });
+
+  it('installs the CLI for skill bots and does not pretend they speak MCP', () => {
+    const openclaw = byId('openclaw');
+    const hermes = byId('hermes');
+    assert.match(
+      openclaw.steps.map((s) => s.code || '').join('\n'),
+      /npm install -g postqueen/
+    );
+    assert.match(
+      openclaw.steps.map((s) => s.code || '').join('\n'),
+      /openclaw onboard/
+    );
+    assert.equal(openclaw.examples?.[0]?.tool, undefined);
+    assert.match(openclaw.examples?.[0]?.code || '', /posts:create/);
+    assert.equal(
+      hermes.steps.find((s) => s.title === 'Check it worked')?.code,
+      'postqueen integrations:list'
+    );
+    assert.doesNotMatch(
+      hermes.steps.map((s) => s.code || '').join('\n'),
+      /hermes tools list/
+    );
+    assert.match(
+      hermes.steps.map((s) => s.code || '').join('\n'),
+      /external_dirs/
+    );
+    assert.equal(hermes.examples?.[0]?.tool, undefined);
+  });
+
+  it('states CLI, API and OAuth capabilities without mixing surfaces', () => {
+    assert.match(byId('cli').intro, /16 commands/);
+    assert.match(byId('cli').intro, /does not generate video/);
+    assert.match(byId('api').intro, /generate video/);
+    assert.match(byId('api').intro, /Image generation is MCP only/);
+    assert.match(byId('oauth').intro, /pos_/);
+    assert.match(byId('oauth').intro, /Bearer token on \/mcp/);
+    assert.doesNotMatch(byId('oauth').intro, / and the CLI/);
+    assert.match(byId('zapier').intro, /Professional/);
+    assert.match(
+      byId('codex').steps.map((s) => s.code || '').join('\n'),
+      /codex mcp add postqueen --url/
+    );
+    assert.equal(
+      byId('gemini').steps.find((s) => s.title === 'Check it worked')?.code,
+      '/mcp'
+    );
   });
 
   it('marks Muse app no paste-MCP lie', () => {
@@ -319,6 +399,13 @@ describe('Connect marketplace catalog', () => {
     assert.doesNotMatch(byId('openclaw').short, /terminal/i);
     assert.doesNotMatch(byId('openclaw').intro, /from your terminal/i);
     assert.match(byId('openclaw').intro, /WhatsApp/);
+    for (const item of all) {
+      assert.doesNotMatch(
+        item.intro,
+        /[—–]| - /,
+        `${item.id} intro has a dash: ${item.intro}`
+      );
+    }
   });
 
   it('shows a surface-matched usage example, not the same three chat bubbles', () => {

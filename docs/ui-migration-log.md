@@ -1272,3 +1272,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: usage examples match the surface
 
 **i18n +22 net.** Dropped the shared three-bubble prompts (`conn_ex_list_channels`, `conn_ex_schedule_launch`, `conn_ex_cross_post`, `conn_examples_try`, `conn_bridge_prompt_*`) and the fake Muse/OAuth examples. Each live client now has its own prompt plus a reply or stdout, rendered as chat, a hosted bot thread, an agent panel, or a terminal, matching how you actually use it. Claude Code is `claude` in a session, not `claude mcp list`. The PostQueen CLI shows `integrations:list` JSON and `posts:create`. The Node SDK shows `new PostQueen` plus `integrations()` / `post()`. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: documentation that matches the real setup
+
+**i18n +34 net.** Detail pane intro is full-width under **What this is**, not cramped next to the icon. Chat cards gained per-app pairing keys (WhatsApp QR, BotFather, Slack/Discord plugins) and dropped the generic `conn_chat_step_channel*` pair. Skill bots now install the CLI as its own step. Codex can `codex mcp add`. Gemini verify is `/mcp`. API / CLI / Zapier notes state which surface can generate video, images, or analytics. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

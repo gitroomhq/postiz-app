@@ -1031,10 +1031,16 @@ export const ConnectPanel: FC<{
                 </span>
               )}
             </div>
-            <div className="mt-[3px] text-[13.5px] leading-[1.5] text-pqMuted">
-              {item.intro}
-            </div>
           </div>
+        </div>
+
+        <div>
+          <div className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+            {t('conn_what_this_is', 'What this is')}
+          </div>
+          <p className="mt-[6px] text-[14px] leading-[1.65] text-pqText">
+            {item.intro}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-[8px]">

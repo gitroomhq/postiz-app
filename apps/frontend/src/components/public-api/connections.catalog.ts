@@ -453,22 +453,30 @@ export function buildConnectionsCatalog(
       title: t('conn_step_skill_install', 'Install the PostQueen skill'),
       detail: t(
         'conn_step_skill_install_detail',
-        'One command, once per machine. It installs the skill playbook, not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
+        'One command, once per machine. This is a playbook (SKILL.md). It does not install the CLI.'
       ),
       code: 'npx skills add GkhanKINAY/postqueen-agent',
+    },
+    {
+      title: t('conn_step_cli_install', 'Install the postqueen CLI'),
+      detail: t(
+        'conn_step_cli_install_detail',
+        'Skill agents run real shell commands on your machine. The skill does not put postqueen on your PATH. You still need this package.'
+      ),
+      code: 'npm install -g postqueen',
     },
     {
       title: t('conn_step_skill_key', 'Give it your API key'),
       detail: t(
         'conn_step_skill_key_detail',
-        'The agent reads this from the environment. Put it in your shell profile to make it permanent. Get the key from Settings → API Keys.'
+        'The agent and the CLI read this from the environment. Put it in the profile the gateway or agent actually runs in. Get the key from Settings → API Keys.'
       ),
       code: `export POSTQUEEN_API_KEY="${apiKey}"`,
     },
     ...apiUrlStep,
   ];
 
-  const chatFrontDoorSteps = (): Step[] => [
+  const chatGroundworkSteps = (): Step[] => [
     {
       title: t(
         'conn_chat_step_agent',
@@ -476,28 +484,124 @@ export function buildConnectionsCatalog(
       ),
       detail: t(
         'conn_chat_step_agent_detail',
-        'Chat front doors talk to an agent you host, PostQueen never signs into the chat app. Install OpenClaw or Hermes, then keep its gateway awake.'
+        'PostQueen never signs into WhatsApp, Telegram, Slack or Discord. An agent you host sits in the middle, reads the message and runs the postqueen CLI. Keep its gateway awake: openclaw gateway or hermes gateway. A sleeping laptop means a silent bot.'
       ),
     },
     ...skillInstall,
     {
-      title: t('conn_chat_step_channel', 'Connect the chat app'),
+      title: t('conn_chat_step_cli_ready', 'Confirm the CLI half'),
       detail: t(
-        'conn_chat_step_channel_detail',
-        'Follow the channel section in the docs for pairing, bot tokens or QR login. Slack, Discord and Telegram can also be publishing channels, that is a separate setup under Channels.'
+        'conn_chat_step_cli_ready_detail',
+        'A JSON list of your channels means the agent can reach PostQueen. Finish this before pairing a chat app.'
+      ),
+      code: 'postqueen integrations:list',
+    },
+  ];
+
+  const chatTryStep = (): Step => ({
+    title: t('conn_chat_step_try', 'Send it a message'),
+    detail: t(
+      'conn_chat_step_try_detail',
+      'From the connected chat app, in your own words. Ask for a draft if you want to review on the calendar first. Keep a human in the loop before anything publishes.'
+    ),
+    code: t(
+      'conn_bridge_example',
+      'Schedule this to LinkedIn and X tomorrow at 9am as a draft'
+    ),
+  });
+
+  const whatsappSteps = (): Step[] => [
+    ...chatGroundworkSteps(),
+    {
+      title: t('conn_whatsapp_step_pair', 'Pair WhatsApp over QR'),
+      detail: t(
+        'conn_whatsapp_step_pair_detail',
+        'WhatsApp is an OpenClaw plugin. channels add installs it and starts setup. channels login shows a QR code: scan it from the phone. OpenClaw recommends a separate WhatsApp number. Hermes uses hermes gateway setup for the same channel.'
+      ),
+      code: `openclaw channels add --channel whatsapp
+openclaw channels login --channel whatsapp`,
+    },
+    {
+      title: t('conn_whatsapp_step_gateway', 'Start the gateway and approve you'),
+      detail: t(
+        'conn_whatsapp_step_gateway_detail',
+        'Leave the gateway running. The first sender to message you needs a pairing code. Access requests expire after an hour.'
+      ),
+      code: `openclaw gateway
+openclaw pairing list whatsapp
+openclaw pairing approve whatsapp <CODE>`,
+    },
+    chatTryStep(),
+  ];
+
+  const telegramSteps = (): Step[] => [
+    ...chatGroundworkSteps(),
+    {
+      title: t('conn_telegram_step_bot', 'Create a Telegram bot'),
+      detail: t(
+        'conn_telegram_step_bot_detail',
+        'In Telegram, message @BotFather, run /newbot, and save the token. Telegram ships in the core OpenClaw install, there is no plugin to add. Slack, Discord and Telegram can also be publishing channels under Channels. That is a separate setup.'
       ),
     },
     {
-      title: t('conn_chat_step_try', 'Send it a message'),
+      title: t('conn_telegram_step_token', 'Give the token to the gateway'),
       detail: t(
-        'conn_chat_step_try_detail',
-        'From the connected chat app, in your own words. Keep a human in the loop before anything publishes.'
+        'conn_telegram_step_token_detail',
+        'Export it where the gateway runs, or put it in the OpenClaw channel config. Then start the gateway and approve your own pairing code.'
       ),
-      code: t(
-        'conn_bridge_example',
-        'Schedule this to LinkedIn and X tomorrow at 9am: …'
+      code: `export TELEGRAM_BOT_TOKEN="123:abc"
+openclaw gateway
+openclaw pairing list telegram
+openclaw pairing approve telegram <CODE>`,
+    },
+    chatTryStep(),
+  ];
+
+  const slackChatSteps = (): Step[] => [
+    ...chatGroundworkSteps(),
+    {
+      title: t('conn_slack_chat_step_app', 'Create a Slack app in your workspace'),
+      detail: t(
+        'conn_slack_chat_step_app_detail',
+        'Socket Mode needs a Bot User OAuth Token and an App-Level Token with connections:write. Both tokens must come from the same Slack app. This is a front door to your agent, not connecting Slack as a publishing channel under Channels.'
       ),
     },
+    {
+      title: t('conn_slack_chat_step_plugin', 'Install the Slack plugin'),
+      detail: t(
+        'conn_slack_chat_step_plugin_detail',
+        'Then patch the gateway config and keep it running. Typical bot scopes include app_mentions:read, channels:history, chat:write, im:history and files:write.'
+      ),
+      code: `openclaw plugins install @openclaw/slack
+export SLACK_BOT_TOKEN=your-bot-token
+export SLACK_APP_TOKEN=your-app-token
+openclaw gateway`,
+    },
+    chatTryStep(),
+  ];
+
+  const discordChatSteps = (): Step[] => [
+    ...chatGroundworkSteps(),
+    {
+      title: t('conn_discord_chat_step_bot', 'Create a Discord bot'),
+      detail: t(
+        'conn_discord_chat_step_bot_detail',
+        'In the Discord Developer Portal, create an application with a bot user. Turn Message Content Intent on or the bot receives nothing readable. Invite it with the bot and applications.commands scopes. Publishing into Discord is a separate Channels setup.'
+      ),
+    },
+    {
+      title: t('conn_discord_chat_step_plugin', 'Install the Discord plugin'),
+      detail: t(
+        'conn_discord_chat_step_plugin_detail',
+        'Hand the token to OpenClaw, start the gateway, then DM the bot and approve the pairing code.'
+      ),
+      code: `openclaw plugins install @openclaw/discord
+export DISCORD_BOT_TOKEN="YOUR_BOT_TOKEN"
+openclaw gateway
+openclaw pairing list discord
+openclaw pairing approve discord <CODE>`,
+    },
+    chatTryStep(),
   ];
 
   return [
@@ -522,7 +626,7 @@ export function buildConnectionsCatalog(
           short: t('conn_openclaw_short', 'A bot you host that posts from chat'),
           intro: t(
             'conn_openclaw_intro',
-            "OpenClaw is a self hosted personal agent that stays running, more like a bot than a coding session. You message it from WhatsApp, Telegram, Slack or Discord. It loads PostQueen as an Agent Skill, not MCP."
+            'OpenClaw is a self hosted personal agent that stays running on your machine. Message it from WhatsApp, Telegram, Slack or Discord. It is a bot, not a coding session. It drives the postqueen CLI through an Agent Skill, not MCP.'
           ),
           examples: [
             {
@@ -530,7 +634,7 @@ export function buildConnectionsCatalog(
                 'conn_openclaw_ex',
                 'Post the blog cover to LinkedIn and X tomorrow at 9am'
               ),
-              tool: 'schedulePostTool',
+              code: 'postqueen posts:create',
               reply: t(
                 'conn_openclaw_ex_reply',
                 'Queued as drafts on LinkedIn and X for 09:00. Confirm before they publish.'
@@ -539,7 +643,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_openclaw_note',
-            'The same install also powers the chat front doors: once OpenClaw has this skill, anything that can reach your agent can publish through it. Keep a human in the loop before anything goes out.'
+            'The same install powers the Chat cards. Keep the Gateway awake. Chat credentials stay on your machine; PostQueen only sees the API key the CLI uses. Keep a human in the loop before anything goes out.'
           ),
           docs: [
             {
@@ -554,13 +658,31 @@ export function buildConnectionsCatalog(
             },
           ],
           steps: [
+            {
+              title: t('conn_openclaw_step_install', 'Install OpenClaw'),
+              detail: t(
+                'conn_openclaw_step_install_detail',
+                'On macOS or Linux run the installer, then onboard so the Gateway stays running. Windows uses the PowerShell script. OpenClaw is a separate project; Node 22.22.3+, 24.15+ or 25.9+.'
+              ),
+              code: `curl -fsSL https://openclaw.ai/install.sh | bash
+openclaw onboard --install-daemon`,
+            },
             ...skillInstall,
             {
               title: t('conn_step_verify', 'Check it worked'),
               detail: t(
                 'conn_openclaw_verify',
-                'Ask the agent to list your social accounts. It should name every channel you have connected.'
+                'A JSON list of your channels means the CLI half is ready. Then link a chat app: Telegram needs a BotFather token; WhatsApp, Slack and Discord are plugins. Pairing steps live on each Chat card.'
               ),
+              code: 'postqueen integrations:list',
+            },
+            {
+              title: t('conn_openclaw_step_channel', 'Link a chat app'),
+              detail: t(
+                'conn_openclaw_step_channel_detail',
+                'openclaw channels add installs the plugin and starts that channel\'s setup. Restart the Gateway after a plugin install. Full pairing: docs.postqueen.ai/agents/chat-channels.'
+              ),
+              code: 'openclaw channels add',
             },
           ],
         },
@@ -577,7 +699,7 @@ export function buildConnectionsCatalog(
           short: t('conn_hermes_short', 'Hand it a brief. It plans the week.'),
           intro: t(
             'conn_hermes_intro',
-            "Hermes is Nous Research's open-source agent framework. It picks PostQueen up through the same Agent Skills package the other CLI agents use, so one install covers every agent on the machine."
+            'Hermes is Nous Research\'s open-source agent. It runs on your machine (Python, not Node), keeps memory across sessions, and drives the postqueen CLI. Hand it one brief and it can plan, write and schedule a week. It can also front the same chat apps as OpenClaw.'
           ),
           examples: [
             {
@@ -585,7 +707,7 @@ export function buildConnectionsCatalog(
                 'conn_hermes_ex',
                 'Draft a weekly digest for LinkedIn from this week\'s posts and save it for Monday morning'
               ),
-              tool: 'schedulePostTool',
+              code: 'postqueen posts:create -t draft',
               reply: t(
                 'conn_hermes_ex_reply',
                 'LinkedIn draft saved for Monday 09:00. Review it on the calendar before it goes out.'
@@ -594,7 +716,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_hermes_note',
-            'Hermes can run tools on a schedule from its own config, which is a neat fit for recurring publishing, a weekly digest, say. Whatever you automate, keep a human in the loop before it publishes.'
+            'The skills CLI installs into ~/.agents/skills. Hermes loads ~/.hermes/skills plus skills.external_dirs, so point it at that folder. Recurring jobs use hermes cron create. Keep a human in the loop before anything publishes.'
           ),
           docs: [
             {
@@ -609,10 +731,32 @@ export function buildConnectionsCatalog(
             },
           ],
           steps: [
+            {
+              title: t('conn_hermes_step_install', 'Install Hermes'),
+              detail: t(
+                'conn_hermes_step_install_detail',
+                'The installer pulls uv and Python 3.11. Windows uses the PowerShell script. Chat apps are linked with hermes gateway setup, then hermes gateway keeps them awake.'
+              ),
+              code: 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash',
+            },
             ...skillInstall,
             {
+              title: t('conn_hermes_step_skills_dir', 'Point Hermes at the skill folder'),
+              detail: t(
+                'conn_hermes_step_skills_dir_detail',
+                'Add this to ~/.hermes/config.yaml so Hermes reads the skill the next time it starts.'
+              ),
+              code: `skills:
+  external_dirs:
+    - ~/.agents/skills`,
+            },
+            {
               title: t('conn_step_verify', 'Check it worked'),
-              code: 'hermes tools list',
+              detail: t(
+                'conn_hermes_verify',
+                'A JSON list of your channels means Hermes can drive PostQueen. Then give it a brief, or hook a chat app with hermes gateway setup.'
+              ),
+              code: 'postqueen integrations:list',
             },
           ],
         },
@@ -629,7 +773,7 @@ export function buildConnectionsCatalog(
           short: t('conn_cc_short', 'Schedule from the Claude Code session'),
           intro: t(
             'conn_cc_intro',
-            'Claude Code is Anthropic\'s terminal and IDE agent, not claude.ai or Claude Desktop. Same pairing as Codex vs ChatGPT. MCP is one command; skills load less context. The skill does not install the CLI, that is npm i -g postqueen. Customize → Connectors does not register this product.'
+            'Claude Code is Anthropic\'s terminal and IDE agent, not claude.ai or Claude Desktop. Same pairing as Codex vs ChatGPT. Point it at PostQueen over MCP with one command, then schedule from the session you already have open.'
           ),
           examples: [
             {
@@ -647,7 +791,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_cc_note',
-            'claude_desktop_config.json is the Claude chat app, not Claude Code. Config for this product is ~/.claude.json or a project .mcp.json. Official install is claude mcp add --transport http. A custom connector on claude.ai does not replace that command.'
+            'claude_desktop_config.json is the Claude chat app, not Claude Code. Config for this product is ~/.claude.json or a project .mcp.json. Official install is claude mcp add --transport http. A custom connector on claude.ai does not replace that command. Prefer MCP here; the Agent Skill is optional if you also want postqueen on the PATH (npm install -g postqueen).'
           ),
           docs: [
             {
@@ -696,7 +840,7 @@ export function buildConnectionsCatalog(
           ),
           intro: t(
             'conn_grok_build_intro',
-            'Grok Build is xAI\'s terminal coding agent, not grok.com chat and not Grok Bot. Same split as Claude Code vs Claude. Official install is grok mcp add --transport http, which writes ~/.grok/config.toml. grok.com/connectors does not register this product. It can also read Cursor mcp.json and ~/.claude.json at lower priority.'
+            'Grok Build is xAI\'s terminal coding agent, not grok.com chat and not Grok Bot. Same split as Claude Code vs Claude. Register PostQueen with grok mcp add. A custom connector at grok.com/connectors does not register this product.'
           ),
           examples: [
             {
@@ -714,7 +858,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_grok_build_note',
-            'A custom connector on grok.com does not replace grok mcp add. Grok Build may pick up a Cursor or Claude Code MCP entry as a fallback. Official setup is the grok command, then grok mcp list.'
+            'A custom connector on grok.com does not replace grok mcp add. The command writes ~/.grok/config.toml. Grok Build may pick up a Cursor or Claude Code MCP entry as a fallback. Official setup is the grok command, then grok mcp list. grok mcp doctor postqueen diagnoses connectivity.'
           ),
           docs: [
             {
@@ -756,7 +900,7 @@ export function buildConnectionsCatalog(
           short: t('conn_codex_short', 'Schedule from the Codex coding agent'),
           intro: t(
             'conn_codex_intro',
-            'Codex is OpenAI\'s coding agent, not ChatGPT. Same pairing as Claude Code vs Claude. It discovers PostQueen from the skill and can also take MCP via the Codex CLI. The skill is a playbook; install the CLI separately if you want postqueen commands on the PATH.'
+            'Codex is OpenAI\'s coding agent, not ChatGPT. Same pairing as Claude Code vs Claude. Teach it the postqueen CLI with the Agent Skill, or register MCP with the Codex CLI. Settings → Apps in ChatGPT does not install this product.'
           ),
           examples: [
             {
@@ -789,6 +933,14 @@ export function buildConnectionsCatalog(
           ],
           steps: [
             ...skillInstall,
+            {
+              title: t('conn_codex_step_mcp', 'Or register MCP instead'),
+              detail: t(
+                'conn_codex_step_mcp_detail',
+                'Prefer tool calls to shell commands? The Codex CLI speaks streamable HTTP MCP natively and writes ~/.codex/config.toml. Get the key from Settings → API Keys.'
+              ),
+              code: `codex mcp add postqueen --url ${mcpUrlWithKey}`,
+            },
             {
               title: t('conn_step_verify', 'Check it worked'),
               code: 'codex "list my social media integrations"',
@@ -904,7 +1056,7 @@ export function buildConnectionsCatalog(
           short: t('conn_whatsapp_short', 'Voice notes to the bot on your phone'),
           intro: t(
             'conn_whatsapp_intro',
-            'WhatsApp is a chat front door only, PostQueen does not publish into WhatsApp. OpenClaw pairs over QR on your machine; your messages never touch PostQueen directly.'
+            'Talk to your hosted OpenClaw or Hermes agent from WhatsApp. PostQueen does not sign into WhatsApp and does not publish into WhatsApp. Pairing is QR on your machine. The gateway has to stay awake.'
           ),
           examples: [
             {
@@ -928,7 +1080,7 @@ export function buildConnectionsCatalog(
               href: `${DOCS}/agents/chat-channels#whatsapp`,
             },
           ],
-          steps: chatFrontDoorSteps(),
+          steps: whatsappSteps(),
         },
         {
           id: 'telegram',
@@ -943,7 +1095,7 @@ export function buildConnectionsCatalog(
           short: t('conn_telegram_short', 'Message the hosted bot from Telegram'),
           intro: t(
             'conn_telegram_intro',
-            'Talk to her from Telegram through OpenClaw or Hermes on your machine. Telegram can also be a publishing channel under Channels, that is a separate setup.'
+            'Talk to your hosted agent from Telegram. Create a bot with @BotFather and give the token to OpenClaw or Hermes. Telegram can also be a publishing channel under Channels. That is a separate setup.'
           ),
           examples: [
             {
@@ -963,7 +1115,7 @@ export function buildConnectionsCatalog(
               href: `${DOCS}/agents/chat-channels#telegram`,
             },
           ],
-          steps: chatFrontDoorSteps(),
+          steps: telegramSteps(),
         },
         {
           id: 'slack-chat',
@@ -978,7 +1130,7 @@ export function buildConnectionsCatalog(
           short: t('conn_slack_chat_short', 'Ask the hosted bot in a Slack channel'),
           intro: t(
             'conn_slack_chat_intro',
-            'Use Slack as a front door to your agent, not the same as connecting Slack as a publishing channel under Channels.'
+            'Ask your hosted agent from a Slack channel. You add a Slack app to the workspace and OpenClaw or Hermes keeps the gateway running. Connecting Slack as a publishing channel under Channels is a different setup.'
           ),
           examples: [
             {
@@ -998,7 +1150,7 @@ export function buildConnectionsCatalog(
               href: `${DOCS}/agents/chat-channels#slack`,
             },
           ],
-          steps: chatFrontDoorSteps(),
+          steps: slackChatSteps(),
         },
         {
           id: 'discord-chat',
@@ -1013,7 +1165,7 @@ export function buildConnectionsCatalog(
           short: t('conn_discord_chat_short', 'Ask the hosted bot in a Discord channel'),
           intro: t(
             'conn_discord_chat_intro',
-            'Message your agent from Discord. Publishing into Discord is a separate Channels setup.'
+            'Ask your hosted agent from Discord. You run a bot with Message Content Intent and keep OpenClaw or Hermes awake. Publishing into Discord is a separate Channels setup.'
           ),
           examples: [
             {
@@ -1021,7 +1173,7 @@ export function buildConnectionsCatalog(
                 'conn_discord_chat_ex',
                 'Queue the changelog to X as a draft'
               ),
-              tool: 'schedulePostTool',
+              code: 'postqueen posts:create -t draft',
               reply: t(
                 'conn_discord_chat_ex_reply',
                 'X draft is on the calendar. Open it before it publishes.'
@@ -1034,7 +1186,7 @@ export function buildConnectionsCatalog(
               href: `${DOCS}/agents/chat-channels#discord`,
             },
           ],
-          steps: chatFrontDoorSteps(),
+          steps: discordChatSteps(),
         },
       ],
     },
@@ -1559,7 +1711,7 @@ export function buildConnectionsCatalog(
           short: t('conn_zed_short', 'Zed editor remote MCP from JSON'),
           intro: t(
             'conn_zed_intro',
-            'Zed stores MCP servers under context_servers, not mcpServers. Add a remote server from Settings → AI → MCP Servers → Add Remote Server. If the Authorization header is missing, Zed starts an OAuth flow PostQueen does not speak, so send a Bearer header or put the key in the URL.'
+            'Zed is an editor with an Agent Panel. It stores remote MCP servers under context_servers, not mcpServers. Add PostQueen from Settings → AI → MCP Servers, or edit the settings file.'
           ),
           examples: [
             {
@@ -1576,7 +1728,7 @@ export function buildConnectionsCatalog(
           ],
           info: t(
             'conn_zed_note',
-            'A remote entry with only a url and no Authorization header is Zed\'s OAuth path. PostQueen /mcp with an API key is not that flow. Always send Authorization: Bearer, or put the key in the URL.'
+            'A remote entry with only a url and no Authorization header is Zed\'s OAuth path. PostQueen /mcp with an API key is not that flow. Always send Authorization: Bearer. Putting the key in the URL is not enough on its own; without the header Zed still starts OAuth.'
           ),
           docs: [
             {
@@ -1596,7 +1748,7 @@ export function buildConnectionsCatalog(
               title: t('conn_zed_step_json', 'Paste this JSON'),
               detail: t(
                 'conn_zed_step_json_detail',
-                'The key is context_servers. Include the Authorization header so Zed does not start OAuth. Get the key from Settings → API Keys.'
+                'The key is context_servers. Always include the Authorization header. Without it Zed starts an OAuth flow PostQueen does not speak, even if the key is already in the URL. Get the key from Settings → API Keys.'
               ),
               code: JSON.stringify(
                 {
@@ -1688,7 +1840,11 @@ export function buildConnectionsCatalog(
             },
             {
               title: t('conn_step_verify', 'Check it worked'),
-              code: 'gemini mcp list',
+              detail: t(
+                'conn_gemini_verify',
+                'Start Gemini CLI and run the slash command /mcp. postqueen should show as connected with 14 tools. Then ask it to list your connected social media accounts.'
+              ),
+              code: '/mcp',
             },
           ],
         },
@@ -1911,7 +2067,11 @@ export function buildConnectionsCatalog(
           short: t('conn_zapier_short', 'HTTP today. Official Zapier app soon'),
           intro: t(
             'conn_zapier_intro',
-            "There is no PostQueen app in Zapier's directory yet. Until there is, Webhooks by Zapier talks to the Public API in both directions. Zaps you build now stay valid."
+            'There is no PostQueen app in Zapier\'s directory yet. Until there is, Webhooks by Zapier talks to the Public API in both directions. That Zapier app is on Professional, Team and Enterprise, not the Free plan. Zaps you build now stay valid.'
+          ),
+          info: t(
+            'conn_zapier_note',
+            'Use Custom Request, not the plain POST event: the create-post body is nested JSON. Authorization is the raw API key, no Bearer prefix.'
           ),
           examples: [
             {
@@ -1947,7 +2107,7 @@ export function buildConnectionsCatalog(
               title: t('conn_zapier_step_in', 'Zapier → PostQueen'),
               detail: t(
                 'conn_zapier_step_in_detail',
-                'Use the Webhooks by Zapier action with POST and this URL to create a post.'
+                'Use the Webhooks by Zapier Custom Request action (not the plain POST event) with this URL. The create-post body is nested JSON.'
               ),
               code: `${backendUrl}/public/v1/posts`,
             },
@@ -2144,7 +2304,11 @@ export function buildConnectionsCatalog(
           short: t('conn_cli_short', 'Run postqueen commands in a shell'),
           intro: t(
             'conn_cli_intro',
-            'Automate posting from the terminal. Same Public API under the hood; data commands print JSON so anything that can run a shell command can run your publishing. The Agent Skill does not install this package.'
+            'The postqueen CLI is 16 commands for channels, posts, media uploads and analytics. Same Public API under the hood; data commands print JSON. It does not generate video. The Agent Skill is a playbook and does not install this package.'
+          ),
+          info: t(
+            'conn_cli_note',
+            'Video generation lives on MCP (generateVideoTool) and the Public API (POST /generate-video). Analytics is here and on the API, not on MCP.'
           ),
           examples: [
             {
@@ -2210,7 +2374,11 @@ export function buildConnectionsCatalog(
           short: t('conn_api_short', 'REST for channels, posts and media'),
           intro: t(
             'conn_api_intro',
-            'Everything the app does to your account, you can do over HTTP: list channels, schedule and delete posts, upload media, generate video, read analytics. The header is the raw key, no Bearer prefix.'
+            'REST at /public/v1. List channels, schedule and delete posts, upload media, generate video, read analytics. This is the widest surface: 22 key authenticated operations. Image generation is MCP only. The header is the raw key, no Bearer prefix.'
+          ),
+          info: t(
+            'conn_api_note',
+            'MCP Bearer headers are for /mcp. Here, Authorization is the raw key. pos_ OAuth tokens use the same raw header. Video: POST /generate-video. There is no image generation endpoint on this API.'
           ),
           examples: [
             {
@@ -2326,7 +2494,7 @@ await pq.post({
           short: t('conn_oauth_short', 'Let other apps post for your users'),
           intro: t(
             'conn_oauth_intro',
-            'If you are building a product rather than automating your own account, register an OAuth app under OAuth Apps. Your users authorise it and you receive a token that works with the API, MCP and the CLI, no key sharing. Tokens are prefixed pos_.'
+            'If you are building a product rather than automating your own account, register an OAuth app under OAuth Apps. Users approve access and you receive a pos_ token. That token works on the Public API (raw key header) and on MCP as a Bearer token on /mcp. The URL form /mcp/KEY only accepts API keys.'
           ),
           docs: [
             {
@@ -2346,7 +2514,7 @@ await pq.post({
               title: t('conn_oauth_step_token', 'Use the token'),
               detail: t(
                 'conn_oauth_step_token_detail',
-                'Tokens are prefixed pos_ and go in the same Authorization header as an API key (raw, no Bearer) on the Public API.'
+                'Tokens are prefixed pos_ and go in the same Authorization header as an API key (raw, no Bearer) on the Public API. On MCP, send them as Authorization: Bearer pos_… on https://api.postqueen.ai/mcp. Do not put a pos_ token in the /mcp/KEY URL; that form only looks up API keys.'
               ),
             },
           ],
