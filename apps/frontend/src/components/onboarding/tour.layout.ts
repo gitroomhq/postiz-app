@@ -20,7 +20,12 @@ export const TOUR_CARD_H = 196;
 export const TOUR_MARGIN = 16;
 /** Same cutoff as `PQ_MOBILE_MAX` in `use.viewport.tsx`. */
 export const TOUR_MOBILE_MAX = 760;
-/** Tall hub / Add Channel targets: ring only the visible top slice. */
+/**
+ * Phone only. Featured and Add Channel are tall 1-column stacks there, so
+ * the ring takes the visible top slice instead of the whole screen. Desktop
+ * keeps the measured pane — Add a channel used to look cut in half because
+ * this cap ran on every viewport.
+ */
 export const TOUR_TALL_MAX_VH = 0.42;
 
 export const tourCardWidth = (vw: number) =>
@@ -45,8 +50,9 @@ export const clampTourPos = (
 };
 
 /**
- * Intersect the measured target with the viewport, then cap Featured / Add
- * Channel so a 1-column stack cannot own the whole phone screen.
+ * Intersect the measured target with the viewport. On a phone, cap Featured
+ * / Add Channel so a 1-column stack cannot own the whole screen. Desktop
+ * rings the visible pane in full.
  */
 export const clipSpotlight = (
   r: TourRect,
@@ -64,6 +70,7 @@ export const clipSpotlight = (
   const w = Math.max(0, right - left);
   let h = Math.max(0, bottom - top);
   if (
+    isMobileTour(vw) &&
     (key === 'connect-featured' || key === 'platform-grid') &&
     h > vh * TOUR_TALL_MAX_VH
   ) {
