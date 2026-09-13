@@ -731,47 +731,41 @@ export const ConnectPanel: FC<{
     if (compact) {
       return (
         <div
-          className="rounded-pqLg bg-pqPop p-[12px_14px] shadow-[inset_0_0_0_1px_var(--border)]"
+          className="flex flex-wrap items-center gap-[8px] rounded-pqLg bg-pqPop px-[14px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
           aria-label={t('conn_your_connection', 'Your connection')}
         >
-          <div className="flex flex-wrap items-center gap-[8px]">
-            <span className="text-[12px] font-[600] text-pqMuted">
-              {t('api_key', 'API key')}
-            </span>
-            <code className="min-w-0 max-w-full truncate rounded-pqSm bg-pqInner px-[10px] py-[5px] font-mono text-[12.5px] text-pqText">
-              {maskedKey || '•'.repeat(32)}
-            </code>
-          </div>
-          <div className="mt-[8px] flex flex-wrap gap-[6px]">
+          <span className="text-[12px] font-[600] text-pqMuted">
+            {t('api_key', 'API key')}
+          </span>
+          <code className="min-w-0 max-w-[min(100%,280px)] truncate rounded-pqSm bg-pqInner px-[10px] py-[5px] font-mono text-[12.5px] text-pqText">
+            {maskedKey || '•'.repeat(32)}
+          </code>
+          <button
+            type="button"
+            onClick={() => setKeyRevealed((v) => !v)}
+            className={copyChipClass}
+          >
+            {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
+          </button>
+          {showMcp && (
             <button
               type="button"
-              onClick={() => setKeyRevealed((v) => !v)}
+              onClick={() => {
+                copy(mcpUrlWithKey);
+                toaster.show('MCP URL copied to clipboard', 'success');
+              }}
               className={copyChipClass}
             >
-              {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
+              {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
             </button>
-            {showMcp && (
-              <button
-                type="button"
-                onClick={() => {
-                  copy(mcpUrlWithKey);
-                  toaster.show('MCP URL copied to clipboard', 'success');
-                }}
-                className={copyChipClass}
-              >
-                {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
-              </button>
-            )}
-          </div>
+          )}
           {showApi && (
-            <div className="mt-[8px]">
-              <code className="inline-flex rounded-pqSm bg-pqInner px-[10px] py-[4px] font-mono text-[11.5px] text-pqMuted">
-                Authorization: KEY
-              </code>
-            </div>
+            <code className="rounded-pqSm bg-pqInner px-[10px] py-[4px] font-mono text-[11.5px] text-pqMuted">
+              Authorization: KEY
+            </code>
           )}
           {!apiKey && (
-            <div className="mt-[8px]">
+            <div className="basis-full">
               <ApiKeyMissingNote />
             </div>
           )}
@@ -1293,7 +1287,7 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
-          : 'h-full w-full max-w-[1400px] rounded-[16px]'
+          : 'h-full w-full rounded-[16px]'
       )}
     >
       {/* Left nav / mobile chips — Settings chrome: search above, then groups */}
