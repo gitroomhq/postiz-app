@@ -1319,7 +1319,7 @@ export function buildConnectionsCatalog(
           ),
           examples: [
             {
-              title: t('conn_n8n_ex_1_title', 'GitHub Release → socials'),
+              title: t('conn_n8n_ex_1_title', 'GitHub Release → Create Post (LinkedIn + X)'),
               body: t(
                 'conn_n8n_ex_1_body',
                 'GitHub Release published → Get Channels → Create Post on LinkedIn and X.'
