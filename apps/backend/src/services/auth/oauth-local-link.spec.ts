@@ -3,8 +3,10 @@ import { describe, it } from 'node:test';
 import {
   existingAccountForEmail,
   findExistingOauthUser,
+  oauthWorkspaceName,
   shouldAttachGoogleId,
   shouldBlockLocalRegister,
+  shouldCompleteOauthWithoutOrgForm,
   shouldLinkGoogleToLocalEmail,
   shouldLinkOauthToLocalEmail,
   shouldAttachAppleId,
@@ -30,6 +32,22 @@ describe('shouldLinkGoogleToLocalEmail', () => {
     assert.equal(shouldLinkGoogleToLocalEmail('GOOGLE', null), false);
     assert.equal(shouldLinkGoogleToLocalEmail('GITHUB', 'a@b.com'), false);
     assert.equal(shouldLinkGoogleToLocalEmail('LOCAL', 'a@b.com'), false);
+  });
+});
+
+describe('shouldCompleteOauthWithoutOrgForm', () => {
+  it('completes Google and Apple without a company step, not GitHub', () => {
+    assert.equal(shouldCompleteOauthWithoutOrgForm('GOOGLE'), true);
+    assert.equal(shouldCompleteOauthWithoutOrgForm('APPLE'), true);
+    assert.equal(shouldCompleteOauthWithoutOrgForm('GITHUB'), false);
+    assert.equal(shouldCompleteOauthWithoutOrgForm('LOCAL'), false);
+  });
+});
+
+describe('oauthWorkspaceName', () => {
+  it('uses the email prefix when it is long enough, otherwise Workspace', () => {
+    assert.equal(oauthWorkspaceName('gokhan@example.com'), 'gokhan');
+    assert.equal(oauthWorkspaceName('ab@example.com'), 'Workspace');
   });
 });
 
@@ -294,7 +312,7 @@ describe('findExistingOauthUser', () => {
     const found = await findExistingOauthUser(
       'APPLE',
       { id: 'apple-55', email: null },
-      users
+      users,
     );
     assert.equal(found, linkedLocal);
     assert.equal(found?.providerId, 'google-99');
@@ -324,7 +342,7 @@ const makeUserTable = (seed: UserRow[] = []) => {
         (row) =>
           row.deletedAt === null &&
           row.providerName === 'LOCAL' &&
-          row.email.toLowerCase() === email.toLowerCase()
+          row.email.toLowerCase() === email.toLowerCase(),
       ) ?? null,
     getUserByProvider: async (providerId, provider) => {
       if (provider === 'GOOGLE') {
@@ -332,7 +350,7 @@ const makeUserTable = (seed: UserRow[] = []) => {
           (row) =>
             row.deletedAt === null &&
             row.providerName === 'LOCAL' &&
-            row.providerId === providerId
+            row.providerId === providerId,
         );
         if (linkedLocal) {
           return linkedLocal;
@@ -343,7 +361,7 @@ const makeUserTable = (seed: UserRow[] = []) => {
           (row) =>
             row.deletedAt === null &&
             row.providerName === 'LOCAL' &&
-            row.appleProviderId === providerId
+            row.appleProviderId === providerId,
         );
         if (linkedLocal) {
           return linkedLocal;
@@ -354,13 +372,13 @@ const makeUserTable = (seed: UserRow[] = []) => {
           (row) =>
             row.deletedAt === null &&
             row.providerName === provider &&
-            row.providerId === providerId
+            row.providerId === providerId,
         ) ?? null
       );
     },
     attachProviderId: async (userId, providerId) => {
       const row = rows.find(
-        (item) => item.id === userId && item.providerName === 'LOCAL'
+        (item) => item.id === userId && item.providerName === 'LOCAL',
       );
       if (row) {
         row.providerId = providerId;
@@ -368,7 +386,7 @@ const makeUserTable = (seed: UserRow[] = []) => {
     },
     attachAppleProviderId: async (userId, appleProviderId) => {
       const row = rows.find(
-        (item) => item.id === userId && item.providerName === 'LOCAL'
+        (item) => item.id === userId && item.providerName === 'LOCAL',
       );
       if (row) {
         row.appleProviderId = appleProviderId;
@@ -385,14 +403,14 @@ const makeUserTable = (seed: UserRow[] = []) => {
   const insert = (
     providerName: string,
     email: string,
-    providerId: string
+    providerId: string,
   ): UserRow => {
     if (
       rows.some(
         (row) =>
           row.deletedAt === null &&
           row.providerName === providerName &&
-          row.email.toLowerCase() === email.toLowerCase()
+          row.email.toLowerCase() === email.toLowerCase(),
       )
     ) {
       throw new Error(`unique (email, providerName): ${email}/${providerName}`);
@@ -415,12 +433,10 @@ const makeUserTable = (seed: UserRow[] = []) => {
     const matches = rows.filter(
       (row) =>
         row.deletedAt === null &&
-        row.email.toLowerCase() === email.toLowerCase()
+        row.email.toLowerCase() === email.toLowerCase(),
     );
     return (
-      matches.find((row) => row.providerName === 'LOCAL') ||
-      matches[0] ||
-      null
+      matches.find((row) => row.providerName === 'LOCAL') || matches[0] || null
     );
   };
 
@@ -453,18 +469,33 @@ const makeUserTable = (seed: UserRow[] = []) => {
     return insert('LOCAL', email, '');
   };
 
-  const appleSignIn = async (identity: { id: string; email?: string | null }) => {
+  const appleSignIn = async (identity: {
+    id: string;
+    email?: string | null;
+  }) => {
     const existing = await findExistingOauthUser('APPLE', identity, store);
     if (existing) {
       return { user: existing, created: false };
     }
     return {
-      user: insert('APPLE', identity.email || `apple-${identity.id}@privaterelay.appleid.com`, identity.id),
+      user: insert(
+        'APPLE',
+        identity.email || `apple-${identity.id}@privaterelay.appleid.com`,
+        identity.id,
+      ),
       created: true,
     };
   };
 
-  return { rows, store, googleSignIn, appleSignIn, otpSignIn, passwordRegister, insert };
+  return {
+    rows,
+    store,
+    googleSignIn,
+    appleSignIn,
+    otpSignIn,
+    passwordRegister,
+    insert,
+  };
 };
 
 describe('one verified inbox is one User (table + unique constraint)', () => {
@@ -544,7 +575,7 @@ describe('one verified inbox is one User (table + unique constraint)', () => {
 
     await assert.rejects(
       () => db.passwordRegister('gokhan@example.com'),
-      /Email already exists/
+      /Email already exists/,
     );
     assert.equal(db.rows.length, 1);
   });
@@ -553,11 +584,7 @@ describe('one verified inbox is one User (table + unique constraint)', () => {
     const db = makeUserTable();
     db.insert('LOCAL', 'gokhan@example.com', '');
 
-    const github = await findExistingOauthUser(
-      'GITHUB',
-      google,
-      db.store
-    );
+    const github = await findExistingOauthUser('GITHUB', google, db.store);
 
     assert.equal(github, null);
   });

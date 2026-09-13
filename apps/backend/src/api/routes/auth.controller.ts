@@ -37,7 +37,7 @@ export class AuthController {
   constructor(
     private _authService: AuthService,
     private _emailService: EmailService,
-    private _abuseGuardService: AbuseGuardService
+    private _abuseGuardService: AbuseGuardService,
   ) {}
 
   /**
@@ -49,7 +49,7 @@ export class AuthController {
   private async isAbusive(
     action: 'login' | 'register' | 'forgot',
     email: string,
-    ip: string
+    ip: string,
   ) {
     const decision = await this._abuseGuardService.challenge({
       action,
@@ -73,18 +73,16 @@ export class AuthController {
     @Body() body: CreateOrgUserDto,
     @Res({ passthrough: false }) response: Response,
     @RealIP() ip: string,
-    @UserAgent() userAgent: string
+    @UserAgent() userAgent: string,
   ) {
     if (await this.isAbusive('register', body.email, ip)) {
-      response
-        .status(429)
-        .send('Too many requests, please try again later');
+      response.status(429).send('Too many requests, please try again later');
       return;
     }
 
     try {
       const getOrgFromCookie = this._authService.getOrgFromCookie(
-        req?.cookies?.org
+        req?.cookies?.org,
       );
 
       const { jwt, addedOrg } = await this._authService.routeAuth(
@@ -92,7 +90,7 @@ export class AuthController {
         body,
         ip,
         userAgent,
-        getOrgFromCookie
+        getOrgFromCookie,
       );
 
       // A provider round-trip already proves the address, so only LOCAL
@@ -159,18 +157,16 @@ export class AuthController {
     @Body() body: LoginUserDto,
     @Res({ passthrough: false }) response: Response,
     @RealIP() ip: string,
-    @UserAgent() userAgent: string
+    @UserAgent() userAgent: string,
   ) {
     if (await this.isAbusive('login', body.email, ip)) {
-      response
-        .status(429)
-        .send('Too many requests, please try again later');
+      response.status(429).send('Too many requests, please try again later');
       return;
     }
 
     try {
       const getOrgFromCookie = this._authService.getOrgFromCookie(
-        req?.cookies?.org
+        req?.cookies?.org,
       );
 
       const { jwt, addedOrg } = await this._authService.routeAuth(
@@ -178,7 +174,7 @@ export class AuthController {
         body,
         ip,
         userAgent,
-        getOrgFromCookie
+        getOrgFromCookie,
       );
 
       response.cookie('auth', jwt, {
@@ -252,7 +248,7 @@ export class AuthController {
   mobileCallback(
     @Query('code') code: string,
     @Query('state') state: string,
-    @Res({ passthrough: false }) response: Response
+    @Res({ passthrough: false }) response: Response,
   ) {
     const scheme = process.env.MOBILE_APP_SCHEME || 'postqueen://auth/callback';
     const params = new URLSearchParams();
@@ -265,7 +261,7 @@ export class AuthController {
   async oauthLink(
     @Param('provider') provider: string,
     @Query() query: any,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     if (provider.toUpperCase() === 'WALLET' && !isWalletLoginEnabled()) {
       return response.status(404).send('Wallet login is disabled');
@@ -291,11 +287,11 @@ export class AuthController {
   async activate(
     @Body('code') code: string,
     @Body('datafast_visitor_id') datafast_visitor_id: string,
-    @Res({ passthrough: false }) response: Response
+    @Res({ passthrough: false }) response: Response,
   ) {
     const activate = await this._authService.activate(
       code,
-      datafast_visitor_id
+      datafast_visitor_id,
     );
     if (!activate) {
       return response.status(200).json({ can: false });
@@ -343,7 +339,7 @@ export class AuthController {
     @Param('provider') provider: string,
     @Body('code') code: string,
     @Body('state') state: string,
-    @Res({ passthrough: false }) response: Response
+    @Res({ passthrough: false }) response: Response,
   ) {
     if (!code) {
       return response.redirect(303, `${process.env.FRONTEND_URL}/auth/login`);
@@ -355,7 +351,7 @@ export class AuthController {
     params.set('provider', provider.toUpperCase());
     return response.redirect(
       303,
-      `${process.env.FRONTEND_URL}/auth?${params.toString()}`
+      `${process.env.FRONTEND_URL}/auth?${params.toString()}`,
     );
   }
 
@@ -366,7 +362,9 @@ export class AuthController {
     @Body('redirect_uri') redirect_uri: string,
     @Body('state') state: string,
     @Param('provider') provider: string,
-    @Res({ passthrough: false }) response: Response
+    @RealIP() ip: string,
+    @UserAgent() userAgent: string,
+    @Res({ passthrough: false }) response: Response,
   ) {
     // a cross-site form post can spoof any body field, a json body cannot
     if (!req.headers['content-type']?.includes('application/json')) {
@@ -377,39 +375,40 @@ export class AuthController {
       return response.status(404).send('Wallet login is disabled');
     }
 
-    const { jwt, token } = await this._authService.checkExists(
-      provider,
-      code,
-      redirect_uri,
-      state,
-      req?.cookies?.oauth_state
-    );
+    try {
+      const { jwt, token, isNew } = await this._authService.checkExists(
+        provider,
+        code,
+        redirect_uri,
+        state,
+        req?.cookies?.oauth_state,
+        ip,
+        userAgent,
+      );
 
-    if (token) {
-      return response.json({ token });
+      if (token) {
+        return response.json({ token });
+      }
+
+      if (!jwt) {
+        return response.status(400).send('Invalid user');
+      }
+
+      this.setAuthCookie(response, jwt);
+
+      if (isNew) {
+        Sentry.metrics.count('new_user', 1);
+        response.header('onboarding', 'true');
+      }
+      response.header('reload', 'true');
+
+      return response.status(200).json({
+        login: true,
+        isNew: !!isNew,
+      });
+    } catch (e: any) {
+      return response.status(400).type('text/plain').send(e.message);
     }
-
-    response.cookie('auth', jwt, {
-      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-      ...(areCookiesSecured()
-        ? {
-            secure: true,
-            httpOnly: true,
-            sameSite: 'none',
-          }
-        : {}),
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-    });
-
-    if (!areCookiesSecured()) {
-      response.header('auth', jwt);
-    }
-
-    response.header('reload', 'true');
-
-    response.status(200).json({
-      login: true,
-    });
   }
 
   private setAuthCookie(response: Response, jwt: string) {
@@ -434,7 +433,7 @@ export class AuthController {
   async otpRequest(
     @Body() body: OtpRequestDto,
     @RealIP() ip: string,
-    @Res({ passthrough: false }) response: Response
+    @Res({ passthrough: false }) response: Response,
   ) {
     if (process.env.PASSWORDLESS_LOGIN !== 'true') {
       return response.status(400).send('Passwordless login is disabled');
@@ -453,7 +452,7 @@ export class AuthController {
     @Body() body: OtpVerifyDto,
     @RealIP() ip: string,
     @UserAgent() userAgent: string,
-    @Res({ passthrough: false }) response: Response
+    @Res({ passthrough: false }) response: Response,
   ) {
     if (process.env.PASSWORDLESS_LOGIN !== 'true') {
       return response.status(400).send('Passwordless login is disabled');
@@ -464,7 +463,7 @@ export class AuthController {
         body.email,
         body.code,
         ip,
-        userAgent
+        userAgent,
       );
 
       this.setAuthCookie(response, jwt);

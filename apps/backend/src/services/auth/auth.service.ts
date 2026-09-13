@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes, randomInt } from 'crypto';
-import { OtpPurpose, Provider, User } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
+import {
+  OtpPurpose,
+  Provider,
+  User,
+} from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -19,7 +23,9 @@ import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
 import {
   existingAccountForEmail,
   findExistingOauthUser,
+  oauthWorkspaceName,
   shouldBlockLocalRegister,
+  shouldCompleteOauthWithoutOrgForm,
 } from '@gitroom/backend/services/auth/oauth-local-link';
 
 // A session lasts as long as the cookie that carries it (one year, set in
@@ -37,7 +43,7 @@ let dummyPasswordHash: string | undefined;
 const passwordHashToCompare = (hash?: string | null) =>
   hash ||
   (dummyPasswordHash ??= AuthChecker.hashPassword(
-    randomBytes(16).toString('hex')
+    randomBytes(16).toString('hex'),
   ));
 
 @Injectable()
@@ -49,7 +55,7 @@ export class AuthService {
     private _emailService: EmailService,
     private _providerManager: AuthProviderManager,
     private _otpService: OtpService,
-    private _abuseGuardService: AbuseGuardService
+    private _abuseGuardService: AbuseGuardService,
   ) {}
 
   // Passwordless email-code login (cloud). Kept behind PASSWORDLESS_LOGIN so
@@ -75,7 +81,7 @@ export class AuthService {
       throw new Error(
         decision.reason === 'rate_limited'
           ? 'Too many requests, please try again later'
-          : 'Please complete the verification and try again'
+          : 'Please complete the verification and try again',
       );
     }
 
@@ -93,19 +99,14 @@ export class AuthService {
     await this._notificationService.sendEmail(
       email,
       'Your PostQueen sign-in code',
-      `Your sign-in code is <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.<br />It expires in 10 minutes. If you didn't request it, you can ignore this email.`
+      `Your sign-in code is <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.<br />It expires in 10 minutes. If you didn't request it, you can ignore this email.`,
     );
 
     // Never reveal whether the email maps to an existing account.
     return { sent: true };
   }
 
-  async verifyOtp(
-    email: string,
-    code: string,
-    ip: string,
-    userAgent: string
-  ) {
+  async verifyOtp(email: string, code: string, ip: string, userAgent: string) {
     email = email.toLowerCase();
 
     // Rate limiting only — the captcha is solved when the code is requested,
@@ -120,13 +121,13 @@ export class AuthService {
       throw new Error(
         decision.reason === 'rate_limited'
           ? 'Too many attempts, please try again later'
-          : 'Verification blocked, please request a new code'
+          : 'Verification blocked, please request a new code',
       );
     }
 
     const record = await this._otpService.getLatestActive(
       email,
-      OtpPurpose.LOGIN
+      OtpPurpose.LOGIN,
     );
 
     if (!record || dayjs(record.expiresAt).isBefore(dayjs())) {
@@ -148,7 +149,7 @@ export class AuthService {
     const local = await this._userService.getUserByEmail(email);
     let user: User | null = existingAccountForEmail(
       local,
-      local ?? (await this._userService.getUserByEmailAnyProvider(email))
+      local ?? (await this._userService.getUserByEmailAnyProvider(email)),
     );
     let isNew = false;
 
@@ -160,8 +161,7 @@ export class AuthService {
         throw new Error('Registration is disabled');
       }
 
-      const prefix = email.split('@')[0] || '';
-      const company = prefix.length >= 3 ? prefix.slice(0, 64) : 'Workspace';
+      const company = oauthWorkspaceName(email);
       const create = await this._organizationService.createOrgAndUser(
         {
           email,
@@ -171,7 +171,7 @@ export class AuthService {
           datafast_visitor_id: '',
         },
         ip,
-        userAgent
+        userAgent,
       );
 
       user = create.users[0].user as User;
@@ -204,7 +204,7 @@ export class AuthService {
     body: CreateOrgUserDto | LoginUserDto,
     ip: string,
     userAgent: string,
-    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string },
   ) {
     if (provider === Provider.LOCAL) {
       if (process.env.DISALLOW_PLUS && body.email.includes('+')) {
@@ -217,7 +217,8 @@ export class AuthService {
       if (body instanceof CreateOrgUserDto) {
         const any = existingAccountForEmail(
           user,
-          user ?? (await this._userService.getUserByEmailAnyProvider(body.email))
+          user ??
+            (await this._userService.getUserByEmailAnyProvider(body.email)),
         );
         if (shouldBlockLocalRegister(any)) {
           throw new Error('Email already exists');
@@ -230,7 +231,7 @@ export class AuthService {
         const create = await this._organizationService.createOrgAndUser(
           body,
           ip,
-          userAgent
+          userAgent,
         );
 
         const addedOrg =
@@ -239,7 +240,7 @@ export class AuthService {
                 create.users[0].user.id,
                 addToOrg.id,
                 addToOrg.orgId,
-                addToOrg.role
+                addToOrg.role,
               )
             : false;
 
@@ -253,9 +254,9 @@ export class AuthService {
             body.email,
             'Activate your account',
             `Click <a href="${this.activationLink(
-              create.users[0].user
+              create.users[0].user,
             )}">here</a> to activate your account`,
-            'top'
+            'top',
           );
         }
         return obj;
@@ -265,7 +266,7 @@ export class AuthService {
       // it for an unknown address answered in ~1 ms instead of ~100 ms.
       const passwordMatches = AuthChecker.comparePassword(
         body.password,
-        passwordHashToCompare(user?.password)
+        passwordHashToCompare(user?.password),
       );
       if (!user?.password || !passwordMatches) {
         throw new Error('Invalid user name or password');
@@ -282,7 +283,7 @@ export class AuthService {
       provider,
       body as CreateOrgUserDto,
       ip,
-      userAgent
+      userAgent,
     );
 
     const addedOrg =
@@ -291,7 +292,7 @@ export class AuthService {
             user.id,
             addToOrg.id,
             addToOrg.orgId,
-            addToOrg.role
+            addToOrg.role,
           )
         : false;
     return { addedOrg, jwt: await this.jwt(user) };
@@ -329,7 +330,8 @@ export class AuthService {
     return {
       getUserByProvider: (providerId: string, name: string) =>
         this._userService.getUserByProvider(providerId, name as Provider),
-      getUserByEmail: (email: string) => this._userService.getUserByEmail(email),
+      getUserByEmail: (email: string) =>
+        this._userService.getUserByEmail(email),
       attachProviderId: (userId: string, providerId: string) =>
         this._userService.attachProviderId(userId, providerId),
       attachAppleProviderId: (userId: string, appleProviderId: string) =>
@@ -342,7 +344,7 @@ export class AuthService {
     provider: Provider,
     body: CreateOrgUserDto,
     ip: string,
-    userAgent: string
+    userAgent: string,
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -354,7 +356,7 @@ export class AuthService {
     const user = await findExistingOauthUser(
       provider,
       providerUser,
-      this.oauthUserStore()
+      this.oauthUserStore(),
     );
     if (user) {
       return user;
@@ -374,11 +376,11 @@ export class AuthService {
         datafast_visitor_id: body.datafast_visitor_id,
       },
       ip,
-      userAgent
+      userAgent,
     );
 
     this._track('register', providerUser.email, body.datafast_visitor_id).catch(
-      (err) => {}
+      (err) => {},
     );
 
     await NewsletterService.register(providerUser.email);
@@ -397,7 +399,7 @@ export class AuthService {
   private async _track(
     name: string,
     email: string,
-    datafast_visitor_id: string
+    datafast_visitor_id: string,
   ) {
     if (email && datafast_visitor_id && process.env.DATAFAST_API_KEY) {
       try {
@@ -431,13 +433,13 @@ export class AuthService {
         purpose: 'reset',
         expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
       },
-      { expiresIn: RESET_LIFETIME }
+      { expiresIn: RESET_LIFETIME },
     );
 
     await this._notificationService.sendEmail(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`,
     );
   }
 
@@ -535,9 +537,9 @@ export class AuthService {
       user.email,
       'Activate your account',
       `Click <a href="${this.activationLink(
-        user
+        user,
       )}">here</a> to activate your account`,
-      'top'
+      'top',
     );
 
     return true;
@@ -556,7 +558,9 @@ export class AuthService {
     code: string,
     redirectUri?: string,
     state?: string,
-    stateCookie?: string
+    stateCookie?: string,
+    ip?: string,
+    userAgent?: string,
   ) {
     // the mobile app passes redirect_uri and keeps no cookies, the web flow
     // never passes it, so the state nonce is only enforced for the web flow
@@ -574,17 +578,47 @@ export class AuthService {
 
     const providerInstance = this._providerManager.getProvider(provider);
     const token = await providerInstance.getToken(code, redirectUri);
-    const user = await providerInstance.getUser(token);
-    if (!user) {
+    const identity = await providerInstance.getUser(token);
+    if (!identity) {
       throw new Error('Invalid user');
     }
-    const checkExists = await findExistingOauthUser(
+    const existing = await findExistingOauthUser(
       provider as Provider,
-      user,
-      this.oauthUserStore()
+      identity,
+      this.oauthUserStore(),
     );
-    if (checkExists) {
-      return { jwt: await this.jwt(checkExists) };
+    if (existing) {
+      return { jwt: await this.jwt(existing), isNew: false };
+    }
+
+    // Sign in and Create account both land here after Google (and Apple).
+    // Existing inbox → already returned above (linked if it was email-only).
+    // No account → open one with a workspace name from the email, no extra form.
+    if (
+      shouldCompleteOauthWithoutOrgForm(provider.toUpperCase()) &&
+      identity.email
+    ) {
+      if (!(await this.canRegister(provider))) {
+        throw new Error('Registration is disabled');
+      }
+
+      const create = await this._organizationService.createOrgAndUser(
+        {
+          company: oauthWorkspaceName(identity.email),
+          email: identity.email,
+          password: '',
+          provider: provider.toUpperCase() as Provider,
+          providerId: identity.id,
+          datafast_visitor_id: '',
+        },
+        ip || '',
+        userAgent || '',
+      );
+
+      this._track('register', identity.email, '').catch(() => {});
+      await NewsletterService.register(identity.email);
+
+      return { jwt: await this.jwt(create.users[0].user), isNew: true };
     }
 
     return { token };
@@ -596,7 +630,7 @@ export class AuthService {
   private activationLink(user: { id: string; email: string }) {
     const token = AuthChecker.signJWT(
       { id: user.id, email: user.email, purpose: 'activate' },
-      { expiresIn: ACTIVATION_LIFETIME }
+      { expiresIn: ACTIVATION_LIFETIME },
     );
     return `${process.env.FRONTEND_URL}/auth/activate/${token}`;
   }
