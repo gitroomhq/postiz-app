@@ -1218,3 +1218,7 @@ colons (`select_page`, `select_linkedin_page`, `select_instagram_account`,
 `select_tumblr_blog`, `select_location`). Facebook, Instagram, LinkedIn, Google
 Business, and Tumblr now render the same avatar + name + meta item as YouTube,
 so the shared confirm/grid/list CSS can actually size them.
+
+## Connect marketplace IA
+
+**i18n +59 net (Connect hub rebuilt as a job-based marketplace, not a restyle of the same keys).** The catalog and rail dropped MCP / Agent Skills / CLI / API as destinations and added Assistants / Agents / Build, Grok, Muse, Muse Code, kind-aware examples, and a credential strip. Old prompt/try keys (`conn_*_prompt_*`, `conn_*_try`, `connect_hub_mcp`, `connect_nav_cli`, …) were replaced by example and step keys (`conn_ex_*`, `conn_n8n_ex_*`, `conn_grok_*`, `conn_muse_*`, `connect_nav_assistants`, …). No API, route, gate or loop change. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1712 → 1771).
