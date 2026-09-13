@@ -713,6 +713,7 @@ export function buildConnectionsCatalog(
               ),
               code: JSON.stringify(
                 {
+                  schema_version: 1,
                   mcp_servers: {
                     postqueen: {
                       transport: 'streamable_http',
@@ -872,7 +873,7 @@ export function buildConnectionsCatalog(
           short: t('conn_claude_apps_short', 'Manage content from Claude'),
           intro: t(
             'conn_claude_apps_intro',
-            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. Add a custom connector when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
+            'Claude Desktop, claude.ai, and the Claude apps on iOS and Android all reach PostQueen over MCP. Add a custom connector from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for self-hosted / VPN installs. Connectors sync to your account, so the same chat works on laptop and phone.'
           ),
           examples: chatExamples(),
           info: t(
@@ -897,7 +898,7 @@ export function buildConnectionsCatalog(
               ),
               detail: t(
                 'conn_claude_apps_step_desktop_detail',
-                'Claude Desktop → Settings → Connectors → Add custom connector. Paste the MCP URL (key in the path). Leave OAuth fields empty. For LAN or VPN instances, use Edit Config and mcp-remote instead.'
+                'Customize → Connectors → + → Add custom connector (Claude Desktop may still say Settings → Connectors). Paste the MCP URL (key in the path). Leave OAuth / Advanced fields empty. For LAN or VPN instances, use Edit Config and mcp-remote instead.'
               ),
               code: mcpUrlWithKey,
             },
@@ -908,7 +909,7 @@ export function buildConnectionsCatalog(
               ),
               detail: t(
                 'conn_claude_apps_step_web_detail',
-                'claude.ai → Settings → Connectors → Add custom connector. Then toggle PostQueen on from the tools menu in a chat — it appears on iOS and Android after you add it on the web.'
+                'claude.ai → Customize → Connectors → + → Add custom connector. On Team/Enterprise an Owner adds it under Organization settings → Connectors → Add → Custom → Web, then members click Connect. Enable it in a chat from + → Connectors. It appears on iOS and Android after you add it on the web.'
               ),
             },
             {
@@ -933,12 +934,12 @@ export function buildConnectionsCatalog(
           short: t('conn_chatgpt_short', 'Manage content from ChatGPT'),
           intro: t(
             'conn_chatgpt_intro',
-            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Paid plans on the web only — not the Free plan. The connector is not under Settings → Connectors.'
+            'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only — not the Free plan, not the mobile apps.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_chatgpt_note',
-            'Turn on Developer mode, then create a developer-mode app from Plugins. In a chat, open + → Developer mode and include PostQueen. Authentication: No authentication — the key is already in the URL.'
+            'OpenAI Help Center currently says full MCP write (schedule/publish) is for Business and Enterprise/Edu. Plus and Pro can usually connect, but write tools such as schedulePostTool may stay blocked. Authentication: No authentication — the key is already in the URL.'
           ),
           docs: [
             {
@@ -960,14 +961,14 @@ export function buildConnectionsCatalog(
               ),
               detail: t(
                 'conn_chatgpt_step_devmode_detail',
-                'ChatGPT on the web → Settings → Security and login → Developer mode. On Business, Enterprise and Edu an admin controls this switch. It is not available on the Free plan.'
+                'ChatGPT on the web → Settings → Apps → Advanced settings → Developer mode. Older ChatGPT builds put this under Settings → Security and login. On Business, Enterprise and Edu an admin controls this switch. It is not available on the Free plan.'
               ),
             },
             {
               title: t('conn_chatgpt_step_plugin', 'Create the app'),
               detail: t(
                 'conn_chatgpt_step_plugin_detail',
-                'Go to chatgpt.com/plugins (or Settings → Plugins), click +, name it PostQueen, paste the MCP URL, set Authentication to No authentication, then save. Enable it in a chat via + → Developer mode.'
+                'Settings → Apps → Create (workspace admins: Workspace settings → Apps → Create). Older builds: Settings → Plugins or chatgpt.com/plugins → +. Name it PostQueen, paste the MCP URL, set Authentication to No authentication, then save. Enable it in a chat via + → Developer mode (or the tools menu).'
               ),
               code: mcpUrlWithKey,
             },
@@ -993,12 +994,12 @@ export function buildConnectionsCatalog(
           short: t('conn_grok_short', 'Add her as a Grok custom connector'),
           intro: t(
             'conn_grok_intro',
-            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors. Grok Bot uses the same connector — create it there, then enable it on the Bot under Plugins. The server must be reachable over the public internet.'
+            'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet.'
           ),
           examples: chatExamples(),
           info: t(
             'conn_grok_note',
-            'On Grok Business and Enterprise, an admin may need to provision the connector first. There is no Bot-only MCP URL — grok.com/connectors is the source of truth.'
+            'On Grok Business and Enterprise, an admin must provision the connector in console.x.ai first. There is no Bot-only MCP URL — grok.com/connectors is the source of truth. If Grok Bot offers Plugins or Connectors, enable that same account connector there; do not invent a second URL.'
           ),
           docs: [
             {
@@ -1032,7 +1033,7 @@ export function buildConnectionsCatalog(
               title: t('conn_grok_step_bot', 'Grok Bot (optional)'),
               detail: t(
                 'conn_grok_step_bot_detail',
-                'Create the connector on grok.com/connectors first. Then open the Bot and enable that connector under Settings → Plugins. Asking the Bot to "add a custom server" still ends at the same URL.'
+                'Create the connector on grok.com/connectors first. If you use Grok Bot, enable that same account connector under the Bot\'s Plugins or Connectors if the UI offers it. Asking the Bot to "add a custom server" still ends at the same URL — there is no second MCP endpoint.'
               ),
             },
             {
@@ -1057,7 +1058,7 @@ export function buildConnectionsCatalog(
           short: t('conn_cursor_short', 'Schedule posts from Cursor'),
           intro: t(
             'conn_cursor_intro',
-            'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field — Cursor infers the transport. You can also add it from Cursor Settings → MCP, or the Customize → MCP page; both write the same file.'
+            'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field — Cursor infers the transport. You can also add it from Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP); all write the same file.'
           ),
           examples: chatExamples(),
           docs: [
@@ -1081,7 +1082,7 @@ export function buildConnectionsCatalog(
               title: t('conn_cursor_step_ui', 'Add the server'),
               detail: t(
                 'conn_cursor_step_ui_detail',
-                'Cursor Settings → MCP (or Customize → MCP), then add a streamable HTTP server named postqueen. Or create ~/.cursor/mcp.json (global) or .cursor/mcp.json (this project).'
+                'Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP), then add a streamable HTTP server named postqueen. Or create ~/.cursor/mcp.json (global) or .cursor/mcp.json (this project).'
               ),
             },
             {
@@ -1118,7 +1119,7 @@ export function buildConnectionsCatalog(
           short: t('conn_gemini_short', 'Point Gemini CLI at her MCP URL'),
           intro: t(
             'conn_gemini_intro',
-            'Gemini CLI reads MCP servers from ~/.gemini/settings.json. Streamable HTTP uses the httpUrl key — url is reserved for SSE and will not connect to PostQueen.'
+            'Gemini CLI reads MCP servers from ~/.gemini/settings.json. Streamable HTTP uses the httpUrl key — url is reserved for SSE and will not connect to PostQueen. This is the terminal CLI, not gemini.google.com.'
           ),
           examples: [
             {
@@ -1126,6 +1127,10 @@ export function buildConnectionsCatalog(
               code: 'gemini mcp list',
             },
           ],
+          info: t(
+            'conn_gemini_note',
+            'This settings.json does not appear in gemini.google.com. Google Connected Apps / Spark is a separate product with its own eligibility — do not expect the phone apps to pick up Gemini CLI.'
+          ),
           docs: [
             {
               label: t('conn_docs_gemini', 'Gemini CLI guide'),
@@ -1151,7 +1156,7 @@ export function buildConnectionsCatalog(
               title: t('conn_gemini_step_config', 'Or edit settings.json'),
               detail: t(
                 'conn_gemini_step_config_detail',
-                'Add this to ~/.gemini/settings.json. Use httpUrl, not url.'
+                'Add this to ~/.gemini/settings.json. Use httpUrl, not url. If an older gemini mcp add wrote "url" plus a type field, change that key to httpUrl or the connection fails.'
               ),
               code: JSON.stringify(
                 { mcpServers: { postqueen: { httpUrl: mcpUrlWithKey } } },

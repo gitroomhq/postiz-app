@@ -80,15 +80,22 @@ describe('Connect marketplace catalog', () => {
     assert.doesNotMatch(byId('make').steps[1].code || '', /Bearer/);
   });
 
-  it('uses Gemini httpUrl and ChatGPT Developer mode, not Connectors', () => {
+  it('uses Gemini httpUrl and ChatGPT Apps Create, not Connectors or Plugins', () => {
     const gemini = byId('gemini');
     assert.match(gemini.steps.map((s) => s.code).join('\n'), /"httpUrl"/);
     assert.doesNotMatch(gemini.intro, /\burl is the streamable/);
     assert.match(gemini.intro, /httpUrl/);
+    assert.match(gemini.intro, /not gemini\.google\.com/);
 
     const chatgpt = byId('chatgpt');
     assert.match(chatgpt.intro, /Developer mode/);
-    assert.match(chatgpt.intro, /not under Settings → Connectors/);
+    assert.match(chatgpt.intro, /Settings → Apps/);
+    assert.match(chatgpt.intro, /not Settings → Connectors/);
+    assert.match(
+      chatgpt.steps.map((s) => s.detail).join('\n'),
+      /Apps → Create/
+    );
+    assert.match(chatgpt.info || '', /schedulePostTool may stay blocked/);
   });
 
   it('says 14 tools and points keys at API Keys', () => {
@@ -107,6 +114,10 @@ describe('Connect marketplace catalog', () => {
     assert.equal(grok.method, 'MCP');
     assert.ok(grok.steps.some((s) => /Grok Bot/i.test(s.title)));
     assert.match(grok.intro, /grok\.com\/connectors/);
+    assert.match(
+      grok.steps.map((s) => s.detail).join('\n'),
+      /if the UI offers it/
+    );
 
     const muse = byId('muse');
     assert.match(muse.intro, /not a paste-an-MCP-URL flow/i);
