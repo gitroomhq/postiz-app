@@ -14,10 +14,10 @@ import {
 } from '@gitroom/frontend/components/auth/auth-chrome';
 
 /**
- * The provider buttons (Google / Apple / OIDC / GitHub / Farcaster / Wallet),
- * stacked full width so Apple sits under Google instead of squeezing a row of
- * icons. Wallet stays a per-form concern because register lazy-loads it;
- * callers pass it via `extraProviders`.
+ * The provider buttons (Google / Apple / OIDC / GitHub / Farcaster), stacked
+ * full width so Apple sits under Google instead of squeezing a row of icons.
+ * Wallet is opt-in via WALLET_LOGIN and stays a per-form concern because
+ * register lazy-loads it; callers pass it via `extraProviders`.
  */
 function Providers({ extraProviders }: { extraProviders?: ReactNode }) {
   const { isGeneral, neynarClientId, appleClientId, genericOauth } =

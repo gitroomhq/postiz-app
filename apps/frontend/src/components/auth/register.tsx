@@ -87,7 +87,7 @@ export function RegisterAfter({
   provider: string;
 }) {
   const t = useT();
-  const { billingEnabled, legalUrl } = useVariables();
+  const { walletLogin, legalUrl } = useVariables();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const fireEvents = useFireEvents();
@@ -253,7 +253,7 @@ export function RegisterAfter({
           <AuthShell
             title={t('sign_up', 'Sign Up')}
             subtitle={subtitle}
-            extraProviders={billingEnabled ? <WalletProvider /> : undefined}
+            extraProviders={walletLogin ? <WalletProvider /> : undefined}
             emailStep={emailFields}
           />
         )}

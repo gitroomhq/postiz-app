@@ -29,6 +29,7 @@ import * as Sentry from '@sentry/nestjs';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
 import { isEmailActivationRequired } from '@gitroom/helpers/utils/activation.required';
 import { AbuseGuardService } from '@gitroom/nestjs-libraries/services/abuse-guard.service';
+import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -266,6 +267,10 @@ export class AuthController {
     @Query() query: any,
     @Res({ passthrough: true }) response: Response
   ) {
+    if (provider.toUpperCase() === 'WALLET' && !isWalletLoginEnabled()) {
+      return response.status(404).send('Wallet login is disabled');
+    }
+
     const state = `login-${makeId(16)}`;
     response.cookie('oauth_state', state, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
@@ -366,6 +371,10 @@ export class AuthController {
     // a cross-site form post can spoof any body field, a json body cannot
     if (!req.headers['content-type']?.includes('application/json')) {
       return response.status(400).send('Invalid request');
+    }
+
+    if (provider.toUpperCase() === 'WALLET' && !isWalletLoginEnabled()) {
+      return response.status(404).send('Wallet login is disabled');
     }
 
     const { jwt, token } = await this._authService.checkExists(

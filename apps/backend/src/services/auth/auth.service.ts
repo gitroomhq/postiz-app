@@ -15,6 +15,7 @@ import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newslett
 import { OtpService } from '@gitroom/nestjs-libraries/database/prisma/otp/otp.service';
 import { AbuseGuardService } from '@gitroom/nestjs-libraries/services/abuse-guard.service';
 import { isEmailActivationRequired } from '@gitroom/helpers/utils/activation.required';
+import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
 import {
   existingAccountForEmail,
   findExistingOauthUser,
@@ -543,6 +544,9 @@ export class AuthService {
   }
 
   oauthLink(provider: string, query?: any) {
+    if (provider.toUpperCase() === 'WALLET' && !isWalletLoginEnabled()) {
+      throw new Error('Wallet login is disabled');
+    }
     const providerInstance = this._providerManager.getProvider(provider);
     return providerInstance.generateLink(query);
   }
@@ -562,6 +566,10 @@ export class AuthService {
       (!state || state !== stateCookie)
     ) {
       throw new Error('Invalid state');
+    }
+
+    if (provider.toUpperCase() === 'WALLET' && !isWalletLoginEnabled()) {
+      throw new Error('Wallet login is disabled');
     }
 
     const providerInstance = this._providerManager.getProvider(provider);

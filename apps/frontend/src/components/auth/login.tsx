@@ -9,10 +9,18 @@ import { useMemo, useState } from 'react';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
-import WalletProvider from '@gitroom/frontend/components/auth/providers/wallet.provider';
+import dynamic from 'next/dynamic';
+import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/placeholder/wallet.ui.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AuthShell } from '@gitroom/frontend/components/auth/auth-shell';
 import { OtpEmailStep } from '@gitroom/frontend/components/auth/otp-email-step';
+const WalletProvider = dynamic(
+  () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
+  {
+    ssr: false,
+    loading: () => <WalletUiProvider />,
+  }
+);
 // The DTO the resolver validates against is the form's shape. Declaring a
 // second, near-identical type let the two drift — this one was missing
 // `datafast_visitor_id` — and @hookform/resolvers 5 checks that they agree.
@@ -22,7 +30,7 @@ export function Login() {
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
   const [withCode, setWithCode] = useState(false);
-  const { billingEnabled, passwordlessLogin, emailEnabled } = useVariables();
+  const { walletLogin, passwordlessLogin, emailEnabled } = useVariables();
   const resolver = useMemo(() => {
     return classValidatorResolver(LoginUserDto);
   }, []);
@@ -47,7 +55,7 @@ export function Login() {
         <AuthShell
           title={t('sign_in', 'Sign In')}
           subtitle={subtitle}
-          extraProviders={billingEnabled ? <WalletProvider /> : undefined}
+          extraProviders={walletLogin ? <WalletProvider /> : undefined}
           emailStep={
             <div className="flex flex-col gap-[12px]">
               <OtpEmailStep submitLabel={t('sign_in_1', 'Sign in')} />
@@ -125,7 +133,7 @@ export function Login() {
         <AuthShell
           title={t('sign_in', 'Sign In')}
           subtitle={subtitle}
-          extraProviders={billingEnabled ? <WalletProvider /> : undefined}
+          extraProviders={walletLogin ? <WalletProvider /> : undefined}
           emailStep={
             <div className="flex flex-col gap-[12px]">
               <div className="text-textColor">
