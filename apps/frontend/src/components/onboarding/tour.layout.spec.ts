@@ -42,14 +42,13 @@ describe('tour overlay geometry', () => {
     assert.ok(pos.t >= target.t + target.h, 'card should not cover Connect');
   });
 
-  it('docks to the top when the Channels row sits in the lower half', () => {
+  it('docks Channels to the top so the rail row stays visible', () => {
     const vw = 390;
     const vh = 844;
-    const target = { t: 560, l: 12, w: 260, h: 44 };
+    const target = { t: 280, l: 12, w: 260, h: 44 };
     const pos = placeTourCard(target, false, 'nav-channels', vw, vh, false);
     onScreen(pos, vw, vh);
     assert.ok(pos.t < vh * 0.3, 'card should sit at the top');
-    assert.ok(pos.t + TOUR_CARD_H <= target.t, 'card should not cover Channels');
   });
 
   it('clips a tall Featured stack on a phone and still places the card on screen', () => {
@@ -63,13 +62,15 @@ describe('tour overlay geometry', () => {
     onScreen(pos, vw, vh);
   });
 
-  it('keeps the API key strip from counting as a full-screen dim', () => {
+  it('docks the API key card to the bottom so the strip at the top stays visible', () => {
     const vw = 390;
     const vh = 844;
     const strip = { t: 72, l: 16, w: 358, h: 52 };
     assert.ok(!tourIsHuge(strip, 'connect-creds', false, vw, vh));
     const pos = placeTourCard(strip, false, 'connect-creds', vw, vh, false);
     onScreen(pos, vw, vh);
+    assert.ok(pos.t > vh * 0.6, 'card should sit in the lower half');
+    assert.ok(pos.t >= strip.t + strip.h, 'card should not cover the key strip');
   });
 
   it('places Connect beside the rail on desktop', () => {

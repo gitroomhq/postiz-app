@@ -42,7 +42,10 @@ export const STEPS: StepMeta[] = [
   { key: 'cal-grid', path: CALENDAR_STEP_PATH, needs: 'posts-panel' },
   { key: 'posts-panel', path: CALENDAR_STEP_PATH, needs: 'posts-panel' },
   // Spotlight is the rail Connect button (still visible on /connections).
-  { key: 'connect-pq', path: '/connections?nav=all' },
+  { key: 'connect-pq', path: CALENDAR_STEP_PATH },
+  // Hub overlay covers the rail. Stay on the calendar so Connect in the
+  // rail (and the phone drawer) is the thing the ring can see. Next opens
+  // the hub for the key strip and Featured.
   // Key strip sits above Featured in the hub. Walk it first so the phone
   // scroll matches the desktop reading order (and so a 1-column Featured
   // stack is not the first thing the overlay tries to ring).

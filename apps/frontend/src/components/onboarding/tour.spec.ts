@@ -18,8 +18,11 @@ describe('product tour Connect steps', () => {
     );
   });
 
-  it('opens Connect on All so Featured and the key strip exist', () => {
-    for (const key of ['connect-pq', 'connect-creds', 'connect-featured']) {
+  it('opens the hub on All for the key strip and Featured, after Connect on the calendar', () => {
+    const connect = STEPS.find((s) => s.key === 'connect-pq');
+    assert.ok(connect);
+    assert.equal(connect.path, '__calendar__');
+    for (const key of ['connect-creds', 'connect-featured']) {
       const step = STEPS.find((s) => s.key === key);
       assert.ok(step, key);
       assert.match(step.path, /\/connections\?nav=all/);

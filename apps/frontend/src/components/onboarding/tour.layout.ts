@@ -119,7 +119,26 @@ export const placeTourCard = (
   if (isMobileTour(vw) && !huge) {
     const l = (vw - cardW) / 2;
     const targetMid = r.t + r.h / 2;
-    const t = targetMid > vh * 0.55 ? MARGIN : vh - cardH - MARGIN;
+    // Key strip and Featured live at the top of the hub; Posts and Add
+    // Channel fill the screen. Dock the card to the opposite edge so the
+    // spotlight is not sitting under the copy.
+    let t: number;
+    if (
+      key === 'posts-panel' ||
+      key === 'platform-grid' ||
+      key === 'nav-channels'
+    ) {
+      t = MARGIN;
+    } else if (
+      key === 'connect-creds' ||
+      key === 'connect-featured' ||
+      key === 'connect-pq' ||
+      key === 'cal-grid'
+    ) {
+      t = vh - cardH - MARGIN;
+    } else {
+      t = targetMid > vh * 0.55 ? MARGIN : vh - cardH - MARGIN;
+    }
     return clampTourPos(l, t, vw, vh, cardW, cardH);
   }
 
