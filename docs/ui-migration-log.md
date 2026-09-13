@@ -1246,3 +1246,7 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Connect: Grok Build, VS Code, Windsurf, Zed
 
 **i18n +35 net.** Four clients with official installs that are not Cursor `{ mcpServers: { url } }`. Grok Build (Agents): `grok mcp add --transport http`. VS Code: `servers` plus `"type": "http"`. Windsurf Cascade: `serverUrl` in `mcp_config.json`. Zed: `context_servers` plus a Bearer header (missing header starts OAuth). Cline, Continue, Goose, Warp, JetBrains, Raycast and Copilot CLI stay on Any MCP. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Product tour: Connect hub is not one overlay step
+
+**i18n +2 net.** Dropped `tour_clients_title` / `tour_clients_text` (the old whole-panel step that dimmed Featured). Added `tour_featured_title` / `tour_featured_text` and `tour_creds_title` / `tour_creds_text`. The tour now walks calendar → Connect (assistant vs channel) → Featured → API key strip → Channels (publishing, not assistants) → Add Channel. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

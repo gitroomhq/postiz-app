@@ -20,6 +20,14 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { CrownGlyph } from '@gitroom/frontend/components/ui/logo.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
+import {
+  CALENDAR_STEP_PATH,
+  STEPS,
+  TOUR_COPY,
+  type StepMeta,
+} from './tour.steps';
+
+export { STEPS, TOUR_COPY, type StepMeta } from './tour.steps';
 
 /**
  * The product tour. A fixed overlay that spotlights one `[data-tour="…"]`
@@ -241,62 +249,10 @@ export const useHasPublishedPost = (enabled: boolean) => {
   return data;
 };
 
-interface StepMeta {
-  key: string;
-  /** Where the target lives. May carry a query — settings tabs are deep-linked. */
-  path: string;
-  /** Skips the ring and dims the whole screen — for a step about a whole page. */
-  dim?: boolean;
-  /**
-   * Draw the ring on the target's own edge instead of `RING_PAD` outside it.
-   *
-   * The gap is right for a control sitting in a page — it separates the ring
-   * from what is around the control. A surface that already has an edge of its
-   * own does not want a second one floating beside it; the ring belongs on the
-   * edge that is there.
-   */
-  flush?: boolean;
-  /**
-   * Something that has to be on screen for this step's target to exist.
-   *
-   * The panel a step describes can be collapsed — that preference lives in a
-   * cookie for a year — and then the step explained a panel while pointing at
-   * nothing. Measured before this existed: ring 1 with the panel open, ring 0
-   * with it collapsed, same step, same words.
-   *
-   * The component that owns the thing asks `useTourNeeds()` and renders it
-   * open while the step is on screen. Nothing writes the user's cookie, so
-   * there is no preference to restore afterwards and no way to leave it
-   * changed — the prototype's `panelCollapsed: false`, without the side effect.
-   */
-  needs?: 'posts-panel' | 'channel-add';
-}
-
 interface Step extends StepMeta {
   title: string;
   text: string;
 }
-
-/** Metadata only. `useSteps()` adds the copy. Matches prototype tourSteps(). */
-const STEPS: StepMeta[] = [
-  // Always land on week calendar — a leftover `calendar-display=list` cookie
-  // (or rail → Posts) would otherwise show the empty list and hide the demo.
-  { key: 'cal-grid', path: CAL_PATH, needs: 'posts-panel' },
-  { key: 'posts-panel', path: CAL_PATH, needs: 'posts-panel' },
-  // Spotlight is the rail Connect button (still visible on /connections).
-  { key: 'connect-pq', path: '/connections' },
-  // No `dim`, unlike the prototype: there Connections is a whole page, so
-  // dimming the screen and centring the card was the only option. Here it is a
-  // 1040×680 panel, and a spotlight on it says the same thing while leaving the
-  // categories the copy points at actually lit. A phone, where the panel is
-  // full-screen, still falls through to the dim via the `covers` test.
-  { key: 'connections-page', path: '/connections', flush: true },
-  // Spotlight is the rail Channels row; open Add Channel so the right pane
-  // matches what the step describes (owner: not calendar behind the tip).
-  { key: 'nav-channels', path: '/channels', needs: 'channel-add' },
-  // End on open Add Channel / platform grid (design chAdd:'connect').
-  { key: 'platform-grid', path: '/channels', needs: 'channel-add' },
-];
 
 /**
  * Whether the running tour currently needs this thing visible.
@@ -320,59 +276,38 @@ const useSteps = (): Step[] => {
   return useMemo(() => {
     const copy: Record<string, { title: string; text: string }> = {
       'cal-grid': {
-        title: t('tour_calendar_title', 'One calendar for every account'),
-        text: t(
-          'tour_calendar_text',
-          'Write, generate and schedule for 30+ platforms here, without ever opening a social app.'
-        ),
+        title: t('tour_calendar_title', TOUR_COPY['cal-grid'].title),
+        text: t('tour_calendar_text', TOUR_COPY['cal-grid'].text),
       },
       'posts-panel': {
-        title: t('tour_views_title', 'Every post in one queue'),
-        text: t(
-          'tour_views_text',
-          'Scheduled, drafts and published, always right here.'
-        ),
+        title: t('tour_views_title', TOUR_COPY['posts-panel'].title),
+        text: t('tour_views_text', TOUR_COPY['posts-panel'].text),
       },
       'connect-pq': {
-        title: t('tour_connect_title', 'Connect your AI to PostQueen'),
-        text: t(
-          'tour_connect_text',
-          'Claude, ChatGPT, Grok, Cursor, n8n or any AI agent can write, schedule and publish your posts through PostQueen.'
-        ),
+        title: t('tour_connect_title', TOUR_COPY['connect-pq'].title),
+        text: t('tour_connect_text', TOUR_COPY['connect-pq'].text),
       },
-      'connections-page': {
-        title: t('tour_clients_title', 'Works with the tools you already use'),
-        // The design's line, verbatim. It had drifted into a description of
-        // this panel's left nav, which reads as instructions for a screen
-        // somebody is already looking at; naming the clients is the point.
-        // Every one of these is in `connections.catalog`, which is the point:
-        // this list has to stay in step with the catalog or it promises a client
-        // the Connections screen cannot show. It named a retired one for a while,
-        // which is exactly the failure the comment was supposed to prevent.
-        text: t(
-          'tour_clients_text',
-          'Claude, ChatGPT, Grok, Cursor, Claude Code, Codex, n8n and every other MCP client.'
-        ),
+      'connect-featured': {
+        title: t('tour_featured_title', TOUR_COPY['connect-featured'].title),
+        text: t('tour_featured_text', TOUR_COPY['connect-featured'].text),
+      },
+      'connect-creds': {
+        title: t('tour_creds_title', TOUR_COPY['connect-creds'].title),
+        text: t('tour_creds_text', TOUR_COPY['connect-creds'].text),
       },
       'nav-channels': {
-        title: t('tour_channels_title', 'Your accounts live here'),
-        text: t(
-          'tour_channels_text',
-          'Connect them once and set the hours each one publishes.'
-        ),
+        title: t('tour_channels_title', TOUR_COPY['nav-channels'].title),
+        text: t('tour_channels_text', TOUR_COPY['nav-channels'].text),
       },
       'platform-grid': {
-        title: t('tour_add_channel_title', 'Post everywhere at once'),
-        text: t(
-          'tour_add_channel_text',
-          'Write it once and it goes out to every channel you picked.'
-        ),
+        title: t('tour_add_channel_title', TOUR_COPY['platform-grid'].title),
+        text: t('tour_add_channel_text', TOUR_COPY['platform-grid'].text),
       },
     };
     return STEPS.map((step) => ({
       ...step,
       ...copy[step.key],
-      path: step.path === CAL_PATH ? cal : step.path,
+      path: step.path === CALENDAR_STEP_PATH ? cal : step.path,
     }));
   }, [t, cal]);
 };
@@ -741,14 +676,12 @@ const place = (r: Rect, huge: boolean, key: string) => {
       const inset = 16;
       l = rtl ? r.l + r.w - CARD_W - inset : r.l + inset;
       t = r.t + r.h - CARD_H - inset;
-    } else if (key === 'connections-page') {
-      // On the panel, not beside it. Beside only fits on a wide desktop, and
-      // there the card lands out in the dimmed background where it reads as
-      // detached from the thing it is describing (owner). The lower end of the
-      // panel is below the connector grid, so it covers nothing.
-      const inset = 24;
+    } else if (key === 'connect-featured') {
+      // Under Featured, not on the cards. The old connections-page target was
+      // the whole overlay, which now fills the viewport and trips `covers`.
+      const inset = 16;
       l = rtl ? r.l + inset : r.l + r.w - CARD_W - inset;
-      t = r.t + r.h - CARD_H - inset;
+      t = Math.min(r.t + r.h + 14, vh - CARD_H - MARGIN);
     } else if (key === 'platform-grid') {
       // Upper-mid of the Add Channel grid — not flush under the page title
       // (owner: finish card sat too high and covered the heading / first row).
@@ -1113,7 +1046,11 @@ export const Tour: FC = () => {
       // up top. Use 'start' for that step; 'center' for compact targets.
       if (scrolled.current !== current.key) {
         scrolled.current = current.key;
-        if (current.key === 'platform-grid') {
+        if (
+          current.key === 'platform-grid' ||
+          current.key === 'connect-featured' ||
+          current.key === 'connect-creds'
+        ) {
           const pane =
             (el.closest('[data-tour="channels-page"]') as HTMLElement | null) ||
             (el.closest('.overflow-auto') as HTMLElement | null);
@@ -1268,6 +1205,7 @@ export const Tour: FC = () => {
   const huge =
     !!rect &&
     current.key !== 'platform-grid' &&
+    current.key !== 'connect-featured' &&
     (offscreen || covers || !!current.dim);
   const spot = !!rect && !huge;
   const pad = current.flush ? 0 : RING_PAD;

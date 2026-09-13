@@ -499,7 +499,11 @@ export const ConnectPanel: FC<{
   const router = useRouter();
   const searchParams = useSearchParams();
   const tourKey = useTourStepKey();
-  const tourConn = tourKey === 'connections-page';
+  const tourHub =
+    tourKey === 'connect-pq' ||
+    tourKey === 'connect-featured' ||
+    tourKey === 'connect-creds';
+  const tourConn = tourKey === 'connect-featured';
 
 
   const [nav, setNav] = useState<ConnectNavId>('all');
@@ -530,6 +534,15 @@ export const ConnectPanel: FC<{
   const all = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
+    if (!tourHub) return;
+    setNav('all');
+    setPicked('');
+    setQuery('');
+    setMobileNavOpen(false);
+  }, [tourHub]);
+
+  useEffect(() => {
+    if (tourHub) return;
     const resolvedNav = resolveConnectNavId(searchParams.get('nav'));
     const connectorId = resolveConnectorId(searchParams.get('connector'));
 
@@ -544,7 +557,7 @@ export const ConnectPanel: FC<{
         if (!resolvedNav) setNav(defaultNavForConnection(found));
       }
     }
-  }, [searchParams, groups]);
+  }, [searchParams, groups, tourHub]);
 
   const syncUrl = useCallback(
     (nextNav: ConnectNavId, nextPicked: string) => {
@@ -683,7 +696,7 @@ export const ConnectPanel: FC<{
         title: t('connect_hub_agents', 'Agents'),
         blurb: t(
           'connect_hub_agents_blurb',
-          'OpenClaw is a chat bot you host. Claude Code and Codex run in a coding session.'
+          'OpenClaw is a chat bot you host. Claude Code, Grok Build and Codex run in a coding session.'
         ),
       },
       chat: {
@@ -733,6 +746,7 @@ export const ConnectPanel: FC<{
         <div
           className="flex flex-wrap items-center gap-[8px] rounded-pqLg bg-pqPop px-[14px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
           aria-label={t('conn_your_connection', 'Your connection')}
+          data-tour={compact ? 'connect-creds' : undefined}
         >
           <span className="text-[12px] font-[600] text-pqMuted">
             {t('api_key', 'API key')}
@@ -1123,7 +1137,11 @@ export const ConnectPanel: FC<{
         {credentialStrip('hub', true)}
 
         {browsingAll && (
-          <div className="flex flex-col gap-[10px]">
+          <div
+            className="flex flex-col gap-[10px]"
+            data-tour="connect-featured"
+            {...(tourConn ? { 'data-tourconn': '1' } : {})}
+          >
             <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
               {t('connect_featured', 'Featured')}
             </div>
@@ -1301,8 +1319,6 @@ export const ConnectPanel: FC<{
   return (
     <div
       data-connect-panel="1"
-      data-tour="connections-page"
-      {...(tourConn ? { 'data-tourconn': '1' } : {})}
       onClick={(e) => e.stopPropagation()}
       className={clsx(
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',

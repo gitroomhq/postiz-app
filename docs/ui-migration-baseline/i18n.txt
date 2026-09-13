@@ -1675,10 +1675,10 @@ tour_calendar_text
 tour_calendar_title
 tour_channels_text
 tour_channels_title
-tour_clients_text
-tour_clients_title
 tour_connect_text
 tour_connect_title
+tour_creds_text
+tour_creds_title
 tour_demo_1_body
 tour_demo_1_title
 tour_demo_2_body
@@ -1697,6 +1697,8 @@ tour_demo_8_body
 tour_demo_8_title
 tour_demo_drag_body
 tour_demo_drag_title
+tour_featured_text
+tour_featured_title
 tour_views_text
 tour_views_title
 trial_banner_active
