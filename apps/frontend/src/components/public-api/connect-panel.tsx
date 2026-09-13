@@ -461,7 +461,8 @@ const CliSetupCallout: FC<{
 
 /**
  * Dual-pane Connect PostQueen marketplace.
- * Desktop fills the viewport. All: Featured four-up, then rail groups of compact cards.
+ * Same card size as Settings (`1040×680`). All: Featured four-up, then
+ * rail groups of compact cards.
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -1324,7 +1325,7 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
-          : 'h-full w-full rounded-[16px]'
+          : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >
       {/* Left nav / mobile chips, Settings chrome: search above, then groups */}
