@@ -18,10 +18,11 @@ import dynamic from 'next/dynamic';
 import { WalletUiProvider } from '@gitroom/frontend/components/auth/providers/placeholder/wallet.ui.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import useCookie from 'react-use-cookie';
+import { AuthShell } from '@gitroom/frontend/components/auth/auth-shell';
 import {
-  AuthShell,
-  AuthStep,
-} from '@gitroom/frontend/components/auth/auth-shell';
+  AuthModeFooter,
+  AuthModeSwitch,
+} from '@gitroom/frontend/components/auth/auth-chrome';
 const WalletProvider = dynamic(
   () => import('@gitroom/frontend/components/auth/providers/wallet.provider'),
   {
@@ -88,7 +89,6 @@ export function RegisterAfter({
   const t = useT();
   const { billingEnabled, legalUrl } = useVariables();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<AuthStep>('method');
   const router = useRouter();
   const fireEvents = useFireEvents();
   const track = useTrack();
@@ -224,8 +224,7 @@ export function RegisterAfter({
     </div>
   );
 
-  // The sign-in cross-link lives in the auth chrome (top right), so the form
-  // itself carries no footer.
+  // Sign in / Create account sits under the title and again under the form.
   const subtitle = t(
     'sign_up_subtitle',
     'Create your account and connect your first channel.'
@@ -244,17 +243,16 @@ export function RegisterAfter({
             <p className="mt-[10px] text-[15px] text-textItemBlur">
               {subtitle}
             </p>
+            <AuthModeSwitch />
             <div className="min-h-[320px] flex flex-col mt-[28px]">
               {emailFields}
+              <AuthModeFooter />
             </div>
           </div>
         ) : (
           <AuthShell
             title={t('sign_up', 'Sign Up')}
             subtitle={subtitle}
-            step={step}
-            onContinueEmail={() => setStep('email')}
-            onBack={() => setStep('method')}
             extraProviders={billingEnabled ? <WalletProvider /> : undefined}
             emailStep={emailFields}
           />

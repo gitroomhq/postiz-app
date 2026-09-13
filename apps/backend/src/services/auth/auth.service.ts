@@ -331,6 +331,8 @@ export class AuthService {
       getUserByEmail: (email: string) => this._userService.getUserByEmail(email),
       attachProviderId: (userId: string, providerId: string) =>
         this._userService.attachProviderId(userId, providerId),
+      attachAppleProviderId: (userId: string, appleProviderId: string) =>
+        this._userService.attachAppleProviderId(userId, appleProviderId),
       activateUser: (id: string) => this._userService.activateUser(id),
     };
   }

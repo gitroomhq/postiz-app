@@ -1,10 +1,9 @@
 'use client';
 
-// The frame around every auth form: logo and the opposite-action button on top,
-// copyright and legal links at the bottom. Both live here rather than in the
-// layout because they need client state — the current route to know which way
-// the top button points, and the variable context to know whether this
-// deployment publishes legal pages at all.
+// The frame around every auth form: logo on top, copyright and legal links at
+// the bottom. Login / Create account switching lives next to the form
+// (AuthModeSwitch + AuthModeFooter), not in this header. Nobody looking at the
+// fields was finding the opposite action in the top-right corner.
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -13,23 +12,77 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
 
 export const AuthNav = () => {
+  return (
+    <header className="flex items-center">
+      <LogoTextComponent />
+    </header>
+  );
+};
+
+export const AuthModeSwitch = () => {
   const t = useT();
   const pathname = usePathname();
-  // /auth is register; /auth/login, /auth/forgot and /auth/activate all belong
-  // to someone who already has an account, so only the login page offers
-  // sign-up. Everything else offers the way back in.
-  const onLogin = !!pathname?.startsWith('/auth/login');
+  const onLogin = pathname === '/auth/login';
+
+  const tabClass = (active: boolean) =>
+    `flex h-[40px] items-center justify-center rounded-[8px] text-[14px] font-[500] transition-colors ${
+      active
+        ? 'bg-boxHover text-newTextColor'
+        : 'text-textItemBlur hover:text-newTextColor'
+    }`;
 
   return (
-    <header className="flex items-center justify-between gap-[16px]">
-      <LogoTextComponent />
+    <nav
+      aria-label={t('auth_mode', 'Sign in or create an account')}
+      className="mt-[20px] grid grid-cols-2 gap-[4px] rounded-[10px] border border-pqBorder p-[4px]"
+    >
       <Link
-        href={onLogin ? '/auth' : '/auth/login'}
-        className="flex h-[38px] items-center rounded-[10px] border border-newBorder px-[18px] text-[14px] font-[500] transition-colors hover:bg-boxHover"
+        href="/auth/login"
+        className={tabClass(onLogin)}
+        aria-current={onLogin ? 'page' : undefined}
       >
-        {onLogin ? t('sign_up', 'Sign Up') : t('login', 'Login')}
+        {t('sign_in', 'Sign In')}
       </Link>
-    </header>
+      <Link
+        href="/auth"
+        className={tabClass(!onLogin)}
+        aria-current={!onLogin ? 'page' : undefined}
+      >
+        {t('create_account_tab', 'Create account')}
+      </Link>
+    </nav>
+  );
+};
+
+export const AuthModeFooter = () => {
+  const t = useT();
+  const pathname = usePathname();
+  const onLogin = pathname === '/auth/login';
+
+  return (
+    <p className="mt-[20px] text-center text-[14px] text-textItemBlur">
+      {onLogin ? (
+        <>
+          {t('dont_have_an_account', "Don't have an account?")}{' '}
+          <Link
+            href="/auth"
+            className="font-[500] text-newTextColor underline hover:font-bold"
+          >
+            {t('create_one', 'Create one')}
+          </Link>
+        </>
+      ) : (
+        <>
+          {t('already_have_an_account', 'Already have an account?')}{' '}
+          <Link
+            href="/auth/login"
+            className="font-[500] text-newTextColor underline hover:font-bold"
+          >
+            {t('sign_in', 'Sign In')}
+          </Link>
+        </>
+      )}
+    </p>
   );
 };
 

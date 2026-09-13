@@ -32,7 +32,7 @@ export const GoogleProvider = () => {
       type="button"
       onClick={gotoLogin}
       aria-label={t('continue_with_google', 'Continue with Google')}
-      className={`cursor-pointer flex-1 w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px]`}
+      className="cursor-pointer w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px] text-[15px] font-[500]"
     >
       <div>
         <svg
@@ -59,7 +59,7 @@ export const GoogleProvider = () => {
           />
         </svg>
       </div>
-      <div className="block xs:hidden">{t('google', 'Google')}</div>
+      <div>{t('continue_with_google', 'Continue with Google')}</div>
     </button>
   );
 };
