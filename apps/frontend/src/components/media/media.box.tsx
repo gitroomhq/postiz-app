@@ -36,6 +36,9 @@ import { createPortal } from 'react-dom';
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 
+/** Grid tiles are square. `4/3` made a portrait photo look like a banner. */
+export const MEDIA_LIBRARY_THUMB_ASPECT = 'aspect-square';
+
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -109,7 +112,9 @@ const MediaThumb: FC<{ media: MediaRow; className?: string }> = ({
   const video = isVideoMedia(media);
   if (video) {
     return (
-      <VideoFrame url={mediaDirectory.set(media.path)} />
+      <div className={clsx('h-full w-full', className)}>
+        <VideoFrame url={mediaDirectory.set(media.path)} />
+      </div>
     );
   }
   return (
@@ -648,7 +653,10 @@ export const MediaBox: FC<{
                     {[...new Array(8)].map((_, i) => (
                       <Skeleton
                         key={i}
-                        className="aspect-[4/3] rounded-[10px]"
+                        className={clsx(
+                          MEDIA_LIBRARY_THUMB_ASPECT,
+                          'rounded-[10px]'
+                        )}
                       />
                     ))}
                   </div>
@@ -668,7 +676,12 @@ export const MediaBox: FC<{
                         onClick={openLightbox(media)}
                         className="group flex cursor-pointer flex-col gap-0.5"
                       >
-                        <div className="relative grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1 transition-[outline-color] group-hover:outline-pqBrand">
+                        <div
+                          className={clsx(
+                            'relative grid place-items-center overflow-hidden rounded-[10px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1 transition-[outline-color] group-hover:outline-pqBrand',
+                            MEDIA_LIBRARY_THUMB_ASPECT
+                          )}
+                        >
                           <MediaThumb media={media} />
                           {isVideoMedia(media) && (
                             <span className="absolute bottom-[7px] end-[7px] flex h-[19px] items-center gap-[4px] rounded-[5px] bg-black/72 px-[6px] text-[10px] font-[600] tabular-nums text-white">
@@ -938,7 +951,12 @@ export const MediaBox: FC<{
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-[14px] gap-y-[12px]">
               {[...new Array(8)].map((_, i) => (
                 <div key={i} className="flex flex-col gap-0.5">
-                  <Skeleton className="aspect-[4/3] rounded-[10px]" />
+                  <Skeleton
+                    className={clsx(
+                      MEDIA_LIBRARY_THUMB_ASPECT,
+                      'rounded-[10px]'
+                    )}
+                  />
                   <div className="flex justify-between gap-[8px]">
                     <Skeleton className="h-[11px] w-[28%] rounded" />
                     <Skeleton className="h-[11px] w-[34%] rounded" />
@@ -992,7 +1010,8 @@ export const MediaBox: FC<{
                     className={clsx(
                       // Selection chrome: 2px brand border flush on the thumb
                       // edge — no ring-offset halo/gap between image and ring.
-                      'relative grid aspect-[4/3] place-items-center overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
+                      'relative grid place-items-center overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
+                      MEDIA_LIBRARY_THUMB_ASPECT,
                       marked
                         ? 'border-pqBrand'
                         : 'border-pqBorder group-hover:border-pqBrand'

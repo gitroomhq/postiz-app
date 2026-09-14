@@ -1324,3 +1324,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Channels: pick several Facebook pages in one Save
 
 **i18n 0.** Configure Your Channel was a radio: one page, then Save, then `inBetweenSteps` was already false so a second page 400ed. Grid and list pickers are checkboxes (Select all / Clear). One POST sends `{ pages: [...] }`; the first page still fills the in-between row, extras get their own channel under the same Facebook (or Instagram / LinkedIn / YouTube / GMB / Tumblr) account. Page photos in that picker are square with a 12px radius, not circles and not stretched rectangles.
+
+## Media library: square tiles, not 4/3 banners
+
+**i18n 0.** The Media page and the composer picker used `aspect-[4/3]`, so a portrait photo sat in a landscape box. Import (third-party) tiles were already square. Both grids now use `aspect-square` and `object-cover`.
