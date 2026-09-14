@@ -11,6 +11,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
 import {
+  FEED_PREVIEW_FALLBACK_WH,
   FEED_PREVIEW_MAX_WH,
   FEED_PREVIEW_MIN_WH,
   STORY_PREVIEW_WH,
@@ -185,7 +186,7 @@ export const FacebookPreview: FC<{
             src={mediaDir.set(renderContent[0].images[0].path)}
             minWH={isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MIN_WH}
             maxWH={isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MAX_WH}
-            fallbackWH={isStory ? STORY_PREVIEW_WH : 1}
+            fallbackWH={isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_FALLBACK_WH}
           />
         ) : (
           <div className="aspect-square -mx-[15px] overflow-hidden flex">

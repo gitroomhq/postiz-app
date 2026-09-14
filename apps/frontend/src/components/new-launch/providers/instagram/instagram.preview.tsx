@@ -4,15 +4,11 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-import { FC } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
 import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
-import {
-  FEED_PREVIEW_MAX_WH,
-  FEED_PREVIEW_MIN_WH,
-  STORY_PREVIEW_WH,
-} from '@gitroom/frontend/components/new-launch/preview-media-aspect';
+import { instagramFeedPreviewRange } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const InstagramPreview: FC<{
@@ -26,9 +22,16 @@ export const InstagramPreview: FC<{
     | string
     | undefined;
   const isStory = postType === 'story';
-  const minWH = isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MIN_WH;
-  const maxWH = isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MAX_WH;
-  const fallbackWH = isStory ? STORY_PREVIEW_WH : 1;
+  const media = topValue?.[0]?.image ?? [];
+  const range = instagramFeedPreviewRange({
+    isStory,
+    paths: media.map((image) => image.path),
+  });
+  const [leadWH, setLeadWH] = useState<number | undefined>();
+  const leadPath = media[0]?.path;
+  useEffect(() => {
+    setLeadWH(undefined);
+  }, [leadPath, range.minWH, range.maxWH]);
 
   const renderContent = topValue.map((p) => {
     const newContent = stripHtmlValidation(
@@ -91,9 +94,11 @@ export const InstagramPreview: FC<{
             <PreviewMediaFrame
               key={`image_${index}`}
               src={mediaDir.set(image.path)}
-              minWH={minWH}
-              maxWH={maxWH}
-              fallbackWH={fallbackWH}
+              minWH={range.minWH}
+              maxWH={range.maxWH}
+              fallbackWH={range.fallbackWH}
+              aspectWH={index === 0 ? undefined : leadWH}
+              onAspect={index === 0 ? setLeadWH : undefined}
             />
           ))}
         />
@@ -103,7 +108,7 @@ export const InstagramPreview: FC<{
           className={
             isStory
               ? '!bg-cover w-full aspect-[9/16] rounded-[8px] overflow-hidden'
-              : '!bg-cover w-full aspect-square rounded-[8px] overflow-hidden'
+              : '!bg-cover w-full aspect-[4/5] rounded-[8px] overflow-hidden'
           }
         />
       )}

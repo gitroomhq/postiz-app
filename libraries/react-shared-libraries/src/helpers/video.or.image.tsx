@@ -25,7 +25,12 @@ export const VideoOrImage: FC<{
       <video
         src={src}
         autoPlay={autoplay}
-        className={clsx('w-full h-full', videoClassName)}
+        playsInline
+        className={clsx(
+          'w-full h-full',
+          isContain ? 'object-contain' : 'object-cover',
+          videoClassName
+        )}
         muted={true}
         loop={true}
         onLoadedMetadata={(e: SyntheticEvent<HTMLVideoElement>) =>

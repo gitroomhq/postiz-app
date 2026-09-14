@@ -4,10 +4,12 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
 import {
+  FEED_PREVIEW_FALLBACK_WH,
   FEED_PREVIEW_MAX_WH,
   FEED_PREVIEW_MIN_WH,
 } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
@@ -299,8 +301,13 @@ export const LinkedinPreview: FC<{
             className="rounded-full relative z-[2] w-[48px] h-[48px]"
           />
         </div>
-        <div className="flex flex-col leading-[16px]">
-          <div className="text-[14px] font-[500]">{integration?.name}</div>
+        <div className="flex min-w-0 flex-col leading-[16px]">
+          <div className="truncate text-[14px] font-[500]">{integration?.name}</div>
+          {!!formatChannelHandle(integration?.display) && (
+            <div className="truncate text-[12px] font-[400] text-pqSoft">
+              {formatChannelHandle(integration?.display)}
+            </div>
+          )}
           <div className="text-[12px] font-[400] text-pqSoft">
             2,871 followers
           </div>
@@ -336,6 +343,7 @@ export const LinkedinPreview: FC<{
             src={mediaDir.set(renderContent[0].images[0].path)}
             minWH={FEED_PREVIEW_MIN_WH}
             maxWH={FEED_PREVIEW_MAX_WH}
+            fallbackWH={FEED_PREVIEW_FALLBACK_WH}
           />
         ) : (
           <div className="aspect-square -mx-[15px] overflow-hidden flex">
