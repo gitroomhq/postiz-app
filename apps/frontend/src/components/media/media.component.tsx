@@ -13,7 +13,6 @@ import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/third-party.media';
 import { ReactSortable } from 'react-sortablejs';
-import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -310,8 +309,10 @@ export const MultiMediaComponent: FC<{
         {showThumbs && (
           <div
             className={clsx(
-              'flex',
-              ghost ? 'flex-wrap gap-[7px] pb-[3px]' : 'gap-[10px] px-[12px]'
+              'flex overflow-visible',
+              ghost
+                ? 'flex-wrap gap-[7px] pb-[3px] pe-[6px] pt-[6px]'
+                : 'gap-[10px] px-[12px] pe-[18px] pt-[8px]'
             )}
           >
             {!!currentMedia && (
@@ -322,7 +323,7 @@ export const MultiMediaComponent: FC<{
                   onChange({ target: { name, value: next } });
                 }}
                 className={clsx(
-                  'sortable-container flex',
+                  'sortable-container flex overflow-visible',
                   ghost ? 'flex-wrap gap-[7px]' : 'gap-[10px]'
                 )}
                 animation={200}
@@ -335,7 +336,7 @@ export const MultiMediaComponent: FC<{
                   <div
                     key={`${media.id}-${index}`}
                     className={clsx(
-                      'group relative overflow-hidden transition-[box-shadow]',
+                      'group relative overflow-visible transition-[box-shadow]',
                       ghost
                         ? 'dragging h-[58px] w-[58px] cursor-move rounded-[9px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)]'
                         : 'dragging h-[48px] w-[48px] cursor-move rounded-[8px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
@@ -353,109 +354,38 @@ export const MultiMediaComponent: FC<{
                       )}
                     </div>
 
-                    {!ghost && (
-                      <>
-                        <div
-                          data-ci-actions="1"
-                          className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                        />
-                        <button
-                          type="button"
-                          data-ci-actions="1"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearMedia(index)();
-                          }}
-                          aria-label={t('remove', 'Remove')}
-                          title={t('remove', 'Remove')}
-                          className="absolute end-[4px] top-[4px] z-[20] grid size-[22px] place-items-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-pqDanger"
-                        >
-                          <svg
-                            viewBox="0 0 12 12"
-                            width="10"
-                            height="10"
-                            fill="none"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M3 3l6 6M9 3L3 9"
-                              stroke="currentColor"
-                              strokeWidth="1.7"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          data-ci-actions="1"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={() => {
-                            modals.openModal({
-                              title: t('change_alt_text', 'Change alt text'),
-                              children: (close) => (
-                                <MediaComponentInner
-                                  media={media as any}
-                                  onClose={close}
-                                  onSelect={(next: any) => {
-                                    const updated = currentMedia.map((p) => {
-                                      if (p.id === media.id) {
-                                        return {
-                                          ...p,
-                                          ...next,
-                                        };
-                                      }
-                                      return p;
-                                    });
-                                    setCurrentMedia(updated);
-                                    onChange({
-                                      target: {
-                                        name,
-                                        value: updated,
-                                      },
-                                    });
-                                  }}
-                                />
-                              ),
-                            });
-                          }}
-                          aria-label={t('media_settings', 'Media settings')}
-                          title={t('media_settings', 'Media settings')}
-                          className="absolute bottom-[4px] start-1/2 z-[20] grid size-[22px] -translate-x-1/2 place-items-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-black/85"
-                        >
-                          <svg
-                            viewBox="0 0 16 16"
-                            width="12"
-                            height="12"
-                            fill="none"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M8 10.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z"
-                              stroke="currentColor"
-                              strokeWidth="1.4"
-                            />
-                            <path
-                              d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M4.1 4.1l.85.85M11.05 11.05l.85.85M11.9 4.1l-.85.85M4.95 11.05l-.85.85"
-                              stroke="currentColor"
-                              strokeWidth="1.4"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-
-                    {ghost && (
-                      <button
-                        type="button"
-                        onClick={clearMedia(index)}
-                        aria-label={t('remove', 'Remove')}
-                        className="absolute -end-[5px] -top-[5px] z-[20] grid h-[17px] w-[17px] place-items-center rounded-full bg-pqWarn text-[10px] font-[700] leading-none text-pqOnBrand"
+                    {/* 48px cannot hold overlay chips. Drag the thumb; remove hangs off the corner. */}
+                    <button
+                      type="button"
+                      data-ci-actions="1"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearMedia(index)();
+                      }}
+                      aria-label={t('remove', 'Remove')}
+                      title={t('remove', 'Remove')}
+                      className={clsx(
+                        'absolute -end-[6px] -top-[6px] z-[20] grid size-[16px] cursor-pointer place-items-center rounded-full bg-pqPop text-pqMuted shadow-[0_1px_3px_rgba(0,0,0,0.4),inset_0_0_0_1px_var(--border)] hover:bg-pqDanger hover:text-pqOnBrand',
+                        !ghost &&
+                          'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100'
+                      )}
+                    >
+                      <svg
+                        viewBox="0 0 12 12"
+                        width="8"
+                        height="8"
+                        fill="none"
+                        aria-hidden="true"
                       >
-                        ×
-                      </button>
-                    )}
+                        <path
+                          d="M3 3l6 6M9 3L3 9"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </ReactSortable>

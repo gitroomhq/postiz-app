@@ -9,12 +9,12 @@ const source = readFileSync(
 );
 
 describe('composer media hover actions', () => {
-  it('uses glass circles instead of inset-shadow 18px chips', () => {
-    assert.match(source, /rounded-full bg-black\/70 text-white/);
-    assert.doesNotMatch(
-      source,
-      /h-\[18px\] w-\[18px\].*shadow-\[inset_0_0_0_1px_var\(--border\)\]/,
-    );
+  it('keeps the 48px thumb uncovered: corner X only, no overlay or extra chips', () => {
+    assert.match(source, /absolute -end-\[6px\] -top-\[6px\].*size-\[16px\]/);
+    assert.doesNotMatch(source, /bg-black\/(40|70)/);
+    assert.doesNotMatch(source, /media_settings/);
+    assert.doesNotMatch(source, /change_alt_text/);
+    assert.doesNotMatch(source, /overflow-hidden transition-\[box-shadow\]/);
   });
 
   it('drags from the whole thumb, not a four-dot grab handle', () => {

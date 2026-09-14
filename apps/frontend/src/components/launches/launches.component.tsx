@@ -349,6 +349,7 @@ export const MenuComponent: FC<
       changeProfilePicture: boolean;
       changeNickName: boolean;
       refreshNeeded?: boolean;
+      display?: string;
     };
   }
 > = (props) => {

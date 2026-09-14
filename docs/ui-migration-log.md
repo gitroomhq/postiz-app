@@ -1332,3 +1332,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Post preview matches the published crop
 
 **i18n 0.** Instagram preview used a 585px-tall `object-cover` box (Facebook/LinkedIn 280px). A square graphic looked taller and tighter than the live post. Feed previews now measure the file and clamp to 4:5 … 1.91:1 (stories 9:16), the same range Instagram/Facebook actually show.
+
+## Composer media: corner remove, not three overlay chips
+
+**i18n +1 net.** A 48px attachment cannot hold grab dots, a close chip and an alt/sun control. Hover now leaves the image alone: the whole thumb is the drag handle, and a 16px remove sits on the top-end corner (same hanging-X pattern as the comment composer). Alt text stays in the Media Library ⋯ menu. Dropped `reorder_media` and `media_settings`. Added `copy_debug_json_admin`, `open_link`, `view_post` from the calendar / notification pass that had not updated this baseline. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
