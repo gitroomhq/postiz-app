@@ -53,6 +53,8 @@ import { stripLinks } from '@gitroom/helpers/utils/strip.links';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { postContentPlainText } from '@gitroom/helpers/utils/sanitize.post.content';
+import { CreatePublicCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
 import { weightedLength } from '@gitroom/helpers/utils/count.length';
 
 type PostWithConditionals = Post & {
@@ -826,7 +828,10 @@ export class PostsService {
           errors = err?.message || 'Invalid media';
         }
 
-        const maximumCharacters = provider.maxLength(additionalSettings, settings);
+        const maximumCharacters = provider.maxLength(
+          additionalSettings,
+          settings
+        );
         const isX = integration.providerIdentifier === 'x';
 
         const emptyContent = (post.value || []).some((a) => {
@@ -878,7 +883,11 @@ export class PostsService {
   // the platform: require the explicit `republish` opt-in instead. The message
   // doubles as the confirmation dialog for API/MCP automation.
   private guardAgainstRepublish(
-    post: { state: State; publishDate: Date; integration?: { providerIdentifier: string } } | null,
+    post: {
+      state: State;
+      publishDate: Date;
+      integration?: { providerIdentifier: string };
+    } | null,
     source: 'createPost' | 'changeDate'
   ) {
     if (post?.state !== 'PUBLISHED') {
@@ -891,7 +900,9 @@ export class PostsService {
     throw new BadRequestException(
       `This post was already published on ${dayjs
         .utc(post.publishDate)
-        .format('YYYY-MM-DD HH:mm')} UTC. Saving it this way would publish it again to ${
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC. Saving it this way would publish it again to ${
         post.integration?.providerIdentifier || 'the channel'
       }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
     );
@@ -949,6 +960,11 @@ export class PostsService {
       if (!posts?.length) {
         return [] as any[];
       }
+
+      const existingIds = (post.value || []).map((p) => p.id).filter(Boolean);
+      await this.detachStaleAnchors(
+        posts.filter((p) => existingIds.includes(p.id))
+      );
 
       if (body.type !== 'update') {
         this.startWorkflow(
@@ -1331,8 +1347,170 @@ export class PostsService {
     return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
   }
 
-  getComments(postId: string) {
-    return this._postRepository.getComments(postId);
+  async getComments(previewId: string) {
+    const posts = await this.getPostsRecursively(previewId, false);
+    const comments = await this._postRepository.getCommentsForPosts(
+      posts.map((p) => p.id)
+    );
+
+    return comments.map((comment) => ({
+      id: comment.id,
+      postId: comment.postId,
+      parentId: comment.parentId,
+      content: comment.content,
+      anchorStart: comment.anchorStart,
+      anchorEnd: comment.anchorEnd,
+      anchorQuote: comment.anchorQuote,
+      resolvedAt: comment.resolvedAt,
+      createdAt: comment.createdAt,
+      name: comment.userId
+        ? [comment.user?.name, comment.user?.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim() || null
+        : comment.displayName,
+    }));
+  }
+
+  async createPublicComment(
+    previewId: string,
+    body: CreatePublicCommentDto,
+    userId: string | null,
+    ip: string
+  ) {
+    const posts = await this.getPostsRecursively(previewId, false);
+    if (!posts.length) {
+      throw new NotFoundException('Post not found');
+    }
+
+    let post = body.postId ? posts.find((p) => p.id === body.postId) : posts[0];
+    if (!post) {
+      throw new BadRequestException('Post does not belong to this preview');
+    }
+
+    if (!userId) {
+      if (!body.displayName?.trim()) {
+        throw new BadRequestException('Name is required');
+      }
+      await this.verifyRecaptcha(body.recaptchaToken, ip);
+    }
+
+    const hasStart = typeof body.anchorStart === 'number';
+    const hasEnd = typeof body.anchorEnd === 'number';
+    if (hasStart !== hasEnd) {
+      throw new BadRequestException('Both anchor offsets are required');
+    }
+
+    if (body.parentId) {
+      const parent = await this._postRepository.getCommentById(body.parentId);
+      if (!parent || !posts.some((p) => p.id === parent.postId)) {
+        throw new BadRequestException('Parent comment not found');
+      }
+      if (parent.parentId) {
+        throw new BadRequestException(
+          'Replies can only be added to a root comment'
+        );
+      }
+      if (hasStart || body.anchorQuote) {
+        throw new BadRequestException('Replies cannot be anchored');
+      }
+      post = posts.find((p) => p.id === parent.postId)!;
+    }
+
+    if (hasStart) {
+      const plainText = postContentPlainText(post.content);
+      if (
+        body.anchorStart! < 0 ||
+        body.anchorStart! >= body.anchorEnd! ||
+        body.anchorEnd! > plainText.length
+      ) {
+        throw new BadRequestException('Anchor is out of range');
+      }
+      if (
+        body.anchorQuote !== plainText.slice(body.anchorStart!, body.anchorEnd!)
+      ) {
+        throw new BadRequestException('Anchor does not match the post text');
+      }
+    }
+
+    return this._postRepository.createComment(
+      post.organizationId,
+      userId,
+      post.id,
+      body.content,
+      {
+        displayName: userId ? undefined : body.displayName!.trim(),
+        parentId: body.parentId,
+        anchorStart: hasStart ? body.anchorStart : undefined,
+        anchorEnd: hasStart ? body.anchorEnd : undefined,
+        anchorQuote: hasStart ? body.anchorQuote : undefined,
+      }
+    );
+  }
+
+  private async verifyRecaptcha(token: string | undefined, ip: string) {
+    if (!process.env.RECAPTCHA_SECRET_KEY) {
+      return;
+    }
+
+    if (!token) {
+      throw new BadRequestException('Captcha verification failed');
+    }
+
+    const result = await (
+      await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: token,
+          remoteip: ip,
+        }),
+      })
+    ).json();
+
+    if (!result?.success) {
+      throw new BadRequestException('Captcha verification failed');
+    }
+  }
+
+  async resolveComment(orgId: string, commentId: string, resolved: boolean) {
+    const comment = await this._postRepository.getCommentById(commentId);
+    if (!comment || comment.post.organizationId !== orgId) {
+      throw new NotFoundException('Comment not found');
+    }
+    if (comment.parentId) {
+      throw new BadRequestException('Only root comments can be resolved');
+    }
+
+    return this._postRepository.setCommentResolved(
+      commentId,
+      resolved ? new Date() : null
+    );
+  }
+
+  // A comment anchored to a span of text keeps its quote but loses the
+  // highlight once the span no longer reads the same on the new content.
+  async detachStaleAnchors(posts: { id: string; content: string }[]) {
+    for (const post of posts) {
+      const anchored = await this._postRepository.getAnchoredCommentsForPost(
+        post.id
+      );
+      if (!anchored.length) {
+        continue;
+      }
+
+      const plainText = postContentPlainText(post.content);
+      const stale = anchored
+        .filter(
+          (c) => c.anchorQuote !== plainText.slice(c.anchorStart!, c.anchorEnd!)
+        )
+        .map((c) => c.id);
+
+      if (stale.length) {
+        await this._postRepository.detachAnchorsForPost(post.id, stale);
+      }
+    }
   }
 
   getTags(orgId: string) {
@@ -1349,14 +1527,5 @@ export class PostsService {
 
   deleteTag(id: string, orgId: string) {
     return this._postRepository.deleteTag(id, orgId);
-  }
-
-  createComment(
-    orgId: string,
-    userId: string,
-    postId: string,
-    comment: string
-  ) {
-    return this._postRepository.createComment(orgId, userId, postId, comment);
   }
 }
