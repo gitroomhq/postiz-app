@@ -867,7 +867,7 @@ export const Editor: FC<{
                     </svg>
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-[6px]">
+                <div className="flex flex-wrap items-center gap-[6px] ps-[40px]">
                   {(
                     [
                       {

@@ -25,6 +25,7 @@ describe('phone calendar and composer', () => {
     assert.match(calendar, /data-tour="cal-grid"/);
     assert.match(calendar, /flex min-h-\[44px\] min-w-0 flex-1/);
     assert.match(calendar, /day\.format\('dd'\)/);
+    assert.match(calendar, /data-cal-sticky-head="1"/);
     assert.doesNotMatch(calendar, /min-w-\[52px\]/);
   });
 

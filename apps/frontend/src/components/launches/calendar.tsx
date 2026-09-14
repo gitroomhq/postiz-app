@@ -2835,41 +2835,42 @@ const MobileWeekAgenda = () => {
       data-tour="cal-grid"
       className="relative flex min-h-0 min-w-0 flex-1 flex-col text-pqText"
     >
-      <div className="z-[1] flex shrink-0 gap-[4px] overflow-x-auto overscroll-x-contain bg-pqInner px-[4px] pb-[10px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {days.map((day) => {
-          const key = day.format('YYYY-MM-DD');
-          const on = key === selected.format('YYYY-MM-DD');
-          const todayChip = day.isSame(today, 'day');
-          return (
-            <button
-              key={key}
-              type="button"
-              data-cal-today={todayChip ? '1' : undefined}
-              onClick={() => setSelectedKey(key)}
-              className={clsx(
-                'flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center rounded-[12px] px-[2px] py-[8px]',
-                on ? 'bg-pqBrand text-pqOnBrand' : 'bg-pqSettings text-pqText'
-              )}
-            >
-              <span className="text-[11px] font-[600] uppercase tracking-[0.04em] opacity-80">
-                {day.format('dd')}
-              </span>
-              <span className="text-[16px] font-[700]">{day.format('D')}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="relative min-h-0 min-w-0 flex-1">
+      <div
+        data-tour="cal-day"
+        ref={setScrollerRef}
+        className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+      >
         <div
-          data-tour="cal-day"
-          ref={setScrollerRef}
-          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+          data-cal-sticky-head="1"
+          className="sticky top-0 z-[2] flex gap-[4px] border-b border-pqLine bg-pqInner px-[4px] pb-[10px] pt-[2px] shadow-[0_10px_0_0_var(--inner)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
-            {hours.map((hour) => (
-              <DayHourSection key={`${selectedKey}-${hour}`} hour={hour} day={selected} />
-            ))}
-          </div>
+          {days.map((day) => {
+            const key = day.format('YYYY-MM-DD');
+            const on = key === selected.format('YYYY-MM-DD');
+            const todayChip = day.isSame(today, 'day');
+            return (
+              <button
+                key={key}
+                type="button"
+                data-cal-today={todayChip ? '1' : undefined}
+                onClick={() => setSelectedKey(key)}
+                className={clsx(
+                  'flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center rounded-[12px] px-[2px] py-[8px]',
+                  on ? 'bg-pqBrand text-pqOnBrand' : 'bg-pqSettings text-pqText'
+                )}
+              >
+                <span className="text-[11px] font-[600] uppercase tracking-[0.04em] opacity-80">
+                  {day.format('dd')}
+                </span>
+                <span className="text-[16px] font-[700]">{day.format('D')}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px]">
+          {hours.map((hour) => (
+            <DayHourSection key={`${selectedKey}-${hour}`} hour={hour} day={selected} />
+          ))}
         </div>
       </div>
     </div>
