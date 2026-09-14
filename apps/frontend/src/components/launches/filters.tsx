@@ -68,7 +68,7 @@ function getDateRange(
 export const Filters = () => {
   const calendar = useCalendar();
   const t = useT();
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const {
     datePattern,
     formatWeekRange,
@@ -322,7 +322,7 @@ export const Filters = () => {
   }, [dateMenuOpen]);
 
   useEffect(() => {
-    if (!calPickOpen || mobile) return;
+    if (!calPickOpen || touch) return;
     const onDoc = (e: MouseEvent) => {
       if (!calPickRef.current?.contains(e.target as Node)) {
         setCalPickOpen(false);
@@ -330,7 +330,7 @@ export const Filters = () => {
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, [calPickOpen, mobile]);
+  }, [calPickOpen, touch]);
 
   const pickCalDay = useCallback(
     // `YYYY-MM-DD` from Mantine 9's picker, where 5 handed over a Date. It was
@@ -441,7 +441,7 @@ export const Filters = () => {
   const segment = 'flex gap-[2px] rounded-pqSm bg-pqSettings p-[2px]';
   const segmentItem =
     'flex cursor-pointer items-center justify-center rounded-[6px] px-[10px] text-center text-[12.5px] transition-colors ' +
-    (mobile ? 'h-[44px]' : 'h-[28px]');
+    (touch ? 'h-[44px]' : 'h-[28px]');
   const segmentOn = 'bg-pqInner font-[600] text-pqText shadow-pqE1';
   const segmentOff = 'font-[500] text-pqSoft hover:text-pqText';
   return (
@@ -465,14 +465,14 @@ export const Filters = () => {
             <div
               className={clsx(
                 'flex items-center overflow-hidden rounded-pqSm bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]',
-                mobile ? 'h-[44px]' : 'h-[34px]'
+                touch ? 'h-[44px]' : 'h-[34px]'
               )}
             >
               <div
                 onClick={previous}
                 className={clsx(
                   'flex h-full cursor-pointer items-center justify-center text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180',
-                  mobile ? 'min-w-[44px]' : 'px-[10px]'
+                  touch ? 'min-w-[44px]' : 'px-[10px]'
                 )}
               >
                 <svg
@@ -493,7 +493,7 @@ export const Filters = () => {
               </div>
               <div className={clsx(
                 'flex h-full items-center justify-center text-center',
-                mobile ? 'min-w-0 flex-1' : 'min-w-[190px]'
+                touch ? 'min-w-0 flex-1' : 'min-w-[190px]'
               )}>
                 {/* A date range is a left-to-right token: in RTL, bidi otherwise
                     flips "03/08 - 09/08" into "09/08 - 03/08" and the week reads
@@ -518,7 +518,7 @@ export const Filters = () => {
                 onClick={next}
                 className={clsx(
                   'flex h-full cursor-pointer items-center justify-center text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText rtl:rotate-180',
-                  mobile ? 'min-w-[44px]' : 'px-[10px]'
+                  touch ? 'min-w-[44px]' : 'px-[10px]'
                 )}
               >
                 <svg
@@ -538,7 +538,7 @@ export const Filters = () => {
                 </svg>
               </div>
             </div>
-            {calPickOpen && !mobile && (
+            {calPickOpen && !touch && (
               <div
                 ref={calPickCalendarRef}
                 className="z-[300] rounded-pqMd border border-pqBorder bg-pqPop p-[12px] text-pqText shadow-menu"
@@ -560,7 +560,7 @@ export const Filters = () => {
                 />
               </div>
             )}
-            {mobile && (
+            {touch && (
               <MobileSheet
                 open={calPickOpen}
                 onClose={() => setCalPickOpen(false)}
@@ -581,12 +581,12 @@ export const Filters = () => {
             )}
           </div>
           <div className="flex-1 text-[14px] font-[500]">
-            <div className={clsx('flex text-center', mobile ? 'h-[44px]' : 'h-[34px]')}>
+            <div className={clsx('flex text-center', touch ? 'h-[44px]' : 'h-[34px]')}>
               <div
                 onClick={setToday}
                 className={clsx(
                   'flex cursor-pointer items-center justify-center rounded-pqSm bg-pqInner px-[14px] text-[13px] font-[500] shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:text-pqText',
-                  mobile ? 'h-[44px]' : 'h-[34px]'
+                  touch ? 'h-[44px]' : 'h-[34px]'
                 )}
               >
                 {t('today', 'Today')}
@@ -598,7 +598,7 @@ export const Filters = () => {
       {isListView && (
         <div className={clsx(
           'flex flex-grow items-center gap-[10px]',
-          mobile && 'flex-wrap'
+          touch && 'flex-wrap'
         )}>
           {/* List toolbar: Date → Status → flex-1 → Newest/Oldest.
               Status lives here because PostsPanel is unmounted on list. */}
@@ -907,7 +907,7 @@ export const Filters = () => {
           onClick={setCalendarView}
           className={clsx(
             segmentItem,
-            mobile ? 'min-w-[44px] flex-1 px-0' : 'w-[30px] px-0',
+            touch ? 'min-w-[44px] w-[44px] px-0' : 'w-[30px] px-0',
             !isListView ? segmentOn : segmentOff
           )}
         >
@@ -932,7 +932,7 @@ export const Filters = () => {
           onClick={setList}
           className={clsx(
             segmentItem,
-            mobile ? 'min-w-[44px] flex-1 px-0' : 'w-[30px] px-0',
+            touch ? 'min-w-[44px] w-[44px] px-0' : 'w-[30px] px-0',
             isListView ? segmentOn : segmentOff
           )}
         >

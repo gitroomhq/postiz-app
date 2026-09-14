@@ -67,7 +67,7 @@ export const MovePostSheet: FC<{
 };
 
 /**
- * Phone-only Move control for calendar / queue cards. Reuses the same PUT
+ * Phone and tablet Move control for calendar / queue cards. Reuses the same PUT
  * string as HTML5 drop (`/posts/${item.id}/date`) so the API baseline stays.
  */
 export const CalendarMoveButton: FC<{
@@ -77,10 +77,10 @@ export const CalendarMoveButton: FC<{
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const { changeDate, reloadCalendarView } = useCalendar();
   const [open, setOpen] = useState(false);
-  if (!mobile) return null;
+  if (!touch) return null;
   const item = post;
   return (
     <>

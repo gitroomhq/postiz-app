@@ -797,7 +797,7 @@ export const AddProviderComponent: FC<{
   onStepChange?: (open: boolean) => void;
 }> = (props) => {
   const { update, social, article, onboarding, isMobile, onStepChange } = props;
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   // Callers used to forget `isMobile`, so the phone picker stayed a 4-column
   // desktop grid. Viewport is the source of truth; the prop still forces it.
   const phone = Boolean(isMobile) || mobile;
@@ -853,13 +853,13 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
-            ...(phone ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
               <div
-                {...(phone
+                {...(touch
                   ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
@@ -1043,7 +1043,7 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
-            ...(phone ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
@@ -1055,13 +1055,13 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
-            ...(phone ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
               <div
-                {...(phone
+                {...(touch
                   ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
@@ -1078,7 +1078,7 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    [onboarding]
+    [onboarding, touch]
   );
 
   const t = useT();

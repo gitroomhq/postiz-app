@@ -64,7 +64,7 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
 import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
-import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { PQ_TABLET_MAX, useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { Pagination } from '@gitroom/frontend/components/media/media.pagination';
 import { useRouter } from 'next/navigation';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
@@ -866,6 +866,7 @@ export const ListView = () => {
   const modal = useModals();
   const router = useRouter();
   const { start: startTour } = useTour();
+  const { touch } = useViewport();
   const { longDatePattern } = useDateFormat();
   const {
     loading,
@@ -1033,7 +1034,7 @@ export const ListView = () => {
             onClick={() => router.push('/channels?add=1')}
             className={clsx(
               'mt-[2px] min-w-[200px] rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
-              mobile ? 'h-[44px] min-h-[44px]' : 'h-[36px]'
+              touch ? 'h-[44px] min-h-[44px]' : 'h-[36px]'
             )}
           >
             {t('add_your_first_channel', 'Add your first channel')}
@@ -1803,7 +1804,7 @@ const CalendarItem: FC<{
         // from list→Scheduled (put-back / cancel reschedule, leave QUEUE).
         source: 'calendar' as const,
       },
-      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= 760,
+      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
       collect: (monitor) => ({
         // 40%, not invisible: the design keeps the card faintly in place so you
         // can still see where it came from. (Doc 02 says "fully transparent" —
@@ -2989,7 +2990,7 @@ const DayDraggableListItem: FC<{
         state: post.state,
         source: 'calendar' as const,
       },
-      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= 760,
+      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),

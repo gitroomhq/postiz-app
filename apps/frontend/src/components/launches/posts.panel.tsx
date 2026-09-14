@@ -26,7 +26,7 @@ import {
   useTourNeeds,
   useTourStepKey,
 } from '@gitroom/frontend/components/onboarding/tour';
-import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { PQ_TABLET_MAX, useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -58,7 +58,7 @@ export const PostsPanel: FC = () => {
   const toaster = useToaster();
   const router = useRouter();
   const { start: startTour } = useTour();
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const {
     listPosts,
     listLoading,
@@ -90,15 +90,15 @@ export const PostsPanel: FC = () => {
 
   useEffect(() => {
     if (forcePanel) return;
-    if (mobile && postsPanelOpen && !autoCollapsed.current) {
+    if (touch && postsPanelOpen && !autoCollapsed.current) {
       autoCollapsed.current = true;
       setPostsPanelOpen(false);
       return;
     }
-    if (!mobile) {
+    if (!touch) {
       autoCollapsed.current = false;
     }
-  }, [mobile, postsPanelOpen, setPostsPanelOpen, forcePanel]);
+  }, [touch, postsPanelOpen, setPostsPanelOpen, forcePanel]);
 
   const tabs = useMemo(
     () =>
@@ -181,7 +181,7 @@ export const PostsPanel: FC = () => {
   );
 
   if (!showPanel) {
-    if (mobile) return null;
+    if (touch) return null;
     return (
       <div className="flex w-[44px] shrink-0 flex-col items-center bg-pqInner py-[16px]">
         <button
@@ -422,7 +422,7 @@ const QueueCard: FC<{
         state: post.state,
         source: 'list' as const,
       },
-      canDrag: !demo && post.state !== 'PUBLISHED' && typeof window !== 'undefined' && window.innerWidth >= 760,
+      canDrag: !demo && post.state !== 'PUBLISHED' && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),

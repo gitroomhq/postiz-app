@@ -58,7 +58,7 @@ const Divider = ({ className }: { className?: string }) => (
  */
 export const UserMenu = () => {
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const user = useUser();
   const router = useRouter();
   const fetch = useFetch();
@@ -74,7 +74,7 @@ export const UserMenu = () => {
   >(open, 'end');
 
   useEffect(() => {
-    if (!open || mobile) return;
+    if (!open || touch) return;
     const onDown = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -87,7 +87,7 @@ export const UserMenu = () => {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, mobile]);
+  }, [open, touch]);
 
   const logout = useCallback(async () => {
     setOpen(false);
@@ -140,7 +140,7 @@ export const UserMenu = () => {
 
   const item = clsx(
     ROW,
-    mobile && 'h-[44px] min-h-[44px] px-[12px] text-[15px]'
+    touch && 'h-[44px] min-h-[44px] px-[12px] text-[15px]'
   );
 
   const menuBody = (
@@ -264,7 +264,7 @@ export const UserMenu = () => {
               data-tooltip-content={option.label}
               className={clsx(
                 'grid place-items-center rounded-full transition-colors',
-                mobile ? 'h-[44px] w-[44px]' : 'h-[24px] w-[28px]',
+                touch ? 'h-[44px] w-[44px]' : 'h-[24px] w-[28px]',
                 mode === option.key
                   ? 'bg-pqInner text-pqText'
                   : 'text-pqSoft hover:text-pqText'
@@ -317,7 +317,7 @@ export const UserMenu = () => {
         aria-label={t('account_menu', 'Account menu')}
         className={clsx(
           'flex items-center rounded-[8px] transition-colors hover:bg-pqHover',
-          mobile
+          touch
             ? 'size-[44px] justify-center p-0'
             : 'h-[30px] max-w-[200px] gap-[8px] p-[2px]',
           open && 'bg-pqHover'
@@ -332,7 +332,7 @@ export const UserMenu = () => {
         </span>
       </button>
 
-      {mobile ? (
+      {touch ? (
         <MobileSheet
           open={open}
           onClose={() => setOpen(false)}

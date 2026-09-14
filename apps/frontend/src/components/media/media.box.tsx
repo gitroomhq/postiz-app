@@ -155,7 +155,7 @@ export const MediaBox: FC<{
   const modals = useModals();
   const toaster = useToaster();
   const t = useT();
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const uploaderRef = useRef<HTMLInputElement>(null);
   const mediaDirectory = useMediaDirectory();
   const [loading, setLoading] = useState(false);
@@ -422,7 +422,7 @@ export const MediaBox: FC<{
         'relative flex shrink-0 cursor-pointer items-center gap-[7px] bg-pqBrand font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
         size === 'picker'
           ? 'h-[44px] rounded-[8px] px-[18px] text-[14px]'
-          : mobile
+          : touch
             ? 'h-[44px] rounded-pqSm px-[16px] ps-[14px] text-[13.5px]'
             : 'h-[36px] rounded-pqSm px-[14px] ps-[12px] text-[13px]'
       )}
@@ -533,7 +533,7 @@ export const MediaBox: FC<{
           onClick={() => setTab(value)}
           className={clsx(
             'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
-            mobile ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
+            touch ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'
@@ -655,7 +655,7 @@ export const MediaBox: FC<{
                     onClick={() => uploaderRef.current?.click()}
                     className={clsx(
                       'mt-[2px] rounded-pqSm bg-pqBrand px-[16px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
-                      mobile ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[36px]'
+                      touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[36px]'
                     )}
                   >
                     {t('upload_media', 'Upload media')}
@@ -928,7 +928,7 @@ export const MediaBox: FC<{
           onClick={() => setTab(value)}
           className={clsx(
             'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
-            mobile ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
+            touch ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'

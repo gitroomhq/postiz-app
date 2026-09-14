@@ -86,7 +86,7 @@ export const NewPost = () => {
   const user = useUser();
   const router = useRouter();
   const { billingEnabled, aiEnabled } = useVariables();
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const aiAvailable = useAiAvailable();
   const addProvider = useAddProvider(mutateIntegrations);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -342,7 +342,7 @@ export const NewPost = () => {
         ref={referenceRef}
         className={clsx(
           'flex overflow-hidden rounded-[10px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand',
-          mobile ? 'size-[44px]' : 'h-[36px]'
+          mobile ? 'size-[44px]' : touch ? 'h-[44px]' : 'h-[36px]'
         )}
       >
         <button

@@ -254,7 +254,7 @@ const NotificationComponent = () => {
   const fetch = useFetch();
   const t = useT();
   const toaster = useToaster();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const [show, setShow] = useState(false);
   const [markedAllRead, setMarkedAllRead] = useState(false);
   const [unreadCutoff, setUnreadCutoff] = useState<string | null>(null);
@@ -301,7 +301,7 @@ const NotificationComponent = () => {
     setUnreadCutoff(cutoff);
   }, []);
   const ref = useClickAway<HTMLDivElement>(() => {
-    if (!mobile) setShow(false);
+    if (!touch) setShow(false);
   });
   const { referenceRef, floatingRef } = useAnchoredPopover<
     HTMLButtonElement,
@@ -317,7 +317,7 @@ const NotificationComponent = () => {
         aria-expanded={show}
         className={clsx(
           'relative grid place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText',
-          mobile ? 'size-[44px]' : 'size-[30px]',
+          touch ? 'size-[44px]' : 'size-[30px]',
           show && 'bg-pqHover text-pqText'
         )}
       >
@@ -345,7 +345,7 @@ const NotificationComponent = () => {
         )}
       </button>
       {show &&
-        (mobile ? (
+        (touch ? (
           <MobileSheet
             open={show}
             onClose={() => setShow(false)}

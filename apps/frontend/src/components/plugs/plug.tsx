@@ -217,7 +217,7 @@ export const PlugItem: FC<{
 }> = (props) => {
   const { plug, addPlug, data, channelLabel } = props;
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const [activated, setActivated] = useState(!!data?.activated);
   useEffect(() => {
     setActivated(!!data?.activated);
@@ -285,7 +285,7 @@ export const PlugItem: FC<{
         }}
         className={clsx(
           'self-start rounded-pqSm bg-pqSettings px-[12px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover',
-          mobile ? 'h-[44px] min-h-[44px] px-[16px]' : 'py-[6px]'
+          touch ? 'h-[44px] min-h-[44px] px-[16px]' : 'py-[6px]'
         )}
       >
         {ctaLabel}

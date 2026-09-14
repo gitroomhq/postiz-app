@@ -142,10 +142,10 @@ export const CommentsComponents: FC<{
 
 /** Public `/p/[id]` comments: inline on desktop, a sheet on phone. */
 export const PreviewCommentsPane: FC<{ postId: string }> = ({ postId }) => {
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const t = useT();
   const [open, setOpen] = useState(false);
-  if (!mobile) {
+  if (!touch) {
     return <CommentsComponents postId={postId} />;
   }
   return (

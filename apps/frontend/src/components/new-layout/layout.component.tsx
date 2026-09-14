@@ -173,12 +173,12 @@ const MissingBackendUrlNotice = () => (
  * positioned panel off itself.
  */
 const HeaderIcon = ({ children }: { children: ReactNode }) => {
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   return (
     <div
       className={clsx(
         'grid shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText empty:hidden',
-        mobile ? 'size-[44px]' : 'size-[30px]'
+        touch ? 'size-[44px]' : 'size-[30px]'
       )}
     >
       {children}

@@ -35,6 +35,12 @@ export interface Viewport {
   mobile: boolean;
   tablet: boolean;
   desktop: boolean;
+  /**
+   * Phone or tablet. Touch-first chrome (sheets instead of hover menus,
+   * 44px hits, no HTML5 drag) keys off this. Layout that needs a true
+   * phone stack — hamburger, week chips, settings push — still uses `mobile`.
+   */
+  touch: boolean;
 }
 
 const measure = (width: number): Viewport => ({
@@ -42,6 +48,7 @@ const measure = (width: number): Viewport => ({
   mobile: width < PQ_MOBILE_MAX,
   tablet: width >= PQ_MOBILE_MAX && width < PQ_TABLET_MAX,
   desktop: width >= PQ_TABLET_MAX,
+  touch: width < PQ_TABLET_MAX,
 });
 
 // The server has no width. The design's own fallback is 1440, and desktop is

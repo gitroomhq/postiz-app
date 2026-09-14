@@ -30,17 +30,19 @@ describe('phone calendar and composer', () => {
     assert.match(calendar, /grid-cols-7/);
   });
 
-  it('disables HTML5 drag on phone widths', () => {
-    assert.match(calendar, /window\.innerWidth >= 760/);
+  it('disables HTML5 drag below the tablet max', () => {
+    assert.match(calendar, /window\.innerWidth >= PQ_TABLET_MAX/);
+    assert.match(posts, /window\.innerWidth >= PQ_TABLET_MAX/);
   });
 
-  it('hides the collapsed 44px posts rail on phone', () => {
-    assert.match(posts, /if \(mobile\) return null;/);
+  it('hides the collapsed 44px posts rail on phone and tablet', () => {
+    assert.match(posts, /if \(touch\) return null;/);
   });
 
-  it('splits composer into Edit and Preview panes on phone', () => {
+  it('splits composer into Edit and Preview panes on phone and tablet', () => {
     assert.match(manage, /composerPane/);
     assert.match(manage, /setComposerPane\('preview'\)/);
+    assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });
 
@@ -51,15 +53,27 @@ describe('phone calendar and composer', () => {
     );
     assert.match(filters, /data-cal-view-sheet/);
     assert.match(filters, /viewSheetOpen/);
+    assert.match(filters, /\{mobile && !isListView && \(/);
   });
 
-  it('hides the Posts rail toggle and calendar/list segment on phone', () => {
+  it('hides the calendar/list segment on phone and keeps it on tablet', () => {
     const filters = readFileSync(
       fileURLToPath(new URL('./filters.tsx', import.meta.url)),
       'utf8',
     );
     assert.doesNotMatch(filters, /data-posts-toggle/);
+    assert.match(filters, /\{!isListView && !mobile && \(/);
     assert.match(filters, /\{!mobile && \(/);
+  });
+
+  it('shows the Move sheet instead of HTML5 drag on phone and tablet', () => {
+    const move = readFileSync(
+      fileURLToPath(
+        new URL('../layout/move-post-sheet.tsx', import.meta.url)
+      ),
+      'utf8',
+    );
+    assert.match(move, /if \(!touch\) return null;/);
   });
 });
 
@@ -78,8 +92,16 @@ describe('phone chrome and channel picker', () => {
     assert.match(addProvider, /phone && 'flex flex-col gap-\[8px\]'/);
   });
 
-  it('renders Create Post as a 44px plus on phone', () => {
-    assert.match(newPost, /mobile \? 'size-\[44px\]' : 'h-\[36px\]'/);
+  it('opens nested Add Channel steps fullscreen on phone and tablet', () => {
+    assert.match(addProvider, /const \{ mobile, touch \} = useViewport\(\)/);
+    assert.match(addProvider, /\.\.\.\(touch \? \{ removeLayout: true, fullScreen: true \} : \{\}\)/);
+  });
+
+  it('renders Create Post as a 44px plus on phone and a 44px labelled split on tablet', () => {
+    assert.match(
+      newPost,
+      /mobile \? 'size-\[44px\]' : touch \? 'h-\[44px\]' : 'h-\[36px\]'/,
+    );
     assert.match(newPost, /\{\!mobile && \(/);
   });
 });

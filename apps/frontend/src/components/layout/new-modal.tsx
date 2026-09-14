@@ -113,9 +113,9 @@ export const Component: FC<{
   modal: { id: string } & OpenModalInterface;
 }> = memo(({ isLast, modal, closeModal, zIndex }) => {
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const decision = useDecisionModal();
-  const edgeToEdge = mobile || !!modal.fullScreen;
+  const edgeToEdge = touch || !!modal.fullScreen;
   const closeModalFunction = useCallback(async () => {
     if (modal.askClose) {
       const open = await decision.open({
@@ -218,7 +218,7 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && (mobile ? 'gap-[16px] p-[20px]' : 'gap-[16px] p-[32px]'),
+                !modal.removeLayout && (touch ? 'gap-[16px] p-[20px]' : 'gap-[16px] p-[32px]'),
                 // Prototype form card: --inner, r24, p32, gap16,
                 // min-width:min(600px,100%) even when formWidth is 420/460.
                 // Phone: edge-to-edge so min(600px) cannot overflow the viewport.

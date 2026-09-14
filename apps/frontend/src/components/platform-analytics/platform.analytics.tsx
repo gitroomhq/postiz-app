@@ -43,7 +43,7 @@ export const PlatformAnalytics = () => {
   const t = useT();
   const router = useRouter();
   const { disableXAnalytics } = useVariables();
-  const { mobile, tablet } = useViewport();
+  const { mobile, tablet, touch } = useViewport();
 
   const [selected, setSelected] = useState('');
   const [key, setKey] = useState(7);
@@ -276,7 +276,7 @@ export const PlatformAnalytics = () => {
               onClick={() => mutate()}
               className={clsx(
                 'mt-[4px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
-                mobile ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
+                touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
               )}
             >
               {t('try_again', 'Try again')}
@@ -303,7 +303,7 @@ export const PlatformAnalytics = () => {
               onClick={openAddChannel}
               className={clsx(
                 'mt-[4px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
-                mobile ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
+                touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
               )}
             >
               {t('connect_a_channel', 'Connect a channel')}
@@ -398,7 +398,7 @@ export const PlatformAnalytics = () => {
               onClick={openAddChannel}
               className={clsx(
                 'flex items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqBrandSoft',
-                mobile
+                touch
                   ? 'h-[44px] min-h-[44px] min-w-0 flex-1'
                   : channelsCollapsed
                     ? 'h-[36px] w-[36px] shrink-0'

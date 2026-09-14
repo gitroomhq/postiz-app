@@ -80,7 +80,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   surface = 'app',
 }) => {
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const {
     isChatBase,
     extensionStoreUrl,
@@ -110,7 +110,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   const version = process.env.NEXT_PUBLIC_APP_VERSION || '';
 
   useEffect(() => {
-    if (!open || mobile) return;
+    if (!open || touch) return;
     const onDown = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -123,7 +123,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, mobile]);
+  }, [open, touch]);
 
   // Hovering opens it. Everything in here is one click deep, so making people
   // click the trigger first only added a step — and the tooltip that used to
@@ -163,7 +163,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   const row = clsx(
     ROW,
     ROW_INK,
-    mobile && 'h-[44px] min-h-[44px] px-[12px] text-[15px]'
+    touch && 'h-[44px] min-h-[44px] px-[12px] text-[15px]'
   );
 
   // Whoever reads the mail asks for these two first. The signature is appended
@@ -347,7 +347,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
         aria-label={t('help', 'Help')}
         className={clsx(
           'rounded-[8px] text-[12.5px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText',
-          mobile
+          touch
             ? 'grid size-[44px] place-items-center'
             : 'flex h-[30px] items-center gap-[6px] px-[9px]',
           open && 'bg-pqHover text-pqText'
@@ -372,7 +372,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
         <span data-hdr-label="1">{t('help', 'Help')}</span>
       </button>
 
-      {mobile ? (
+      {touch ? (
         <MobileSheet
           open={open}
           onClose={() => setOpen(false)}
