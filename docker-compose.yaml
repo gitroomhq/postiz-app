@@ -12,7 +12,7 @@ services:
       DATABASE_URL: 'postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local'
       REDIS_URL: 'redis://postiz-redis:6379'
       BACKEND_INTERNAL_URL: 'http://localhost:3000'
-      TEMPORAL_ADDRESS: "temporal:7233"
+      TEMPORAL_ADDRESS: 'temporal:7233'
       IS_GENERAL: 'true'
       DISABLE_REGISTRATION: 'false'
 
@@ -40,6 +40,10 @@ services:
       REDDIT_CLIENT_SECRET: ''
       GITHUB_CLIENT_ID: ''
       GITHUB_CLIENT_SECRET: ''
+      APPLE_CLIENT_ID: ''
+      APPLE_TEAM_ID: ''
+      APPLE_KEY_ID: ''
+      APPLE_PRIVATE_KEY: ''
       BEEHIIVE_API_KEY: ''
       BEEHIIVE_PUBLICATION_ID: ''
       THREADS_APP_ID: ''
@@ -50,10 +54,14 @@ services:
       YOUTUBE_CLIENT_SECRET: ''
       TIKTOK_CLIENT_ID: ''
       TIKTOK_CLIENT_SECRET: ''
+      TIKTOK_BUSINESS_CLIENT_ID: ''
+      TIKTOK_BUSINESS_CLIENT_SECRET: ''
       PINTEREST_CLIENT_ID: ''
       PINTEREST_CLIENT_SECRET: ''
       DRIBBBLE_CLIENT_ID: ''
       DRIBBBLE_CLIENT_SECRET: ''
+      TUMBLR_CLIENT_ID: ''
+      TUMBLR_CLIENT_SECRET: ''
       DISCORD_CLIENT_ID: ''
       DISCORD_CLIENT_SECRET: ''
       DISCORD_BOT_TOKEN_ID: ''
@@ -83,6 +91,8 @@ services:
 
       # === Misc Settings
       OPENAI_API_KEY: ''
+      # Only this OAuth client can receive verified user email claims via OIDC.
+      OPENAI_OAUTH_CLIENT_ID: ''
       NEXT_PUBLIC_DISCORD_SUPPORT: ''
       NEXT_PUBLIC_POLOTNO: ''
       API_LIMIT: 30
@@ -113,7 +123,7 @@ services:
       - postiz-config:/config/
       - postiz-uploads:/uploads/
     ports:
-      - "4007:5000"
+      - '4007:5000'
     networks:
       - postiz-network
       - temporal-network

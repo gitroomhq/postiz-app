@@ -192,19 +192,39 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
+      let republish = false;
       if (
         (type === 'now' || type === 'schedule') &&
         (existingData?.posts?.[0]?.state === 'PUBLISHED' ||
           (existingData?.posts?.[0]?.state === 'QUEUE' &&
             dayjs().isAfter(date.utc())))
       ) {
+        const channels = selectedIntegrations
+          .map((p) => p.integration.name)
+          .join(', ');
+        const isRecurring =
+          !!repeater || !!existingData?.posts?.[0]?.intervalInDays;
+
         const whatToDo = await new Promise((resolve) => {
           modal.openModal({
-            title: 'What do you want to do?',
+            title: t('what_do_you_want_to_do', 'What do you want to do?'),
             children: (
               <div className="flex flex-col">
                 <div className="text-[20px] mb-[20px]">
-                  This post was already published, what do you want to do?
+                  {t(
+                    'post_already_published_republish_warning',
+                    'This post was already published. Republishing will publish it again to'
+                  )}{' '}
+                  {channels} {t('republish_at', 'at')}{' '}
+                  {date.format('DD/MM/YYYY HH:mm')}.
+                  {isRecurring && (
+                    <div className="mt-[10px]">
+                      {t(
+                        'republish_recurring_note',
+                        'This is a recurring post: your changes apply to all future recurrences starting now.'
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex w-full gap-[10px]">
                   <div className="flex-1 flex">
@@ -213,7 +233,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       className="flex-1"
                       onClick={() => resolve('update')}
                     >
-                      Just update the post details
+                      {t(
+                        'just_update_post_details',
+                        'Just update the post details'
+                      )}
                     </Button>
                   </div>
                   <div className="flex-1 flex">
@@ -222,7 +245,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       className="flex-1"
                       onClick={() => resolve('republish')}
                     >
-                      Republish the post
+                      {t('republish_the_post', 'Republish the post')}
                     </Button>
                   </div>
                 </div>
@@ -233,6 +256,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         if (whatToDo === 'update') {
           type = 'update';
+        }
+
+        if (whatToDo === 'republish') {
+          republish = true;
         }
       }
 
@@ -375,7 +402,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 'shortlink_urls_question',
                 'Do you want to shortlink the URLs? it will let you get statistics over clicks'
               ),
-              t('yes_shortlink_it', 'Yes, shortlink it!')
+              t('yes_shortlink_it', 'Yes, shortlink it!'),
+              undefined,
+              t('no_original_urls', 'No, original URLs')
             );
           }
         }
@@ -383,6 +412,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
       const data = {
         type,
+        ...(republish ? { republish } : {}),
         ...(repeater ? { inter: repeater } : {}),
         tags,
         shortLink,

@@ -23,6 +23,10 @@ interface StatsResponse {
   errors: StatsBlock;
   posts: StatsBlock;
   connected: StatsBlock;
+  publishingAccounts?: StatsBlock;
+  scheduledAccounts?: StatsBlock;
+  publishingChannels?: StatsBlock;
+  scheduledChannels?: StatsBlock;
 }
 
 const isoDaysAgo = (days: number) => {
@@ -224,36 +228,117 @@ export const AdminStatsComponent: FC = () => {
       ) : error || !data ? (
         <div className="text-red-400">Failed to load stats.</div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
-            <SummaryCard label="Total posts published" value={data.posts.total} />
-            <SummaryCard
-              label="Total connected accounts"
-              value={data.connected.total}
-            />
-            <SummaryCard
-              label={unknownOnly ? 'Total unknown errors' : 'Total errors'}
-              value={data.errors.total}
-            />
+        <div className="overflow-x-auto pb-[8px] scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor flex flex-col gap-[16px]">
+          <div className="flex gap-[12px]">
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <SummaryCard
+                label="Total posts published"
+                value={data.posts.total}
+              />
+            </div>
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <SummaryCard
+                label="Total connected accounts"
+                value={data.connected.total}
+              />
+            </div>
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <SummaryCard
+                label={unknownOnly ? 'Total unknown errors' : 'Total errors'}
+                value={data.errors.total}
+              />
+            </div>
+            {data.publishingChannels && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <SummaryCard
+                  label="Unique channels - published (all platforms combined)"
+                  value={data.publishingChannels.total}
+                />
+              </div>
+            )}
+            {data.scheduledChannels && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <SummaryCard
+                  label="Unique channels - scheduled (all platforms combined)"
+                  value={data.scheduledChannels.total}
+                />
+              </div>
+            )}
+            {data.publishingAccounts && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <SummaryCard
+                  label="Unique users - published (all platforms combined)"
+                  value={data.publishingAccounts.total}
+                />
+              </div>
+            )}
+            {data.scheduledAccounts && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <SummaryCard
+                  label="Unique users - scheduled (all platforms combined)"
+                  value={data.scheduledAccounts.total}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-[12px]">
-            <PerSocialTable
-              title="Posts published per social"
-              block={data.posts}
-            />
-            <PerSocialTable
-              title="Connected accounts per social"
-              block={data.connected}
-            />
-            <PerSocialTable
-              title={
-                unknownOnly ? 'Unknown errors per social' : 'Errors per social'
-              }
-              block={data.errors}
-            />
+          <div className="flex gap-[12px] items-start">
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <PerSocialTable
+                title="Posts published per social"
+                block={data.posts}
+              />
+            </div>
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <PerSocialTable
+                title="Connected accounts per social"
+                block={data.connected}
+              />
+            </div>
+            <div className="flex-1 min-w-[220px] shrink-0">
+              <PerSocialTable
+                title={
+                  unknownOnly
+                    ? 'Unknown errors per social'
+                    : 'Errors per social'
+                }
+                block={data.errors}
+              />
+            </div>
+            {data.publishingChannels && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <PerSocialTable
+                  title="Unique channels - published"
+                  block={data.publishingChannels}
+                />
+              </div>
+            )}
+            {data.scheduledChannels && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <PerSocialTable
+                  title="Unique channels - scheduled"
+                  block={data.scheduledChannels}
+                />
+              </div>
+            )}
+            {data.publishingAccounts && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <PerSocialTable
+                  title="Unique users - published"
+                  block={data.publishingAccounts}
+                />
+              </div>
+            )}
+            {data.scheduledAccounts && (
+              <div className="flex-1 min-w-[220px] shrink-0">
+                <PerSocialTable
+                  title="Unique users - scheduled"
+                  block={data.scheduledAccounts}
+                />
+              </div>
+            )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

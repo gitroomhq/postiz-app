@@ -16,12 +16,12 @@ const makeClient = (redirectUri: string) =>
 
 @AuthProvider({ provider: 'GOOGLE' })
 export class GoogleProvider extends AuthProviderAbstract {
-  generateLink(query?: { redirect_uri?: string }) {
+  generateLink(query?: { redirect_uri?: string; state?: string }) {
     const redirectUri = query?.redirect_uri || defaultRedirect();
     return makeClient(redirectUri).generateAuthUrl({
       access_type: 'online',
       prompt: 'consent',
-      state: 'login',
+      state: query?.state || 'login',
       redirect_uri: redirectUri,
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',

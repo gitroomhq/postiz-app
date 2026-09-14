@@ -160,16 +160,10 @@ export class PostsRepository {
         integration: {
           deletedAt: null,
           organizationId: orgId,
+          ...(query.customer ? { customerId: query.customer } : {}),
         },
         deletedAt: null,
         parentPostId: null,
-        ...(query.customer
-          ? {
-              integration: {
-                customerId: query.customer,
-              },
-            }
-          : {}),
       },
       select: {
         id: true,
@@ -181,6 +175,7 @@ export class PostsRepository {
         intervalInDays: true,
         group: true,
         creationMethod: true,
+        settings: true,
         tags: {
           select: {
             tag: true,
@@ -517,10 +512,15 @@ export class PostsRepository {
     body: PostBody,
     tags: { value: string; label: string }[],
     creationMethod: CreationMethod,
-    inter?: number
+    inter?: number,
+    // Keep the existing group instead of rotating it, so open clients
+    // (calendar) holding the group stay valid. Used by out-of-band updates
+    // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
+    keepGroup = false
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
+    const group = keepGroup && body.group ? body.group : uuid;
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -548,7 +548,7 @@ export class PostsRepository {
           : {}),
         content: value.content,
         delay: value.delay || 0,
-        group: uuid,
+        group,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
@@ -639,11 +639,29 @@ export class PostsRepository {
         )?.id!
       : undefined;
 
-    if (body.group) {
+    if (body.group && !keepGroup) {
       await this._post.model.post.updateMany({
         where: {
           group: body.group,
           deletedAt: null,
+        },
+        data: {
+          parentPostId: null,
+          deletedAt: new Date(),
+        },
+      });
+    }
+
+    // keepGroup: the updated rows still carry the old group, so sweep only the
+    // rows dropped from it (removed comments) by id instead of by group.
+    if (body.group && keepGroup) {
+      await this._post.model.post.updateMany({
+        where: {
+          group: body.group,
+          deletedAt: null,
+          id: {
+            notIn: posts.map((p) => p.id),
+          },
         },
         data: {
           parentPostId: null,
