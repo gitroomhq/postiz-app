@@ -103,3 +103,19 @@ describe('Plugs and Agents list handle contract', () => {
     assert.match(agents, /channelListSubtitle\(integration\)/);
   });
 });
+
+describe('Channel pick list handle contract', () => {
+  it('uses channelListSubtitle, not the platform slug', () => {
+    const pick = readFileSync(
+      fileURLToPath(
+        new URL('../launches/channel.pick.list.tsx', import.meta.url),
+      ),
+      'utf8',
+    );
+    assert.match(pick, /channelListSubtitle\(integration\)/);
+    assert.doesNotMatch(
+      pick,
+      /text-pqMuted">\s*\{integration\.identifier\}/,
+    );
+  });
+});

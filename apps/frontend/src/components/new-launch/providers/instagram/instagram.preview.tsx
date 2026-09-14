@@ -13,6 +13,7 @@ import {
   FEED_PREVIEW_MIN_WH,
   STORY_PREVIEW_WH,
 } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const InstagramPreview: FC<{
   maximumCharacters?: number;
@@ -72,8 +73,15 @@ export const InstagramPreview: FC<{
             className="rounded-full relative z-[2] w-[36px] h-[36px]"
           />
         </div>
-        <div className="flex flex-col leading-[18px]">
-          <div className="text-[15px] font-[600]">{integration?.name}</div>
+        <div className="flex min-w-0 flex-col leading-[18px]">
+          <div className="truncate text-[15px] font-[600]">
+            {integration?.name}
+          </div>
+          {!!formatChannelHandle(integration?.display) && (
+            <div className="truncate text-[12px] font-[400] text-pqSoft">
+              {formatChannelHandle(integration?.display)}
+            </div>
+          )}
         </div>
       </div>
       {!!renderContent?.[0]?.images?.length ? (

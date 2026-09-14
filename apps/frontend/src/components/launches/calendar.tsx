@@ -2062,12 +2062,6 @@ const CalendarItem: FC<{
                 "04:00" to anyone three hours off UTC. */}
             {timeLabel}
           </span>
-          {!!tagNames && (
-            <span className="grid h-[14px] shrink-0 place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
-              {tagNames}
-            </span>
-          )}
-          <span className="min-w-0 flex-1" />
           {state === 'ERROR' && (
             <span
               className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
@@ -2086,8 +2080,6 @@ const CalendarItem: FC<{
               {t('published', 'Published')}
             </span>
           )}
-          {/* Top-right status: design Draft chip + Scheduled (owner). Hover
-              actions stay bottom-end so they don't cover this. */}
           {state === 'QUEUE' && (
             <span className="flex shrink-0 items-center gap-[4px] text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqFocused">
               <span
@@ -2102,6 +2094,12 @@ const CalendarItem: FC<{
               {t('draft', 'Draft')}
             </span>
           )}
+          {!!tagNames && (
+            <span className="grid h-[14px] min-w-0 max-w-[72px] shrink place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
+              {tagNames}
+            </span>
+          )}
+          <span className="min-w-0 flex-1" />
         </div>
         <div
           className={clsx(

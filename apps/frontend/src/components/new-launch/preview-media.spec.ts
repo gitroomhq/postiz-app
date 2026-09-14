@@ -26,4 +26,8 @@ describe('post preview media frame', () => {
     assert.match(facebook, /PreviewMediaFrame/);
     assert.doesNotMatch(facebook, /h-\[280px\]/);
   });
+
+  it('shows the channel handle on Instagram, not only the page name', () => {
+    assert.match(instagram, /formatChannelHandle\(integration\?\.display\)/);
+  });
 });

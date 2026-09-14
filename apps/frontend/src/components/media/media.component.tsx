@@ -328,6 +328,8 @@ export const MultiMediaComponent: FC<{
                 animation={200}
                 swap={true}
                 handle=".dragging"
+                filter={'[data-ci-actions="1"]'}
+                preventOnFilter={true}
               >
                 {currentMedia.map((media, index) => (
                   <div
@@ -336,7 +338,7 @@ export const MultiMediaComponent: FC<{
                       'group relative overflow-hidden transition-[box-shadow]',
                       ghost
                         ? 'dragging h-[58px] w-[58px] cursor-move rounded-[9px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)]'
-                        : 'h-[48px] w-[48px] cursor-pointer rounded-[8px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
+                        : 'dragging h-[48px] w-[48px] cursor-move rounded-[8px] bg-pqSettings shadow-[inset_0_0_0_1px_var(--border)] hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                     )}
                   >
                     <div className="relative h-full w-full overflow-hidden rounded-[inherit]">
@@ -355,62 +357,39 @@ export const MultiMediaComponent: FC<{
                       <>
                         <div
                           data-ci-actions="1"
-                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/35 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                          className="pointer-events-none absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                         />
-                        <div
-                          data-ci-actions="1"
-                          className="absolute inset-[4px] z-[20] flex items-start justify-between opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-                        >
-                          <button
-                            type="button"
-                            data-ci-actions="1"
-                            aria-label={t('reorder_media', 'Reorder')}
-                            title={t('reorder_media', 'Reorder')}
-                            className="dragging grid size-[22px] cursor-move place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-black/80"
-                          >
-                            <svg
-                              viewBox="0 0 12 12"
-                              width="11"
-                              height="11"
-                              fill="currentColor"
-                              aria-hidden="true"
-                            >
-                              <circle cx="3.5" cy="3.5" r="1.15" />
-                              <circle cx="8.5" cy="3.5" r="1.15" />
-                              <circle cx="3.5" cy="8.5" r="1.15" />
-                              <circle cx="8.5" cy="8.5" r="1.15" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            data-ci-actions="1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearMedia(index)();
-                            }}
-                            aria-label={t('remove', 'Remove')}
-                            title={t('remove', 'Remove')}
-                            className="grid size-[22px] place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-pqDanger"
-                          >
-                            <svg
-                              viewBox="0 0 12 12"
-                              width="10"
-                              height="10"
-                              fill="none"
-                              aria-hidden="true"
-                            >
-                              <path
-                                d="M3 3l6 6M9 3L3 9"
-                                stroke="currentColor"
-                                strokeWidth="1.7"
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
                         <button
                           type="button"
                           data-ci-actions="1"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearMedia(index)();
+                          }}
+                          aria-label={t('remove', 'Remove')}
+                          title={t('remove', 'Remove')}
+                          className="absolute end-[4px] top-[4px] z-[20] grid size-[22px] place-items-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-pqDanger"
+                        >
+                          <svg
+                            viewBox="0 0 12 12"
+                            width="10"
+                            height="10"
+                            fill="none"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M3 3l6 6M9 3L3 9"
+                              stroke="currentColor"
+                              strokeWidth="1.7"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          data-ci-actions="1"
+                          onMouseDown={(e) => e.stopPropagation()}
                           onClick={() => {
                             modals.openModal({
                               title: t('change_alt_text', 'Change alt text'),
@@ -442,7 +421,7 @@ export const MultiMediaComponent: FC<{
                           }}
                           aria-label={t('media_settings', 'Media settings')}
                           title={t('media_settings', 'Media settings')}
-                          className="absolute bottom-[4px] start-1/2 z-[20] grid size-[22px] -translate-x-1/2 place-items-center rounded-full bg-black/65 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-black/80"
+                          className="absolute bottom-[4px] start-1/2 z-[20] grid size-[22px] -translate-x-1/2 place-items-center rounded-full bg-black/70 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-black/85"
                         >
                           <svg
                             viewBox="0 0 16 16"
