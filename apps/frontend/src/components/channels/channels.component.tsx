@@ -608,6 +608,7 @@ export const ChannelsComponent: FC = () => {
   const addOpenGeneration = useRef(0);
   const addedConsumed = useRef(false);
   const focusedFromAdded = useRef(false);
+  const addedListMutated = useRef(false);
 
   // Design `_autoSide`: collapse under 1180 on viewport transitions only.
   // `collapseMenu` must stay out of the deps — otherwise expanding on tablet
@@ -719,7 +720,7 @@ export const ChannelsComponent: FC = () => {
       focusedFromAdded.current = false;
       addedConsumed.current = true;
       setSelected((currentId) => (currentId === id ? '' : currentId));
-      stripChannelQuery(['added', 'msg']);
+      stripChannelQuery(['added', 'msg', 'focus']);
     },
     [stripChannelQuery]
   );
@@ -762,24 +763,34 @@ export const ChannelsComponent: FC = () => {
     const returningFromConnect = !!addedProvider && !addedConsumed.current;
 
     if (returningFromConnect) {
+      if (!addedListMutated.current) {
+        addedListMutated.current = true;
+        void mutate();
+      }
       if (!list.length) {
         return;
       }
-      const match = selectAddedIntegration(list, addedProvider);
+      const match = selectAddedIntegration(
+        list,
+        addedProvider,
+        searchParams.get('focus'),
+      );
+      // Stale SWR cache is often still the previous channels (YouTube) after
+      // Facebook two-step. Do not consume or fall back to list[0] until the
+      // new row is actually in the list.
+      if (!match?.id) {
+        return;
+      }
       addedConsumed.current = true;
       focusedFromAdded.current = true;
       closeAddPane();
-      if (match?.id) {
-        setSelected(match.id);
-      } else if (list[0]?.id) {
-        setSelected(list[0].id);
-      }
+      setSelected(match.id);
       setDetailOpen(true);
       const msg = searchParams.get('msg');
       if (msg) {
         toast.show(msg, 'success');
       }
-      stripChannelQuery(['added', 'msg']);
+      stripChannelQuery(['added', 'msg', 'focus']);
       return;
     }
 
@@ -816,6 +827,7 @@ export const ChannelsComponent: FC = () => {
     closeAddPane,
     stripChannelQuery,
     toast,
+    mutate,
   ]);
 
   // Tour last step + Finish leave Add Channel open (design chAdd:'connect').

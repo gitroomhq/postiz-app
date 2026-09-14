@@ -237,6 +237,7 @@ export const ContinueIntegration: FC<{
       navigateOrShow(
         oauthReturnPath({
           added: provider,
+          focus: id,
           msg: 'Channel Updated',
           onboarding,
         }),
@@ -302,6 +303,7 @@ export const ContinueIntegration: FC<{
             navigateOrShow(
               oauthReturnPath({
                 added: provider,
+                focus: twoStepState.integrationId,
                 msg: 'Channel Added',
                 onboarding: twoStepState.onboarding,
               }),

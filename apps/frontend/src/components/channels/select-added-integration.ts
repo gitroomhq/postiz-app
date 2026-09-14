@@ -1,10 +1,11 @@
 /**
  * Pick which connected channel to focus after OAuth lands on
- * `/channels?added=<provider>`.
+ * `/channels?added=<provider>&focus=<integrationUuid>`.
  *
- * Matches `identifier === added`. Several accounts on the same provider
- * (two YouTube channels, two X accounts) resolve to the newest `createdAt`
- * when the list carries it, otherwise the last match in list order.
+ * `focus` wins when that id is in the list (Facebook two-step already knows
+ * it). Otherwise matches `identifier === added`. Several accounts on the
+ * same provider resolve to the newest `createdAt` when the list carries it,
+ * otherwise the last match in list order.
  */
 export type AddedIntegrationFields = {
   id?: string;
@@ -15,8 +16,20 @@ export type AddedIntegrationFields = {
 export function selectAddedIntegration<T extends AddedIntegrationFields>(
   list: T[] | null | undefined,
   added: string | null | undefined,
+  focus?: string | null,
 ): T | undefined {
-  if (!added || !Array.isArray(list) || list.length === 0) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return undefined;
+  }
+
+  if (focus) {
+    const focused = list.find((item) => item.id === focus);
+    if (focused) {
+      return focused;
+    }
+  }
+
+  if (!added) {
     return undefined;
   }
 

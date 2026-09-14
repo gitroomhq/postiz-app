@@ -4,6 +4,8 @@
  */
 export function oauthReturnPath(opts: {
   added?: string;
+  /** Integration UUID to focus on Channels. Not `id` — Google OAuth uses that. */
+  focus?: string;
   msg?: string;
   onboarding?: boolean;
   precondition?: boolean;
@@ -11,6 +13,9 @@ export function oauthReturnPath(opts: {
   const params = new URLSearchParams();
   if (opts.added) {
     params.set('added', opts.added);
+  }
+  if (opts.focus) {
+    params.set('focus', opts.focus);
   }
   if (opts.msg) {
     params.set('msg', opts.msg);

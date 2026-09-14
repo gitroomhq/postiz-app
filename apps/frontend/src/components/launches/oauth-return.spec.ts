@@ -31,11 +31,31 @@ describe('oauthReturnPath', () => {
       '/channels?precondition=true',
     );
   });
+
+  it('puts focus on the Channels URL without using id', () => {
+    assert.equal(
+      oauthReturnPath({
+        added: 'facebook',
+        focus: 'int-uuid',
+        msg: 'Channel Added',
+      }),
+      '/channels?added=facebook&focus=int-uuid&msg=Channel+Added',
+    );
+    assert.doesNotMatch(
+      oauthReturnPath({ added: 'facebook', focus: 'int-uuid' }),
+      /[?&]id=/,
+    );
+  });
 });
 
 describe('OAuth continue default return', () => {
   it('uses oauthReturnPath instead of /launches', () => {
     assert.match(continueSource, /oauthReturnPath\(/);
     assert.doesNotMatch(continueSource, /`\/launches\?/);
+  });
+
+  it('passes focus as the integration uuid on one-step and two-step success', () => {
+    assert.match(continueSource, /focus:\s*id/);
+    assert.match(continueSource, /focus:\s*twoStepState\.integrationId/);
   });
 });
