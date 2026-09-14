@@ -1288,3 +1288,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: examples are labeled samples, not another How to connect box
 
 **i18n +94 net.** The detail pane treated examples as one more inner well, often a single LinkedIn bubble after eight install steps. Examples now sit above How to connect in a brand-tinted **Examples** frame (not live, N samples). Each card is numbered, titled (`One channel: Instagram`, `One channel: X`, `Several channels`, or `Check the calendar`), tagged with channel chips, and copyable. Chat/bot samples keep You vs product bubbles; WhatsApp uses voice notes, Slack/Discord use @mentions. Dropped `conn_examples_agent_panel` / `conn_examples_bot`. Added per-client `_x` / `_ig` / `_multi` keys plus `conn_examples_*` chrome. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (1881 → 1975).
+
+## Connect: examples last, after How to connect
+
+**i18n 0.** Same keys. The Examples frame stays visually distinct, but it is the last block on the detail pane: intro, credentials, How to connect, then samples. It no longer sits between the info note and the install steps.

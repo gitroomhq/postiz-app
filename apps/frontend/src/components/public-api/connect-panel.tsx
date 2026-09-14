@@ -1318,15 +1318,6 @@ export const ConnectPanel: FC<{
           </button>
         )}
 
-        {!!item.examples?.length && (
-          <ExamplesBlock
-            kind={item.exampleKind}
-            examples={item.examples}
-            name={item.name}
-            mask={maskCode}
-          />
-        )}
-
         <div className="flex flex-col gap-[16px] rounded-[18px] bg-pqInner p-[22px] shadow-[inset_0_0_0_1px_var(--border)]">
           <div className="text-[15px] font-[600] text-pqText">
             {t('conn_how_to_connect', 'How to connect')}
@@ -1359,6 +1350,15 @@ export const ConnectPanel: FC<{
           <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[12.5px] leading-[1.55] text-pqMuted">
             {item.note}
           </div>
+        )}
+
+        {!!item.examples?.length && (
+          <ExamplesBlock
+            kind={item.exampleKind}
+            examples={item.examples}
+            name={item.name}
+            mask={maskCode}
+          />
         )}
       </div>
     );
