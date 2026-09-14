@@ -14,7 +14,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
-import { SettingsModal } from '@gitroom/frontend/components/launches/settings.modal';
+import {
+  SettingsModal,
+  publishingOptionCopy,
+} from '@gitroom/frontend/components/launches/settings.modal';
 import {
   AddProviderComponent,
   CustomVariables,
@@ -34,7 +37,11 @@ import {
   ChannelsListEmpty,
   ChannelsPageEmpty,
 } from '@gitroom/frontend/components/ui/no-channels-art';
-import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
+import {
+  formatChannelHandle,
+  channelNameWithHandle,
+  channelListSubtitle,
+} from '@gitroom/frontend/components/channels/channel-handle';
 import { selectAddedIntegration } from '@gitroom/frontend/components/channels/select-added-integration';
 
 /**
@@ -144,7 +151,7 @@ const PublishingOptions: FC<{ integration: any; mutate: () => void }> = ({
 
   const openEditor = useCallback(() => {
     modal.openModal({
-      title: t('additional_settings', 'Additional Settings'),
+      title: t('publishing_options', 'Publishing options'),
       children: (
         <SettingsModal
           integration={integration}
@@ -161,12 +168,28 @@ const PublishingOptions: FC<{ integration: any; mutate: () => void }> = ({
     return null;
   }
 
+  const countLabel =
+    options.length === 1
+      ? t('one_publishing_option', '1 publishing option')
+      : t('n_publishing_options', '{count} publishing options').replace(
+          '{count}',
+          String(options.length)
+        );
+
   return (
-    <div data-ch-opts="1" className="flex flex-col gap-[8px]">
+    <div
+      data-ch-opts="1"
+      className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]"
+    >
       <button
         type="button"
+        aria-expanded={openList}
+        aria-controls={`ch-opts-${integration.id}`}
         onClick={() => setOpenList((v) => !v)}
-        className="flex w-full items-center gap-[12px] rounded-pqMd bg-pqPop px-[15px] py-[13px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover"
+        className={clsx(
+          'flex w-full items-center gap-[12px] px-[15px] py-[13px] text-start transition-colors hover:bg-pqHover',
+          openList && 'border-b border-pqLine'
+        )}
       >
         <span className="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-pqSettings text-pqMuted">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
@@ -184,10 +207,7 @@ const PublishingOptions: FC<{ integration: any; mutate: () => void }> = ({
             {t('platform_options', '{{name}} options', { name: platformLabel })}
           </span>
           <span className="mt-[2px] block text-[12.5px] text-pqMuted">
-            {t('n_publishing_options', '{count} publishing options').replace(
-              '{count}',
-              String(options.length)
-            )}
+            {countLabel}
           </span>
         </span>
         <svg
@@ -211,39 +231,42 @@ const PublishingOptions: FC<{ integration: any; mutate: () => void }> = ({
       </button>
       {openList && (
         <div
+          id={`ch-opts-${integration.id}`}
           data-publishing-options={options.length}
-          className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]"
+          className="bg-pqThird"
         >
-          {options.map((option: any) => (
-            <div
-              key={option.title}
-              className="flex items-center gap-[12px] border-b border-pqLine px-[15px] py-[12px] last:border-b-0"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[13.5px] font-[600] text-pqText">
-                  {option.title}
-                </div>
-                <div className="mt-[2px] text-[12.5px] text-pqMuted">
-                  {option.type === 'boolean' || option.type === 'checkbox'
-                    ? t(
-                        'applies_to_every_post_on_this_channel',
-                        'Applies to every post on this channel.'
-                      )
-                    : t(
-                        'default_value_used_when_publishing_here',
-                        'Default value used when publishing here'
-                      )}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={openEditor}
-                className="shrink-0 text-[13px] font-[600] text-pqFocused hover:underline"
+          {options.map((option: any) => {
+            const copy = publishingOptionCopy(option, (key, fallback) =>
+              t(key, fallback)
+            );
+            return (
+              <div
+                key={option.title}
+                className="flex items-center gap-[12px] border-b border-pqLine py-[12px] pe-[15px] ps-[57px] last:border-b-0"
               >
-                {t('edit', 'Edit')}
-              </button>
-            </div>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-[600] text-pqText">
+                    {copy.title}
+                  </div>
+                  <div className="mt-[2px] text-[12.5px] leading-[1.45] text-pqMuted">
+                    {copy.hint}
+                  </div>
+                </div>
+                {copy.status ? (
+                  <span className="grid h-[20px] shrink-0 place-items-center rounded-full bg-pqSettings px-[8px] text-[11px] font-[600] tabular-nums text-pqMuted">
+                    {copy.status}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  className="grid h-[30px] shrink-0 place-items-center rounded-pqSm bg-pqBtnSimple px-[12px] text-[12.5px] font-[600] text-pqText hover:bg-pqHover"
+                >
+                  {t('edit', 'Edit')}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1171,6 +1194,9 @@ export const ChannelsComponent: FC = () => {
               title={channelNameWithHandle(integration)}
               role="button"
               tabIndex={0}
+              aria-current={
+                !adding && current?.id === integration.id ? 'true' : undefined
+              }
               onClick={() => {
                 setSelected(integration.id);
                 setInviteAdd(false);
@@ -1219,7 +1245,12 @@ export const ChannelsComponent: FC = () => {
                 data-crl="1"
                 className="min-w-0 flex-1 group-[.sidebar]:hidden"
               >
-                <span className="block truncate text-[14px]">
+                <span
+                  className={clsx(
+                    'block truncate text-[14px]',
+                    !adding && current?.id === integration.id && 'font-[600]'
+                  )}
+                >
                   {integration.name}
                 </span>
                 <span
@@ -1228,10 +1259,12 @@ export const ChannelsComponent: FC = () => {
                     needsAttention(integration) ? 'text-pqWarn' : 'text-pqMuted'
                   )}
                 >
-                  {needsAttention(integration)
-                    ? t('needs_reconnect', 'Needs reconnect')
-                    : formatChannelHandle(integration.display) ||
-                      integration.identifier}
+                  {channelListSubtitle(
+                    integration,
+                    needsAttention(integration)
+                      ? t('needs_reconnect', 'Needs reconnect')
+                      : undefined
+                  )}
                 </span>
               </span>
             </div>
@@ -1381,10 +1414,10 @@ export const ChannelsComponent: FC = () => {
                   />
                 </span>
                 <div className="min-w-0 max-w-[420px] flex-1">
-                  <div className="truncate text-[19px] font-[600] -tracking-[0.01em]">
+                  <div className="truncate text-[19px] font-[600] leading-[1.2] -tracking-[0.01em] text-pqText">
                     {current.name}
                   </div>
-                  <div className="mt-[4px] flex items-center gap-[8px]">
+                  <div className="mt-[5px] flex min-w-0 flex-wrap items-center gap-x-[8px] gap-y-[6px]">
                     {needsAttention(current) ? (
                       <button
                         type="button"
