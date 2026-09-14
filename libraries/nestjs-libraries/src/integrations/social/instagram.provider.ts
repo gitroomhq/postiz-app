@@ -699,6 +699,17 @@ export class InstagramProvider
               )}`
             : ``;
 
+        // location_id is not supported on stories, and for carousels it goes
+        // on the parent container (created in finalizePost), not the children
+        const location =
+          firstPost?.settings?.location?.id &&
+          !isStory &&
+          firstPost?.media?.length === 1
+            ? `&location_id=${encodeURIComponent(
+                firstPost.settings.location.id
+              )}`
+            : ``;
+
         // audio_configuration is only supported for Reels (single video, not a story)
         // and only with Facebook Login (not Instagram Login / graph.instagram.com)
         const audioConfiguration =
@@ -724,7 +735,7 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${collaborators}${trialParams}${audioConfiguration}${location}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -754,6 +765,9 @@ export class InstagramProvider
               : 'carousel',
           containers: medias,
           message: firstPost?.message || '',
+          ...(firstPost?.settings?.location?.id && !isStory
+            ? { locationId: firstPost.settings.location.id }
+            : {}),
         },
       },
     ];
@@ -767,6 +781,7 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      locationId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -833,6 +848,7 @@ export class InstagramProvider
       containers: string[];
       message?: string;
       carouselId?: string;
+      locationId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -889,7 +905,11 @@ export class InstagramProvider
             pendingData.message || ''
           )}&media_type=CAROUSEL&children=${encodeURIComponent(
             pendingData.containers.join(',')
-          )}&access_token=${accessToken}`,
+          )}${
+            pendingData.locationId
+              ? `&location_id=${encodeURIComponent(pendingData.locationId)}`
+              : ''
+          }&access_token=${accessToken}`,
           {
             method: 'POST',
           }

@@ -48,6 +48,16 @@ export class InstagramAudio {
   @Max(100)
   video_volume?: number;
 }
+export class InstagramLocation {
+  @IsDefined()
+  @IsString()
+  id: string;
+
+  @IsOptional()
+  @IsString()
+  label?: string;
+}
+
 export class InstagramDto {
   @IsIn(['post', 'story'])
   @IsDefined()
@@ -70,4 +80,9 @@ export class InstagramDto {
   @ValidateNested()
   @IsOptional()
   audio?: InstagramAudio;
+
+  @Type(() => InstagramLocation)
+  @ValidateNested()
+  @IsOptional()
+  location?: InstagramLocation;
 }

@@ -7,6 +7,7 @@ import {
 import { FC } from 'react';
 import { Select } from '@gitroom/react/form/select';
 import { Checkbox } from '@gitroom/react/form/checkbox';
+import { Input } from '@gitroom/react/form/input';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramCollaboratorsTags } from '@gitroom/frontend/components/new-launch/providers/instagram/instagram.tags';
@@ -68,6 +69,24 @@ const InstagramCollaborators: FC<{
             value: [],
           })}
         />
+      )}
+
+      {postCurrentType !== 'story' && (
+        <div className="mt-[18px]">
+          <Input
+            label={t(
+              'instagram_location_label',
+              'Location - Facebook Places ID (optional)'
+            )}
+            placeholder={t(
+              'instagram_location_placeholder',
+              'e.g. 7640348500 - the page ID of the place on Facebook'
+            )}
+            {...register('location.id', {
+              value: '',
+            })}
+          />
+        </div>
       )}
 
       {postCurrentType === 'post' && (
