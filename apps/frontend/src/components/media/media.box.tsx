@@ -38,6 +38,8 @@ const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 
 /** Grid tiles are square. `4/3` made a portrait photo look like a banner. */
 export const MEDIA_LIBRARY_THUMB_ASPECT = 'aspect-square';
+/** Out of flow so a landscape file cannot stretch the cell. Crop, don't squash. */
+export const MEDIA_LIBRARY_THUMB_FILL = 'absolute inset-0 h-full w-full';
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -678,11 +680,14 @@ export const MediaBox: FC<{
                       >
                         <div
                           className={clsx(
-                            'relative grid place-items-center overflow-hidden rounded-[10px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1 transition-[outline-color] group-hover:outline-pqBrand',
+                            'relative w-full overflow-hidden rounded-[10px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1 transition-[outline-color] group-hover:outline-pqBrand',
                             MEDIA_LIBRARY_THUMB_ASPECT
                           )}
                         >
-                          <MediaThumb media={media} />
+                          <MediaThumb
+                            media={media}
+                            className={MEDIA_LIBRARY_THUMB_FILL}
+                          />
                           {isVideoMedia(media) && (
                             <span className="absolute bottom-[7px] end-[7px] flex h-[19px] items-center gap-[4px] rounded-[5px] bg-black/72 px-[6px] text-[10px] font-[600] tabular-nums text-white">
                               {media.duration || t('video', 'Video')}
@@ -1010,14 +1015,17 @@ export const MediaBox: FC<{
                     className={clsx(
                       // Selection chrome: 2px brand border flush on the thumb
                       // edge — no ring-offset halo/gap between image and ring.
-                      'relative grid place-items-center overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
+                      'relative w-full overflow-hidden rounded-[10px] bg-pqSettings border-2 transition-[border-color]',
                       MEDIA_LIBRARY_THUMB_ASPECT,
                       marked
                         ? 'border-pqBrand'
                         : 'border-pqBorder group-hover:border-pqBrand'
                     )}
                   >
-                    <MediaThumb media={media} />
+                    <MediaThumb
+                      media={media}
+                      className={MEDIA_LIBRARY_THUMB_FILL}
+                    />
                     {isVideoMedia(media) && !marked && (
                       <span className="absolute bottom-[7px] end-[7px] flex h-[19px] items-center gap-[4px] rounded-[5px] bg-black/72 px-[6px] text-[10px] font-[600] tabular-nums text-white">
                         {media.duration || t('video', 'Video')}

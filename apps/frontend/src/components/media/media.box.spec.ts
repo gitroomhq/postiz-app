@@ -11,6 +11,17 @@ const source = readFileSync(
 describe('Media library thumbnails', () => {
   it('are square tiles, not 4/3 banners', () => {
     assert.match(source, /MEDIA_LIBRARY_THUMB_ASPECT = 'aspect-square'/);
+    assert.match(source, /MEDIA_LIBRARY_THUMB_FILL = 'absolute inset-0 h-full w-full'/);
     assert.doesNotMatch(source, /aspect-\[4\/3\]/);
+  });
+
+  it('crops the drop-zone and picker grids with object-cover', () => {
+    assert.match(source, /data-pq="media-grid"/);
+    assert.match(source, /data-pq="media-library-grid"/);
+    assert.equal(
+      source.split('className={MEDIA_LIBRARY_THUMB_FILL}').length - 1,
+      2
+    );
+    assert.match(source, /className="h-full w-full object-cover"/);
   });
 });
