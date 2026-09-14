@@ -1859,11 +1859,11 @@ const CalendarItem: FC<{
             alt=""
           />
         </span>
-        <span className="shrink-0 text-[10px] font-[700] text-pqMuted">
+        <span className="min-w-0 truncate text-[10px] font-[700] text-pqMuted">
           {timeLabel}
         </span>
         {state === 'PUBLISHED' && (
-          <span className="shrink-0 text-[8px] font-[800] uppercase tracking-[0.04em] text-pqOk">
+          <span className="shrink-0 whitespace-nowrap text-[8px] font-[800] uppercase tracking-[0.04em] text-pqOk">
             {t('published', 'Published')}
           </span>
         )}
@@ -1950,7 +1950,7 @@ const CalendarItem: FC<{
               </span>
             )}
             {state === 'PUBLISHED' && (
-              <span className="flex h-[16px] shrink-0 items-center gap-[4px] rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk">
+              <span className="flex h-[16px] shrink-0 items-center gap-[4px] whitespace-nowrap rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk">
                 <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
                 {t('published', 'Published')}
               </span>
@@ -2054,7 +2054,7 @@ const CalendarItem: FC<{
             src={post.integration.picture! || '/no-picture.jpg'}
             alt=""
           />
-          <span className="shrink-0 text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
+          <span className="min-w-0 truncate text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
             {/* `dayjs.utc(...).local()`, the same reading the cell above uses to
                 decide which hour row this card belongs in. `newDayjs(x)` parses
                 the stored UTC string as local, so the card printed the UTC hour
@@ -2074,14 +2074,22 @@ const CalendarItem: FC<{
               !
             </span>
           )}
+          {!!tagNames && (
+            <span className="grid h-[14px] min-w-0 max-w-[72px] shrink place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
+              {tagNames}
+            </span>
+          )}
+          <span className="min-w-0 flex-1" />
+        </div>
+        <div className="flex min-w-0 items-start gap-[4px]">
           {state === 'PUBLISHED' && (
-            <span className="flex h-[14px] shrink-0 items-center gap-[3px] rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk">
+            <span className="mt-[1px] flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk">
               <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
               {t('published', 'Published')}
             </span>
           )}
           {state === 'QUEUE' && (
-            <span className="flex shrink-0 items-center gap-[4px] text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqFocused">
+            <span className="mt-[1px] flex shrink-0 items-center gap-[4px] whitespace-nowrap text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqFocused">
               <span
                 className="size-[5px] rounded-full bg-pqFocused"
                 aria-hidden
@@ -2090,24 +2098,18 @@ const CalendarItem: FC<{
             </span>
           )}
           {state === 'DRAFT' && (
-            <span className="shrink-0 text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqSoft">
+            <span className="mt-[1px] shrink-0 whitespace-nowrap text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqSoft">
               {t('draft', 'Draft')}
             </span>
           )}
-          {!!tagNames && (
-            <span className="grid h-[14px] min-w-0 max-w-[72px] shrink place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
-              {tagNames}
-            </span>
-          )}
-          <span className="min-w-0 flex-1" />
-        </div>
-        <div
-          className={clsx(
-            'break-words text-start text-[11px] leading-[1.3] text-pqText',
-            lineClamp === 1 ? 'line-clamp-1' : 'line-clamp-2'
-          )}
-        >
-          {contentPreview}
+          <div
+            className={clsx(
+              'min-w-0 flex-1 break-words text-start text-[11px] leading-[1.3] text-pqText',
+              lineClamp === 1 ? 'line-clamp-1' : 'line-clamp-2'
+            )}
+          >
+            {contentPreview}
+          </div>
         </div>
       </div>
       {/* Prototype: Open / Duplicate / Preview / Delete — no Statistics on
