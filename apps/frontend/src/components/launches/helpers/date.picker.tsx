@@ -1,4 +1,5 @@
 import { FC, useCallback, useState } from 'react';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 // Aliased: this module exports its own `DatePicker`, which is the whole popover
 // below, not the month grid inside it.
@@ -28,8 +29,9 @@ const DAY_CLASSNAMES = [
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
+  className?: string;
 }> = (props) => {
-  const { date, onChange } = props;
+  const { date, onChange, className } = props;
   const [open, setOpen] = useState(false);
   const t = useT();
   const { dateTimePattern } = useDateFormat();
@@ -66,18 +68,23 @@ export const DatePicker: FC<{
   );
   return (
     <div
-      className="px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1"
+      className={clsx(
+        'relative ml-[7px] flex h-[44px] flex-1 select-none items-center justify-center gap-[8px] rounded-[8px] border border-newTextColor/10 px-[16px] text-[15px] font-[600]',
+        className
+      )}
       ref={ref}
     >
       <div
-        className="flex flex-1 cursor-pointer items-center justify-center gap-[8px]"
+        className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-[8px]"
         onClick={changeShow}
         ref={referenceRef}
       >
-        <div>
+        <div className="shrink-0">
           <CalendarIcon />
         </div>
-        <div>{date.format(dateTimePattern())}</div>
+        <div className="min-w-0 truncate whitespace-nowrap tabular-nums">
+          {date.format(dateTimePattern())}
+        </div>
       </div>
       {open && (
         <div

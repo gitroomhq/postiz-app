@@ -723,7 +723,7 @@ export const ConnectPanel: FC<{
   );
   const { backendUrl } = useVariables();
   const toaster = useToaster();
-  const { mobile, tablet, desktop } = useViewport();
+  const { mobile, tablet, desktop, touch } = useViewport();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tourKey = useTourStepKey();
@@ -1727,6 +1727,8 @@ export const ConnectPanel: FC<{
         '[&_a]:cursor-pointer [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed',
         mobile
           ? 'h-full w-full flex-col pb-[env(safe-area-inset-bottom)]'
+          : touch
+          ? 'h-full w-full rounded-none'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >

@@ -28,6 +28,30 @@ const helpMenu = readFileSync(
   'utf8',
 );
 
+const overlay = readFileSync(
+  fileURLToPath(new URL('./leave-settings.tsx', import.meta.url)),
+  'utf8',
+);
+const settings = readFileSync(
+  fileURLToPath(new URL('./settings.component.tsx', import.meta.url)),
+  'utf8',
+);
+const connect = readFileSync(
+  fileURLToPath(
+    new URL('../public-api/connect-panel.tsx', import.meta.url)
+  ),
+  'utf8',
+);
+
+describe('settings and connect overlay on tablet', () => {
+  it('covers the app chrome and goes edge to edge on phone and tablet', () => {
+    assert.match(overlay, /z-\[220\]/);
+    assert.match(overlay, /touch \? 'p-0' : 'p-\[44px_24px\]'/);
+    assert.match(settings, /touch\s*\n\s*\? 'h-full w-full rounded-none'/);
+    assert.match(connect, /touch\s*\n\s*\? 'h-full w-full rounded-none'/);
+  });
+});
+
 describe('phone account and help chrome', () => {
   it('opens the account menu as a bottom sheet', () => {
     assert.match(userMenu, /<MobileSheet/);

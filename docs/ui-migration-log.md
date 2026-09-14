@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Clipped Settings/Connect cards and composer footer on phone and tablet.** The overlay sat at z-90 under the header/rail and used 20px padding below 1180px, so search and nav were cut off and Create Post painted on the card. Phone composer’s “Check the circles above…” CTA wrapped over Repeat/Date. Overlay is now z-220 and edge-to-edge on `touch`; tablet cards fill the scrim; the footer stacks date above the actions and reuses `select_channels`. i18n 0.
+
 **Phone native UX (viewport, sheets, Settings stack, calendar agenda, composer tabs).** The redesign already had a 760px drawer, but Settings capped nav at 132px, week/month stayed 7-column grids, and the composer stacked a 340px preview on the editor. Phone now uses `viewport-fit: cover` + safe-area utilities, a shared `MobileSheet`, edge-to-edge modals, an iOS-style Settings/Connect push stack, week-as-day-chips + agenda, month as a compact date picker, Edit/Preview composer tabs, and 44px taps. i18n 0 — reused existing keys (`back`, `close`, `edit`, `preview`, `move`, `posts`, `date`).
 
 **Stripe finalize pass: what turning tax on broke, and what the webhook hardening

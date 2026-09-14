@@ -47,6 +47,12 @@ describe('phone calendar and composer', () => {
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });
 
+  it('keeps the composer footer from overlapping on phone and tablet', () => {
+    assert.match(manage, /grid w-full grid-cols-2/);
+    assert.match(manage, /touch\s*\n\s*\? t\('select_channels'/);
+    assert.match(manage, /!ml-0 w-full flex-none/);
+  });
+
   it('opens Day/Week/Month from a single View sheet on phone', () => {
     const filters = readFileSync(
       fileURLToPath(new URL('./filters.tsx', import.meta.url)),

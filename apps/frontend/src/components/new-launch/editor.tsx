@@ -844,7 +844,7 @@ export const Editor: FC<{
                     )}
                   </span>
                 </span>
-                <span className="flex shrink-0 flex-wrap items-center gap-[6px]">
+                <span className="flex min-w-0 flex-wrap items-center gap-[6px]">
                   {(
                     [
                       {

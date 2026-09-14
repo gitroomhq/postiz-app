@@ -166,7 +166,7 @@ export const SettingsPopup: FC<{
   }, [modal]);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const [query, setQuery] = useState('');
 
   // Tabs can be deep-linked, e.g. /settings?tab=api (Connect) or ?tab=teams
@@ -496,6 +496,8 @@ export const SettingsPopup: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col pb-[env(safe-area-inset-bottom)]'
+          : touch
+          ? 'h-full w-full rounded-none'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >

@@ -859,29 +859,35 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         >
           <div
             className={clsx(
-              'flex min-w-0 items-center gap-[8px]',
-              touch ? 'w-full' : 'flex-1 ps-[20px]'
+              'min-w-0 gap-[8px]',
+              touch
+                ? 'grid w-full grid-cols-2'
+                : 'flex flex-1 items-center ps-[20px]'
             )}
           >
             {!dummy && (
-              <TagsComponent
-                name="tags"
-                label={t('tags', 'Tags')}
-                initial={tags}
-                onChange={(e) => {
-                  setTags(e.target.value);
-                }}
-              />
+              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+                <TagsComponent
+                  name="tags"
+                  label={t('tags', 'Tags')}
+                  initial={tags}
+                  onChange={(e) => {
+                    setTags(e.target.value);
+                  }}
+                />
+              </div>
             )}
 
             {!dummy && (
-              <RepeatComponent repeat={repeater} onChange={setRepeater} />
+              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+                <RepeatComponent repeat={repeater} onChange={setRepeater} />
+              </div>
             )}
           </div>
           <div
             className={clsx(
-              'flex items-center justify-end gap-[8px]',
-              touch ? 'w-full flex-wrap' : 'shrink-0 pe-[20px]'
+              'flex min-w-0 items-center justify-end gap-[8px]',
+              touch ? 'w-full flex-col' : 'shrink-0 pe-[20px]'
             )}
           >
             {existingData?.integration && (
@@ -895,7 +901,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <div>{t('delete_post', 'Delete Post')}</div>
               </button>
             )}
-            <DatePicker onChange={setDate} date={date} />
+            <DatePicker
+              onChange={setDate}
+              date={date}
+              className={touch ? '!ml-0 w-full flex-none' : undefined}
+            />
+            <div
+              className={clsx(
+                'flex min-w-0 items-center justify-end gap-[8px]',
+                touch && 'w-full'
+              )}
+            >
             {!addEditSets && (
               <button
                 disabled={
@@ -903,8 +919,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 }
                 onClick={schedule('draft')}
                 className={clsx(
-                  'relative flex h-[42px] cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple px-[18px] text-[14px] font-[600] disabled:cursor-not-allowed',
-                  touch && 'min-w-0 flex-1'
+                  'relative flex cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple text-[14px] font-[600] disabled:cursor-not-allowed',
+                  touch
+                    ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                    : 'h-[42px] px-[18px]'
                 )}
               >
                 {loading && (
@@ -912,7 +930,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Spinner width={20} height={20} />
                   </div>
                 )}
-                <div className={clsx(loading && 'invisible')}>
+                <div className={clsx('truncate', loading && 'invisible')}>
                   {t('save_as_draft', 'Save as Draft')}
                 </div>
               </button>
@@ -920,8 +938,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             {addEditSets && (
               <button
                 className={clsx(
-                  'btnSub flex h-[42px] items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
-                  touch ? 'min-w-0 flex-1' : 'min-w-[168px]'
+                  'btnSub flex items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                  touch
+                    ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                    : 'h-[42px] min-w-[168px] px-[18px]'
                 )}
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
@@ -933,7 +953,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {!addEditSets && (
               <div className={clsx('relative', touch && 'flex min-w-0 flex-1')} ref={postNowClickRef}>
-                <div className={clsx('flex', touch && 'w-full')} ref={postNowRef}>
+                <div className={clsx('flex min-w-0', touch && 'w-full')} ref={postNowRef}>
                   <button
                     type="button"
                     disabled={
@@ -941,8 +961,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     }
                     onClick={schedule('schedule')}
                     className={clsx(
-                      'btnSub relative flex h-[42px] items-center justify-center rounded-s-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
-                      touch ? 'min-w-0 flex-1' : 'min-w-[168px]'
+                      'btnSub relative flex items-center justify-center rounded-s-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                      touch
+                        ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                        : 'h-[42px] min-w-[168px] px-[18px]'
                     )}
                   >
                     {loading && (
@@ -950,12 +972,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         <Spinner width={20} height={20} />
                       </div>
                     )}
-                    <span className={clsx(loading && 'invisible')}>
+                    <span className={clsx('truncate', loading && 'invisible')}>
                       {selectedIntegrations.length === 0
-                        ? t(
-                            'check_circles_above',
-                            'Check the circles above to pick a channel'
-                          )
+                        ? touch
+                          ? t('select_channels', 'Select channels')
+                          : t(
+                              'check_circles_above',
+                              'Check the circles above to pick a channel'
+                            )
                         : dummy
                         ? t('create_output', 'Create output')
                         : !existingData?.integration
@@ -975,7 +999,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       aria-label={t('more', 'More')}
                       data-tooltip-id="tooltip"
                       data-tooltip-content={t('more', 'More')}
-                      className="grid h-[42px] w-[38px] place-items-center rounded-e-[10px] bg-pqBrand text-white shadow-[inset_1px_0_0_rgba(255,255,255,.24)] outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                      className={clsx(
+                        'grid w-[38px] shrink-0 place-items-center rounded-e-[10px] bg-pqBrand text-white shadow-[inset_1px_0_0_rgba(255,255,255,.24)] outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                        touch ? 'h-[44px]' : 'h-[42px]'
+                      )}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1014,6 +1041,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
