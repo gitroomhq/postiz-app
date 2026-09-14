@@ -541,7 +541,6 @@ conn_docs_claude_code
 conn_docs_cli
 conn_docs_cli_auth
 conn_docs_codex
-conn_docs_cta
 conn_docs_cursor
 conn_docs_discord_chat
 conn_docs_gemini
@@ -945,14 +944,12 @@ connect_nav_oauth_apps
 connect_nav_public_api
 connect_nav_sdk
 connect_nav_section
-connect_nav_settings
 connect_open_integrations
 connect_open_oauth_apps
 connect_post
 connect_postqueen
 connect_telegram
 connect_this_channel
-connect_view_all
 connect_your_accounts
 connect_your_repository
 connected

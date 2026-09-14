@@ -1296,3 +1296,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 **Method is under the title, not stuck on the logo.** The MCP/Skill/Chat chip on the large icon overlapped the artwork. The icon is clean; method (and Coming soon) sit on a second line under the name.
 
 **Hub credential strip is a card, not one mixed row.** The key sits on its own row with Reveal and Copy key. Copy MCP URL and Copy API header are actions on a second row. The dead `Authorization: KEY` chip is gone; that header is now copyable. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (`conn_copy_key`, `conn_copy_header`; 1975 → 1977).
+
+## Connect: one Connectors row, automation on the left rail
+
+**i18n -3 (`connect_view_all`, `connect_nav_settings`, `conn_docs_cta`).** The Connectors heading stays. Its one child is labeled Connectors, not All. Agents / Bots / Chat / Editors / Automation left the rail; they remain group headings inside the Connectors panel. n8n, Zapier and Make sit on the rail next to Webhooks and RSS AutoPost. Webhooks and RSS still leave to Settings. `?nav=agents` and friends resolve to Connectors. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
