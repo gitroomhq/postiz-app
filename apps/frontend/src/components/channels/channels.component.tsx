@@ -1189,7 +1189,7 @@ export const ChannelsComponent: FC = () => {
                   alt={integration.identifier}
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className="size-[32px] rounded-full object-cover"
                 />
                 <img
                   src={`/icons/platforms/${integration.identifier}.png`}
@@ -1359,14 +1359,12 @@ export const ChannelsComponent: FC = () => {
                     alt={current.identifier}
                     width={52}
                     height={52}
-                    className="size-[52px] rounded-[15px] object-cover"
+                    className="size-[52px] rounded-full object-cover"
                   />
-                  <span
-                    className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full bg-[length:13px] bg-center bg-no-repeat"
-                    style={{
-                      backgroundColor: 'var(--badgeRing)',
-                      backgroundImage: `url(/icons/platforms/${current.identifier}.png)`,
-                    }}
+                  <img
+                    src={`/icons/platforms/${current.identifier}.png`}
+                    alt=""
+                    className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full border border-pqInner object-cover"
                   />
                 </span>
                 <div className="min-w-0 max-w-[420px] flex-1">

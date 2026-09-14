@@ -1316,3 +1316,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: open a card from the top of the pane
 
 **i18n 0.** Hub and detail share one overflow column. Scrolling the marketplace then clicking an agent kept that scrollTop, so Back and the title sat above the fold. `nav` / `picked` now reset the pane with `useLayoutEffect`, same idea as Channels `scrollResetKey`.
+
+## Channels: detail avatar is a circle, like the rail
+
+**i18n 0.** The rail already clipped the Facebook page photo to a circle. The detail header used `rounded-[15px]`, so the same square logo looked like a rounded tile. Channels detail and Analytics detail now use `rounded-full object-cover` and the same round platform badge as the rail.

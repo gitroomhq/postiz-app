@@ -527,14 +527,12 @@ export const PlatformAnalytics = () => {
                   alt=""
                   width={44}
                   height={44}
-                  className="size-[44px] rounded-[13px] object-cover"
+                  className="size-[44px] rounded-full object-cover"
                 />
-                <span
-                  className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full bg-[length:13px] bg-center bg-no-repeat"
-                  style={{
-                    backgroundColor: 'var(--badgeRing)',
-                    backgroundImage: `url(/icons/platforms/${currentIntegration.identifier}.png)`,
-                  }}
+                <img
+                  src={`/icons/platforms/${currentIntegration.identifier}.png`}
+                  alt=""
+                  className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full border border-pqInner object-cover"
                 />
               </span>
               <div className="min-w-0">
