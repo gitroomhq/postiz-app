@@ -247,6 +247,7 @@ const ExamplesBlock: FC<{
   mask?: (text: string) => string;
 }> = ({ kind, examples, name, mask }) => {
   const t = useT();
+  const toaster = useToaster();
   if (!examples.length) return null;
 
   const isTalk = kind === 'chat' || kind === 'bot';
@@ -281,7 +282,6 @@ const ExamplesBlock: FC<{
           );
 
   const youLabel = t('conn_examples_you', 'You');
-  const toaster = useToaster();
   const total = examples.length;
 
   const sampleCard = (ex: Example, i: number, inner: ReactNode) => {
