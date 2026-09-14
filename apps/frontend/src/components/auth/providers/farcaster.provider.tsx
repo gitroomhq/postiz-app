@@ -10,7 +10,7 @@ export const FarcasterProvider = () => {
   const fetch = useFetch();
   const gotoLogin = useCallback(async (code: string) => {
     const state = await (await fetch('/auth/oauth/FARCASTER')).text();
-    window.location.href = `/auth?provider=FARCASTER&code=${code}&state=${state}`;
+    window.location.href = `/auth?provider=FARCASTER&code=${encodeURIComponent(code)}&state=${state}`;
   }, []);
   return <ButtonCaster login={gotoLogin} />;
 };
