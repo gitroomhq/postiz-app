@@ -159,7 +159,7 @@ export function RegisterAfter({
   // from a provider round-trip.
   const emailFields = (
     <div className="flex flex-col gap-[12px]">
-      <div className="text-textColor">
+      <div className="flex flex-col gap-[20px] text-textColor">
         {!isAfterProvider && (
           <>
             <Input

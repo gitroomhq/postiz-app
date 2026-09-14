@@ -136,7 +136,7 @@ export function Login() {
           extraProviders={walletLogin ? <WalletProvider /> : undefined}
           emailStep={
             <div className="flex flex-col gap-[12px]">
-              <div className="text-textColor">
+              <div className="flex flex-col gap-[20px] text-textColor">
                 <Input
                   label="Email"
                   translationKey="label_email"

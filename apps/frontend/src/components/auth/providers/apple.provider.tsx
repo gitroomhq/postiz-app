@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { oauthButtonClass } from '@gitroom/frontend/components/auth/oauth-button-class';
 export const AppleProvider = () => {
   const fetch = useFetch();
   const t = useT();
@@ -30,7 +31,7 @@ export const AppleProvider = () => {
       type="button"
       onClick={gotoLogin}
       aria-label={t('continue_with_apple', 'Continue with Apple')}
-      className="cursor-pointer w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px] text-[15px] font-[500]"
+      className={oauthButtonClass}
     >
       <div>
         <svg
