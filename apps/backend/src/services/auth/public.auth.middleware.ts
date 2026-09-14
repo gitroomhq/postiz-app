@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
+import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 
 @Injectable()
 export class PublicAuthMiddleware implements NestMiddleware {
@@ -59,6 +60,13 @@ export class PublicAuthMiddleware implements NestMiddleware {
     } catch (err) {
       throw new HttpForbiddenException();
     }
+
+    setSentryUserContext({
+      // @ts-ignore
+      orgId: req.org.id,
+      // @ts-ignore
+      paymentId: req.org.paymentId,
+    });
     next();
   }
 }

@@ -9,6 +9,7 @@ import {
   Put,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
+import { UpdatePostSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/update.post.settings.dto';
 import {
   AuthorizationActions,
   Sections,
@@ -39,7 +41,7 @@ import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notification
 import { Readable } from 'stream';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fromBuffer } = require('file-type');
+const { fileTypeFromBuffer } = require('file-type');
 
 const PUBLIC_API_ALLOWED_MIME = new Set<string>([
   'image/jpeg',
@@ -60,6 +62,8 @@ import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 
@@ -74,7 +78,8 @@ export class PublicIntegrationsController {
     private _mediaService: MediaService,
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _usersService: UsersService
   ) {}
 
   @Post('/upload')
@@ -129,7 +134,7 @@ export class PublicIntegrationsController {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    const detected = await fromBuffer(buffer);
+    const detected = await fileTypeFromBuffer(buffer);
     if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
       throw new HttpException({ msg: 'Unsupported file type.' }, 400);
     }
@@ -339,8 +344,16 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'Integration not allowed' }, 400);
     }
 
-    const integrationProvider =
-      this._integrationManager.getSocialIntegration(integration);
+    // A provider migrated via MIGRATE_PROVIDERS reconnects through its target
+    // provider's OAuth: the callback lands on the target and the channel is
+    // migrated in place (see migrateIntegration).
+    const migrateTo = refresh
+      ? this._integrationManager.getMigrationTarget(integration)
+      : undefined;
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      migrateTo || integration
+    );
 
     if (integrationProvider.externalUrl) {
       throw new HttpException(
@@ -366,6 +379,16 @@ export class PublicIntegrationsController {
     } catch (err) {
       throw new HttpException({ msg: 'Failed to generate auth URL' }, 500);
     }
+  }
+
+  @Get('/users')
+  @UseGuards(SuperAdminGuard)
+  async listUsers(
+    @GetOrgFromRequest() org: Organization,
+    @Query('name') name: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._usersService.getImpersonateUser(name);
   }
 
   @Get('/notifications')
@@ -472,6 +495,21 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._postsService.getMissingContent(org.id, id);
+  }
+
+  @Put('/posts/:id/settings')
+  async updatePostSettings(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string,
+    @Body() body: UpdatePostSettingsDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postsService.updatePostSettings(
+      org.id,
+      id,
+      body.settings,
+      'API'
+    );
   }
 
   @Put('/posts/:id/status')
