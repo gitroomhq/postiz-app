@@ -7,7 +7,10 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -286,6 +289,9 @@ export class AuthController {
     }
   }
 
+  // public and creates a signer at Neynar per call, so cap it per client
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @Post('/farcaster/signer')
   async farcasterSigner() {
     try {
