@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="410" height="124" viewBox="0 0 410 124" role="img" aria-label="Grok Bot: the cloud agent. Tell it the MCP URL in chat. Not grok.com/connectors.">
+  <defs>
+    <linearGradient id="grokBotBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f0e1d"/><stop offset="1" stop-color="#171331"/></linearGradient>
+  </defs>
+  <rect x="1" y="1" width="408" height="122" rx="18" fill="url(#grokBotBg)" stroke="#2a2150" stroke-width="1.5"/>
+  <rect x="24" y="40" width="44" height="44" rx="10" fill="#e2e4e9" stroke="#c9ccd6" stroke-width="1.5"/>
+  <g transform="translate(31,47) scale(1)">
+    <rect x="0.75" y="0.75" width="28.5" height="28.5" rx="8" fill="#111111" stroke="#2a2a2a" stroke-width="1.5"/>
+    <path d="M15 6.5 17.2 12.3l6.3.5-4.8 3.9 1.5 6.1L15 19.6l-5.2 3.2 1.5-6.1-4.8-3.9 6.3-.5L15 6.5Z" fill="#fff"/>
+  </g>
+  <text x="90" y="42" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" font-weight="700" fill="#ffffff">Grok Bot</text>
+  <text x="90" y="66" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#c4b5fd">Cloud agent: tell it the MCP URL in chat.</text>
+  <text x="90" y="85" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#c4b5fd">Not grok.com/connectors, not Grok Build.</text>
+  <text x="90" y="107" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#c9c2ef">Set-up guide &#187;</text>
+</svg>
