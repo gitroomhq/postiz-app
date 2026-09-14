@@ -1308,3 +1308,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: pointer cursor on every control; Copy key left of MCP URL
 
 **i18n +1 (`conn_go_api_keys`).** Tailwind v4 leaves native `cursor: default` on `<button>`, so Copy MCP URL and the other Connect chips did not look clickable. The panel root now sets `[&_button]:cursor-pointer` and `[&_a]:cursor-pointer`, and the shared chip / rail / hub-card classes do the same. Compact hub strip: Reveal stays on the key row; the right chip is **Go to API Keys** and opens Account → API Keys. Copy key moved to the action row, left of Copy MCP URL. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: example replies answer the prompt
+
+**i18n 0.** Same keys. Sample replies were status logs plus product splits (`Claude chat, not Claude Code`, `Enable PostQueen from +`). They now answer the prompt the way the assistant would: terrace photo drafted to Instagram tonight, same visual on three channels Friday, nothing about which Claude product this is. That distinction stays in the intro and How to connect steps.
