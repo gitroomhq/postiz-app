@@ -1304,3 +1304,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: examples are photos, videos and schedules, not changelogs
 
 **i18n 0.** Same keys. Sample prompts dropped GitHub, README, CHANGELOG and PR language. MCP cards ask to make a photo, a short video, or a visual and schedule it. Chat and skill bots attach a photo or video the user already has. n8n / Zapier / Make start from a new photo or video, not a GitHub release.
+
+## Connect: pointer cursor on every control; Copy key left of MCP URL
+
+**i18n +1 (`conn_go_api_keys`).** Tailwind v4 leaves native `cursor: default` on `<button>`, so Copy MCP URL and the other Connect chips did not look clickable. The panel root now sets `[&_button]:cursor-pointer` and `[&_a]:cursor-pointer`, and the shared chip / rail / hub-card classes do the same. Compact hub strip: Reveal stays on the key row; the right chip is **Go to API Keys** and opens Account → API Keys. Copy key moved to the action row, left of Copy MCP URL. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

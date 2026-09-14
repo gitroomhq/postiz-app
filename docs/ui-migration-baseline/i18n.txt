@@ -605,6 +605,7 @@ conn_gemini_step_cli_detail
 conn_gemini_step_config
 conn_gemini_step_config_detail
 conn_gemini_verify
+conn_go_api_keys
 conn_grok_bot_ex
 conn_grok_bot_ex_ig
 conn_grok_bot_ex_ig_reply

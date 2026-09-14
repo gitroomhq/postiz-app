@@ -678,6 +678,7 @@
   "conn_soon_short": "Soon",
   "conn_copy_key": "Copy key",
   "conn_copy_header": "Copy API header",
+  "conn_go_api_keys": "Go to API Keys",
   "conn_examples_eyebrow": "Examples",
   "conn_examples_not_live": "Not a live chat",
   "conn_examples_count_label": "samples",
