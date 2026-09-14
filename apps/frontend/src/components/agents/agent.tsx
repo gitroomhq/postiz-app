@@ -30,6 +30,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-card';
 import { ChannelsListEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const needsAttention = (integration: {
   refreshNeeded?: boolean;
@@ -443,7 +444,7 @@ export const AgentList: FC<{
                   >
                     {integration.refreshNeeded || integration.inBetweenSteps
                       ? t('needs_reconnect', 'Needs reconnect')
-                      : integration.identifier}
+                      : channelListSubtitle(integration)}
                   </span>
                 </span>
                 {showKebab && (

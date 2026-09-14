@@ -22,6 +22,7 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import type { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const allowedIntegrations = [
   'facebook',
@@ -477,7 +478,7 @@ export const PlatformAnalytics = () => {
                     >
                       {needsRefresh
                         ? t('needs_reconnect', 'Needs reconnect')
-                        : integration.identifier}
+                        : channelListSubtitle(integration)}
                     </span>
                   </span>
                   <div
@@ -543,7 +544,7 @@ export const PlatformAnalytics = () => {
                   {t('analytics_summary_range', '{meta} · last {days} days')
                     .replace(
                       '{meta}',
-                      `@${String(currentIntegration.name || currentIntegration.identifier).replace(/^@/, '')}`
+                      channelListSubtitle(currentIntegration)
                     )
                     .replace('{days}', String(keys))}
                 </div>

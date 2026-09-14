@@ -701,7 +701,7 @@ export const MediaBox: FC<{
                               type="button"
                               onClick={openMenu(media)}
                               title={t('more', 'More')}
-                              className="grid h-[28px] w-[28px] place-items-center rounded-[8px] bg-pqPop text-pqMuted shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)] hover:text-pqText"
+                              className="grid size-[28px] place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-black/80"
                             >
                               <svg
                                 viewBox="0 0 24 24"
@@ -1074,7 +1074,7 @@ export const MediaBox: FC<{
                         type="button"
                         onClick={openMenu(media)}
                         title={t('more', 'More')}
-                        className="grid h-[28px] w-[28px] place-items-center rounded-[8px] bg-pqPop text-pqMuted shadow-pqE2 shadow-[inset_0_0_0_1px_var(--border)] hover:text-pqText"
+                        className="grid size-[28px] place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-black/80"
                       >
                         <svg
                           viewBox="0 0 24 24"

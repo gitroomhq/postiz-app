@@ -19,3 +19,14 @@ export function formatChannelHandle(display?: string | null): string {
   }
   return raw.startsWith('@') ? raw : `@${raw}`;
 }
+
+/** List subtitle: handle when we have one, otherwise the platform slug. */
+export function channelListSubtitle(
+  integration: { display?: string | null; identifier?: string },
+  reconnect?: string
+): string {
+  if (reconnect) {
+    return reconnect;
+  }
+  return formatChannelHandle(integration.display) || integration.identifier || '';
+}

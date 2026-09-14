@@ -17,6 +17,7 @@ import {
   isClientDemoPost,
   useDemoPostAction,
   usePostActions,
+  displayPostState,
 } from '@gitroom/frontend/components/launches/calendar';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
@@ -427,6 +428,7 @@ const QueueCard: FC<{
     [demo, post.id, post.intervalInDays, post.publishDate, post.state]
   );
 
+  const state = displayPostState(post.state, post.publishDate);
   return (
     <div
       // @ts-ignore
@@ -459,9 +461,9 @@ const QueueCard: FC<{
         <span
           className={clsx(
             'flex shrink-0 items-center gap-[5px] text-[11px] font-[500]',
-            post.state === 'PUBLISHED'
+            state === 'PUBLISHED'
               ? 'text-pqOk'
-              : post.state === 'DRAFT'
+              : state === 'DRAFT'
               ? 'text-pqSoft'
               : 'text-pqFocused'
           )}
@@ -470,9 +472,9 @@ const QueueCard: FC<{
             className="size-[5px] rounded-full bg-current"
             aria-hidden="true"
           />
-          {post.state === 'PUBLISHED'
+          {state === 'PUBLISHED'
             ? t('published', 'Published')
-            : post.state === 'DRAFT'
+            : state === 'DRAFT'
             ? t('draft', 'Draft')
             : t('scheduled', 'Scheduled')}
         </span>

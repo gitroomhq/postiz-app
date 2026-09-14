@@ -69,6 +69,7 @@ import { Pagination } from '@gitroom/frontend/components/media/media.pagination'
 import { useRouter } from 'next/navigation';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -109,7 +110,7 @@ export const hours = Array.from(
  * Published (matches the drag dialog that already treats past QUEUE as
  * "already published"). Does not change API / drag payload state.
  */
-function displayPostState(
+export function displayPostState(
   state: State,
   publishDate: string | Date
 ): State {
@@ -117,6 +118,15 @@ function displayPostState(
     return 'PUBLISHED';
   }
   return state;
+}
+
+function postChannelHandle(
+  post: { integration: { id: string } },
+  integrations: Integrations[]
+) {
+  return formatChannelHandle(
+    integrations.find((item) => item.id === post.integration.id)?.display
+  );
 }
 
 /**
@@ -1721,11 +1731,13 @@ const CalendarItem: FC<{
     post,
     date,
     isBeforeNow,
+    integrations,
     state: rawState,
     deletePost,
     lineClamp = 2,
   } = props;
   const state = displayPostState(rawState, post.publishDate);
+  const channelHandle = postChannelHandle(post, integrations);
   // Past QUEUE paints as Published, but the API row is still editable QUEUE.
   const canEdit = rawState !== 'PUBLISHED';
   const user = useUser();
@@ -1850,6 +1862,11 @@ const CalendarItem: FC<{
         <span className="shrink-0 text-[10px] font-[700] text-pqMuted">
           {timeLabel}
         </span>
+        {state === 'PUBLISHED' && (
+          <span className="shrink-0 text-[8px] font-[800] uppercase tracking-[0.04em] text-pqOk">
+            {t('published', 'Published')}
+          </span>
+        )}
         <span className="min-w-0 flex-1 truncate text-[10.5px] text-pqText">
           {contentPreview}
         </span>
@@ -1913,6 +1930,7 @@ const CalendarItem: FC<{
             />
             <span className="min-w-0 truncate text-[11.5px] text-pqSoft">
               {post.integration.name}
+              {channelHandle ? ` · ${channelHandle}` : ''}
             </span>
             <span className="min-w-0 flex-1" />
             {/* Status chip: design only shows Draft; owner wants Scheduled too
@@ -1932,7 +1950,7 @@ const CalendarItem: FC<{
               </span>
             )}
             {state === 'PUBLISHED' && (
-              <span className="flex shrink-0 items-center gap-[4px] text-[9.5px] font-[700] uppercase tracking-[0.04em] text-pqOk">
+              <span className="flex h-[16px] shrink-0 items-center gap-[4px] rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk">
                 <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
                 {t('published', 'Published')}
               </span>
@@ -2063,7 +2081,7 @@ const CalendarItem: FC<{
             </span>
           )}
           {state === 'PUBLISHED' && (
-            <span className="flex shrink-0 items-center gap-[4px] text-[8.5px] font-[700] uppercase tracking-[0.03em] text-pqOk">
+            <span className="flex h-[14px] shrink-0 items-center gap-[3px] rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk">
               <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
               {t('published', 'Published')}
             </span>
@@ -2164,7 +2182,9 @@ const ListItem: FC<{
     post,
   } = props;
   const { disableXAnalytics } = useVariables();
+  const { integrations } = useCalendar();
   const state = displayPostState(post.state, post.publishDate);
+  const channelHandle = postChannelHandle(post, integrations);
   // Same as calendar cells: display may say Published for past QUEUE.
   const canEdit = post.state !== 'PUBLISHED';
   const demo = isClientDemoPost(post.id);
@@ -2244,6 +2264,11 @@ const ListItem: FC<{
           <span className="min-w-0 truncate text-[13px] font-[600] text-pqText">
             {post.integration.name}
           </span>
+          {!!channelHandle && (
+            <span className="min-w-0 truncate text-[12px] font-[500] text-pqMuted">
+              {channelHandle}
+            </span>
+          )}
           <span className="shrink-0 text-[12.5px] font-[600] text-pqSoft">
             {dayjs
               .utc(post.publishDate)
@@ -2853,7 +2878,10 @@ const CopyDebug = () => {
       strokeLinecap="round"
       strokeLinejoin="round"
       data-tooltip-id="tooltip"
-      data-tooltip-content={t('copy_debug_json', 'Copy Debug JSON')}
+      data-tooltip-content={t(
+        'copy_debug_json_admin',
+        'Copy debug JSON (admin)'
+      )}
     >
       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />

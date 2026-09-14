@@ -353,54 +353,61 @@ export const MultiMediaComponent: FC<{
 
                     {!ghost && (
                       <>
-                        <button
-                          type="button"
+                        <div
                           data-ci-actions="1"
-                          aria-label={t('reorder_media', 'Reorder')}
-                          title={t('reorder_media', 'Reorder')}
-                          className="dragging absolute start-[4px] top-[4px] z-[20] grid h-[18px] w-[18px] cursor-move place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-pqText"
-                        >
-                          <svg
-                            viewBox="0 0 12 12"
-                            width="10"
-                            height="10"
-                            fill="currentColor"
-                            aria-hidden="true"
-                          >
-                            <circle cx="3.5" cy="3.5" r="1.1" />
-                            <circle cx="8.5" cy="3.5" r="1.1" />
-                            <circle cx="3.5" cy="8.5" r="1.1" />
-                            <circle cx="8.5" cy="8.5" r="1.1" />
-                          </svg>
-                        </button>
-
-                        <button
-                          type="button"
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/35 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                        />
+                        <div
                           data-ci-actions="1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            clearMedia(index)();
-                          }}
-                          aria-label={t('remove', 'Remove')}
-                          title={t('remove', 'Remove')}
-                          className="absolute end-[4px] top-[4px] z-[20] grid h-[18px] w-[18px] place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-pqDangerChip hover:text-pqDanger"
+                          className="absolute inset-[4px] z-[20] flex items-start justify-between opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                         >
-                          <svg
-                            viewBox="0 0 12 12"
-                            width="9"
-                            height="9"
-                            fill="none"
-                            aria-hidden="true"
+                          <button
+                            type="button"
+                            data-ci-actions="1"
+                            aria-label={t('reorder_media', 'Reorder')}
+                            title={t('reorder_media', 'Reorder')}
+                            className="dragging grid size-[22px] cursor-move place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-black/80"
                           >
-                            <path
-                              d="M3 3l6 6M9 3L3 9"
-                              stroke="currentColor"
-                              strokeWidth="1.6"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </button>
-
+                            <svg
+                              viewBox="0 0 12 12"
+                              width="11"
+                              height="11"
+                              fill="currentColor"
+                              aria-hidden="true"
+                            >
+                              <circle cx="3.5" cy="3.5" r="1.15" />
+                              <circle cx="8.5" cy="3.5" r="1.15" />
+                              <circle cx="3.5" cy="8.5" r="1.15" />
+                              <circle cx="8.5" cy="8.5" r="1.15" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            data-ci-actions="1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearMedia(index)();
+                            }}
+                            aria-label={t('remove', 'Remove')}
+                            title={t('remove', 'Remove')}
+                            className="grid size-[22px] place-items-center rounded-full bg-black/65 text-white backdrop-blur-[2px] hover:bg-pqDanger"
+                          >
+                            <svg
+                              viewBox="0 0 12 12"
+                              width="10"
+                              height="10"
+                              fill="none"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M3 3l6 6M9 3L3 9"
+                                stroke="currentColor"
+                                strokeWidth="1.7"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                         <button
                           type="button"
                           data-ci-actions="1"
@@ -435,24 +442,24 @@ export const MultiMediaComponent: FC<{
                           }}
                           aria-label={t('media_settings', 'Media settings')}
                           title={t('media_settings', 'Media settings')}
-                          className="absolute bottom-[4px] left-1/2 z-[20] grid h-[18px] w-[18px] -translate-x-1/2 place-items-center rounded-[5px] bg-pqPop text-pqMuted opacity-0 shadow-[inset_0_0_0_1px_var(--border)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:text-pqText"
+                          className="absolute bottom-[4px] start-1/2 z-[20] grid size-[22px] -translate-x-1/2 place-items-center rounded-full bg-black/65 text-white opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-black/80"
                         >
                           <svg
                             viewBox="0 0 16 16"
-                            width="11"
-                            height="11"
+                            width="12"
+                            height="12"
                             fill="none"
                             aria-hidden="true"
                           >
                             <path
                               d="M8 10.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4Z"
                               stroke="currentColor"
-                              strokeWidth="1.3"
+                              strokeWidth="1.4"
                             />
                             <path
                               d="M8 2.5v1.2M8 12.3v1.2M2.5 8h1.2M12.3 8h1.2M4.1 4.1l.85.85M11.05 11.05l.85.85M11.9 4.1l-.85.85M4.95 11.05l-.85.85"
                               stroke="currentColor"
-                              strokeWidth="1.3"
+                              strokeWidth="1.4"
                               strokeLinecap="round"
                             />
                           </svg>

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { formatChannelHandle } from './channel-handle.ts';
+import { formatChannelHandle, channelListSubtitle } from './channel-handle.ts';
 
 const detailSource = readFileSync(
   fileURLToPath(new URL('./channels.component.tsx', import.meta.url)),
@@ -53,5 +53,53 @@ describe('Channels list handle contract', () => {
       detailSource,
       /formatChannelHandle\(\s*integration\.display\s*\)\s*\|\|/,
     );
+  });
+});
+
+describe('channelListSubtitle', () => {
+  it('prefers the formatted handle over the platform slug', () => {
+    assert.equal(
+      channelListSubtitle({ display: 'thegokhankinay', identifier: 'youtube' }),
+      '@thegokhankinay',
+    );
+  });
+
+  it('falls back to the platform slug when display is empty', () => {
+    assert.equal(
+      channelListSubtitle({ display: '', identifier: 'facebook' }),
+      'facebook',
+    );
+  });
+});
+
+describe('Analytics handle contract', () => {
+  it('uses channelListSubtitle, not @name', () => {
+    const analytics = readFileSync(
+      fileURLToPath(
+        new URL('../platform-analytics/platform.analytics.tsx', import.meta.url),
+      ),
+      'utf8',
+    );
+    assert.match(analytics, /channelListSubtitle\(currentIntegration\)/);
+    assert.match(analytics, /channelListSubtitle\(integration\)/);
+    assert.doesNotMatch(
+      analytics,
+      /currentIntegration\.name \|\| currentIntegration\.identifier/,
+    );
+  });
+});
+
+describe('Plugs and Agents list handle contract', () => {
+  it('shows the handle on both channel columns', () => {
+    const plugs = readFileSync(
+      fileURLToPath(new URL('../plugs/plugs.tsx', import.meta.url)),
+      'utf8',
+    );
+    const agents = readFileSync(
+      fileURLToPath(new URL('../agents/agent.tsx', import.meta.url)),
+      'utf8',
+    );
+    assert.match(plugs, /channelListSubtitle\(integration\)/);
+    assert.match(agents, /channelListSubtitle\(integration\)/);
   });
 });

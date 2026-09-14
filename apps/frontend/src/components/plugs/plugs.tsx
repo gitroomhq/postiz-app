@@ -18,6 +18,7 @@ import { PageContentSkeleton } from '@gitroom/frontend/components/layout/loading
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { TwoColumnDetailDrawer } from '@gitroom/frontend/components/layout/two-column-detail-drawer';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const Plugs = () => {
   const fetch = useFetch();
@@ -313,7 +314,7 @@ export const Plugs = () => {
                     >
                       {needsRefresh
                         ? t('needs_reconnect', 'Needs reconnect')
-                        : integration.identifier}
+                        : channelListSubtitle(integration)}
                     </span>
                   </span>
                 </div>
