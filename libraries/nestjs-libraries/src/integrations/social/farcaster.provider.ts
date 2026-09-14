@@ -15,10 +15,25 @@ import { Integration } from '@prisma/client';
 import { FarcasterDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/farcaster.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { mnemonicToAccount } from 'viem/accounts';
+import { toDataURL } from 'qrcode';
 
 const client = new NeynarAPIClient({
   apiKey: process.env.NEYNAR_SECRET_KEY || '00000000-000-0000-000-000000000000',
 });
+
+const SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN = {
+  name: 'Farcaster SignedKeyRequestValidator',
+  version: '1',
+  chainId: 10,
+  verifyingContract: '0x00000000fc700472606ed4fa22623acf62c60553',
+} as const;
+
+const SIGNED_KEY_REQUEST_TYPE = [
+  { name: 'requestFid', type: 'uint256' },
+  { name: 'key', type: 'bytes' },
+  { name: 'deadline', type: 'uint256' },
+] as const;
 
 @Rules(
   'Farcaster/Warpcast can only accept pictures'
@@ -70,6 +85,76 @@ export class FarcasterProvider
       url: `${process.env.NEYNAR_CLIENT_ID}||${state}` || '',
       codeVerifier: makeId(10),
       state,
+    };
+  }
+
+  async createSigner(): Promise<{
+    signerUuid: string;
+    approvalUrl: string;
+    qrCode: string;
+  }> {
+    if (!process.env.NEYNAR_APP_FID || !process.env.NEYNAR_APP_MNEMONIC) {
+      throw new Error(
+        'Farcaster is not configured: set NEYNAR_APP_FID and NEYNAR_APP_MNEMONIC'
+      );
+    }
+
+    const appFid = Number(process.env.NEYNAR_APP_FID);
+    const signer = await client.createSigner();
+    const deadline = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+    const signature = await mnemonicToAccount(
+      process.env.NEYNAR_APP_MNEMONIC
+    ).signTypedData({
+      domain: SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN,
+      types: { SignedKeyRequest: SIGNED_KEY_REQUEST_TYPE },
+      primaryType: 'SignedKeyRequest',
+      message: {
+        requestFid: BigInt(appFid),
+        key: signer.public_key as `0x${string}`,
+        deadline: BigInt(deadline),
+      },
+    });
+
+    const registered = await client.registerSignedKey({
+      signerUuid: signer.signer_uuid,
+      appFid,
+      deadline,
+      signature,
+      ...(process.env.NEYNAR_SPONSOR_SIGNERS === 'true'
+        ? { sponsor: { sponsored_by_neynar: true } }
+        : {}),
+    });
+
+    return {
+      signerUuid: registered.signer_uuid,
+      approvalUrl: registered.signer_approval_url!,
+      qrCode: await toDataURL(registered.signer_approval_url!),
+    };
+  }
+
+  async signerStatus(
+    signerUuid: string
+  ): Promise<{ status: string; code?: string }> {
+    const signer = await client.lookupSigner({ signerUuid });
+    if (signer.status !== 'approved') {
+      return { status: signer.status };
+    }
+
+    const {
+      users: [user],
+    } = await client.fetchBulkUsers({ fids: [signer.fid!] });
+
+    return {
+      status: signer.status,
+      code: Buffer.from(
+        JSON.stringify({
+          signer_uuid: signerUuid,
+          fid: signer.fid,
+          username: user.username,
+          display_name: user.display_name,
+          pfp_url: user.pfp_url,
+        })
+      ).toString('base64'),
     };
   }
 

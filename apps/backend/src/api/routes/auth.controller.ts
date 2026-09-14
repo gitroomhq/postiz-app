@@ -24,6 +24,7 @@ import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import * as Sentry from '@sentry/nestjs';
+import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -282,6 +283,24 @@ export class AuthController {
         success: false,
         message: e.message,
       };
+    }
+  }
+
+  @Post('/farcaster/signer')
+  async farcasterSigner() {
+    try {
+      return await new FarcasterProvider().createSigner();
+    } catch (err: any) {
+      return { error: err.message || 'Failed to create signer' };
+    }
+  }
+
+  @Get('/farcaster/signer')
+  async farcasterSignerStatus(@Query('signerUuid') signerUuid: string) {
+    try {
+      return await new FarcasterProvider().signerStatus(signerUuid);
+    } catch (err: any) {
+      return { error: err.message || 'Failed to check signer' };
     }
   }
 
