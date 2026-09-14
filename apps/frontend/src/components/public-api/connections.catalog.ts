@@ -12,7 +12,7 @@
 
 export type Kind = 'AGENT' | 'CHAT' | 'MCP' | 'SKILL' | 'FLOW' | 'API' | 'MEDIA';
 
-/** How the card connects, shown as a chip, not a destination. */
+/** How the connector talks to PostQueen. Shown on the detail pane, not the hub card. */
 export type MethodId = 'MCP' | 'Skill' | 'Chat' | 'HTTP' | 'CLI' | 'API';
 
 /** How examples render in the detail pane. */
@@ -269,6 +269,41 @@ export const CONNECT_NAV_ACCOUNT: {
   },
 ];
 
+/**
+ * Left-rail rows that leave Connect and open a Settings tab.
+ * Webhooks and RSS AutoPost are not catalog cards: the overlay would only
+ * tell you to open Settings.
+ */
+export const CONNECT_SETTINGS_EXITS: {
+  id: string;
+  href: string;
+  labelKey: string;
+  labelDefault: string;
+}[] = [
+  {
+    id: 'webhooks',
+    href: '/settings?tab=webhooks',
+    labelKey: 'conn_webhooks_name',
+    labelDefault: 'Webhooks',
+  },
+  {
+    id: 'rss',
+    href: '/settings?tab=autopost',
+    labelKey: 'conn_rss_name',
+    labelDefault: 'RSS AutoPost',
+  },
+];
+
+export const SETTINGS_EXIT_HREF: Record<string, string> = {
+  webhooks: '/settings?tab=webhooks',
+  rss: '/settings?tab=autopost',
+  autopost: '/settings?tab=autopost',
+};
+
+export function settingsExitHref(id: string): string | undefined {
+  return SETTINGS_EXIT_HREF[id];
+}
+
 export const CONNECT_NAV = [
   ...CONNECT_NAV_CONNECTORS,
   ...CONNECT_NAV_DEVELOP,
@@ -296,6 +331,8 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'other-clients': 'other-mcp',
   'any-mcp': 'other-mcp',
   'make.com': 'make',
+  autopost: 'rss',
+  'rss-autopost': 'rss',
   grokbot: 'grok-bot',
   'grok bot': 'grok-bot',
   grokbuild: 'grok-build',
@@ -350,7 +387,8 @@ const HUB_SECTIONS: SectionId[] = [
 /**
  * Remaining cards on All, grouped like the rail. Featured ids are omitted.
  * Develop (Public API, CLI, Node SDK, OAuth Apps) and Account rows are
- * panel-only. Media stays in the catalog but is not a Connect nav.
+ * panel-only. Webhooks and RSS AutoPost are left-rail Settings exits, not
+ * cards. Media stays in the catalog but is not a Connect nav.
  */
 export function restGroupsForAllPage(
   groups: Group[]
@@ -368,9 +406,10 @@ export function connectionsForNav(
   navId: ConnectNavId
 ): Connection[] {
   const all = groups.flatMap((g) => g.items);
+  const hubCard = (c: Connection) => !SETTINGS_EXIT_HREF[c.id];
   switch (navId) {
     case 'all':
-      return all.filter((c) => HUB_SECTIONS.includes(c.section));
+      return all.filter((c) => HUB_SECTIONS.includes(c.section) && hubCard(c));
     case 'agents':
       return sortByIdOrder(
         all.filter((c) => c.section === 'agents'),
@@ -389,7 +428,7 @@ export function connectionsForNav(
         EDITORS_DISPLAY_ORDER
       );
     case 'automation':
-      return all.filter((c) => c.section === 'automation');
+      return all.filter((c) => c.section === 'automation' && hubCard(c));
     case 'public-api':
       return all.filter((c) => c.id === 'api');
     case 'cli':
@@ -1961,7 +2000,7 @@ openclaw onboard --install-daemon`,
       label: t('conn_group_automation', 'Automation'),
       blurb: t(
         'conn_group_automation_blurb',
-        'Workflows in, webhooks and RSS out. Official Zapier/Make apps are not shipped yet, HTTP still works.'
+        'n8n is live. Zapier and Make official apps are coming soon. Webhooks and RSS AutoPost open from the left rail.'
       ),
       items: [
         {

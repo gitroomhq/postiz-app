@@ -1280,3 +1280,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: documentation that matches the real setup
 
 **i18n +34 net.** Detail pane intro is full-width under **What this is**, not cramped next to the icon. Chat cards gained per-app pairing keys (WhatsApp QR, BotFather, Slack/Discord plugins) and dropped the generic `conn_chat_step_channel*` pair. Skill bots now install the CLI as its own step. Codex can `codex mcp add`. Gemini verify is `/mcp`. API / CLI / Zapier notes state which surface can generate video, images, or analytics. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: quiet hub cards, Settings exits for Webhooks and RSS
+
+**i18n +1 (`connect_nav_settings`).** Hub cards dropped the MCP / Chat / HTTP / SOON chips that clipped names (ChatGPT in Featured). Method stays on the detail pane next to the title. Zapier and Make keep a muted `Soon` word, not a colored pill. Webhooks and RSS AutoPost left the Automation grid; they are a Settings rail that opens `/settings?tab=webhooks` and `/settings?tab=autopost`. Catalog entries remain for deep links (`?connector=webhooks`). `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

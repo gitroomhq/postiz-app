@@ -849,6 +849,7 @@ connect_nav_oauth_apps
 connect_nav_public_api
 connect_nav_sdk
 connect_nav_section
+connect_nav_settings
 connect_open_integrations
 connect_open_oauth_apps
 connect_post

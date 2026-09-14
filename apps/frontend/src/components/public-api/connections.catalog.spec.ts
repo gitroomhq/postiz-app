@@ -8,6 +8,7 @@ import {
   FEATURED_IDS,
   ALL_PAGE_NAV_IDS,
   CONNECT_NAV_DEVELOP,
+  CONNECT_SETTINGS_EXITS,
   DEVELOP_NAV_ITEM,
   buildConnectionsCatalog,
   connectionsForNav,
@@ -16,6 +17,7 @@ import {
   findConnection,
   resolveConnectNavId,
   resolveConnectorId,
+  settingsExitHref,
 } from './connections.catalog.ts';
 
 const catalog = buildConnectionsCatalog({
@@ -64,6 +66,10 @@ describe('Connect marketplace catalog', () => {
     );
     assert.ok(leftover.find((g) => g.nav === 'chat')?.items.some((c) => c.id === 'whatsapp'));
     assert.ok(!leftover.some((g) => g.items.some((c) => c.section === 'developer')));
+    assert.ok(
+      !leftover.some((g) => g.items.some((c) => c.id === 'webhooks' || c.id === 'rss')),
+      'Webhooks and RSS AutoPost belong on the left rail, not All cards'
+    );
   });
 
   it('features Claude, ChatGPT, Cursor and Grok', () => {
@@ -152,6 +158,19 @@ describe('Connect marketplace catalog', () => {
     assert.equal(byId('zapier').soon, true);
     assert.match(byId('make').steps[1].code || '', /^Authorization: test-key$/);
     assert.doesNotMatch(byId('make').steps[1].code || '', /Bearer/);
+    assert.deepEqual(
+      connectionsForNav(catalog, 'automation').map((c) => c.id),
+      ['n8n', 'zapier', 'make']
+    );
+    assert.deepEqual(
+      CONNECT_SETTINGS_EXITS.map((x) => x.id),
+      ['webhooks', 'rss']
+    );
+    assert.equal(settingsExitHref('webhooks'), '/settings?tab=webhooks');
+    assert.equal(settingsExitHref('rss'), '/settings?tab=autopost');
+    assert.equal(settingsExitHref('autopost'), '/settings?tab=autopost');
+    assert.equal(resolveConnectorId('autopost'), 'rss');
+    assert.equal(resolveConnectorId('rss-autopost'), 'rss');
   });
 
   it('uses Gemini httpUrl and ChatGPT Apps Create, not Connectors or Plugins', () => {
