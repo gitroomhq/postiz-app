@@ -301,6 +301,9 @@ export class AuthController {
     }
   }
 
+  // the modal polls every 2s for up to 10 minutes, so leave room for that
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 1000, ttl: 3600000 } })
   @Get('/farcaster/signer')
   async farcasterSignerStatus(@Query('signerUuid') signerUuid: string) {
     try {
