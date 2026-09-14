@@ -274,11 +274,6 @@ export const CONNECT_NAV_DEVELOP: {
   },
   { id: 'cli', labelKey: 'connect_nav_cli', labelDefault: 'CLI' },
   { id: 'sdk', labelKey: 'connect_nav_sdk', labelDefault: 'Node SDK' },
-  {
-    id: 'oauth-apps',
-    labelKey: 'connect_nav_oauth_apps',
-    labelDefault: 'OAuth Apps',
-  },
 ];
 
 export const CONNECT_NAV_ACCOUNT: {
@@ -290,6 +285,11 @@ export const CONNECT_NAV_ACCOUNT: {
     id: 'api-keys',
     labelKey: 'connect_nav_api_keys',
     labelDefault: 'API Keys',
+  },
+  {
+    id: 'oauth-apps',
+    labelKey: 'developers',
+    labelDefault: 'Developers',
   },
   {
     id: 'approved-apps',
@@ -416,7 +416,8 @@ const HUB_SECTIONS: SectionId[] = [
 
 /**
  * Remaining cards on Connectors, grouped by category. Featured ids are omitted.
- * Develop (Public API, CLI, Node SDK, OAuth Apps) and Account rows are
+ * Develop (Public API, CLI, Node SDK) and Account (API Keys, Developers,
+ * Approved Apps) rows are
  * panel-only. n8n / Zapier / Make are both grouped here and left-rail
  * shortcuts. Webhooks and RSS AutoPost are left-rail Settings exits, not
  * cards. Media stays in the catalog but is not a Connect nav.

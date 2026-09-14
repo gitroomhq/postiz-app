@@ -10,6 +10,7 @@ import {
   CONNECT_AUTOMATION_SHORTCUTS,
   CONNECT_NAV_CONNECTORS,
   CONNECT_NAV_DEVELOP,
+  CONNECT_NAV_ACCOUNT,
   CONNECT_SETTINGS_EXITS,
   DEVELOP_NAV_ITEM,
   buildConnectionsCatalog,
@@ -126,11 +127,16 @@ describe('Connect marketplace catalog', () => {
     assert.equal(byId('muse-code').soon, undefined);
   });
 
-  it('exposes Public API, CLI, Node SDK and OAuth Apps as Develop nav, not All cards', () => {
+  it('exposes Public API, CLI and Node SDK as Develop nav; Developers under Account', () => {
     assert.deepEqual(
       CONNECT_NAV_DEVELOP.map((n) => n.id),
-      ['public-api', 'cli', 'sdk', 'oauth-apps']
+      ['public-api', 'cli', 'sdk']
     );
+    assert.deepEqual(
+      CONNECT_NAV_ACCOUNT.map((n) => n.id),
+      ['api-keys', 'oauth-apps', 'approved-apps']
+    );
+    assert.equal(CONNECT_NAV_ACCOUNT[1]?.labelDefault, 'Developers');
     assert.equal(DEVELOP_NAV_ITEM['public-api'], 'api');
     assert.equal(DEVELOP_NAV_ITEM.cli, 'cli');
     assert.equal(DEVELOP_NAV_ITEM.sdk, 'sdk');

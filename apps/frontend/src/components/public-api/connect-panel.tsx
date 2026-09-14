@@ -938,7 +938,7 @@ export const ConnectPanel: FC<{
       'public-api': t('connect_nav_public_api', 'Public API'),
       cli: t('connect_nav_cli', 'CLI'),
       sdk: t('connect_nav_sdk', 'Node SDK'),
-      'oauth-apps': t('connect_nav_oauth_apps', 'OAuth Apps'),
+      'oauth-apps': t('developers', 'Developers'),
       'api-keys': t('connect_nav_api_keys', 'API Keys'),
       'approved-apps': t('connect_nav_approved_apps', 'Approved Apps'),
     }),

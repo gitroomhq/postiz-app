@@ -521,8 +521,16 @@ export const SettingsPopup: FC<{
           </div>
         </div>
         <nav className="flex min-h-0 flex-1 flex-col gap-[16px] overflow-y-auto p-[0_8px_14px]">
-          {visibleGroups.map(({ group, items }) => (
-            <div key={group} className="flex flex-col gap-[1px]">
+          {visibleGroups.map(({ group, items }, groupIndex) => (
+            <div
+              key={group}
+              className={clsx(
+                'flex flex-col gap-[1px]',
+                !mobile &&
+                  groupIndex > 0 &&
+                  'border-t border-pqLine pt-[12px]'
+              )}
+            >
               <div className="px-[9px] pb-[5px] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
                 {group}
               </div>
