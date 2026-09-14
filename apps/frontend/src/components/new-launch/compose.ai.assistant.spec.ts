@@ -31,7 +31,8 @@ describe('compose AI assistant placement', () => {
   it('opens CopilotKit as a popup chat anchored to the footer control', () => {
     assert.match(assistant, /<CopilotPopup/);
     assert.match(assistant, /Button=\{ComposeAiPopupButton\}/);
-    assert.match(assistant, /placement: 'top-end'/);
+    assert.match(assistant, /availableHeight: number/);
+    assert.match(assistant, /availableWidth: number/);
     assert.match(assistant, /position: relative !important/);
   });
 });

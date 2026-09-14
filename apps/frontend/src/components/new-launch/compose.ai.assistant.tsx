@@ -154,7 +154,15 @@ function usePinCopilotWindow(
             shift({ padding: 16 }),
             size({
               padding: 16,
-              apply({ availableHeight, availableWidth, elements }) {
+              apply({
+                availableHeight,
+                availableWidth,
+                elements,
+              }: {
+                availableHeight: number;
+                availableWidth: number;
+                elements: { floating: HTMLElement };
+              }) {
                 elements.floating.style.maxHeight = `${Math.max(
                   200,
                   availableHeight
