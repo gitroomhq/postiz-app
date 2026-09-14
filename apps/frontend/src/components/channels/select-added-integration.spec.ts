@@ -100,7 +100,8 @@ describe('Channels added= focus contract', () => {
       channelsSource,
       /selectAddedIntegration\(\s*list,\s*addedProvider,\s*searchParams\.get\('focus'\)/,
     );
-    assert.match(channelsSource, /if \(!match\?\.id\) \{\s*return;/);
+    assert.match(channelsSource, /if \(!match\?\.id\) \{/);
+    assert.match(channelsSource, /void mutate\(\)\.finally/);
     assert.match(channelsSource, /stripChannelQuery\(\['added', 'msg', 'focus'\]\)/);
     assert.doesNotMatch(
       channelsSource,

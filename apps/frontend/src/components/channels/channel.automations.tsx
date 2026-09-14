@@ -175,6 +175,10 @@ export const ChannelAutomations: FC<{ integration: any }> = ({
     mutate,
   } = useSWR(match ? `plugs-${integration.id}` : null, loadActive);
 
+  // Catalog is `@Plug` metadata, not the channel list. Only X, LinkedIn Page,
+  // Threads, and Bluesky ship plugs — Facebook / Instagram / Instagram
+  // Standalone / YouTube correctly have no Automations panel. Off + "Set up
+  // plug" is opt-in; connect does not activate a plug.
   if (!match?.plugs?.length) {
     return null;
   }

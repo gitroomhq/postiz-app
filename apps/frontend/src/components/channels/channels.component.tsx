@@ -608,7 +608,8 @@ export const ChannelsComponent: FC = () => {
   const addOpenGeneration = useRef(0);
   const addedConsumed = useRef(false);
   const focusedFromAdded = useRef(false);
-  const addedListMutated = useRef(false);
+  const addedRefreshStarted = useRef(false);
+  const [addedRefreshDone, setAddedRefreshDone] = useState(false);
 
   // Design `_autoSide`: collapse under 1180 on viewport transitions only.
   // `collapseMenu` must stay out of the deps — otherwise expanding on tablet
@@ -763,22 +764,21 @@ export const ChannelsComponent: FC = () => {
     const returningFromConnect = !!addedProvider && !addedConsumed.current;
 
     if (returningFromConnect) {
-      if (!addedListMutated.current) {
-        addedListMutated.current = true;
-        void mutate();
-      }
-      if (!list.length) {
-        return;
-      }
       const match = selectAddedIntegration(
         list,
         addedProvider,
         searchParams.get('focus'),
       );
-      // Stale SWR cache is often still the previous channels (YouTube) after
-      // Facebook two-step. Do not consume or fall back to list[0] until the
-      // new row is actually in the list.
+      // SWR keeps the pre-connect list (`revalidateIfStale` / `OnFocus` off).
+      // After social-connect 201 the new row is missing until we mutate —
+      // without this, a non-empty list shows the toast and never waits.
+      // Stale cache after Facebook two-step is often still YouTube: do not
+      // consume or fall back to list[0] until the focused row is in the list.
       if (!match?.id) {
+        if (!addedRefreshStarted.current) {
+          addedRefreshStarted.current = true;
+          void mutate().finally(() => setAddedRefreshDone(true));
+        }
         return;
       }
       addedConsumed.current = true;
@@ -828,6 +828,7 @@ export const ChannelsComponent: FC = () => {
     stripChannelQuery,
     toast,
     mutate,
+    addedRefreshDone,
   ]);
 
   // Tour last step + Finish leave Add Channel open (design chAdd:'connect').

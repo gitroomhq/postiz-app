@@ -3,6 +3,7 @@
 import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { HttpStatusCode } from 'axios';
 import { useRouter } from 'next/navigation';
+import { useSWRConfig } from 'swr';
 import { Redirect } from '@gitroom/frontend/components/layout/redirect';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -52,6 +53,7 @@ export const ContinueIntegration: FC<{
 }> = (props) => {
   const { provider, searchParams, logged } = props;
   const { push } = useRouter();
+  const { mutate } = useSWRConfig();
   const t = useT();
   const fetch = useFetch();
   const { extensionId, backendUrl } = useVariables();
@@ -78,6 +80,17 @@ export const ContinueIntegration: FC<{
     },
     [logged, push]
   );
+
+  // `useIntegrationList` turns off revalidateOnFocus / revalidateIfStale, so
+  // CHANNELS keeps the pre-connect snapshot until we refetch.
+  const refreshIntegrationsList = useCallback(async () => {
+    try {
+      await mutate('/integrations/list');
+    } catch {
+      // /channels?added= will refetch if the new row is still missing.
+    }
+  }, [mutate]);
+
   const modifiedParams = useMemo(() => {
     if (provider === 'mewe') {
       return {
@@ -234,6 +247,7 @@ export const ContinueIntegration: FC<{
         return;
       }
 
+      await refreshIntegrationsList();
       navigateOrShow(
         oauthReturnPath({
           added: provider,
@@ -308,6 +322,7 @@ export const ContinueIntegration: FC<{
               savedIds[savedIds.length - 1] ||
               (typeof saved?.id === 'string' ? saved.id : '') ||
               twoStepState.integrationId;
+            await refreshIntegrationsList();
             navigateOrShow(
               oauthReturnPath({
                 added: provider,
@@ -358,6 +373,7 @@ export const ContinueIntegration: FC<{
       navigateOrShow,
       logged,
       t,
+      refreshIntegrationsList,
     ]
   );
 
