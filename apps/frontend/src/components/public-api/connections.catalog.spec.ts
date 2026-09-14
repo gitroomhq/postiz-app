@@ -516,6 +516,11 @@ describe('Connect marketplace catalog', () => {
           /[—–]| - /,
           `${item.id} example has a dash`
         );
+        assert.doesNotMatch(
+          `${ex.title || ''} ${ex.body} ${ex.reply || ''}`,
+          /changelog|CHANGELOG|GitHub Release|README|PR title/i,
+          `${item.id} example still sounds like a developer changelog`
+        );
       }
     }
   });

@@ -1300,3 +1300,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: one Connectors row, automation on the left rail
 
 **i18n -3 (`connect_view_all`, `connect_nav_settings`, `conn_docs_cta`).** The Connectors heading stays. Its one child is labeled Connectors, not All. Agents / Bots / Chat / Editors / Automation left the rail; they remain group headings inside the Connectors panel. n8n, Zapier and Make sit on the rail next to Webhooks and RSS AutoPost. Webhooks and RSS still leave to Settings. `?nav=agents` and friends resolve to Connectors. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: examples are photos, videos and schedules, not changelogs
+
+**i18n 0.** Same keys. Sample prompts dropped GitHub, README, CHANGELOG and PR language. MCP cards ask to make a photo, a short video, or a visual and schedule it. Chat and skill bots attach a photo or video the user already has. n8n / Zapier / Make start from a new photo or video, not a GitHub release.
