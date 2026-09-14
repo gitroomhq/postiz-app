@@ -1328,3 +1328,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Media library: square tiles, not 4/3 banners
 
 **i18n 0.** The Media page and the composer picker used `aspect-[4/3]`, so a portrait photo sat in a landscape box. Import (third-party) tiles were already square. Both grids now use `aspect-square` and `object-cover`.
+
+## Post preview matches the published crop
+
+**i18n 0.** Instagram preview used a 585px-tall `object-cover` box (Facebook/LinkedIn 280px). A square graphic looked taller and tighter than the live post. Feed previews now measure the file and clamp to 4:5 … 1.91:1 (stories 9:16), the same range Instagram/Facebook actually show.

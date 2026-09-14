@@ -9,6 +9,12 @@ import { getPresetBackground } from '@gitroom/frontend/components/new-launch/pro
 import { FC } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import {
+  FEED_PREVIEW_MAX_WH,
+  FEED_PREVIEW_MIN_WH,
+  STORY_PREVIEW_WH,
+} from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 
 const Icons = () => {
   return (
@@ -77,6 +83,10 @@ export const FacebookPreview: FC<{
   const preset = useWatch({ control, name: 'text_format_preset_id' }) as
     | string
     | undefined;
+  const postType = useWatch({ control, name: 'post_type' }) as
+    | string
+    | undefined;
+  const isStory = postType === 'story';
   const firstText = stripHtmlValidation(
     'normal',
     topValue?.[0]?.content || '',
@@ -168,20 +178,30 @@ export const FacebookPreview: FC<{
           }}
         />
       )}
-      {!!renderContent?.[0]?.images?.length && (
-        <div className="h-[280px] -mx-[15px] overflow-hidden flex">
-          {renderContent?.[0]?.images.map((image, index) => (
-            <a
-              key={`image_${index}`}
-              className="flex-1"
-              href={mediaDir.set(image.path)}
-              target="_blank"
-            >
-              <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
-            </a>
-          ))}
-        </div>
-      )}
+      {!!renderContent?.[0]?.images?.length &&
+        (renderContent[0].images.length === 1 ? (
+          <PreviewMediaFrame
+            className="-mx-[15px]"
+            src={mediaDir.set(renderContent[0].images[0].path)}
+            minWH={isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MIN_WH}
+            maxWH={isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MAX_WH}
+            fallbackWH={isStory ? STORY_PREVIEW_WH : 1}
+          />
+        ) : (
+          <div className="aspect-square -mx-[15px] overflow-hidden flex">
+            {renderContent[0].images.map((image, index) => (
+              <a
+                key={`image_${index}`}
+                className="relative flex-1 overflow-hidden"
+                href={mediaDir.set(image.path)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
+              </a>
+            ))}
+          </div>
+        ))}
       <div className="flex text-textLinkedin text-[12px] font-[400] items-center">
         <div className="flex flex-1 gap-[10px] items-center">
           <Icons />

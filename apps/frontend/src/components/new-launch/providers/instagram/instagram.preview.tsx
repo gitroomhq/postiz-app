@@ -5,8 +5,14 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { FC } from 'react';
-import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
+import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import {
+  FEED_PREVIEW_MAX_WH,
+  FEED_PREVIEW_MIN_WH,
+  STORY_PREVIEW_WH,
+} from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 
 export const InstagramPreview: FC<{
   maximumCharacters?: number;
@@ -14,6 +20,14 @@ export const InstagramPreview: FC<{
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
+  const control = useFormContext()?.control;
+  const postType = useWatch({ control, name: 'post_type' }) as
+    | string
+    | undefined;
+  const isStory = postType === 'story';
+  const minWH = isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MIN_WH;
+  const maxWH = isStory ? STORY_PREVIEW_WH : FEED_PREVIEW_MAX_WH;
+  const fallbackWH = isStory ? STORY_PREVIEW_WH : 1;
 
   const renderContent = topValue.map((p) => {
     const newContent = stripHtmlValidation(
@@ -64,22 +78,25 @@ export const InstagramPreview: FC<{
       </div>
       {!!renderContent?.[0]?.images?.length ? (
         <SliderComponent
-          className="h-[585px] rounded-[8px] overflow-hidden"
+          className="rounded-[8px] overflow-hidden"
           list={renderContent?.[0]?.images.map((image, index) => (
-            <a
+            <PreviewMediaFrame
               key={`image_${index}`}
-              className="flex-1"
-              href={mediaDir.set(image.path)}
-              target="_blank"
-            >
-              <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
-            </a>
+              src={mediaDir.set(image.path)}
+              minWH={minWH}
+              maxWH={maxWH}
+              fallbackWH={fallbackWH}
+            />
           ))}
         />
       ) : (
         <div
           style={{ background: 'url(/no-video-youtube.png)' }}
-          className="!bg-cover w-full aspect-[calc(16/9)] rounded-[8px] overflow-hidden"
+          className={
+            isStory
+              ? '!bg-cover w-full aspect-[9/16] rounded-[8px] overflow-hidden'
+              : '!bg-cover w-full aspect-square rounded-[8px] overflow-hidden'
+          }
         />
       )}
       <div
