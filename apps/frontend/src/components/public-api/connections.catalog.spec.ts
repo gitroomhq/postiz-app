@@ -454,7 +454,43 @@ describe('Connect marketplace catalog', () => {
     const justBodies = all.flatMap((item) => (item.examples || []).map((ex) => ex.body));
     const dupes = justBodies.filter((b, i) => justBodies.indexOf(b) !== i);
     assert.deepEqual(dupes, [], `duplicate example bodies: ${dupes.join(', ')}`);
-    assert.ok(bodies.length > 10);
+    assert.ok(
+      (byId('whatsapp').examples?.length || 0) >= 3,
+      'WhatsApp should show several sample messages'
+    );
+    assert.deepEqual(
+      (byId('whatsapp').examples || []).map((e) => e.title),
+      ['One channel: Instagram', 'One channel: X', 'Several channels']
+    );
+    const wa = (byId('whatsapp').examples || []).map((e) => `${e.body} ${e.reply}`).join('\n');
+    assert.match(wa, /Voice note/);
+    assert.match(wa, /Instagram/);
+    assert.match(wa, /\bX\b/);
+    assert.match(wa, /LinkedIn/);
+    const igOnly = (byId('whatsapp').examples || []).filter((e) =>
+      /Instagram/i.test(`${e.body} ${e.reply}`) && !/\bX\b/.test(e.body) && !/LinkedIn/.test(e.body)
+    );
+    assert.ok(igOnly.length >= 1, 'one WhatsApp sample should be Instagram only');
+    const xOnly = (byId('whatsapp').examples || []).filter((e) =>
+      /\bX\b/.test(e.body) && !/Instagram/.test(e.body) && !/LinkedIn/.test(e.body)
+    );
+    assert.ok(xOnly.length >= 1, 'one WhatsApp sample should be X only');
+    const multi = (byId('whatsapp').examples || []).filter((e) =>
+      /Instagram/.test(e.body) && /\bX\b/.test(e.body) && /LinkedIn/.test(e.body)
+    );
+    assert.ok(multi.length >= 1, 'one WhatsApp sample should name several channels');
+    const talkers = all.filter((c) =>
+      ['chat', 'bot', 'agent', 'cli'].includes(c.exampleKind) && (c.examples?.length || 0) > 0
+    );
+    for (const item of talkers) {
+      if (item.id === 'cli' || item.id === 'api' || item.id === 'sdk') continue;
+      assert.ok(
+        (item.examples?.length || 0) >= 3,
+        `${item.id} should show three samples, not one LinkedIn bubble`
+      );
+      const titles = (item.examples || []).map((e) => e.title || '').join(' | ');
+      assert.match(titles, /Instagram|X|Several|calendar/i, `${item.id} samples need labeled jobs`);
+    }
     for (const item of all) {
       for (const ex of item.examples || []) {
         assert.doesNotMatch(

@@ -193,6 +193,53 @@ const TerminalFrame: FC<{
   </div>
 );
 
+const EXAMPLE_CHANNELS = [
+  'Instagram',
+  'LinkedIn',
+  'YouTube',
+  'TikTok',
+  'X',
+] as const;
+
+const channelsInExample = (ex: Example): string[] => {
+  const blob = `${ex.title || ''} ${ex.body} ${ex.reply || ''}`;
+  return EXAMPLE_CHANNELS.filter((name) =>
+    name === 'X'
+      ? /(^|[^A-Za-z])X([^A-Za-z]|$)/.test(blob)
+      : blob.includes(name)
+  );
+};
+
+const CopyGlyph: FC = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden>
+    <path
+      d="M9 9V5.5A1.5 1.5 0 0 1 10.5 4h8A1.5 1.5 0 0 1 20 5.5v8a1.5 1.5 0 0 1-1.5 1.5H15M5.5 9h8A1.5 1.5 0 0 1 15 10.5v8a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 4 18.5v-8A1.5 1.5 0 0 1 5.5 9Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const CopySample: FC<{ text: string }> = ({ text }) => {
+  const toaster = useToaster();
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        copy(text);
+        toaster.show(t('conn_examples_copied', 'Copied the sample'), 'success');
+      }}
+      className="inline-flex h-[26px] shrink-0 items-center gap-[5px] rounded-[7px] bg-pqBtnSimple px-[8px] text-[11px] font-[700] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+    >
+      <CopyGlyph />
+      {t('conn_examples_copy', 'Copy')}
+    </button>
+  );
+};
+
 const ExamplesBlock: FC<{
   kind: ExampleKind;
   examples: Example[];
@@ -202,32 +249,117 @@ const ExamplesBlock: FC<{
   const t = useT();
   if (!examples.length) return null;
 
-  const heading =
-    kind === 'chat'
-      ? t('conn_examples_chat', 'In chat')
-      : kind === 'bot'
-        ? t('conn_examples_bot', 'Send a message')
-        : kind === 'agent'
-          ? t('conn_examples_agent', 'In the agent')
-          : kind === 'cli'
-            ? t('conn_examples_cli', 'In the terminal')
-            : kind === 'workflow'
-              ? t('conn_examples_flow', 'Example workflows')
-              : t('conn_examples_http', 'Example request');
+  const isTalk = kind === 'chat' || kind === 'bot';
+  const heading = isTalk
+    ? t('conn_examples_chat', 'What you can say')
+    : kind === 'agent'
+      ? t('conn_examples_agent', 'What you can ask')
+      : kind === 'cli'
+        ? t('conn_examples_cli', 'What you can run')
+        : kind === 'workflow'
+          ? t('conn_examples_flow', 'Example workflows')
+          : t('conn_examples_http', 'Example request');
 
-  const renderTurn = (ex: Example, i: number) => (
-    <div key={`${ex.body}-${i}`} className="flex flex-col gap-[10px]">
+  const blurb = isTalk
+    ? t(
+        'conn_examples_chat_blurb',
+        'These are sample messages, not a live chat. After you connect, say them in your own words. One sample is a single channel. Another is several at once.'
+      )
+    : kind === 'agent'
+      ? t(
+          'conn_examples_agent_blurb',
+          'Sample prompts in this agent. Each card is a different job: one channel, another channel, or several together.'
+        )
+      : kind === 'cli'
+        ? t(
+            'conn_examples_cli_blurb',
+            'Sample commands in this terminal. Copy one, then change the channel and the time.'
+          )
+        : t(
+            'conn_examples_flow_blurb',
+            'Sample automations. One in, one out, or several channels in the same run.'
+          );
+
+  const youLabel = t('conn_examples_you', 'You');
+  const toaster = useToaster();
+  const total = examples.length;
+
+  const sampleCard = (ex: Example, i: number, inner: ReactNode) => {
+    const channels = channelsInExample(ex);
+    const copyText = kind === 'cli' ? ex.code || ex.body : ex.body;
+    return (
+      <article
+        key={`${ex.title ?? ''}-${ex.body}-${i}`}
+        className="overflow-hidden rounded-[16px] bg-pqPop shadow-[0_10px_28px_rgba(15,10,30,0.18),inset_0_0_0_1px_var(--border)]"
+      >
+        <div className="flex flex-wrap items-center gap-[8px] border-b border-pqLine bg-pqSettings px-[12px] py-[9px]">
+          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-pqBrand text-[11px] font-[700] text-pqOnBrand">
+            {i + 1}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-[700] leading-[1.2] text-pqText">
+              {ex.title || t('conn_examples_sample', 'Sample')}
+            </div>
+            <div className="mt-[2px] text-[10.5px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
+              {t('conn_examples_sample', 'Sample')} {i + 1}/{total}
+            </div>
+          </div>
+          {channels.length > 0 && (
+            <div className="flex flex-wrap gap-[4px]">
+              {channels.map((channel) => (
+                <span
+                  key={channel}
+                  className="rounded-full bg-pqBrandSoft px-[8px] py-[3px] text-[10.5px] font-[700] text-pqBrand"
+                >
+                  {channel}
+                </span>
+              ))}
+            </div>
+          )}
+          <CopySample text={copyText} />
+        </div>
+        <div className="bg-[linear-gradient(180deg,rgba(124,58,237,0.07),transparent_42px)] p-[12px]">
+          {inner}
+        </div>
+      </article>
+    );
+  };
+
+  const chatTurn = (ex: Example) => (
+    <div className="flex flex-col gap-[10px]">
       <div className="flex justify-end">
-        <div className="max-w-[92%] rounded-[16px_16px_6px_16px] bg-pqPop px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
-          {ex.body}
+        <div className="max-w-[94%] min-w-0">
+          <div className="mb-[4px] text-end text-[10.5px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+            {youLabel}
+          </div>
+          <div className="relative rounded-[18px_18px_6px_18px] bg-pqBrand px-[14px] py-[11px] pe-[38px] text-[13.5px] leading-[1.45] text-pqOnBrand">
+            {ex.body}
+            <button
+              type="button"
+              aria-label={t('copy', 'Copy')}
+              onClick={() => {
+                copy(ex.body);
+                toaster.show(t('conn_examples_copied', 'Copied the sample'), 'success');
+              }}
+              className="absolute end-[8px] top-[8px] flex h-[22px] w-[22px] items-center justify-center rounded-[6px] text-pqOnBrand/70 transition-colors hover:bg-white/15 hover:text-pqOnBrand"
+            >
+              <CopyGlyph />
+            </button>
+          </div>
         </div>
       </div>
       {(ex.tool || ex.reply) && (
-        <div className="flex max-w-[92%] flex-col gap-[6px]">
-          <div className="text-[11px] font-[600] text-pqMuted">{name}</div>
-          {!!ex.tool && <ToolChip name={ex.tool} />}
+        <div className="max-w-[94%] min-w-0">
+          <div className="mb-[4px] text-[10.5px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+            {name}
+          </div>
+          {!!ex.tool && (
+            <div className="mb-[6px]">
+              <ToolChip name={ex.tool} />
+            </div>
+          )}
           {!!ex.reply && (
-            <div className="rounded-[6px_16px_16px_16px] bg-pqSettings px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText">
+            <div className="rounded-[6px_18px_18px_18px] bg-pqInner px-[14px] py-[11px] text-[13.5px] leading-[1.45] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
               {ex.reply}
             </div>
           )}
@@ -236,90 +368,90 @@ const ExamplesBlock: FC<{
     </div>
   );
 
-  return (
-    <div className="flex flex-col gap-[10px]">
-      <div className="text-[15px] font-[600] text-pqText">{heading}</div>
-      {kind === 'chat' || kind === 'bot' ? (
-        <div className="flex flex-col gap-[14px] rounded-pqLg bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
-          {examples.map(renderTurn)}
-        </div>
-      ) : kind === 'agent' ? (
-        <div className="overflow-hidden rounded-pqLg bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="border-b border-pqLine px-[14px] py-[8px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
-            {t('conn_examples_agent_panel', 'Agent')}
-          </div>
-          <div className="flex flex-col gap-[12px] p-[14px]">
-            {examples.map((ex, i) => (
-              <div key={`${ex.body}-${i}`} className="flex flex-col gap-[8px]">
-                <div className="text-[13.5px] leading-[1.5] text-pqText">{ex.body}</div>
-                {!!ex.tool && <ToolChip name={ex.tool} />}
-                {!!ex.reply && (
-                  <div className="text-[13px] leading-[1.5] text-pqMuted">{ex.reply}</div>
-                )}
+  const inner =
+    isTalk ? (
+      <div className="flex flex-col gap-[12px]">
+        {examples.map((ex, i) => sampleCard(ex, i, chatTurn(ex)))}
+      </div>
+    ) : kind === 'agent' ? (
+      <div className="flex flex-col gap-[12px]">
+        {examples.map((ex, i) =>
+          sampleCard(
+            ex,
+            i,
+            <div className="flex flex-col gap-[8px]">
+              <div>
+                <div className="mb-[4px] text-[10.5px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+                  {youLabel}
+                </div>
+                <div className="rounded-pqSm bg-pqInner px-[12px] py-[10px] text-[13.5px] leading-[1.5] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
+                  {ex.body}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      ) : kind === 'cli' ? (
-        <div className="flex flex-col gap-[10px]">
-          {examples.map((ex, i) => {
-            const launch = ex.code && ex.body && !ex.code.includes(' ') ? ex.code : null;
-            const shell = ex.code && (!ex.body || ex.code.includes(' ')) ? ex.code : null;
-            return (
-              <TerminalFrame
-                key={`${ex.code ?? ex.body}-${i}`}
-                title={t('conn_examples_terminal', 'Terminal')}
-              >
-                {launch && (
-                  <div>
-                    <span className="text-pqMuted">$ </span>
-                    {launch}
+              {!!ex.tool && <ToolChip name={ex.tool} />}
+              {!!ex.reply && (
+                <div>
+                  <div className="mb-[4px] text-[10.5px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+                    {name}
                   </div>
-                )}
-                {shell && (
-                  <div>
-                    <span className="text-pqMuted">$ </span>
-                    {mask ? mask(shell) : shell}
+                  <div className="rounded-pqSm bg-pqBrandSoft px-[12px] py-[10px] text-[13px] leading-[1.5] text-pqText">
+                    {ex.reply}
                   </div>
-                )}
-                {!!ex.body && !!launch && (
-                  <div>
-                    <span className="text-pqMuted">{'> '}</span>
-                    {ex.body}
-                  </div>
-                )}
-                {!!ex.tool && (
-                  <div className="pt-[4px]">
-                    <ToolChip name={ex.tool} />
-                  </div>
-                )}
-                {!!ex.reply && (
-                  <pre className="m-0 mt-[6px] whitespace-pre-wrap break-all text-pqMuted">
-                    {mask ? mask(ex.reply) : ex.reply}
-                  </pre>
-                )}
-              </TerminalFrame>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-[8px]">
-          {examples.map((ex) => (
-            <div
-              key={`${ex.title ?? ''}-${ex.body}`}
-              className="rounded-pqMd bg-pqInner p-[14px_16px] shadow-[inset_0_0_0_1px_var(--border)]"
-            >
-              {!!ex.title && (
-                <div className="text-[13px] font-[600] text-pqText">{ex.title}</div>
+                </div>
               )}
-              <div
-                className={clsx(
-                  'text-[13px] leading-[1.5] text-pqMuted',
-                  ex.title && 'mt-[3px]'
-                )}
-              >
-                {ex.body}
-              </div>
+            </div>
+          )
+        )}
+      </div>
+    ) : kind === 'cli' ? (
+      <div className="flex flex-col gap-[12px]">
+        {examples.map((ex, i) => {
+          const launch = ex.code && ex.body && !ex.code.includes(' ') ? ex.code : null;
+          const shell = ex.code && (!ex.body || ex.code.includes(' ')) ? ex.code : null;
+          return sampleCard(
+            ex,
+            i,
+            <TerminalFrame title={t('conn_examples_terminal', 'Terminal')}>
+              {launch && (
+                <div>
+                  <span className="text-pqMuted">$ </span>
+                  {launch}
+                </div>
+              )}
+              {shell && (
+                <div>
+                  <span className="text-pqMuted">$ </span>
+                  {mask ? mask(shell) : shell}
+                </div>
+              )}
+              {!!ex.body && !!launch && (
+                <div>
+                  <span className="text-pqMuted">{'> '}</span>
+                  {ex.body}
+                </div>
+              )}
+              {!!ex.tool && (
+                <div className="pt-[4px]">
+                  <ToolChip name={ex.tool} />
+                </div>
+              )}
+              {!!ex.reply && (
+                <pre className="m-0 mt-[6px] whitespace-pre-wrap break-all text-pqMuted">
+                  {mask ? mask(ex.reply) : ex.reply}
+                </pre>
+              )}
+            </TerminalFrame>
+          );
+        })}
+      </div>
+    ) : (
+      <div className="flex flex-col gap-[12px]">
+        {examples.map((ex, i) =>
+          sampleCard(
+            ex,
+            i,
+            <div>
+              <div className="text-[13.5px] leading-[1.5] text-pqText">{ex.body}</div>
               {!!ex.code && (
                 <CodeBlock
                   code={mask ? mask(ex.code) : ex.code}
@@ -328,10 +460,42 @@ const ExamplesBlock: FC<{
                 />
               )}
             </div>
-          ))}
+          )
+        )}
+      </div>
+    );
+
+  return (
+    <section className="overflow-hidden rounded-[20px] bg-pqBrandFaint shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35)]">
+      <div className="flex flex-wrap items-start justify-between gap-[10px] px-[16px] py-[14px]">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-[8px]">
+            <span className="inline-flex items-center gap-[6px] rounded-full bg-pqBrand px-[10px] py-[4px] text-[10.5px] font-[700] uppercase tracking-[0.08em] text-pqOnBrand">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" aria-hidden>
+                <path
+                  d="M5 6.5h10.5A2.5 2.5 0 0 1 18 9v5a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16.5H5A2.5 2.5 0 0 1 2.5 14V9A2.5 2.5 0 0 1 5 6.5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t('conn_examples_eyebrow', 'Examples')}
+            </span>
+            <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqBrand">
+              {t('conn_examples_not_live', 'Not a live chat')}
+            </span>
+          </div>
+          <div className="mt-[8px] text-[16px] font-[600] text-pqText">{heading}</div>
+          <div className="mt-[4px] max-w-[52ch] text-[13px] leading-[1.5] text-pqMuted">
+            {blurb}
+          </div>
         </div>
-      )}
-    </div>
+        <span className="rounded-full bg-pqPop px-[10px] py-[4px] text-[11px] font-[700] text-pqBrand shadow-[inset_0_0_0_1px_rgba(124,58,237,0.28)]">
+          {total} {t('conn_examples_count_label', 'samples')}
+        </span>
+      </div>
+      <div className="px-[12px] pb-[12px]">{inner}</div>
+    </section>
   );
 };
 
@@ -1154,6 +1318,15 @@ export const ConnectPanel: FC<{
           </button>
         )}
 
+        {!!item.examples?.length && (
+          <ExamplesBlock
+            kind={item.exampleKind}
+            examples={item.examples}
+            name={item.name}
+            mask={maskCode}
+          />
+        )}
+
         <div className="flex flex-col gap-[16px] rounded-[18px] bg-pqInner p-[22px] shadow-[inset_0_0_0_1px_var(--border)]">
           <div className="text-[15px] font-[600] text-pqText">
             {t('conn_how_to_connect', 'How to connect')}
@@ -1181,15 +1354,6 @@ export const ConnectPanel: FC<{
             </div>
           ))}
         </div>
-
-        {!!item.examples?.length && (
-          <ExamplesBlock
-            kind={item.exampleKind}
-            examples={item.examples}
-            name={item.name}
-            mask={maskCode}
-          />
-        )}
 
         {!!item.note && (
           <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[12.5px] leading-[1.55] text-pqMuted">
