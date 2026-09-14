@@ -29,6 +29,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 import { PlugsDetailGhost } from '@gitroom/frontend/components/layout/loading';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -295,7 +296,7 @@ export const Plug = () => {
     return (await fetch(`/integrations/${plug.providerId}/plugs`)).json();
   }, [plug.providerId]);
   const { data, isLoading, mutate } = useSWR(`plugs-${plug.providerId}`, load);
-  const channelLabel = `${plug.name} · ${plug.identifier}`;
+  const channelLabel = `${plug.name} · ${channelListSubtitle(plug)}`;
   const addEditPlug = useCallback(
     (p: PlugsInterface) =>
       (data?: {

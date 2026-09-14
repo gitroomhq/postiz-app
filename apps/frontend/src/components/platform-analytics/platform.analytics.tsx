@@ -22,7 +22,7 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import type { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
-import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
+import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const allowedIntegrations = [
   'facebook',
@@ -426,7 +426,7 @@ export const PlatformAnalytics = () => {
               return (
                 <div
                   key={integration.id}
-                  title={integration.name}
+                  title={channelNameWithHandle(integration)}
                   onClick={() => {
                     if (integration.refreshNeeded) {
                       toaster.show(

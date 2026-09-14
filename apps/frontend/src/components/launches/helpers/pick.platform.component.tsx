@@ -7,6 +7,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { useCopilotAction, useCopilotReadable } from '@copilotkit/react-core';
 import { useStateCallback } from '@gitroom/react/helpers/use.state.callback';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 
 const PickPlatformCopilotBindings: FC<{
@@ -246,7 +247,7 @@ export const PickPlatforms: FC<{
                       className="flex gap-[8px] items-center"
                       {...(props.toolTip && {
                         'data-tooltip-id': 'tooltip',
-                        'data-tooltip-content': integration.name,
+                        'data-tooltip-content': channelNameWithHandle(integration),
                       })}
                     >
                       <div

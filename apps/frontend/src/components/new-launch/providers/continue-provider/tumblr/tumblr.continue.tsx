@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   continuePickerInitial,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
@@ -56,7 +57,7 @@ export const TumblrContinue = withContinueProvider<
       pictureUrl={item.picture?.data?.url}
       name={item.name}
       meta={joinContinuePickerMeta(
-        item.username,
+        continuePickerHandle(item.username),
         item.followers
           ? `${item.followers.toLocaleString()} followers`
           : undefined,

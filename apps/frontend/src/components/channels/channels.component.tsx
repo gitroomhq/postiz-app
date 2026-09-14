@@ -34,7 +34,7 @@ import {
   ChannelsListEmpty,
   ChannelsPageEmpty,
 } from '@gitroom/frontend/components/ui/no-channels-art';
-import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
+import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { selectAddedIntegration } from '@gitroom/frontend/components/channels/select-added-integration';
 
 /**
@@ -1167,7 +1167,7 @@ export const ChannelsComponent: FC = () => {
             <div
               key={integration.id}
               data-channel={integration.id}
-              title={integration.name}
+              title={channelNameWithHandle(integration)}
               role="button"
               tabIndex={0}
               onClick={() => {

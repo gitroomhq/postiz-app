@@ -8,6 +8,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { useSWRConfig } from 'swr';
 import clsx from 'clsx';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 
 interface DebugPostData {
@@ -228,8 +229,15 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
                       className="w-[24px] h-[24px] rounded-[6px]"
                       alt={integration.name}
                     />
-                    <div className="text-[13px] text-textColor">
-                      {integration.name}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] text-textColor">
+                        {integration.name}
+                      </div>
+                      {!!channelListSubtitle(integration) && (
+                        <div className="truncate text-[11px] text-pqMuted">
+                          {channelListSubtitle(integration)}
+                        </div>
+                      )}
                     </div>
                     <img
                       src={`/icons/platforms/${integration.identifier}.png`}

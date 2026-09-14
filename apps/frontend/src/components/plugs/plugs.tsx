@@ -18,7 +18,7 @@ import { PageContentSkeleton } from '@gitroom/frontend/components/layout/loading
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { TwoColumnDetailDrawer } from '@gitroom/frontend/components/layout/two-column-detail-drawer';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
-import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
+import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const Plugs = () => {
   const fetch = useFetch();
@@ -97,8 +97,11 @@ export const Plugs = () => {
       return null;
     }
     return {
-      providerId: currentIntegration.id,
       ...plug,
+      providerId: currentIntegration.id,
+      name: currentIntegration.name,
+      identifier: currentIntegration.identifier,
+      display: currentIntegration.display,
     };
   }, [currentIntegration, plugList]);
 
@@ -259,7 +262,7 @@ export const Plugs = () => {
               return (
                 <div
                   key={integration.id}
-                  title={integration.name}
+                  title={channelNameWithHandle(integration)}
                   onClick={() => {
                     if (integration.refreshNeeded) {
                       toaster.show(

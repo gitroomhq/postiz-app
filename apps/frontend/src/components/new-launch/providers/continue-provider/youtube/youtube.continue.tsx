@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
 import { withContinueProvider } from '../with-continue-provider';
@@ -54,7 +55,7 @@ export const YoutubeContinue = withContinueProvider<
       pictureUrl={item.picture?.data?.url}
       name={item.name}
       meta={joinContinuePickerMeta(
-        item.username || 'YouTube',
+        continuePickerHandle(item.username),
         item.subscriberCount
           ? `${parseInt(item.subscriberCount, 10).toLocaleString()} subscribers`
           : undefined,

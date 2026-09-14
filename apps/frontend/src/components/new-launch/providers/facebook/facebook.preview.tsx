@@ -10,6 +10,7 @@ import { FC } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import {
   FEED_PREVIEW_FALLBACK_WH,
   FEED_PREVIEW_MAX_WH,
@@ -142,8 +143,13 @@ export const FacebookPreview: FC<{
             className="rounded-full relative z-[2] w-[36px] h-[36px]"
           />
         </div>
-        <div className="flex flex-col leading-[18px]">
-          <div className="text-[14px] font-[500]">{integration?.name}</div>
+        <div className="flex min-w-0 flex-col leading-[18px]">
+          <div className="truncate text-[14px] font-[500]">{integration?.name}</div>
+          {!!formatChannelHandle(integration?.display) && (
+            <div className="truncate text-[12px] font-[400] text-pqSoft">
+              {formatChannelHandle(integration?.display)}
+            </div>
+          )}
           <div className="text-[12px] font-[400] text-pqSoft flex gap-[4px] items-center">
             <span>30m •</span>
             <span>

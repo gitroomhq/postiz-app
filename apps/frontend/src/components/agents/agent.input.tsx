@@ -12,6 +12,7 @@ import { InputProps } from '@copilotkit/react-ui';
 import { PropertiesContext } from '@gitroom/frontend/components/agents/agent';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 const MAX_NEWLINES = 6;
 
@@ -108,6 +109,7 @@ export const Input = ({
               {properties.map((p) => (
                 <span
                   key={p.id}
+                  title={channelNameWithHandle(p)}
                   className="flex h-[26px] items-center gap-[6px] rounded-full bg-pqSettings ps-[4px] pe-[9px] text-[11.5px] font-[600] text-pqText"
                 >
                   <span className="relative h-[18px] w-[18px] shrink-0">
@@ -130,6 +132,11 @@ export const Input = ({
                     </span>
                   </span>
                   {p.name}
+                  {!!formatChannelHandle(p.display) && (
+                    <span className="font-[500] text-pqMuted">
+                      {formatChannelHandle(p.display)}
+                    </span>
+                  )}
                 </span>
               ))}
             </>

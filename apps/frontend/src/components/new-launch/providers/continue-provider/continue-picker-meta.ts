@@ -21,14 +21,6 @@ export function joinContinuePickerMeta(
   return tokens.length ? tokens.join(' · ') : undefined;
 }
 
-export function continuePickerHandle(username?: string): string | undefined {
-  const value = username?.trim();
-  if (!value) {
-    return undefined;
-  }
-  return value.startsWith('@') ? value : `@${value}`;
-}
-
 export function continuePickerInitial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?';
 }

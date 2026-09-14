@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { continuePickerItemClasses } from './continue-picker-meta';
 
+export { continuePickerHandle } from '@gitroom/frontend/components/channels/channel-handle';
+
 export {
   CONTINUE_PICKER_AVATAR_ATTR,
-  continuePickerHandle,
   continuePickerInitial,
   continuePickerItemClasses,
   joinContinuePickerMeta,

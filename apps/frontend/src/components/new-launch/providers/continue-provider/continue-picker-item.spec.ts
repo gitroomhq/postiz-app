@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { continuePickerHandle } from '../../../channels/channel-handle.ts';
 import {
   CONTINUE_PICKER_AVATAR_ATTR,
-  continuePickerHandle,
   continuePickerInitial,
   continuePickerItemClasses,
   joinContinuePickerMeta,
@@ -44,6 +44,13 @@ describe('continuePickerHandle', () => {
   it('skips blank usernames', () => {
     assert.equal(continuePickerHandle('  '), undefined);
     assert.equal(continuePickerHandle(undefined), undefined);
+  });
+
+  it('shows a Tumblr URL as host plus path, without an extra at-sign', () => {
+    assert.equal(
+      continuePickerHandle('https://thegokhankinay.tumblr.com/'),
+      'thegokhankinay.tumblr.com',
+    );
   });
 });
 

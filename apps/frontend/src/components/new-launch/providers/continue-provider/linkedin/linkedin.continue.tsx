@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   continuePickerInitial,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
@@ -49,7 +50,7 @@ export const LinkedinContinue = withContinueProvider<
     <ContinuePickerItem
       pictureUrl={item.picture}
       name={item.name}
-      meta={joinContinuePickerMeta(item.username)}
+      meta={joinContinuePickerMeta(continuePickerHandle(item.username))}
       fallback={continuePickerInitial(item.name)}
     />
   ),

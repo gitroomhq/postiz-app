@@ -30,3 +30,21 @@ export function channelListSubtitle(
   }
   return formatChannelHandle(integration.display) || integration.identifier || '';
 }
+
+/** Tooltip / compact chip: "Name · @handle", or whichever piece we have. */
+export function channelNameWithHandle(integration: {
+  name?: string | null;
+  display?: string | null;
+}): string {
+  const name = (integration.name || '').trim();
+  const handle = formatChannelHandle(integration.display);
+  if (name && handle) {
+    return `${name} · ${handle}`;
+  }
+  return name || handle;
+}
+
+/** Continue-picker subtitle: formatted handle, or nothing if display is empty. */
+export function continuePickerHandle(username?: string): string | undefined {
+  return formatChannelHandle(username) || undefined;
+}

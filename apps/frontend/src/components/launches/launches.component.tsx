@@ -24,7 +24,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
-import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
+import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 /**
  * Ghost for this page while the channel list resolves.
@@ -385,7 +385,7 @@ export const MenuComponent: FC<
       {...(collapsed
         ? {
             'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': integration.name,
+            'data-tooltip-content': channelNameWithHandle(integration),
           }
         : {})}
       className={clsx(

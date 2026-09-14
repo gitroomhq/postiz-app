@@ -28,7 +28,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { capitalize } from 'lodash';
+import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
 import { CopilotPopup } from '@copilotkit/react-ui';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
@@ -318,6 +318,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       const integrationById = (id: string) =>
         selectedIntegrations.find((p) => p.integration.id === id);
 
+      const channelToastLabel = (item: {
+        id: string;
+        identifier?: string;
+        name?: string;
+      }) =>
+        channelNameWithHandle({
+          name: integrationById(item.id)?.integration.name || item.name,
+          display: integrationById(item.id)?.integration.display,
+        }) || item.identifier || '';
+
       const group = existingData.group || makeId(10);
 
       const posts = allValues.map((post: any) => ({
@@ -375,8 +385,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         for (const item of notEnoughChars) {
           toaster.show(
-            `${capitalize(item.identifier.split('-')[0])} (${item.name}):` +
-              ' ' +
+            `${channelToastLabel(item)}: ` +
               t(
                 'post_needs_content_or_image',
                 'Your post should have at least one character or one image.'
@@ -392,7 +401,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           for (const item of checkAllValid) {
             if (item.valid === false) {
               toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                `${channelToastLabel(item)}: ${
                   item.settingsError ||
                   t('please_fix_your_settings', 'Please fix your settings')
                 }`,
@@ -406,9 +415,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             if (item.errors !== true) {
               toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.errors
-                }`,
+                `${channelToastLabel(item)}: ${item.errors}`,
                 'warning'
               );
               focus(item.id, 'preview');
@@ -419,7 +426,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
             if (item.tooLong) {
               toaster.show(
-                `${item.name} (${item.identifier}) ${t(
+                `${channelToastLabel(item)} ${t(
                   'post_is_too_long',
                   'post is too long, please fix it'
                 )}`,
