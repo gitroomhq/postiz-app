@@ -1294,3 +1294,5 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 **i18n 0.** Same keys. The Examples frame stays visually distinct, but it is the last block on the detail pane: intro, credentials, How to connect, then samples. It no longer sits between the info note and the install steps.
 
 **Method is under the title, not stuck on the logo.** The MCP/Skill/Chat chip on the large icon overlapped the artwork. The icon is clean; method (and Coming soon) sit on a second line under the name.
+
+**Hub credential strip is a card, not one mixed row.** The key sits on its own row with Reveal and Copy key. Copy MCP URL and Copy API header are actions on a second row. The dead `Authorization: KEY` chip is gone; that header is now copyable. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only (`conn_copy_key`, `conn_copy_header`; 1975 → 1977).

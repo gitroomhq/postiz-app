@@ -1085,7 +1085,7 @@ export const ConnectPanel: FC<{
   );
 
   const copyChipClass =
-    'flex h-[28px] items-center rounded-pqSm bg-pqSettings px-[10px] text-[12px] font-[500] text-pqText transition-colors hover:bg-pqHover';
+    'flex h-[30px] items-center rounded-[8px] bg-pqBtnSimple px-[11px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover';
 
   const credentialStrip = (
     cred: Connection['cred'] | 'hub',
@@ -1098,48 +1098,73 @@ export const ConnectPanel: FC<{
     const maskedKey = keyRevealed
       ? apiKey
       : apiKey
-        ? `${'•'.repeat(Math.max(apiKey.length - 5, 8))}${apiKey.slice(-5)}`
-        : '•'.repeat(32);
+        ? `••••••••${apiKey.slice(-4)}`
+        : '••••••••••••';
 
     if (compact) {
       return (
         <div
-          className="flex flex-wrap items-center gap-[8px] rounded-pqLg bg-pqPop px-[14px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
+          className="overflow-hidden rounded-[16px] bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]"
           aria-label={t('conn_your_connection', 'Your connection')}
           data-tour={compact ? 'connect-creds' : undefined}
         >
-          <span className="text-[12px] font-[600] text-pqMuted">
-            {t('api_key', 'API key')}
-          </span>
-          <code className="min-w-0 max-w-[min(100%,280px)] truncate rounded-pqSm bg-pqInner px-[10px] py-[5px] font-mono text-[12.5px] text-pqText">
-            {maskedKey || '•'.repeat(32)}
-          </code>
-          <button
-            type="button"
-            onClick={() => setKeyRevealed((v) => !v)}
-            className={copyChipClass}
-          >
-            {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-          </button>
-          {showMcp && (
+          <div className="flex flex-wrap items-center gap-[8px] px-[14px] py-[11px]">
+            <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+              {t('api_key', 'API key')}
+            </span>
+            <code className="min-w-0 flex-1 truncate font-mono text-[13px] tracking-[0.04em] text-pqText">
+              {maskedKey || '••••••••••••'}
+            </code>
             <button
               type="button"
-              onClick={() => {
-                copy(mcpUrlWithKey);
-                toaster.show('MCP URL copied to clipboard', 'success');
-              }}
+              onClick={() => setKeyRevealed((v) => !v)}
               className={copyChipClass}
             >
-              {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
+              {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
-          )}
-          {showApi && (
-            <code className="rounded-pqSm bg-pqInner px-[10px] py-[4px] font-mono text-[11.5px] text-pqMuted">
-              Authorization: KEY
-            </code>
+            {!!apiKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  copy(apiKey);
+                  toaster.show('API key copied to clipboard', 'success');
+                }}
+                className={copyChipClass}
+              >
+                {t('conn_copy_key', 'Copy key')}
+              </button>
+            )}
+          </div>
+          {(showMcp || showApi) && (
+            <div className="flex flex-wrap gap-[8px] border-t border-pqLine bg-pqSettings px-[14px] py-[10px]">
+              {showMcp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    copy(mcpUrlWithKey);
+                    toaster.show('MCP URL copied to clipboard', 'success');
+                  }}
+                  className={copyChipClass}
+                >
+                  {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
+                </button>
+              )}
+              {showApi && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    copy(apiHeader);
+                    toaster.show('API header copied to clipboard', 'success');
+                  }}
+                  className={copyChipClass}
+                >
+                  {t('conn_copy_header', 'Copy API header')}
+                </button>
+              )}
+            </div>
           )}
           {!apiKey && (
-            <div className="basis-full">
+            <div className="border-t border-pqLine px-[14px] py-[10px]">
               <ApiKeyMissingNote />
             </div>
           )}

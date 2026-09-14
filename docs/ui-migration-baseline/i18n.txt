@@ -506,6 +506,8 @@ conn_codex_step_mcp
 conn_codex_step_mcp_detail
 conn_copy_api_header
 conn_copy_env
+conn_copy_header
+conn_copy_key
 conn_copy_mcp
 conn_cursor_ex
 conn_cursor_ex_multi
