@@ -571,7 +571,7 @@ export function buildConnectionsCatalog(
     ),
     code: t(
       'conn_bridge_example',
-      'Post this to Instagram tonight at 7, and to X and LinkedIn Friday at 10 as drafts'
+      'Post this photo to Instagram tonight at 7, and this video to X and LinkedIn Friday at 10 as drafts'
     ),
   });
 
@@ -698,19 +698,19 @@ openclaw pairing approve discord <CODE>`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_openclaw_ex', 'Post the blog cover to Instagram tonight at 7 as a draft'),
+              body: t('conn_openclaw_ex', 'Post this photo to Instagram tonight at 7 as a draft'),
               reply: t('conn_openclaw_ex_reply', 'Instagram draft for 19:00. Confirm in WhatsApp before it publishes.'),
               code: 'postqueen posts:create',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_openclaw_ex_x', 'Turn this into a thread on X tomorrow at 8am, draft only'),
+              body: t('conn_openclaw_ex_x', 'Schedule this video on X tomorrow at 8am, draft only'),
               reply: t('conn_openclaw_ex_x_reply', 'X draft for tomorrow 08:00. Open the calendar before it goes out.'),
               code: 'postqueen posts:create',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_openclaw_ex_multi', 'Share this to Instagram, X and LinkedIn on Friday at 10, leave them as drafts'),
+              body: t('conn_openclaw_ex_multi', 'Share this photo to Instagram, X and LinkedIn on Friday at 10, leave them as drafts'),
               reply: t('conn_openclaw_ex_multi_reply', 'Three drafts for Friday 10:00: Instagram, X and LinkedIn. Confirm before they go out.'),
               code: 'postqueen posts:create',
             }),
@@ -777,20 +777,20 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             sample({
-              title: t('conn_ex_label_week', 'Check the calendar'),
-              body: t('conn_hermes_ex', 'Draft a weekly digest for Instagram from this week\'s posts and save it for Monday 9am'),
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_hermes_ex', 'Draft a caption for this photo and save it to Instagram for Monday 9am'),
               reply: t('conn_hermes_ex_reply', 'Instagram draft saved for Monday 09:00. Review it on the calendar before it goes out.'),
               code: 'postqueen posts:create -t draft',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_hermes_ex_x', 'Write an X thread from the digest and queue it for Tuesday 8am as a draft'),
+              body: t('conn_hermes_ex_x', 'Queue this video on X for Tuesday 8am as a draft'),
               reply: t('conn_hermes_ex_x_reply', 'X draft for Tuesday 08:00. Hermes planned it, you still confirm.'),
               code: 'postqueen posts:create -t draft',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_hermes_ex_multi', 'Put the digest on Instagram, X and LinkedIn Wednesday at 10, all drafts'),
+              body: t('conn_hermes_ex_multi', 'Put this photo on Instagram, X and LinkedIn Wednesday at 10, all drafts'),
               reply: t('conn_hermes_ex_multi_reply', 'Three drafts for Wednesday 10:00. Confirm each one on the calendar.'),
               code: 'postqueen posts:create -t draft',
             }),
@@ -859,19 +859,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_cc_ex', 'Schedule the README screenshot to Instagram tonight at 7 as a draft'),
+              body: t('conn_cc_ex', 'Make a cafe photo and draft it to Instagram tonight at 7'),
               reply: t('conn_cc_ex_reply', 'Instagram draft for 19:00. Check it on the calendar before it publishes.'),
               code: 'claude', tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_cc_ex_x', 'Turn CHANGELOG.md into an X thread for tomorrow 8am, draft only'),
+              body: t('conn_cc_ex_x', 'Make a short video and queue it on X tomorrow at 8am as a draft'),
               reply: t('conn_cc_ex_x_reply', 'X draft for tomorrow 08:00. Claude Code used schedulePostTool.'),
               code: 'claude', tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_cc_ex_multi', 'Share this release to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
+              body: t('conn_cc_ex_multi', 'Make a visual and share it to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
               reply: t('conn_cc_ex_multi_reply', 'Three drafts for Friday 10:00. Open the calendar before they go out.'),
               code: 'claude', tool: 'schedulePostTool',
             }),
@@ -932,19 +932,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_grok_build_ex', 'Which PostQueen channels can I post to, then draft an X post from this file for 8am'),
-              reply: t('conn_grok_build_ex_reply', 'Instagram, X, LinkedIn, YouTube. X draft for 08:00 is on the calendar.'),
-              code: 'grok', tool: 'integrationList',
+              body: t('conn_grok_build_ex', 'Make a short video and draft it to X for 8am'),
+              reply: t('conn_grok_build_ex_reply', 'X draft for 08:00. Confirm it on the calendar before it publishes.'),
+              code: 'grok', tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_grok_build_ex_ig', 'Post this screenshot to Instagram tonight at 7 as a draft'),
+              body: t('conn_grok_build_ex_ig', 'Make a photo of the shop window and post it to Instagram tonight at 7 as a draft'),
               reply: t('conn_grok_build_ex_ig_reply', 'Instagram draft for 19:00. grok mcp add registered this, not grok.com/connectors.'),
               code: 'grok', tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_grok_build_ex_multi', 'Queue this on Instagram, X and LinkedIn Friday at 10, all drafts'),
+              body: t('conn_grok_build_ex_multi', 'Make one visual and queue it on Instagram, X and LinkedIn Friday at 10, all drafts'),
               reply: t('conn_grok_build_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in the terminal session before they publish.'),
               code: 'grok', tool: 'schedulePostTool',
             }),
@@ -1004,15 +1004,15 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_codex_ex_ig', 'draft this screenshot to Instagram tonight at 7'),
+              body: t('conn_codex_ex_ig', 'make a photo and draft it to Instagram tonight at 7'),
               reply: t('conn_codex_ex_ig_reply', 'Instagram draft for 19:00. Codex used the skill, not ChatGPT Apps.'),
-              code: 'codex "draft this screenshot to Instagram tonight at 7"',
+              code: 'codex "make a photo and draft it to Instagram tonight at 7"',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_codex_ex_multi', 'schedule this release to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_codex_ex_multi', 'make a visual and schedule it to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_codex_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm on the calendar.'),
-              code: 'codex "schedule this release to Instagram, X and LinkedIn Friday at 10 as drafts"',
+              code: 'codex "make a visual and schedule it to Instagram, X and LinkedIn Friday at 10 as drafts"',
             }),
           ],
           docs: [
@@ -1065,19 +1065,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_muse_code_ex', 'List my PostQueen channels and draft this file to Instagram tonight at 7'),
+              body: t('conn_muse_code_ex', 'Make a square photo of the storefront and draft it to Instagram tonight at 7'),
               reply: t('conn_muse_code_ex_reply', 'Instagram draft for 19:00. Open it before anything publishes.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_muse_code_ex_x', 'Turn this PR into an X post for tomorrow 8am as a draft'),
+              body: t('conn_muse_code_ex_x', 'Make a short clip and queue it on X tomorrow at 8am as a draft'),
               reply: t('conn_muse_code_ex_x_reply', 'X draft for tomorrow 08:00. Muse Code, not the consumer Muse app.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_muse_code_ex_multi', 'Share this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              body: t('conn_muse_code_ex_multi', 'Share this visual to Instagram, X and LinkedIn Friday at 10, all drafts'),
               reply: t('conn_muse_code_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each on the calendar.'),
               tool: 'schedulePostTool',
             }),
@@ -1173,7 +1173,7 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_whatsapp_ex_x', 'Schedule this as a thread on X tomorrow at 8am, draft only'),
+              body: t('conn_whatsapp_ex_x', 'Voice note: post this video to X tomorrow at 8am, draft only'),
               reply: t('conn_whatsapp_ex_x_reply', 'X draft for tomorrow 08:00. Open it on the calendar first.'),
             }),
             sample({
@@ -1217,12 +1217,12 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_telegram_ex_ig', 'Post this carousel to Instagram tonight at 7 as a draft'),
+              body: t('conn_telegram_ex_ig', 'Post this picture to Instagram tonight at 7 as a draft'),
               reply: t('conn_telegram_ex_ig_reply', 'Instagram draft for 19:00. Confirm in Telegram before it publishes.'),
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_telegram_ex_multi', 'Send this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              body: t('conn_telegram_ex_multi', 'Send this video to Instagram, X and LinkedIn Friday at 10, all drafts'),
               reply: t('conn_telegram_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each one in this chat.'),
             }),
           ],
@@ -1257,12 +1257,12 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_slack_chat_ex_x', '@PostQueen queue this changelog to X tomorrow at 8am as a draft'),
+              body: t('conn_slack_chat_ex_x', '@PostQueen post this photo to X tomorrow at 8am as a draft'),
               reply: t('conn_slack_chat_ex_x_reply', 'X draft for tomorrow 08:00. Open the calendar in Slack before it goes out.'),
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_slack_chat_ex_multi', '@PostQueen share this to Instagram, X and LinkedIn Friday at 10, drafts only'),
+              body: t('conn_slack_chat_ex_multi', '@PostQueen share this video to Instagram, X and LinkedIn Friday at 10, drafts only'),
               reply: t('conn_slack_chat_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in this channel.'),
             }),
           ],
@@ -1292,7 +1292,7 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_discord_chat_ex', '@PostQueen drop this changelog on X tomorrow at 8, draft only'),
+              body: t('conn_discord_chat_ex', '@PostQueen post this photo to X tomorrow at 8, draft only'),
               reply: t('conn_discord_chat_ex_reply', 'X draft for tomorrow 08:00. Open it before it publishes.'),
               code: 'postqueen posts:create -t draft',
             }),
@@ -1304,7 +1304,7 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_discord_chat_ex_multi', '@PostQueen share this to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
+              body: t('conn_discord_chat_ex_multi', '@PostQueen share this photo to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
               reply: t('conn_discord_chat_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each in this channel.'),
               code: 'postqueen posts:create -t draft',
             }),
@@ -1351,13 +1351,13 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_claude_apps_ex_ig', 'Draft this photo to Instagram tonight at 7'),
+              body: t('conn_claude_apps_ex_ig', 'Make a photo of a sunny terrace and draft it to Instagram tonight at 7'),
               reply: t('conn_claude_apps_ex_ig_reply', 'Instagram draft for 19:00. Enable PostQueen from + then Connectors first.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_claude_apps_ex_multi', 'Put this on Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_claude_apps_ex_multi', 'Make a visual and put it on Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_claude_apps_ex_multi_reply', 'Three drafts for Friday 10:00. Claude chat, not Claude Code.'),
               tool: 'schedulePostTool',
             }),
@@ -1421,19 +1421,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_chatgpt_ex', 'Draft an Instagram caption from this changelog and schedule it for tonight at 7'),
+              body: t('conn_chatgpt_ex', 'Make a photo of weekend brunch and draft it to Instagram tonight at 7'),
               reply: t('conn_chatgpt_ex_reply', 'Instagram draft for 19:00. Open the calendar before it goes out. Write tools can stay blocked on Plus and Pro.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_chatgpt_ex_x', 'Turn this changelog into an X thread for tomorrow 8am as a draft'),
+              body: t('conn_chatgpt_ex_x', 'Make a short video for X tomorrow at 8am as a draft'),
               reply: t('conn_chatgpt_ex_x_reply', 'X draft for tomorrow 08:00. Settings then Apps, not Connectors, installed this.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_chatgpt_ex_multi', 'Schedule this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              body: t('conn_chatgpt_ex_multi', 'Make one visual and schedule it to Instagram, X and LinkedIn Friday at 10, all drafts'),
               reply: t('conn_chatgpt_ex_multi_reply', 'Three drafts for Friday 10:00. ChatGPT web, not Codex.'),
               tool: 'schedulePostTool',
             }),
@@ -1500,19 +1500,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_grok_ex', 'Put tonight\'s thread on X tomorrow at 8am as a draft'),
+              body: t('conn_grok_ex', 'Put tonight\'s photo on X tomorrow at 8am as a draft'),
               reply: t('conn_grok_ex_reply', 'X draft for tomorrow 08:00. Nothing publishes until you say so.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_grok_ex_ig', 'Post this image to Instagram tonight at 7 as a draft'),
+              body: t('conn_grok_ex_ig', 'Make a photo of the storefront and post it to Instagram tonight at 7 as a draft'),
               reply: t('conn_grok_ex_ig_reply', 'Instagram draft for 19:00. Added at grok.com/connectors, not Grok Bot.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_grok_ex_multi', 'Queue tonight\'s recap on Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_grok_ex_multi', 'Queue this visual on Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_grok_ex_multi_reply', 'Three drafts for Friday 10:00. Grok chat, not Grok Build.'),
               tool: 'schedulePostTool',
             }),
@@ -1576,19 +1576,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_grok_bot_ex', 'Add an X draft that recaps what we shipped in this repo, tomorrow 8am'),
+              body: t('conn_grok_bot_ex', 'Draft this photo to X for tomorrow 8am'),
               reply: t('conn_grok_bot_ex_reply', 'X draft for tomorrow 08:00. The Bot used the public MCP URL, not grok.com/connectors.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_grok_bot_ex_ig', 'Draft this screenshot to Instagram tonight at 7'),
+              body: t('conn_grok_bot_ex_ig', 'Draft this picture to Instagram tonight at 7'),
               reply: t('conn_grok_bot_ex_ig_reply', 'Instagram draft for 19:00. Tell the Bot in chat, there is no connectors form.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_grok_bot_ex_multi', 'Post this recap to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_grok_bot_ex_multi', 'Post this picture to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_grok_bot_ex_multi_reply', 'Three drafts for Friday 10:00. Grok Bot, not grok.com chat.'),
               tool: 'schedulePostTool',
             }),
@@ -1652,19 +1652,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_cursor_ex', 'Turn this README into an Instagram caption and schedule it tonight at 7'),
+              body: t('conn_cursor_ex', 'Make a sale poster and schedule it to Instagram tonight at 7'),
               reply: t('conn_cursor_ex_reply', 'Instagram draft for 19:00. Cursor asks before running schedulePostTool, keep that on.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_cursor_ex_x', 'Turn this README into an X thread for tomorrow 8am as a draft'),
+              body: t('conn_cursor_ex_x', 'Make a 15 second clip and queue it on X tomorrow at 8am as a draft'),
               reply: t('conn_cursor_ex_x_reply', 'X draft for tomorrow 08:00. Agent mode, not a chat connector.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_cursor_ex_multi', 'Schedule this README to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_cursor_ex_multi', 'Make one poster and schedule it to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_cursor_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Cursor before they publish.'),
               tool: 'schedulePostTool',
             }),
@@ -1735,19 +1735,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_vscode_ex', 'List my PostQueen channels, then draft an X post from CHANGELOG.md for 8am'),
-              reply: t('conn_vscode_ex_reply', 'Instagram, X, LinkedIn, YouTube. X draft for 08:00 is on the calendar from CHANGELOG.md.'),
-              tool: 'integrationList',
+              body: t('conn_vscode_ex', 'Make a product photo and draft it to X for 8am from Copilot Chat'),
+              reply: t('conn_vscode_ex_reply', 'X draft for 08:00. Confirm it on the calendar before it publishes.'),
+              tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_vscode_ex_ig', 'Draft this screenshot to Instagram tonight at 7 from Copilot Chat'),
+              body: t('conn_vscode_ex_ig', 'Draft this photo to Instagram tonight at 7 from Copilot Chat'),
               reply: t('conn_vscode_ex_ig_reply', 'Instagram draft for 19:00. VS Code Copilot, not Cursor mcp.json.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_vscode_ex_multi', 'Share CHANGELOG.md to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_vscode_ex_multi', 'Share this visual to Instagram, X and LinkedIn Friday at 10 as drafts from Copilot Chat'),
               reply: t('conn_vscode_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Copilot Chat agent mode.'),
               tool: 'schedulePostTool',
             }),
@@ -1816,19 +1816,19 @@ openclaw onboard --install-daemon`,
           examples: [
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_windsurf_ex', 'In Cascade, save an Instagram draft of this PR title for tonight at 7'),
+              body: t('conn_windsurf_ex', 'In Cascade, make a photo of the shop and save an Instagram draft for tonight at 7'),
               reply: t('conn_windsurf_ex_reply', 'Instagram draft for 19:00. Cascade, not Devin Local, reads mcp_config.json.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_x', 'One channel: X'),
-              body: t('conn_windsurf_ex_x', 'In Cascade, queue this PR title on X tomorrow at 8am as a draft'),
+              body: t('conn_windsurf_ex_x', 'In Cascade, make a short video and queue it on X tomorrow at 8am as a draft'),
               reply: t('conn_windsurf_ex_x_reply', 'X draft for tomorrow 08:00. Windsurf Cascade, not Cursor.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_windsurf_ex_multi', 'In Cascade, post this PR to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_windsurf_ex_multi', 'In Cascade, post this visual to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_windsurf_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Cascade.'),
               tool: 'schedulePostTool',
             }),
@@ -1900,13 +1900,13 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_zed_ex_ig', 'In the Agent Panel, draft this screenshot to Instagram tonight at 7'),
+              body: t('conn_zed_ex_ig', 'In the Agent Panel, make a photo and draft it to Instagram tonight at 7'),
               reply: t('conn_zed_ex_ig_reply', 'Instagram draft for 19:00. Zed needs the Bearer header, not only the URL.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_zed_ex_multi', 'In the Agent Panel, share this to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_zed_ex_multi', 'In the Agent Panel, share this visual to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_zed_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in the Agent Panel.'),
               tool: 'schedulePostTool',
             }),
@@ -1981,13 +1981,13 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_gemini_ex_ig', 'Draft this screenshot to Instagram tonight at 7 from Gemini CLI'),
+              body: t('conn_gemini_ex_ig', 'Make a photo and draft it to Instagram tonight at 7 from Gemini CLI'),
               reply: t('conn_gemini_ex_ig_reply', 'Instagram draft for 19:00. Use httpUrl in settings.json, not url.'),
               code: 'gemini', tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_gemini_ex_multi', 'Schedule this to Instagram, X and LinkedIn Friday at 10 as drafts from Gemini CLI'),
+              body: t('conn_gemini_ex_multi', 'Schedule this visual to Instagram, X and LinkedIn Friday at 10 as drafts from Gemini CLI'),
               reply: t('conn_gemini_ex_multi_reply', 'Three drafts for Friday 10:00. /mcp should show postqueen connected.'),
               code: 'gemini', tool: 'schedulePostTool',
             }),
@@ -2116,13 +2116,13 @@ openclaw onboard --install-daemon`,
             }),
             sample({
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
-              body: t('conn_other_mcp_ex_ig', 'Ask the client to draft this image to Instagram tonight at 7'),
+              body: t('conn_other_mcp_ex_ig', 'Ask the client to make a photo and draft it to Instagram tonight at 7'),
               reply: t('conn_other_mcp_ex_ig_reply', 'Instagram draft for 19:00. Same MCP URL as the other editor cards.'),
               tool: 'schedulePostTool',
             }),
             sample({
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_other_mcp_ex_multi', 'Ask the client to share this to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              body: t('conn_other_mcp_ex_multi', 'Ask the client to share this visual to Instagram, X and LinkedIn Friday at 10 as drafts'),
               reply: t('conn_other_mcp_ex_multi_reply', 'Three drafts for Friday 10:00. Cline, Continue, Goose and the rest share this shape.'),
               tool: 'schedulePostTool',
             }),
@@ -2179,24 +2179,24 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              title: t('conn_n8n_ex_1_title', 'GitHub Release → Instagram and X'),
+              title: t('conn_n8n_ex_1_title', 'New photo → Instagram'),
               body: t(
                 'conn_n8n_ex_1_body',
-                'GitHub Release published → Get Channels → Create Post on Instagram and X.'
+                'New photo in Google Drive → Upload File → Create Post on Instagram.'
               ),
             },
             {
-              title: t('conn_n8n_ex_2_title', 'RSS → Instagram'),
+              title: t('conn_n8n_ex_2_title', 'New video → X draft'),
               body: t(
                 'conn_n8n_ex_2_body',
-                'RSS item → Upload File → Create Post as a draft for review.'
+                'New video in a folder → Create Post as a draft on X.'
               ),
             },
             {
               title: t('conn_n8n_ex_3_title', 'PostQueen → n8n'),
               body: t(
                 'conn_n8n_ex_3_body',
-                'When a post publishes, PostQueen POSTs to your n8n webhook so Slack or a sheet can log it.'
+                'When a post publishes, PostQueen POSTs to your n8n webhook so a sheet can log it.'
               ),
             },
           ],
@@ -2273,17 +2273,17 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              title: t('conn_zapier_ex_1_title', 'Notion → calendar'),
+              title: t('conn_zapier_ex_1_title', 'New photo → Instagram'),
               body: t(
                 'conn_zapier_ex_1_body',
-                'When a Notion page is published → Webhooks by Zapier POST /public/v1/posts.'
+                'When a new photo lands in Drive → Webhooks by Zapier POST /public/v1/posts to Instagram.'
               ),
             },
             {
-              title: t('conn_zapier_ex_2_title', 'Shopify → announce'),
+              title: t('conn_zapier_ex_2_title', 'New video → X'),
               body: t(
                 'conn_zapier_ex_2_body',
-                'When a Shopify product goes live → schedule an Instagram and X launch post.'
+                'When a new video is ready → schedule it on X as a draft.'
               ),
             },
           ],
@@ -2337,10 +2337,10 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              title: t('conn_make_ex_1_title', 'Typeform → Instagram'),
+              title: t('conn_make_ex_1_title', 'New photo → Instagram'),
               body: t(
                 'conn_make_ex_1_body',
-                'New Typeform response → HTTP Make a request → POST /public/v1/posts to Instagram.'
+                'New photo in a folder → HTTP Make a request → POST /public/v1/posts to Instagram.'
               ),
               code: `${backendUrl}/public/v1/posts`,
             },
@@ -2403,7 +2403,7 @@ openclaw onboard --install-daemon`,
               title: t('conn_webhooks_ex_title', 'Log publishes'),
               body: t(
                 'conn_webhooks_ex_body',
-                'Point a webhook at n8n, Make or your own endpoint. The body includes the post, channel and release URL.'
+                'Point a webhook at n8n, Make or your own endpoint. The body includes the post, the channel and a link to it.'
               ),
             },
           ],
@@ -2523,14 +2523,14 @@ openclaw onboard --install-daemon`,
               title: t('conn_ex_label_ig', 'One channel: Instagram'),
               body: t(
                 'conn_cli_ex_ig',
-                'Schedule an Instagram draft'
+                'Schedule an Instagram photo as a draft'
               ),
-              code: 'postqueen posts:create -c "Tonight\'s still" -s "2026-08-01T19:00:00Z" -i <instagram-id> -t draft',
+              code: 'postqueen posts:create -c "Tonight\'s photo" -s "2026-08-01T19:00:00Z" -i <instagram-id> -t draft',
             },
             {
               title: t('conn_ex_label_multi', 'Several channels'),
-              body: t('conn_cli_ex_create', 'Schedule a post'),
-              code: 'postqueen posts:create -c "Hello world" -s "2026-08-01T10:00:00Z" -i <instagram-id>,<x-id>,<linkedin-id> -t draft',
+              body: t('conn_cli_ex_create', 'Schedule the same photo on Instagram, X and LinkedIn'),
+              code: 'postqueen posts:create -c "Tonight\'s photo" -s "2026-08-01T10:00:00Z" -i <instagram-id>,<x-id>,<linkedin-id> -t draft',
             },
           ],
           docs: [
@@ -2644,7 +2644,7 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              body: t('conn_sdk_ex', 'List channels, then schedule a post'),
+              body: t('conn_sdk_ex', 'List channels, then schedule a photo post'),
               code: `import PostQueen from '@postqueen/node';
 
 const pq = new PostQueen(process.env.POSTQUEEN_API_KEY);
