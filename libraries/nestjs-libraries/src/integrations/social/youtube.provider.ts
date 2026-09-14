@@ -972,7 +972,11 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       });
 
       return acc;
-    } catch (err) {
+    } catch (err: any) {
+      if (err instanceof RefreshToken || err instanceof BadBody) {
+        throw err;
+      }
+      this.throwIfCannotFetch(err);
       return [];
     }
   }

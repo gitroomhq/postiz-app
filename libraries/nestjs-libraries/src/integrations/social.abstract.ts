@@ -5,6 +5,7 @@ import {
   PendingCheckResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
+import { analyticsFetchNeedsReconnect } from '@gitroom/nestjs-libraries/integrations/analytics-fetch.errors';
 import { readOrFetch } from '@gitroom/nestjs-libraries/integrations/read.or.fetch';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
@@ -134,6 +135,79 @@ export abstract class SocialAbstract {
       }
     | undefined {
     return undefined;
+  }
+
+  /**
+   * Analytics used to swallow every provider failure as `[]`, so a revoked
+   * token and a quiet week were the same empty pane. Call this on the raw body
+   * (or the thrown error) before treating an empty series as "no activity".
+   * Auth, missing-scope and token errors throw RefreshToken so the analytics
+   * endpoint can tell the frontend to reconnect rather than show an empty
+   * period.
+   */
+  protected throwIfCannotFetch(errOrBody: unknown, status?: number): void {
+    if (errOrBody == null) {
+      return;
+    }
+
+    const thrown =
+      errOrBody && typeof errOrBody === 'object'
+        ? (errOrBody as Record<string, any>)
+        : undefined;
+    const response = thrown?.response;
+    const httpStatus: number | undefined =
+      status ??
+      (typeof response?.status === 'number' ? response.status : undefined) ??
+      (typeof thrown?.code === 'number' &&
+      thrown.code >= 400 &&
+      thrown.code < 600
+        ? thrown.code
+        : undefined) ??
+      (typeof thrown?.status === 'number' &&
+      thrown.status >= 400 &&
+      thrown.status < 600
+        ? thrown.status
+        : undefined);
+
+    const body =
+      response?.data ??
+      (httpStatus !== undefined && thrown?.data !== undefined
+        ? thrown.data
+        : errOrBody);
+
+    let json = typeof body === 'string' ? body : safeStringify(body ?? {});
+    if ((!json || json === '{}') && errOrBody instanceof Error) {
+      json = errOrBody.message || '{}';
+    }
+
+    const envelope =
+      typeof body === 'object' && body !== null ? (body as Record<string, any>) : thrown;
+    const graphError = envelope?.error;
+    const graphMessage = String(
+      graphError?.message || (typeof graphError === 'string' ? graphError : '')
+    );
+
+    const handleError = this.handleErrors(json, httpStatus ?? 200);
+
+    if (handleError?.type === 'disconnect') {
+      throw new Disconnect(this.identifier, json, '{}', handleError.value);
+    }
+
+    if (
+      analyticsFetchNeedsReconnect({
+        json,
+        httpStatus,
+        handleErrorType: handleError?.type,
+        graphError,
+      })
+    ) {
+      throw new RefreshToken(
+        this.identifier,
+        json,
+        '{}',
+        handleError?.value || graphMessage
+      );
+    }
   }
 
   /**

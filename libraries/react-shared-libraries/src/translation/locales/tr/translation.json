@@ -63,6 +63,7 @@
   "channels": "Kanallar",
   "activate": "Aktifleştir",
   "this_channel_needs_to_be_refreshed": "Bu kanalın yenilenmesi gerekiyor,",
+  "no_data_in_this_period": "Bu dönemde veri yok",
   "click_here_to_refresh": "yenilemek için buraya tıklayın",
   "can_t_show_analytics_yet": "Analitikler henüz gösterilemiyor",
   "you_have_to_add_social_media_channels": "Sosyal medya kanalları eklemelisiniz",

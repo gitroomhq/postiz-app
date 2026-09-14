@@ -58,6 +58,7 @@
   "channels": "চ্যানেল",
   "activate": "সক্রিয় করুন",
   "this_channel_needs_to_be_refreshed": "এই চ্যানেলটি রিফ্রেশ করা প্রয়োজন,",
+  "no_data_in_this_period": "এই সময়ে কোনো তথ্য নেই",
   "click_here_to_refresh": "রিফ্রেশ করতে এখানে ক্লিক করুন",
   "can_t_show_analytics_yet": "এখনও বিশ্লেষণ দেখাতে পারছি না",
   "you_have_to_add_social_media_channels": "আপনাকে সোশ্যাল মিডিয়া চ্যানেল যোগ করতে হবে",

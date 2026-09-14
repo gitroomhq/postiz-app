@@ -1070,7 +1070,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
+    } catch (err: any) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
+      this.throwIfCannotFetch(err);
       console.error('Error fetching TikTok analytics:', err);
       return [];
     }

@@ -58,6 +58,7 @@
   "channels": "Kênh",
   "activate": "Kích hoạt",
   "this_channel_needs_to_be_refreshed": "Kênh này cần được làm mới,",
+  "no_data_in_this_period": "Không có dữ liệu trong khoảng thời gian này",
   "click_here_to_refresh": "bấm vào đây để làm mới",
   "can_t_show_analytics_yet": "Chưa thể hiển thị phân tích",
   "you_have_to_add_social_media_channels": "Bạn cần thêm các kênh mạng xã hội",

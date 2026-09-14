@@ -724,11 +724,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const { data, ...all } = await (
+    const json = await (
       await fetch(
         `https://graph.threads.net/v1.0/${id}/threads_insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+    this.throwIfCannotFetch(json);
+    const { data } = json;
 
     return (
       data?.map((d: any) => ({
