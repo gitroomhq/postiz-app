@@ -18,15 +18,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
-
-function replaceLinks(text: string) {
-  const urlRegex =
-    /(\bhttps?:\/\/[-A-Z0-9+&@#/%?=~_|!:,.;]*[-A-Z0-9+&@#/%=~_|])/gi;
-  return text.replace(
-    urlRegex,
-    '<a class="cursor-pointer underline font-bold" target="_blank" href="$1">$1</a>'
-  );
-}
+import { splitNotificationContent } from '@gitroom/frontend/components/notifications/notification.look';
 
 export const ShowNotification: FC<{
   notification: {
@@ -46,7 +38,9 @@ export const ShowNotification: FC<{
   const createdAt = dayjs(notification.createdAt);
   const isWithin24h = dayjs().diff(createdAt, 'hour') < 24;
   const { mediumDateTimePattern } = useDateFormat();
+  const t = useT();
   const fullDate = createdAt.format(mediumDateTimePattern());
+  const { text, url, kind } = splitNotificationContent(notification.content);
   return (
     <div
       className={clsx(
@@ -54,23 +48,66 @@ export const ShowNotification: FC<{
         unread ? 'bg-pqBrandSoft' : 'bg-transparent'
       )}
     >
-      <span
-        className={clsx(
-          'mt-[6px] size-[6px] shrink-0 rounded-full',
-          unread ? 'bg-pqBrand' : 'bg-transparent'
-        )}
-        aria-hidden="true"
-      />
-      <div className="min-w-0 flex-1">
+      {kind === 'success' ? (
+        <span
+          className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqOk text-white"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
+            <path
+              d="M2.4 6.2 4.8 8.6 9.6 3.4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      ) : kind === 'fail' ? (
+        <span
+          className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqDanger text-white"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 12 12" width="9" height="9" fill="none">
+            <path
+              d="M3 3l6 6M9 3 3 9"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      ) : (
+        <span
+          className={clsx(
+            'mt-[6px] size-[6px] shrink-0 rounded-full',
+            unread ? 'bg-pqBrand' : 'bg-transparent'
+          )}
+          aria-hidden="true"
+        />
+      )}
+      <div className="min-w-0 flex-1 overflow-hidden">
         <div
           className={clsx(
-            'break-words text-[13.5px] leading-[1.5] text-pqText',
+            'break-words text-[13.5px] leading-[1.5] text-pqText [overflow-wrap:anywhere]',
             unread ? 'font-[600]' : 'font-[400]'
           )}
-          dangerouslySetInnerHTML={{
-            __html: replaceLinks(notification.content),
-          }}
-        />
+        >
+          {text}
+        </div>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="mt-[4px] inline-flex text-[12.5px] font-[600] text-pqBrand hover:underline"
+          >
+            {kind === 'success'
+              ? t('view_post', 'View post')
+              : t('open_link', 'Open link')}
+          </a>
+        )}
         <div
           className="mt-[3px] text-[11.5px] font-normal text-pqSoft"
           title={isWithin24h ? fullDate : undefined}
@@ -140,7 +177,7 @@ export const NotificationOpenComponent = forwardRef<
     <div
       ref={ref}
       id="notification-popup"
-      className="z-[600] flex min-h-[200px] w-[380px] max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-pqLg border border-pqBorder bg-pqInner text-pqText shadow-pq animate-pqPop"
+      className="z-[600] flex min-h-[200px] w-[380px] max-w-[calc(100vw-16px)] cursor-default flex-col overflow-hidden rounded-pqLg border border-pqBorder bg-pqInner text-pqText shadow-pq animate-pqPop"
     >
       <div className="flex items-center border-b border-pqLine px-[16px] py-[12px]">
         <span className="flex-1 text-[14px] font-[600]">

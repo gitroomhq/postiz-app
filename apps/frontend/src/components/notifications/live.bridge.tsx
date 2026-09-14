@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { splitNotificationContent } from '@gitroom/frontend/components/notifications/notification.look';
 
 const POLL_MS = 20_000;
 
@@ -79,10 +80,23 @@ export const NotificationsLiveBridge = (): null => {
     const toShow = fresh.slice(0, 3);
     for (const n of toShow) {
       toastedIds.current.add(n.id);
-      const text = n.content.replace(/<[^>]+>/g, '').trim();
-      if (text) {
-        toaster.show(text, { kind: 'info' });
-      }
+      const stripped = n.content.replace(/<[^>]+>/g, '').trim();
+      if (!stripped) continue;
+      const split = splitNotificationContent(stripped);
+      toaster.show(split.text, {
+        kind:
+          split.kind === 'fail'
+            ? 'warning'
+            : split.kind === 'success'
+              ? 'success'
+              : 'info',
+        href: split.url || undefined,
+        action: split.url
+          ? split.kind === 'success'
+            ? 'View post'
+            : 'Open'
+          : undefined,
+      });
     }
 
     const newest = fresh.reduce((a, b) =>
