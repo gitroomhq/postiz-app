@@ -363,6 +363,7 @@ export class IntegrationsController {
       }
 
       getIntegration.token = data.accessToken;
+      getIntegration.refreshToken = data.refreshToken;
 
       if (integrationProvider.refreshWait) {
         await timer(10000);
