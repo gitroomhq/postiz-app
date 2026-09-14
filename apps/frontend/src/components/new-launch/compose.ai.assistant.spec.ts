@@ -35,4 +35,14 @@ describe('compose AI assistant placement', () => {
     assert.match(assistant, /availableWidth: number/);
     assert.match(assistant, /position: relative !important/);
   });
+
+  it('uses a high-contrast filled sparkle and a focused chip, not a brand ring', () => {
+    assert.match(assistant, /width="20"/);
+    assert.match(assistant, /fill="currentColor"/);
+    assert.match(assistant, /text-pqFocused/);
+    assert.match(assistant, /AI assistant/);
+    assert.match(assistant, /var\(--focused\)/);
+    assert.doesNotMatch(assistant, /var\(--brand\)/);
+    assert.doesNotMatch(assistant, /text-pqBrand/);
+  });
 });
