@@ -27,27 +27,22 @@ const COPILOT_DESKTOP_PX = 640;
 
 const triggerClassName = (open: boolean) =>
   clsx(
-    'flex h-[42px] shrink-0 items-center gap-[8px] rounded-[10px] bg-btnSimple px-[14px] text-[14px] font-[600] text-pqText transition-colors hover:bg-pqHover',
+    'flex h-[42px] shrink-0 items-center gap-[8px] rounded-[10px] border-0 bg-btnSimple px-[16px] text-[14px] font-[600] text-pqText transition-colors hover:bg-pqHover',
     open &&
-      'bg-pqBrandSoft text-pqBrand shadow-[inset_0_0_0_1px_var(--brand)]'
+      'bg-pqBrandSoft shadow-[inset_0_0_0_1px_var(--focused)] hover:bg-pqBrandSoft'
   );
 
-const SunIcon: FC = () => (
+const SparkleIcon: FC = () => (
   <svg
     viewBox="0 0 24 24"
-    width="18"
-    height="18"
-    fill="none"
+    width="20"
+    height="20"
+    fill="currentColor"
     aria-hidden="true"
-    className="shrink-0 text-pqBrand"
+    className="shrink-0 text-pqFocused"
   >
-    <path
-      d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M17.4 6.6l1.4-1.4M5.2 18.8l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M12 2.2 14.15 9.85 21.8 12 14.15 14.15 12 21.8 9.85 14.15 2.2 12 9.85 9.85Z" />
+    <path d="M19.1 3.4 19.95 6.55 23.1 7.4 19.95 8.25 19.1 11.4 18.25 8.25 15.1 7.4 18.25 6.55Z" />
   </svg>
 );
 
@@ -58,10 +53,12 @@ const ComposeAiTriggerFace: FC<{
   const t = useT();
   return (
     <>
-      {open ? <CloseIcon size={16} className="text-pqBrand" /> : <SunIcon />}
-      <span>
-        {t('your_assistant', 'AI writing help')}
-      </span>
+      {open ? (
+        <CloseIcon size={20} className="shrink-0 text-pqFocused" />
+      ) : (
+        <SparkleIcon />
+      )}
+      <span>{t('your_assistant', 'AI assistant')}</span>
       {children}
     </>
   );
@@ -73,7 +70,7 @@ const ComposeAiTriggerFace: FC<{
 const ComposeAiPopupButton: FC = () => {
   const t = useT();
   const { open, setOpen } = useChatContext();
-  const label = t('your_assistant', 'AI writing help');
+  const label = t('your_assistant', 'AI assistant');
   return (
     <button
       type="button"
@@ -216,7 +213,7 @@ export const ComposeAiAssistant: FC = () => {
   const [open, setOpen] = useState(false);
   usePinCopilotWindow(hostRef, open);
 
-  const label = t('your_assistant', 'AI writing help');
+  const label = t('your_assistant', 'AI assistant');
   const unconfiguredTip = t(
     'compose_ai_unconfigured_tip',
     'AI assistant needs OpenAI configured. Discover Claude, ChatGPT, and MCP agents in Connections.'
