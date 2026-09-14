@@ -5,6 +5,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { NeynarContextProvider, Theme, useNeynarContext } from '@neynar/react';
 import { NeynarAuthButton } from '@gitroom/frontend/components/auth/nayner.auth.button';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { oauthButtonClass } from '@gitroom/frontend/components/auth/oauth-button-class';
 export const FarcasterProvider = () => {
   const gotoLogin = useCallback(async (code: string) => {
     window.location.href = `/auth?provider=FARCASTER&code=${code}`;
@@ -26,7 +27,7 @@ export const ButtonCaster: FC<{
     >
       <NeynarAuthButton onLogin={login}>
         <div
-          className="cursor-pointer w-full bg-white border border-newBorder hover:bg-boxHover transition-colors h-[52px] rounded-[10px] flex justify-center items-center text-[#0E0E0E] gap-[10px] text-[15px] font-[500]"
+          className={oauthButtonClass}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
