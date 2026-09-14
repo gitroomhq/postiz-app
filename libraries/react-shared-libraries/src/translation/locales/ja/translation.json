@@ -58,6 +58,7 @@
   "channels": "チャンネル",
   "activate": "有効化",
   "this_channel_needs_to_be_refreshed": "このチャンネルは更新が必要です。",
+  "no_data_in_this_period": "この期間のデータはありません",
   "click_here_to_refresh": "ここをクリックして更新",
   "can_t_show_analytics_yet": "まだ分析情報を表示できません",
   "you_have_to_add_social_media_channels": "ソーシャルメディアチャンネルを追加する必要があります",

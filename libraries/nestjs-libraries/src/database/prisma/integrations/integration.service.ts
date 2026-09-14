@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
+  Disconnect,
   NotEnoughScopes,
   RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -671,7 +672,10 @@ export class IntegrationService {
         getIntegration
       );
       if (!data) {
-        return [];
+        throw new HttpException(
+          'This channel needs to be refreshed',
+          HttpStatus.BAD_REQUEST
+        );
       }
 
       const { accessToken } = data;
@@ -684,7 +688,10 @@ export class IntegrationService {
         }
       } else {
         await this.disconnectChannel(org.id, getIntegration);
-        return [];
+        throw new HttpException(
+          'This channel needs to be refreshed',
+          HttpStatus.BAD_REQUEST
+        );
       }
     }
 
@@ -713,8 +720,32 @@ export class IntegrationService {
         return loadAnalytics;
       } catch (e) {
         if (e instanceof RefreshToken) {
+          if (forceRefresh) {
+            throw new HttpException(
+              'This channel needs to be refreshed',
+              HttpStatus.BAD_REQUEST
+            );
+          }
           return this.checkAnalytics(org, integration, date, true);
         }
+        if (e instanceof NotEnoughScopes || e instanceof Disconnect) {
+          throw new HttpException(
+            'This channel needs to be refreshed',
+            HttpStatus.BAD_REQUEST
+          );
+        }
+        if (e instanceof HttpException) {
+          throw e;
+        }
+        Logger.warn(
+          `Analytics fetch failed for ${getIntegration.providerIdentifier}: ${
+            (e as Error)?.message || e
+          }`
+        );
+        throw new HttpException(
+          'This channel needs to be refreshed',
+          HttpStatus.BAD_REQUEST
+        );
       }
     }
 

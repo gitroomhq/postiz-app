@@ -1344,3 +1344,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Buttons look clickable on hover
 
 **i18n 0.** Tailwind 4 preflight leaves `cursor: default` on `<button>`. Connect had a local `[&_button]:cursor-pointer` patch; Channel Edit / Move / Copy / Set up plug did not. One `@layer base` rule after the Tailwind import sets pointer on links, buttons, `[role=button]`, `summary`, `label[for]`, and `select`, and `not-allowed` on disabled. Channel detail rows are the control (no nested CTA button). Set up plug uses `hover:bg-pqBrandHover`.
+
+## Analytics empty period is not a reconnect
+
+**i18n +1 (`no_data_in_this_period`).** The channel analytics pane treated a successful empty series the same as a 4xx / revoked token: "This channel needs to be refreshed" plus Refresh Channel. X returns `[]` when there were no tweets in the selected range, so a quiet week looked like a broken OAuth connection. Empty or all-zero series now say there is no data in this period, without the reconnect CTA. Token / 401 / 403 / missing-scope failures still throw so the pane keeps Refresh Channel. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

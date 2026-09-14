@@ -58,6 +58,7 @@
   "channels": "Canais",
   "activate": "Ativar",
   "this_channel_needs_to_be_refreshed": "Este canal precisa ser atualizado,",
+  "no_data_in_this_period": "Não há dados neste período",
   "click_here_to_refresh": "clique aqui para atualizar",
   "can_t_show_analytics_yet": "Ainda não é possível mostrar análises",
   "you_have_to_add_social_media_channels": "Você precisa adicionar canais de Mídias Sociais",

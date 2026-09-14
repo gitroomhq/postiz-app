@@ -1087,17 +1087,21 @@ export class InstagramProvider
     const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const { data, ...all } = await (
+    const first = await (
       await fetch(
         `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+    this.throwIfCannotFetch(first);
+    const { data } = first;
 
-    const { data: data2, ...all2 } = await (
+    const second = await (
       await fetch(
         `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+    this.throwIfCannotFetch(second);
+    const { data: data2 } = second;
     const analytics = [];
 
     analytics.push(
@@ -1112,7 +1116,7 @@ export class InstagramProvider
     );
 
     analytics.push(
-      ...data2.map((d: any) => ({
+      ...(data2?.map((d: any) => ({
         label: this.setTitle(d.name),
         percentageChange: 5,
         data: [
@@ -1121,7 +1125,7 @@ export class InstagramProvider
             date: dayjs().format('YYYY-MM-DD'),
           },
         ],
-      }))
+      })) || [])
     );
 
     return analytics;

@@ -10,6 +10,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
   BadBody,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -587,6 +588,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       );
 
       const data = await response.json();
+      this.throwIfCannotFetch(data, response.status);
 
       // Response structure: { multiDailyMetricTimeSeries: [{ dailyMetricTimeSeries: [...] }] }
       const dailyMetricTimeSeries =
@@ -630,7 +632,11 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       }
 
       return analytics;
-    } catch (error) {
+    } catch (error: any) {
+      if (error instanceof RefreshToken || error instanceof BadBody) {
+        throw error;
+      }
+      this.throwIfCannotFetch(error);
       console.error('Error fetching GMB analytics:', error);
       return [];
     }

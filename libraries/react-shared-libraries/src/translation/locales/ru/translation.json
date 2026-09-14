@@ -58,6 +58,7 @@
   "channels": "Каналы",
   "activate": "Активировать",
   "this_channel_needs_to_be_refreshed": "Этот канал нужно обновить,",
+  "no_data_in_this_period": "Нет данных за этот период",
   "click_here_to_refresh": "нажмите здесь, чтобы обновить",
   "can_t_show_analytics_yet": "Пока нельзя показать аналитику",
   "you_have_to_add_social_media_channels": "Вам нужно добавить каналы социальных сетей",

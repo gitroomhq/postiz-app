@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo } from 'react';
+import { FC, ReactNode, useCallback, useMemo } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
@@ -6,6 +6,7 @@ import { AnalyticsCardsGhost } from '@gitroom/frontend/components/layout/loading
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
+import { analyticsHasActivity } from './analytics-activity';
 
 interface AnalyticsDataItem {
   label: string;
@@ -97,12 +98,31 @@ const AnalyticsCard: FC<{
   );
 };
 
-const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
+const AnalyticsPaneMessage: FC<{
+  icon: ReactNode;
+  iconClassName: string;
+  children: ReactNode;
+}> = ({ icon, iconClassName, children }) => (
+  <div className="col-span-full flex flex-col items-center justify-center rounded-pqMd bg-pqPop px-[24px] py-[48px] shadow-[inset_0_0_0_1px_var(--border)]">
+    <div
+      className={clsx(
+        'mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-full',
+        iconClassName
+      )}
+    >
+      {icon}
+    </div>
+    {children}
+  </div>
+);
+
+const RefreshChannelState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const t = useT();
 
   return (
-    <div className="col-span-full flex flex-col items-center justify-center rounded-pqMd bg-pqPop px-[24px] py-[48px] shadow-[inset_0_0_0_1px_var(--border)]">
-      <div className="mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-full bg-pqBrandSoft">
+    <AnalyticsPaneMessage
+      iconClassName="bg-pqBrandSoft"
+      icon={
         <svg
           width="24"
           height="24"
@@ -115,7 +135,8 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
           <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           <path d="M12 8v4l2 2" />
         </svg>
-      </div>
+      }
+    >
       <p className="mb-[12px] text-center text-[15px] text-pqText">
         {t(
           'this_channel_needs_to_be_refreshed',
@@ -129,7 +150,34 @@ const EmptyState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       >
         {t('refresh_channel', 'Refresh Channel')}
       </button>
-    </div>
+    </AnalyticsPaneMessage>
+  );
+};
+
+const NoPeriodDataState: FC = () => {
+  const t = useT();
+
+  return (
+    <AnalyticsPaneMessage
+      iconClassName="bg-pqSettings"
+      icon={
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-pqMuted"
+        >
+          <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+        </svg>
+      }
+    >
+      <p className="text-center text-[15px] text-pqText">
+        {t('no_data_in_this_period', 'No data in this period')}
+      </p>
+    </AnalyticsPaneMessage>
   );
 };
 
@@ -137,6 +185,7 @@ type AnalyticsIntegration = {
   id: string;
   identifier: string;
   internalId?: string;
+  refreshNeeded?: boolean;
 };
 
 export const RenderAnalytics: FC<{
@@ -206,6 +255,8 @@ export const RenderAnalytics: FC<{
   // and guarding only the memo left the JSX below to do it anyway.
   const rows: AnalyticsDataItem[] = Array.isArray(data) ? data : [];
   const failed = !isLoading && !Array.isArray(data);
+  const needsRefresh = failed || !!integration.refreshNeeded;
+  const noPeriodData = !needsRefresh && !analyticsHasActivity(rows);
 
   const totals = useMemo(() => {
     return rows.map((p: AnalyticsDataItem) => {
@@ -232,18 +283,18 @@ export const RenderAnalytics: FC<{
     );
   }
 
-  // The request came back with something that is not a list — a 4xx body, or a
-  // rejection that left `data` undefined. Without this the pane rendered an
-  // empty grid and said nothing.
-  if (failed) {
-    return <EmptyState onRefresh={refreshChannel(integration)} />;
+  // A 4xx body, a thrown JSON parse, or a channel already flagged
+  // refreshNeeded. Empty series is not this — that is "no activity".
+  if (needsRefresh) {
+    return <RefreshChannelState onRefresh={refreshChannel(integration)} />;
+  }
+
+  if (noPeriodData) {
+    return <NoPeriodDataState />;
   }
 
   return (
     <div className="grid grid-cols-1 gap-[13px] sm:grid-cols-2 lg:grid-cols-3">
-      {rows.length === 0 && (
-        <EmptyState onRefresh={refreshChannel(integration)} />
-      )}
       {rows.map((item: AnalyticsDataItem, index: number) => (
         <AnalyticsCard
           key={`analytics-${index}`}

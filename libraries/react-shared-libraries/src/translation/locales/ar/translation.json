@@ -58,6 +58,7 @@
   "channels": "القنوات",
   "activate": "تفعيل",
   "this_channel_needs_to_be_refreshed": "يجب تحديث هذه القناة،",
+  "no_data_in_this_period": "لا توجد بيانات في هذه الفترة",
   "click_here_to_refresh": "انقر هنا للتحديث",
   "can_t_show_analytics_yet": "لا يمكن عرض التحليلات بعد",
   "you_have_to_add_social_media_channels": "يجب عليك إضافة قنوات التواصل الاجتماعي",

@@ -58,6 +58,7 @@
   "channels": "频道",
   "activate": "激活",
   "this_channel_needs_to_be_refreshed": "该频道需要刷新，",
+  "no_data_in_this_period": "该时间段内没有数据",
   "click_here_to_refresh": "点击这里刷新",
   "can_t_show_analytics_yet": "暂时无法显示分析数据",
   "you_have_to_add_social_media_channels": "你需要添加社交媒体频道",

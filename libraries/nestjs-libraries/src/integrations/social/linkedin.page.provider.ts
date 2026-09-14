@@ -324,7 +324,7 @@ export class LinkedinPageProvider
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
-    const { elements }: { elements: Root[]; paging: any } = await (
+    const pageStats = await (
       await fetch(
         `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
           `urn:li:organization:${id}`
@@ -338,8 +338,10 @@ export class LinkedinPageProvider
         }
       )
     ).json();
+    this.throwIfCannotFetch(pageStats);
+    const elements: Root[] = pageStats?.elements || [];
 
-    const { elements: elements2 }: { elements: Root[]; paging: any } = await (
+    const followerStats = await (
       await fetch(
         `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
@@ -353,8 +355,10 @@ export class LinkedinPageProvider
         }
       )
     ).json();
+    this.throwIfCannotFetch(followerStats);
+    const elements2: Root[] = followerStats?.elements || [];
 
-    const { elements: elements3 }: { elements: Root[]; paging: any } = await (
+    const shareStats = await (
       await fetch(
         `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
           `urn:li:organization:${id}`
@@ -368,6 +372,8 @@ export class LinkedinPageProvider
         }
       )
     ).json();
+    this.throwIfCannotFetch(shareStats);
+    const elements3: Root[] = shareStats?.elements || [];
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {
