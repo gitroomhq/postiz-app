@@ -522,9 +522,11 @@ const ChannelSettingsGroups: FC<{
           </div>
           <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
             {rows.map((row) => (
-              <div
+              <button
                 key={row.key}
-                className="flex items-center gap-[12px] border-b border-pqLine px-[14px] py-[12px] transition-colors last:border-b-0 hover:bg-pqHover"
+                type="button"
+                onClick={row.onClick}
+                className="flex w-full items-center gap-[12px] border-b border-pqLine px-[14px] py-[12px] text-start transition-colors last:border-b-0 hover:bg-pqHover"
               >
                 <span
                   className={clsx(
@@ -542,30 +544,28 @@ const ChannelSettingsGroups: FC<{
                     />
                   </svg>
                 </span>
-                <div className="min-w-0 flex-1">
-                  <div
+                <span className="min-w-0 flex-1">
+                  <span
                     className={clsx(
-                      'text-[13.5px] font-[600]',
+                      'block text-[13.5px] font-[600]',
                       row.warn ? 'text-pqWarn' : 'text-pqText'
                     )}
                   >
                     {row.label}
-                  </div>
-                  <div className="mt-[2px] text-[12.5px] text-pqMuted">
+                  </span>
+                  <span className="mt-[2px] block text-[12.5px] text-pqMuted">
                     {row.hint}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={row.onClick}
+                  </span>
+                </span>
+                <span
                   className={clsx(
-                    'h-[30px] shrink-0 rounded-pqSm bg-pqBtnSimple px-[12px] text-[12.5px] font-[600] transition-colors hover:bg-pqHover',
+                    'grid h-[30px] shrink-0 place-items-center rounded-pqSm bg-pqBtnSimple px-[12px] text-[12.5px] font-[600]',
                     row.warn ? 'text-pqWarn' : 'text-pqText'
                   )}
                 >
                   {row.cta}
-                </button>
-              </div>
+                </span>
+              </button>
             ))}
           </div>
         </div>
