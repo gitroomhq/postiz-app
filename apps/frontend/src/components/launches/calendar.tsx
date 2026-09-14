@@ -1031,7 +1031,10 @@ export const ListView = () => {
           <button
             type="button"
             onClick={() => router.push('/channels?add=1')}
-            className="mt-[2px] h-[36px] min-w-[200px] rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+            className={clsx(
+              'mt-[2px] min-w-[200px] rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+              mobile ? 'h-[44px] min-h-[44px]' : 'h-[36px]'
+            )}
           >
             {t('add_your_first_channel', 'Add your first channel')}
           </button>

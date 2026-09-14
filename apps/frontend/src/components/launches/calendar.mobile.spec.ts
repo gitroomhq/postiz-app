@@ -52,4 +52,34 @@ describe('phone calendar and composer', () => {
     assert.match(filters, /data-cal-view-sheet/);
     assert.match(filters, /viewSheetOpen/);
   });
+
+  it('hides the Posts rail toggle and calendar/list segment on phone', () => {
+    const filters = readFileSync(
+      fileURLToPath(new URL('./filters.tsx', import.meta.url)),
+      'utf8',
+    );
+    assert.doesNotMatch(filters, /data-posts-toggle/);
+    assert.match(filters, /\{!mobile && \(/);
+  });
+});
+
+const addProvider = readFileSync(
+  fileURLToPath(new URL('./add.provider.component.tsx', import.meta.url)),
+  'utf8',
+);
+const newPost = readFileSync(
+  fileURLToPath(new URL('./new.post.tsx', import.meta.url)),
+  'utf8',
+);
+
+describe('phone chrome and channel picker', () => {
+  it('uses the viewport to drive the Add Channel list even when isMobile is unset', () => {
+    assert.match(addProvider, /const phone = Boolean\(isMobile\) \|\| mobile/);
+    assert.match(addProvider, /phone && 'flex flex-col gap-\[8px\]'/);
+  });
+
+  it('renders Create Post as a 44px plus on phone', () => {
+    assert.match(newPost, /mobile \? 'size-\[44px\]' : 'h-\[36px\]'/);
+    assert.match(newPost, /\{\!mobile && \(/);
+  });
 });

@@ -18,3 +18,26 @@ describe('MobileSheet', () => {
     assert.match(source, /overscroll-contain/);
   });
 });
+
+const userMenu = readFileSync(
+  fileURLToPath(new URL('../new-layout/user.menu.tsx', import.meta.url)),
+  'utf8',
+);
+const helpMenu = readFileSync(
+  fileURLToPath(new URL('../new-layout/help.menu.tsx', import.meta.url)),
+  'utf8',
+);
+
+describe('phone account and help chrome', () => {
+  it('opens the account menu as a bottom sheet', () => {
+    assert.match(userMenu, /<MobileSheet/);
+    assert.match(userMenu, /title=\{t\('account_menu'/);
+    assert.match(userMenu, /size-\[44px\]/);
+  });
+
+  it('opens Help as a bottom sheet instead of a hover popover', () => {
+    assert.match(helpMenu, /<MobileSheet/);
+    assert.match(helpMenu, /if \(!open \|\| mobile\) return/);
+    assert.match(helpMenu, /grid size-\[44px\]/);
+  });
+});

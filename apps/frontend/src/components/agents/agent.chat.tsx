@@ -115,7 +115,7 @@ export const AgentChat: FC = () => {
             '--copilot-kit-muted-color': 'var(--muted)',
           } as CopilotKitCSSProperties
         }
-        className="trz agent bg-pqInner flex flex-col transition-all flex-1 relative min-w-0"
+        className="trz agent bg-pqInner flex min-h-0 flex-col transition-all flex-1 relative min-w-0"
       >
         <div className="absolute start-0 w-full h-full">
           <CopilotChat
@@ -226,7 +226,7 @@ const EmptyState: FC = () => {
   const params = useParams<{ id: string }>();
   // Existing threads start with an empty context while their messages load —
   // without the id gate the hero flashes over every old conversation.
-  if (messages.length || params.id !== 'new') {
+  if (messages.length || (params.id && params.id !== 'new')) {
     return null;
   }
   return (
@@ -234,7 +234,7 @@ const EmptyState: FC = () => {
     // swallow the suggestion card's clicks.
     <div
       data-copilot-empty="1"
-      className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
+      className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[16px] pt-[24px] pb-[30px] text-center sm:px-[40px] sm:pt-[56px]"
     >
       <EmptyStateHero />
     </div>
@@ -318,7 +318,7 @@ const UnconfiguredAgentShell: FC = () => {
           {!messages.length ? (
             <div
               data-copilot-empty="1"
-              className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[40px] pt-[56px] pb-[30px] text-center"
+              className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex flex-col items-center gap-[18px] px-[16px] pt-[24px] pb-[30px] text-center sm:px-[40px] sm:pt-[56px]"
             >
               <EmptyStateHero />
             </div>

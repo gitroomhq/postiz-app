@@ -541,7 +541,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
       data-pq={`agent-${which}`}
       onClick={() => setPanel((p) => (p === which ? null : which))}
       aria-expanded={panel === which}
-          className="h-[32px] min-h-[44px] rounded-pqSm border border-pqBorder bg-pqInner px-[12px] text-[12.5px] font-[500] text-pqText"
+          className="h-[44px] min-h-[44px] flex-1 rounded-pqSm border border-pqBorder bg-pqInner px-[12px] text-[13px] font-[500] text-pqText"
     >
       {label}
     </button>
@@ -617,7 +617,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
               {toggle('threads', t('conversations', 'Conversations'))}
             </div>
           )}
-          <div className="flex flex-1 min-w-0">{children}</div>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
         </div>
 
         <AgentDrawer

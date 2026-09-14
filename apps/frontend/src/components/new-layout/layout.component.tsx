@@ -265,7 +265,14 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="blurMe relative z-[40] flex h-[56px] shrink-0 items-center gap-[12px] border-b border-pqRailLine bg-pqRail pe-[16px]">
+      <header
+        className={clsx(
+          'blurMe relative z-[40] flex shrink-0 items-center border-b border-pqRailLine bg-pqRail',
+          mobile
+            ? 'h-[calc(56px+env(safe-area-inset-top,0px))] gap-[8px] pe-[8px] pt-[env(safe-area-inset-top,0px)]'
+            : 'h-[56px] gap-[12px] pe-[16px]'
+        )}
+      >
         {mobile ? (
           <button
             type="button"
@@ -329,7 +336,12 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
             Create Post is chrome, not a page action: it is the app's primary
             verb and has to be reachable from every route, including before any
             channel exists. The slot after it stays for page-level actions. */}
-        <div className="flex shrink-0 items-center gap-[10px]">
+        <div
+          className={clsx(
+            'flex shrink-0 items-center',
+            mobile ? 'gap-[4px]' : 'gap-[10px]'
+          )}
+        >
           <NewPost />
           <HeaderActionSlot />
           <div className="flex items-center gap-[4px] text-pqMuted">
@@ -339,7 +351,7 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
               <NotificationComponent />
             </HeaderIcon>
           </div>
-          <HeaderDivider />
+          {!mobile && <HeaderDivider />}
           <UserMenu />
         </div>
       </header>

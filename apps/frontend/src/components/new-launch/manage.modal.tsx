@@ -689,7 +689,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   id="social-content"
                   className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
                 >
-                  <div className="flex w-full items-start gap-[16px]">
+                  <div className={clsx(
+                    'flex w-full items-start gap-[16px]',
+                    mobile && 'flex-col'
+                  )}>
                     <div className="flex min-w-0 flex-1 flex-col gap-[12px]">
                       <div className="flex items-center gap-[8px]">
                         <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
@@ -843,8 +846,20 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none min-h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center overflow-x-auto overflow-y-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent pb-[max(12px,env(safe-area-inset-bottom))]">
-          <div className="flex min-w-0 flex-1 items-center gap-[8px] ps-[20px]">
+        <div
+          className={clsx(
+            'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
+            mobile
+              ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
+              : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent'
+          )}
+        >
+          <div
+            className={clsx(
+              'flex min-w-0 items-center gap-[8px]',
+              mobile ? 'w-full' : 'flex-1 ps-[20px]'
+            )}
+          >
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -860,7 +875,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="flex shrink-0 items-center justify-end gap-[8px] pe-[20px]">
+          <div
+            className={clsx(
+              'flex items-center justify-end gap-[8px]',
+              mobile ? 'w-full flex-wrap' : 'shrink-0 pe-[20px]'
+            )}
+          >
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -879,7 +899,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   selectedIntegrations.length === 0 || loading || locked
                 }
                 onClick={schedule('draft')}
-                className="relative flex h-[42px] cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple px-[18px] text-[14px] font-[600] disabled:cursor-not-allowed"
+                className={clsx(
+                  'relative flex h-[42px] cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple px-[18px] text-[14px] font-[600] disabled:cursor-not-allowed',
+                  mobile && 'min-w-0 flex-1'
+                )}
               >
                 {loading && (
                   <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] text-textColor">
@@ -893,7 +916,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {addEditSets && (
               <button
-                className="btnSub flex h-[42px] min-w-[168px] items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                className={clsx(
+                  'btnSub flex h-[42px] items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                  mobile ? 'min-w-0 flex-1' : 'min-w-[168px]'
+                )}
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -903,15 +929,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="relative" ref={postNowClickRef}>
-                <div className="flex" ref={postNowRef}>
+              <div className={clsx('relative', mobile && 'flex min-w-0 flex-1')} ref={postNowClickRef}>
+                <div className={clsx('flex', mobile && 'w-full')} ref={postNowRef}>
                   <button
                     type="button"
                     disabled={
                       selectedIntegrations.length === 0 || loading || locked
                     }
                     onClick={schedule('schedule')}
-                    className="btnSub relative flex h-[42px] min-w-[168px] items-center justify-center rounded-s-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                    className={clsx(
+                      'btnSub relative flex h-[42px] items-center justify-center rounded-s-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                      mobile ? 'min-w-0 flex-1' : 'min-w-[168px]'
+                    )}
                   >
                     {loading && (
                       <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] text-white">

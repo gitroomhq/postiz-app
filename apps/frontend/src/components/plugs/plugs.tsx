@@ -135,7 +135,10 @@ export const Plugs = () => {
             <button
               type="button"
               onClick={openAddChannel}
-              className="mt-[4px] h-[34px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+              className={clsx(
+                'mt-[4px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+                mobile ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
+              )}
             >
               {t('connect_a_channel', 'Connect a channel')}
             </button>

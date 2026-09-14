@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useMenuItem } from '@gitroom/frontend/components/layout/top.menu';
 import { useChromeLocation } from '@gitroom/frontend/components/layout/use-chrome-location';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 // Routes with no menu entry (/admin/*, /err) that still deserve a heading
 // rather than an empty <h1>.
@@ -18,6 +19,7 @@ const FALLBACK_TITLES: Record<string, string> = {
 };
 
 export const Title = () => {
+  const { mobile } = useViewport();
   // Soft Settings/Connections overlays change the URL but keep the previous
   // page mounted — chrome must follow that background page, not the overlay.
   // Hard `/settings` / `/connections` blanks the h1 (scrim covers the header;
@@ -118,7 +120,7 @@ export const Title = () => {
       <h1 className="truncate font-display text-[15.5px] font-[600] -tracking-[0.015em] text-pqText">
         {currentTitle}
       </h1>
-      {!!subtitle && (
+      {!!subtitle && !mobile && (
         <span className="truncate text-[11.5px] text-pqSoft">{subtitle}</span>
       )}
     </>

@@ -596,7 +596,10 @@ export const Filters = () => {
         </div>
       )}
       {isListView && (
-        <div className="flex flex-grow flex-row items-center gap-[10px]">
+        <div className={clsx(
+          'flex flex-grow items-center gap-[10px]',
+          mobile && 'flex-wrap'
+        )}>
           {/* List toolbar: Date → Status → flex-1 → Newest/Oldest.
               Status lives here because PostsPanel is unmounted on list. */}
           <div
@@ -898,16 +901,7 @@ export const Filters = () => {
           </MobileSheet>
         </>
       )}
-      {mobile && !isListView && !calendar.postsPanelOpen && (
-        <button
-          type="button"
-          data-posts-toggle="1"
-          onClick={() => calendar.setPostsPanelOpen(true)}
-          className="h-[44px] shrink-0 rounded-pqSm bg-pqInner px-[14px] text-[13px] font-[500] shadow-[inset_0_0_0_1px_var(--border)]"
-        >
-          {t('posts', 'Posts')}
-        </button>
-      )}
+      {!mobile && (
       <div className={segment}>
         <div
           onClick={setCalendarView}
@@ -960,6 +954,7 @@ export const Filters = () => {
           </svg>
         </div>
       </div>
+      )}
     </div>
   );
 };

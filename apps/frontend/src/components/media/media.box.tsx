@@ -422,7 +422,9 @@ export const MediaBox: FC<{
         'relative flex shrink-0 cursor-pointer items-center gap-[7px] bg-pqBrand font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
         size === 'picker'
           ? 'h-[44px] rounded-[8px] px-[18px] text-[14px]'
-          : 'h-[36px] rounded-pqSm px-[14px] ps-[12px] text-[13px]'
+          : mobile
+            ? 'h-[44px] rounded-pqSm px-[16px] ps-[14px] text-[13.5px]'
+            : 'h-[36px] rounded-pqSm px-[14px] ps-[12px] text-[13px]'
       )}
     >
       {loading ? (
@@ -530,7 +532,8 @@ export const MediaBox: FC<{
           data-media-tab={value}
           onClick={() => setTab(value)}
           className={clsx(
-            'h-[26px] rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            mobile ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'
@@ -565,9 +568,8 @@ export const MediaBox: FC<{
 
           {uppyBar}
 
-          {/* Drop zone + filters stay up even when the gallery is empty so
-              All/Images/Video is never a trap on a blank library. */}
           <div className="flex flex-col gap-[10px]">
+            {!mobile && (
             <button
               type="button"
               disabled={loading}
@@ -619,6 +621,7 @@ export const MediaBox: FC<{
                 </span>
               </span>
             </button>
+            )}
 
             {/* Filters + view — under drop zone, above gallery (owner) */}
             <div className="flex flex-wrap items-center gap-[10px]">
@@ -635,17 +638,25 @@ export const MediaBox: FC<{
                       {t('nothing_here_yet', 'Nothing here yet')}
                     </div>
                     <div className="text-[13.5px] leading-[1.55] text-pqMuted text-balance">
-                      {t(
-                        'upload_images_or_video_or_drag',
-                        'Upload images or video, or drag files straight onto this page. Up\u00a0to 1 GB per upload.'
-                      )}
+                      {mobile
+                        ? t(
+                            'maximum_size_allowed_1gb_images_video',
+                            'Maximum size allowed is 1 GB · images and video'
+                          )
+                        : t(
+                            'upload_images_or_video_or_drag',
+                            'Upload images or video, or drag files straight onto this page. Up\u00a0to 1 GB per upload.'
+                          )}
                     </div>
                   </div>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={() => uploaderRef.current?.click()}
-                    className="mt-[2px] h-[36px] rounded-pqSm bg-pqBrand px-[16px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70"
+                    className={clsx(
+                      'mt-[2px] rounded-pqSm bg-pqBrand px-[16px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
+                      mobile ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[36px]'
+                    )}
                   >
                     {t('upload_media', 'Upload media')}
                   </button>
@@ -916,7 +927,8 @@ export const MediaBox: FC<{
           data-media-tab={value}
           onClick={() => setTab(value)}
           className={clsx(
-            'h-[26px] rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            mobile ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'

@@ -304,14 +304,17 @@ const NotificationComponent = () => {
     if (!mobile) setShow(false);
   });
   const { referenceRef, floatingRef } = useAnchoredPopover<
-    HTMLDivElement,
+    HTMLButtonElement,
     HTMLDivElement
   >(show, 'end', { offsetPx: 10 });
   return (
     <div className="relative cursor-pointer select-none" ref={ref}>
-      <div
+      <button
+        type="button"
         ref={referenceRef}
         onClick={changeShow}
+        aria-label={t('notifications', 'Notifications')}
+        aria-expanded={show}
         className={clsx(
           'relative grid place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText',
           mobile ? 'size-[44px]' : 'size-[30px]',
@@ -340,7 +343,7 @@ const NotificationComponent = () => {
             aria-hidden="true"
           />
         )}
-      </div>
+      </button>
       {show &&
         (mobile ? (
           <MobileSheet
