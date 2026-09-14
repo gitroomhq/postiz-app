@@ -27,12 +27,18 @@ export const ButtonCaster: FC<{
 
   async function* load(signerUuid: string) {
     while (true) {
-      const data = await (
-        await fetch(
-          `/auth/farcaster/signer?signerUuid=${encodeURIComponent(signerUuid)}`
-        )
-      ).json();
-      yield data;
+      try {
+        yield await (
+          await fetch(
+            `/auth/farcaster/signer?signerUuid=${encodeURIComponent(
+              signerUuid
+            )}`
+          )
+        ).json();
+      } catch (err) {
+        // network blip, keep polling until approved or timed out
+        yield {};
+      }
     }
   }
 
