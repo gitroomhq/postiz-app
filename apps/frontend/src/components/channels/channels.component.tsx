@@ -608,6 +608,8 @@ export const ChannelsComponent: FC = () => {
   const addOpenGeneration = useRef(0);
   const addedConsumed = useRef(false);
   const focusedFromAdded = useRef(false);
+  const addedRefreshStarted = useRef(false);
+  const [addedRefreshDone, setAddedRefreshDone] = useState(false);
 
   // Design `_autoSide`: collapse under 1180 on viewport transitions only.
   // `collapseMenu` must stay out of the deps — otherwise expanding on tablet
@@ -762,10 +764,17 @@ export const ChannelsComponent: FC = () => {
     const returningFromConnect = !!addedProvider && !addedConsumed.current;
 
     if (returningFromConnect) {
-      if (!list.length) {
+      const match = selectAddedIntegration(list, addedProvider);
+      // SWR keeps the pre-connect list (`revalidateIfStale` / `OnFocus` off).
+      // After social-connect 201 the new row is missing until we mutate —
+      // without this, a non-empty list shows the toast and never waits.
+      if (!match && !addedRefreshDone) {
+        if (!addedRefreshStarted.current) {
+          addedRefreshStarted.current = true;
+          void mutate().finally(() => setAddedRefreshDone(true));
+        }
         return;
       }
-      const match = selectAddedIntegration(list, addedProvider);
       addedConsumed.current = true;
       focusedFromAdded.current = true;
       closeAddPane();
@@ -816,6 +825,8 @@ export const ChannelsComponent: FC = () => {
     closeAddPane,
     stripChannelQuery,
     toast,
+    mutate,
+    addedRefreshDone,
   ]);
 
   // Tour last step + Finish leave Add Channel open (design chAdd:'connect').
