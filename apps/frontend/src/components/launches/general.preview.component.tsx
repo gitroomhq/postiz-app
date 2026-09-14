@@ -5,6 +5,7 @@ import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
@@ -105,7 +106,7 @@ export const GeneralPreviewComponent: FC<{
                   </div>
                 )}
                 <div className="text-[15px] font-[400] text-customColor27 ms-[4px]">
-                  {integration?.display ||
+                  {formatChannelHandle(integration?.display) ||
                     (integration?.name ? '@username' : '')}
                 </div>
               </div>

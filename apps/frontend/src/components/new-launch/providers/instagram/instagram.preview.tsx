@@ -4,9 +4,12 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-import { FC } from 'react';
-import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { FC, useEffect, useState } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
+import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import { instagramFeedPreviewRange } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const InstagramPreview: FC<{
   maximumCharacters?: number;
@@ -14,6 +17,21 @@ export const InstagramPreview: FC<{
   const { value: topValue, integration } = useIntegration();
   const current = useLaunchStore((state) => state.current);
   const mediaDir = useMediaDirectory();
+  const control = useFormContext()?.control;
+  const postType = useWatch({ control, name: 'post_type' }) as
+    | string
+    | undefined;
+  const isStory = postType === 'story';
+  const media = topValue?.[0]?.image ?? [];
+  const range = instagramFeedPreviewRange({
+    isStory,
+    paths: media.map((image) => image.path),
+  });
+  const [leadWH, setLeadWH] = useState<number | undefined>();
+  const leadPath = media[0]?.path;
+  useEffect(() => {
+    setLeadWH(undefined);
+  }, [leadPath, range.minWH, range.maxWH]);
 
   const renderContent = topValue.map((p) => {
     const newContent = stripHtmlValidation(
@@ -58,28 +76,40 @@ export const InstagramPreview: FC<{
             className="rounded-full relative z-[2] w-[36px] h-[36px]"
           />
         </div>
-        <div className="flex flex-col leading-[18px]">
-          <div className="text-[15px] font-[600]">{integration?.name}</div>
+        <div className="flex min-w-0 flex-col leading-[18px]">
+          <div className="truncate text-[15px] font-[600]">
+            {integration?.name}
+          </div>
+          {!!formatChannelHandle(integration?.display) && (
+            <div className="truncate text-[12px] font-[400] text-pqSoft">
+              {formatChannelHandle(integration?.display)}
+            </div>
+          )}
         </div>
       </div>
       {!!renderContent?.[0]?.images?.length ? (
         <SliderComponent
-          className="h-[585px] rounded-[8px] overflow-hidden"
+          className="rounded-[8px] overflow-hidden"
           list={renderContent?.[0]?.images.map((image, index) => (
-            <a
+            <PreviewMediaFrame
               key={`image_${index}`}
-              className="flex-1"
-              href={mediaDir.set(image.path)}
-              target="_blank"
-            >
-              <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
-            </a>
+              src={mediaDir.set(image.path)}
+              minWH={range.minWH}
+              maxWH={range.maxWH}
+              fallbackWH={range.fallbackWH}
+              aspectWH={index === 0 ? undefined : leadWH}
+              onAspect={index === 0 ? setLeadWH : undefined}
+            />
           ))}
         />
       ) : (
         <div
           style={{ background: 'url(/no-video-youtube.png)' }}
-          className="!bg-cover w-full aspect-[calc(16/9)] rounded-[8px] overflow-hidden"
+          className={
+            isStory
+              ? '!bg-cover w-full aspect-[9/16] rounded-[8px] overflow-hidden'
+              : '!bg-cover w-full aspect-[4/5] rounded-[8px] overflow-hidden'
+          }
         />
       )}
       <div

@@ -22,6 +22,7 @@ import { InternalChannels } from '@gitroom/frontend/components/launches/internal
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 class Empty {
   @IsOptional()
@@ -328,8 +329,19 @@ export const withProvider = function <T extends object>(params: {
                           src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
                         />
                       </div>
-                      <div className="text-[15px] font-[600] tracking-[-0.01em] text-pqText">
-                        {selectedIntegration?.integration.name}
+                      <div>
+                        <div className="text-[15px] font-[600] tracking-[-0.01em] text-pqText">
+                          {selectedIntegration?.integration.name}
+                        </div>
+                        {!!formatChannelHandle(
+                          selectedIntegration?.integration.display
+                        ) && (
+                          <div className="mt-[1px] truncate text-[12.5px] text-pqMuted">
+                            {formatChannelHandle(
+                              selectedIntegration?.integration.display
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

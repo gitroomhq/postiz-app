@@ -1304,3 +1304,39 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: examples are photos, videos and schedules, not changelogs
 
 **i18n 0.** Same keys. Sample prompts dropped GitHub, README, CHANGELOG and PR language. MCP cards ask to make a photo, a short video, or a visual and schedule it. Chat and skill bots attach a photo or video the user already has. n8n / Zapier / Make start from a new photo or video, not a GitHub release.
+
+## Connect: pointer cursor on every control; Copy key left of MCP URL
+
+**i18n +1 (`conn_go_api_keys`).** Tailwind v4 leaves native `cursor: default` on `<button>`, so Copy MCP URL and the other Connect chips did not look clickable. The panel root now sets `[&_button]:cursor-pointer` and `[&_a]:cursor-pointer`, and the shared chip / rail / hub-card classes do the same. Compact hub strip: Reveal stays on the key row; the right chip is **Go to API Keys** and opens Account → API Keys. Copy key moved to the action row, left of Copy MCP URL. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: example replies answer the prompt
+
+**i18n 0.** Same keys. Sample replies were status logs plus product splits (`Claude chat, not Claude Code`, `Enable PostQueen from +`). They now answer the prompt the way the assistant would: terrace photo drafted to Instagram tonight, same visual on three channels Friday, nothing about which Claude product this is. That distinction stays in the intro and How to connect steps.
+
+## Connect: open a card from the top of the pane
+
+**i18n 0.** Hub and detail share one overflow column. Scrolling the marketplace then clicking an agent kept that scrollTop, so Back and the title sat above the fold. `nav` / `picked` now reset the pane with `useLayoutEffect`, same idea as Channels `scrollResetKey`.
+
+## Channels: detail avatar is a circle, like the rail
+
+**i18n 0.** The rail already clipped the Facebook page photo to a circle. The detail header used `rounded-[15px]`, so the same square logo looked like a rounded tile. Channels detail and Analytics detail now use `rounded-full object-cover` and the same round platform badge as the rail.
+
+## Channels: pick several Facebook pages in one Save
+
+**i18n 0.** Configure Your Channel was a radio: one page, then Save, then `inBetweenSteps` was already false so a second page 400ed. Grid and list pickers are checkboxes (Select all / Clear). One POST sends `{ pages: [...] }`; the first page still fills the in-between row, extras get their own channel under the same Facebook (or Instagram / LinkedIn / YouTube / GMB / Tumblr) account. Page photos in that picker are square with a 12px radius, not circles and not stretched rectangles.
+
+## Media library: square tiles, not 4/3 banners
+
+**i18n 0.** The Media page and the composer picker used `aspect-[4/3]`, so a portrait photo sat in a landscape box. Import (third-party) tiles were already square. Both grids now use `aspect-square` and `object-cover`.
+
+## Post preview matches the published crop
+
+**i18n 0.** Instagram preview used a 585px-tall `object-cover` box (Facebook/LinkedIn 280px). A square graphic looked taller and tighter than the live post. Feed previews now measure the file and clamp to 4:5 … 1.91:1 (stories 9:16), the same range Instagram/Facebook actually show.
+
+## Post preview: Instagram is 4:5 recommended, not forced 1:1
+
+**i18n 0.** Square is not Instagram's 2026 default. Meta's feed stills stay native inside **4:5 … 1.91:1** (3:2 stays 3:2; 3:4 crops to 4:5). Unknown/empty cards use **4:5**, not square. A single mp4 publishes as a Reel and the feed card is **4:5** (`object-cover`, same as stills). Carousel slides lock to the first item. Profile-grid 3:4 is a different surface.
+
+## Composer media: corner remove, not three overlay chips
+
+**i18n +1 net.** A 48px attachment cannot hold grab dots, a close chip and an alt/sun control. Hover now leaves the image alone: the whole thumb is the drag handle, and a 16px remove sits on the top-end corner (same hanging-X pattern as the comment composer). Alt text stays in the Media Library ⋯ menu. Dropped `reorder_media` and `media_settings`. Added `copy_debug_json_admin`, `open_link`, `view_post` from the calendar / notification pass that had not updated this baseline. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

@@ -152,10 +152,10 @@ export const MediaLightbox: FC<{
             </svg>
           </button>
         </div>
-        <div className="relative grid aspect-[16/10] place-items-center overflow-hidden rounded-[14px] bg-pqSettings outline outline-1 outline-white/12 -outline-offset-1">
+        <div className="relative grid max-h-[min(72vh,720px)] min-h-[200px] w-full place-items-center overflow-hidden rounded-[14px] bg-black/35 outline outline-1 outline-white/12 -outline-offset-1">
           {isVideo ? (
             <video
-              className="relative z-[1] max-h-full max-w-full object-contain"
+              className="relative z-[1] max-h-[min(72vh,720px)] max-w-full object-contain"
               src={url}
               controls
               autoPlay
@@ -165,7 +165,7 @@ export const MediaLightbox: FC<{
             <img
               src={url}
               alt={t('media', 'Media')}
-              className="relative z-[1] max-h-full max-w-full object-contain"
+              className="relative z-[1] max-h-[min(72vh,720px)] max-w-full object-contain"
               onError={() => setImgFailed(true)}
             />
           ) : null}

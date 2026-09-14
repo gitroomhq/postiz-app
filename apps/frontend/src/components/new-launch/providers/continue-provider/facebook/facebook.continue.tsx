@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   continuePickerInitial,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
@@ -39,13 +40,14 @@ export const FacebookContinue = withContinueProvider<FacebookItem, string>({
   ],
   getItemId: (item) => item.id,
   getSelectionValue: (item) => item.id,
-  transformSaveData: (selection) => ({ page: selection }),
+  transformSaveData: (selection) =>
+    Array.isArray(selection) ? { pages: selection } : { page: selection },
   isSelected: (item, selection) => selection === item.id,
   renderItem: (item) => (
     <ContinuePickerItem
       pictureUrl={item.picture?.data?.url}
       name={item.name}
-      meta={joinContinuePickerMeta(item.username)}
+      meta={joinContinuePickerMeta(continuePickerHandle(item.username))}
       fallback={continuePickerInitial(item.name)}
     />
   ),

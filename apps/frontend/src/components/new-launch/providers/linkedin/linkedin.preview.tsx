@@ -4,8 +4,15 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { FC } from 'react';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import {
+  FEED_PREVIEW_FALLBACK_WH,
+  FEED_PREVIEW_MAX_WH,
+  FEED_PREVIEW_MIN_WH,
+} from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 
 const Icons = () => {
   return (
@@ -294,8 +301,13 @@ export const LinkedinPreview: FC<{
             className="rounded-full relative z-[2] w-[48px] h-[48px]"
           />
         </div>
-        <div className="flex flex-col leading-[16px]">
-          <div className="text-[14px] font-[500]">{integration?.name}</div>
+        <div className="flex min-w-0 flex-col leading-[16px]">
+          <div className="truncate text-[14px] font-[500]">{integration?.name}</div>
+          {!!formatChannelHandle(integration?.display) && (
+            <div className="truncate text-[12px] font-[400] text-pqSoft">
+              {formatChannelHandle(integration?.display)}
+            </div>
+          )}
           <div className="text-[12px] font-[400] text-pqSoft">
             2,871 followers
           </div>
@@ -324,20 +336,30 @@ export const LinkedinPreview: FC<{
           __html: sanitizePreviewHtml(renderContent?.[0]?.text),
         }}
       />
-      {!!renderContent?.[0]?.images?.length && (
-        <div className="h-[280px] -mx-[15px] overflow-hidden flex">
-          {renderContent?.[0]?.images.map((image, index) => (
-            <a
-              key={`image_${index}`}
-              className="flex-1"
-              href={mediaDir.set(image.path)}
-              target="_blank"
-            >
-              <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
-            </a>
-          ))}
-        </div>
-      )}
+      {!!renderContent?.[0]?.images?.length &&
+        (renderContent[0].images.length === 1 ? (
+          <PreviewMediaFrame
+            className="-mx-[15px]"
+            src={mediaDir.set(renderContent[0].images[0].path)}
+            minWH={FEED_PREVIEW_MIN_WH}
+            maxWH={FEED_PREVIEW_MAX_WH}
+            fallbackWH={FEED_PREVIEW_FALLBACK_WH}
+          />
+        ) : (
+          <div className="aspect-square -mx-[15px] overflow-hidden flex">
+            {renderContent[0].images.map((image, index) => (
+              <a
+                key={`image_${index}`}
+                className="relative flex-1 overflow-hidden"
+                href={mediaDir.set(image.path)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
+              </a>
+            ))}
+          </div>
+        ))}
       <div className="flex text-textLinkedin text-[12px] font-[400] items-center">
         <div className="flex flex-1 gap-[11px] items-center">
           <Icons />

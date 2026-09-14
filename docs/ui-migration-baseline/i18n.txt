@@ -605,6 +605,7 @@ conn_gemini_step_cli_detail
 conn_gemini_step_config
 conn_gemini_step_config_detail
 conn_gemini_verify
+conn_go_api_keys
 conn_grok_bot_ex
 conn_grok_bot_ex_ig
 conn_grok_bot_ex_ig_reply
@@ -966,6 +967,7 @@ copy
 copy_a_link_that_works_for_one_hour
 copy_channel_id
 copy_debug_json
+copy_debug_json_admin
 copy_id
 copy_link
 copy_post_id
@@ -1387,7 +1389,6 @@ media_editor
 media_import_failed
 media_imported_successfully
 media_library
-media_settings
 media_upload_complete
 media_upload_complete_one
 media_upload_failed
@@ -1485,6 +1486,7 @@ open_auto_plugs
 open_billing_portal
 open_claim_page
 open_connections
+open_link
 open_wizard
 openclaw
 or
@@ -1621,7 +1623,6 @@ remove_delay
 remove_from_customer
 remove_social_account
 removes_the_channel_and_its_scheduled_posts
-reorder_media
 repeat_post_every
 repeat_post_every_label
 report_a_bug
@@ -1910,6 +1911,7 @@ video_providers_not_configured_description
 video_vertical
 view_errors
 view_founding_membership
+view_post
 view_receipt
 view_stats
 waiting_for_claim

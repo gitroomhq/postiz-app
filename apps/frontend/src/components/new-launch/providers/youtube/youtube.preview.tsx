@@ -5,6 +5,7 @@ import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 
 export const YoutubePreview: FC<{
@@ -71,8 +72,13 @@ export const YoutubePreview: FC<{
               className="rounded-full z-[2] w-[40px] h-[40px]"
             />
           </div>
-          <div className="flex flex-col">
-            <div className="text-[14px] font-[500]">{integration?.name}</div>
+          <div className="flex min-w-0 flex-col">
+            <div className="truncate text-[14px] font-[500]">{integration?.name}</div>
+            {!!formatChannelHandle(integration?.display) && (
+              <div className="truncate text-[10px] font-[400] text-pqSoft">
+                {formatChannelHandle(integration?.display)}
+              </div>
+            )}
             <div className="text-[10px] font-[400]">16.7M subscribers</div>
           </div>
           <div>

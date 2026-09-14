@@ -5,8 +5,8 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
-import { capitalize } from 'lodash';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 import { hasLinks } from '@gitroom/helpers/utils/strip.links';
 
 const Valid: FC = () => {
@@ -300,7 +300,7 @@ export const InformationComponent: FC<{
                     )}
                   >
                     {p.integration.name} (
-                    {capitalize(p.integration.identifier.split('-')[0])}):
+                    {channelListSubtitle(p.integration)}):
                   </div>
                   <div
                     className={clsx(

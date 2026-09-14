@@ -10,6 +10,7 @@ import removeMd from 'remove-markdown';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 const postUrlEmitter = new EventEmitter();
 export const ShowPostSelector = () => {
@@ -201,7 +202,18 @@ export const PostSelector: FC<{
                               }
                             />
                           </div>
-                          <div>{p.integration.name}</div>
+                          <div className="min-w-0">
+                            <div className="truncate">{p.integration.name}</div>
+                            {!!formatChannelHandle(
+                              p.integration.display || p.integration.profile
+                            ) && (
+                              <div className="truncate text-[12px] text-pqMuted">
+                                {formatChannelHandle(
+                                  p.integration.display || p.integration.profile
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex-1">{removeMd(p.content)}</div>
                         <div>

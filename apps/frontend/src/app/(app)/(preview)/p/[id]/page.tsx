@@ -10,14 +10,8 @@ import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
 import { getT } from '@gitroom/react/translation/get.translation.service.backend';
 import { RenderPreviewDateClient } from '@gitroom/frontend/components/preview/render.preview.date.client';
+import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
-
-function formatProfileHandle(profile?: string | null) {
-  if (!profile) {
-    return '';
-  }
-  return profile.startsWith('@') ? profile : `@${profile}`;
-}
 
 function absoluteMediaUrl(path: string | undefined | null): string | undefined {
   if (!path) return undefined;
@@ -111,7 +105,7 @@ export default async function Auth(
   }
 
   const integration = post[0].integration;
-  const profileHandle = formatProfileHandle(integration.profile);
+  const profileHandle = formatChannelHandle(integration.profile);
 
   return (
     <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-[20px] px-[16px] py-[20px] md:px-[24px] md:py-[28px]">

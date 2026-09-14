@@ -11,6 +11,9 @@ export type ToasterShowOptions = {
   kind?: ToasterKind;
   /** Override default 4200ms hide. */
   duration?: number;
+  /** Real link. Never dump a raw URL into `text` — it overflows and is not clickable. */
+  href?: string;
+  action?: string;
 };
 
 type ShowPayload = {
@@ -18,6 +21,8 @@ type ShowPayload = {
   type: ToasterKind;
   title?: string;
   duration: number;
+  href?: string;
+  action?: string;
 };
 
 const toaster = new EventEmitter();
@@ -28,6 +33,8 @@ export const Toaster = () => {
   const [toasterText, setToasterText] = useState('');
   const [toasterTitle, setToasterTitle] = useState<string | undefined>();
   const [toasterType, setToasterType] = useState<ToasterKind>('success');
+  const [toasterHref, setToasterHref] = useState<string | undefined>();
+  const [toasterAction, setToasterAction] = useState<string | undefined>();
 
   useEffect(() => {
     let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -36,6 +43,8 @@ export const Toaster = () => {
       setToasterText(params.text);
       setToasterTitle(params.title);
       setToasterType(params.type);
+      setToasterHref(params.href);
+      setToasterAction(params.action);
       setShowToaster(true);
       hideTimer = setTimeout(() => {
         setShowToaster(false);
@@ -55,7 +64,7 @@ export const Toaster = () => {
   const success = toasterType === 'success';
   const info = toasterType === 'info';
   const iconClass = success
-    ? 'bg-pqOkSoft text-pqOk'
+    ? 'bg-pqOk text-white'
     : info
       ? 'bg-pqBrandSoft text-pqBrand'
       : 'bg-pqAmberSoft text-pqAmber';
@@ -69,13 +78,14 @@ export const Toaster = () => {
     // Above the modal stack (~z-300). Bottom-end so status toasts don't fight the header.
     <div
       data-toaster="1"
-      className="animate-pqFadeDown fixed bottom-[24px] end-[24px] z-[900] flex min-w-[260px] max-w-[min(460px,calc(100vw-32px))] items-start gap-[11px] rounded-[12px] bg-pqPop py-[12px] pe-[16px] ps-[13px] shadow-pqToast mobile:bottom-[16px] mobile:end-[16px]"
+      className="animate-pqFadeDown fixed bottom-[24px] end-[24px] z-[900] flex min-w-[260px] max-w-[min(360px,calc(100vw-32px))] items-start gap-[11px] rounded-[12px] bg-pqPop py-[12px] pe-[16px] ps-[13px] shadow-pqToast mobile:bottom-[16px] mobile:end-[16px]"
     >
       <span
         className={clsx(
           'mt-[1px] grid size-[22px] shrink-0 place-items-center rounded-full',
           iconClass
         )}
+        data-toaster-kind={toasterType}
       >
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none">
           <path
@@ -87,7 +97,7 @@ export const Toaster = () => {
           />
         </svg>
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         {toasterTitle ? (
           <div className="text-[12px] font-[600] leading-[1.3] text-pqSoft">
             {toasterTitle}
@@ -95,12 +105,22 @@ export const Toaster = () => {
         ) : null}
         <div
           className={clsx(
-            'text-[13.5px] font-[500] leading-[1.45] text-pqText',
+            'break-words text-[13.5px] font-[500] leading-[1.45] text-pqText [overflow-wrap:anywhere]',
             toasterTitle && 'mt-[2px]'
           )}
         >
           {toasterText}
         </div>
+        {toasterHref ? (
+          <a
+            href={toasterHref}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-[5px] inline-flex text-[12.5px] font-[600] text-pqBrand hover:underline"
+          >
+            {toasterAction || 'Open'}
+          </a>
+        ) : null}
       </div>
     </div>
   );
@@ -117,6 +137,8 @@ function normalizeShow(
       type: o.kind || 'success',
       title: o.title,
       duration: o.duration ?? DEFAULT_DURATION_MS,
+      href: o.href,
+      action: o.action,
     };
   }
   if (typeOrOptions && typeof typeOrOptions === 'object') {
@@ -125,6 +147,8 @@ function normalizeShow(
       type: typeOrOptions.kind || 'success',
       title: typeOrOptions.title,
       duration: typeOrOptions.duration ?? DEFAULT_DURATION_MS,
+      href: typeOrOptions.href,
+      action: typeOrOptions.action,
     };
   }
   return {

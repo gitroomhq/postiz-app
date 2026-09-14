@@ -30,6 +30,7 @@ import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/au
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import { providerPageSelections } from '@gitroom/nestjs-libraries/integrations/provider-page-selections';
 
 dayjs.extend(utc);
 
@@ -566,45 +567,80 @@ export class IntegrationService {
       );
     }
 
-    let getIntegrationInformation;
-    try {
-      getIntegrationInformation = await provider.fetchPageInformation(
-        getIntegration.token,
-        data
+    const selections = providerPageSelections(data);
+    if (!selections.length) {
+      throw new HttpException(
+        'Select at least one page or account to connect.',
+        HttpStatus.BAD_REQUEST
       );
-    } catch (err) {
-      if (err instanceof HttpException) {
-        throw err;
+    }
+
+    // Resolve every page against the *user* token first. The first save
+    // replaces that token with a page token, which cannot fetch siblings.
+    const pages = [];
+    for (const selection of selections) {
+      let getIntegrationInformation;
+      try {
+        getIntegrationInformation = await provider.fetchPageInformation(
+          getIntegration.token,
+          selection
+        );
+      } catch (err) {
+        if (err instanceof HttpException) {
+          throw err;
+        }
+        throw new HttpException(
+          (err as Error)?.message ||
+            'Could not finish connecting this channel. Please try again.',
+          HttpStatus.BAD_REQUEST
+        );
       }
-      throw new HttpException(
-        (err as Error)?.message ||
-          'Could not finish connecting this channel. Please try again.',
-        HttpStatus.BAD_REQUEST
-      );
+
+      if (!getIntegrationInformation?.id) {
+        throw new HttpException(
+          'The provider did not return a channel to connect.',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+      pages.push(getIntegrationInformation);
     }
 
-    if (!getIntegrationInformation?.id) {
-      throw new HttpException(
-        'The provider did not return a channel to connect.',
-        HttpStatus.BAD_REQUEST
+    const ids: string[] = [];
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      await this.checkForDeletedOnceAndUpdate(org, String(page.id));
+
+      if (i === 0) {
+        const updated = await this._integrationRepository.updateIntegration(
+          id,
+          {
+            picture: page.picture,
+            internalId: String(page.id),
+            organizationId: org,
+            name: page.name,
+            inBetweenSteps: false,
+            token: page.access_token,
+            profile: page.username,
+          }
+        );
+        ids.push(updated.id);
+        continue;
+      }
+
+      const extra = await this._integrationRepository.createExtraProviderPage(
+        getIntegration,
+        {
+          name: page.name,
+          picture: page.picture,
+          internalId: String(page.id),
+          token: page.access_token,
+          username: page.username,
+        }
       );
+      ids.push(extra.id);
     }
 
-    await this.checkForDeletedOnceAndUpdate(
-      org,
-      String(getIntegrationInformation.id)
-    );
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: String(getIntegrationInformation.id),
-      organizationId: org,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegrationInformation.access_token,
-      profile: getIntegrationInformation.username,
-    });
-
-    return { success: true };
+    return { success: true, id: ids[ids.length - 1], ids };
   }
 
   async checkAnalytics(

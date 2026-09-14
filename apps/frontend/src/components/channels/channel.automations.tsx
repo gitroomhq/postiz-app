@@ -187,6 +187,7 @@ export const ChannelAutomations: FC<{ integration: any }> = ({
     providerId: integration.id,
     name: integration.name,
     identifier: integration.identifier,
+    display: integration.display,
     plugs: match.plugs as PlugsInterface[],
   };
 

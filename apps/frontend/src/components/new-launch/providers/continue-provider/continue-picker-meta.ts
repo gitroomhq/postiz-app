@@ -2,7 +2,7 @@ export const CONTINUE_PICKER_AVATAR_ATTR = 'data-avatar';
 
 export const continuePickerItemClasses = {
   fallback:
-    'flex size-[44px] shrink-0 items-center justify-center rounded-full bg-pqSettings text-pqMuted',
+    'flex size-[44px] shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-pqSettings text-pqMuted',
   text: 'min-w-0 max-w-full',
   name: 'block truncate text-[14px] font-[600] text-pqText',
   meta: 'mt-[2px] block truncate text-[12px] text-pqMuted',
@@ -19,14 +19,6 @@ export function joinContinuePickerMeta(
     return trimmed ? [trimmed] : [];
   });
   return tokens.length ? tokens.join(' · ') : undefined;
-}
-
-export function continuePickerHandle(username?: string): string | undefined {
-  const value = username?.trim();
-  if (!value) {
-    return undefined;
-  }
-  return value.startsWith('@') ? value : `@${value}`;
 }
 
 export function continuePickerInitial(name: string): string {

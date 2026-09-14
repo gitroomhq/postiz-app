@@ -24,6 +24,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { DNDProvider } from '@gitroom/frontend/components/launches/helpers/dnd.provider';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
+import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 /**
  * Ghost for this page while the channel list resolves.
@@ -348,6 +349,7 @@ export const MenuComponent: FC<
       changeProfilePicture: boolean;
       changeNickName: boolean;
       refreshNeeded?: boolean;
+      display?: string;
     };
   }
 > = (props) => {
@@ -383,7 +385,7 @@ export const MenuComponent: FC<
       {...(collapsed
         ? {
             'data-tooltip-id': 'tooltip',
-            'data-tooltip-content': integration.name,
+            'data-tooltip-content': channelNameWithHandle(integration),
           }
         : {})}
       className={clsx(
@@ -454,11 +456,18 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
+          'group-[.sidebar]:hidden flex min-w-0 flex-1 flex-col justify-center cursor-move',
           integration.disabled && 'opacity-50'
         )}
       >
-        {integration.name}
+        <span className="truncate whitespace-nowrap text-ellipsis">
+          {integration.name}
+        </span>
+        {!!formatChannelHandle(integration.display) && (
+          <span className="truncate text-[12px] text-pqMuted">
+            {formatChannelHandle(integration.display)}
+          </span>
+        )}
       </div>
       <Menu
         canChangeProfilePicture={integration.changeProfilePicture}

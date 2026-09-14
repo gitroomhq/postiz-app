@@ -5,6 +5,7 @@ export interface PlugSettings {
   providerId: string;
   name: string;
   identifier: string;
+  display?: string | null;
 }
 export interface PlugInterface extends PlugSettings {
   plugs: PlugsInterface[];

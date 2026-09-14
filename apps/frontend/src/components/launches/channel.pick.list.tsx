@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import type { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { formatChannelHandle, channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export type PickableIntegration = Integrations & { refreshNeeded?: boolean };
 
@@ -45,7 +46,9 @@ export const ChannelPickList: FC<{
       if (!q) return true;
       return (
         integration.name.toLowerCase().includes(q) ||
-        integration.identifier.toLowerCase().includes(q)
+        integration.identifier.toLowerCase().includes(q) ||
+        formatChannelHandle(integration.display).toLowerCase().includes(q) ||
+        (integration.display || '').toLowerCase().includes(q)
       );
     });
   }, [integrations, search]);
@@ -180,7 +183,7 @@ export const ChannelPickList: FC<{
                   {integration.name}
                 </span>
                 <span className="block truncate text-[11.5px] text-pqMuted">
-                  {integration.identifier}
+                  {channelListSubtitle(integration)}
                 </span>
               </span>
               {integration.refreshNeeded && (

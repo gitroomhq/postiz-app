@@ -47,12 +47,33 @@ describe('oauthReturnPath', () => {
       '/channels?precondition=true',
     );
   });
+
+  it('puts focus on the Channels URL without using id', () => {
+    assert.equal(
+      oauthReturnPath({
+        added: 'facebook',
+        focus: 'int-uuid',
+        msg: 'Channel Added',
+      }),
+      '/channels?added=facebook&focus=int-uuid&msg=Channel+Added',
+    );
+    assert.doesNotMatch(
+      oauthReturnPath({ added: 'facebook', focus: 'int-uuid' }),
+      /[?&]id=/,
+    );
+  });
 });
 
 describe('OAuth continue default return', () => {
   it('uses oauthReturnPath instead of /launches', () => {
     assert.match(continueSource, /oauthReturnPath\(/);
     assert.doesNotMatch(continueSource, /`\/launches\?/);
+  });
+
+  it('passes focus as the integration uuid on one-step and two-step success', () => {
+    assert.match(continueSource, /focus:\s*id/);
+    assert.match(continueSource, /savedIds\[savedIds\.length - 1\]/);
+    assert.match(continueSource, /twoStepState\.integrationId/);
   });
 
   it('refetches /integrations/list after a finished connect and after a two-step save', () => {
@@ -69,9 +90,18 @@ describe('OAuth continue default return', () => {
 });
 
 describe('Channels OAuth landing', () => {
-  it('mutates the list when ?added= lands and the new row is not in the cache yet', () => {
-    assert.match(channelsSource, /selectAddedIntegration\(list, addedProvider\)/);
+  it('mutates the list when ?added= lands and waits for the focused row', () => {
+    assert.match(
+      channelsSource,
+      /selectAddedIntegration\(\s*list,\s*addedProvider,\s*searchParams\.get\('focus'\)/,
+    );
     assert.match(channelsSource, /void mutate\(\)\.finally/);
+    assert.match(channelsSource, /if \(!match\?\.id\) \{/);
+    assert.match(channelsSource, /stripChannelQuery\(\['added', 'msg', 'focus'\]\)/);
+    assert.doesNotMatch(
+      channelsSource,
+      /else if \(list\[0\]\?\.id\) \{\s*setSelected\(list\[0\]\.id\)/,
+    );
   });
 });
 

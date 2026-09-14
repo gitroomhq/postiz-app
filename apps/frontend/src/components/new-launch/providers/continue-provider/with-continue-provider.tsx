@@ -10,6 +10,11 @@ import {
   continuePickerDensity,
   filterContinuePickerItems,
 } from './continue-picker.density';
+import {
+  asContinueSelectionList,
+  itemIsContinueSelected,
+  toggleContinueSelection,
+} from './continue-picker-selection';
 
 const SWR_OPTIONS = {
   refreshWhenHidden: false,
@@ -40,7 +45,7 @@ export interface ContinueProviderConfig<TItem, TSelection> {
   titleDefault: string;
   emptyStateMessages: EmptyStateMessage[];
   getSelectionValue: (item: TItem) => TSelection;
-  transformSaveData: (selection: TSelection) => any;
+  transformSaveData: (selection: TSelection | TSelection[]) => any;
   renderItem: (item: TItem, isSelected: boolean) => ReactNode;
   isSelected: (item: TItem, selection: TSelection | null) => boolean;
   getItemId: (item: TItem) => string;
@@ -68,6 +73,19 @@ function SelectedMark({ className }: { className?: string }) {
   );
 }
 
+const gridAvatarClass =
+  '[&_img]:mx-auto [&_img]:!size-[56px] [&_img]:!max-w-none [&_img]:!rounded-[12px] [&_img]:object-cover';
+const gridAvatarBoxClass =
+  '[&_[data-avatar]]:!size-[56px] [&_[data-avatar]]:!overflow-hidden [&_[data-avatar]]:!rounded-[12px]';
+const listAvatarClass =
+  '[&_img]:!size-[40px] [&_img]:!max-w-none [&_img]:!shrink-0 [&_img]:!rounded-[12px] [&_img]:object-cover';
+const listAvatarBoxClass =
+  '[&_[data-avatar]]:!size-[40px] [&_[data-avatar]]:!overflow-hidden [&_[data-avatar]]:!rounded-[12px] [&>span]:min-w-0 [&>span]:flex-1';
+const confirmAvatarClass =
+  '[&_img]:mx-auto [&_img]:!size-[88px] [&_img]:!max-w-none [&_img]:!rounded-[12px] [&_img]:object-cover';
+const confirmAvatarBoxClass =
+  '[&_[data-avatar]]:!size-[88px] [&_[data-avatar]]:!overflow-hidden [&_[data-avatar]]:!rounded-[12px]';
+
 export function withContinueProvider<TItem, TSelection>(
   config: ContinueProviderConfig<TItem, TSelection>
 ): FC<ContinueProviderProps> {
@@ -88,7 +106,9 @@ export function withContinueProvider<TItem, TSelection>(
     const { onSave, existingId, initialData, isSaving } = props;
     const call = useCustomProviderFunction();
     const t = useT();
-    const [selection, setSelection] = useState<TSelection | null>(null);
+    const [selection, setSelection] = useState<TSelection | TSelection[] | null>(
+      null
+    );
     const [search, setSearch] = useState('');
 
     const loadData = useCallback(async () => {
@@ -122,6 +142,7 @@ export function withContinueProvider<TItem, TSelection>(
     }, [resolvedData, existingId]);
 
     const density = continuePickerDensity(filteredData.length);
+    const multi = density !== 'confirm';
 
     const visibleData = useMemo(() => {
       if (density !== 'list') {
@@ -129,6 +150,8 @@ export function withContinueProvider<TItem, TSelection>(
       }
       return filterContinuePickerItems(filteredData, search);
     }, [density, filteredData, search]);
+
+    const chosen = asContinueSelectionList(selection);
 
     // One channel and a disabled Save looks like a selected card that does
     // nothing. Pre-select the only option so Save is actually armed.
@@ -141,25 +164,52 @@ export function withContinueProvider<TItem, TSelection>(
 
     const handleSelect = useCallback(
       (item: TItem) => () => {
+        if (multi) {
+          setSelection((current) =>
+            toggleContinueSelection(current, item, getSelectionValue, isSelected)
+          );
+          return;
+        }
         setSelection(getSelectionValue(item));
       },
-      []
+      [multi]
     );
 
-    const handleSave = useCallback(async () => {
-      const chosen =
-        selection ??
-        (filteredData.length === 1
-          ? getSelectionValue(filteredData[0])
-          : null);
-      if (!chosen) {
+    const handleToggleAll = useCallback(() => {
+      if (
+        filteredData.length > 0 &&
+        filteredData.every((item) =>
+          itemIsContinueSelected(item, selection, isSelected)
+        )
+      ) {
+        setSelection([]);
         return;
       }
-      await onSave(transformSaveData(chosen));
-    }, [onSave, selection, filteredData]);
+      setSelection(filteredData.map((item) => getSelectionValue(item)));
+    }, [filteredData, selection]);
+
+    const handleSave = useCallback(async () => {
+      const picked =
+        chosen.length > 0
+          ? chosen
+          : filteredData.length === 1
+            ? [getSelectionValue(filteredData[0])]
+            : [];
+      if (!picked.length) {
+        return;
+      }
+      await onSave(
+        transformSaveData(picked.length === 1 ? picked[0] : picked)
+      );
+    }, [onSave, chosen, filteredData]);
 
     const saveEnabled =
-      !isSaving && (Boolean(selection) || filteredData.length === 1);
+      !isSaving && (chosen.length > 0 || filteredData.length === 1);
+    const allVisibleSelected =
+      filteredData.length > 1 &&
+      filteredData.every((item) =>
+        itemIsContinueSelected(item, selection, isSelected)
+      );
 
     // A failed load is not an empty account. Both used to render the same
     // "nothing here" copy, which told someone whose options exist that they
@@ -221,6 +271,7 @@ export function withContinueProvider<TItem, TSelection>(
         className="flex flex-col gap-[16px]"
         data-pq="continue-picker"
         data-pq-density={density}
+        data-pq-multi={multi ? 'true' : 'false'}
       >
         <div className="flex items-end justify-between gap-[12px]">
           <div className="text-[12px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
@@ -229,11 +280,20 @@ export function withContinueProvider<TItem, TSelection>(
               : t(titleKey, titleDefault)}
           </div>
           {density !== 'confirm' && (
-            <div className="text-[11.5px] text-pqSoft">
-              {t('n_channels', '{count} channels').replace(
-                '{count}',
-                String(filteredData.length)
+            <div className="flex items-center gap-[10px] text-[11.5px] text-pqSoft">
+              {chosen.length > 0 && (
+                <span>
+                  {t('n_selected', '{{count}} selected', {
+                    count: chosen.length,
+                  })}
+                </span>
               )}
+              <span>
+                {t('n_channels', '{count} channels').replace(
+                  '{count}',
+                  String(filteredData.length)
+                )}
+              </span>
             </div>
           )}
         </div>
@@ -246,8 +306,8 @@ export function withContinueProvider<TItem, TSelection>(
             <div
               className={clsx(
                 'flex flex-col items-center gap-[12px]',
-                '[&_img]:mx-auto [&_img]:!size-[88px] [&_img]:!max-w-none [&_img]:!rounded-full [&_img]:object-cover',
-                '[&_[data-avatar]]:!size-[88px]'
+                confirmAvatarClass,
+                confirmAvatarBoxClass
               )}
             >
               {renderItem(filteredData[0], true)}
@@ -265,22 +325,26 @@ export function withContinueProvider<TItem, TSelection>(
         {density === 'grid' && (
           <>
             <div
-              role="radiogroup"
+              role="group"
               aria-label={t(titleKey, titleDefault)}
               className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-[10px]"
             >
               {visibleData.map((item) => {
-                const selected = isSelected(item, selection);
+                const selected = itemIsContinueSelected(
+                  item,
+                  selection,
+                  isSelected
+                );
                 return (
                   <button
                     type="button"
-                    role="radio"
+                    role="checkbox"
                     aria-checked={selected}
                     key={getItemId(item)}
                     className={clsx(
                       'relative flex min-h-[156px] cursor-pointer flex-col items-center justify-center gap-[10px] rounded-pqMd px-[14px] py-[18px] text-center transition-colors',
-                      '[&_img]:mx-auto [&_img]:!size-[56px] [&_img]:!max-w-none [&_img]:!rounded-full [&_img]:object-cover',
-                      '[&_[data-avatar]]:!size-[56px]',
+                      gridAvatarClass,
+                      gridAvatarBoxClass,
                       selected
                         ? 'bg-pqNavActive shadow-[inset_0_0_0_1.5px_var(--brand)]'
                         : 'shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqHover'
@@ -295,7 +359,18 @@ export function withContinueProvider<TItem, TSelection>(
                 );
               })}
             </div>
-            <div>{saveButton}</div>
+            <div className="flex flex-wrap items-center gap-[12px]">
+              <button
+                type="button"
+                onClick={handleToggleAll}
+                className="cursor-pointer text-[13.5px] font-[600] text-pqFocused hover:underline"
+              >
+                {allVisibleSelected
+                  ? t('clear', 'Clear')
+                  : t('select_all', 'Select all')}
+              </button>
+              {saveButton}
+            </div>
           </>
         )}
 
@@ -331,7 +406,7 @@ export function withContinueProvider<TItem, TSelection>(
               />
             </div>
             <div
-              role="radiogroup"
+              role="group"
               aria-label={t(titleKey, titleDefault)}
               className="flex max-h-[360px] flex-col gap-[6px] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
             >
@@ -341,17 +416,21 @@ export function withContinueProvider<TItem, TSelection>(
                 </div>
               )}
               {visibleData.map((item) => {
-                const selected = isSelected(item, selection);
+                const selected = itemIsContinueSelected(
+                  item,
+                  selection,
+                  isSelected
+                );
                 return (
                   <button
                     type="button"
-                    role="radio"
+                    role="checkbox"
                     aria-checked={selected}
                     key={getItemId(item)}
                     className={clsx(
                       'flex w-full cursor-pointer items-center gap-[12px] rounded-pqMd px-[14px] py-[10px] text-start transition-colors',
-                      '[&_img]:!size-[40px] [&_img]:!max-w-none [&_img]:!shrink-0 [&_img]:!rounded-full [&_img]:object-cover',
-                      '[&_[data-avatar]]:!size-[40px] [&>span]:min-w-0 [&>span]:flex-1',
+                      listAvatarClass,
+                      listAvatarBoxClass,
                       selected
                         ? 'bg-pqNavActive shadow-[inset_0_0_0_1.5px_var(--brand)]'
                         : 'shadow-[inset_0_0_0_1px_var(--border)] hover:bg-pqHover'
@@ -366,7 +445,18 @@ export function withContinueProvider<TItem, TSelection>(
                 );
               })}
             </div>
-            <div>{saveButton}</div>
+            <div className="flex flex-wrap items-center gap-[12px]">
+              <button
+                type="button"
+                onClick={handleToggleAll}
+                className="cursor-pointer text-[13.5px] font-[600] text-pqFocused hover:underline"
+              >
+                {allVisibleSelected
+                  ? t('clear', 'Clear')
+                  : t('select_all', 'Select all')}
+              </button>
+              {saveButton}
+            </div>
           </>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
 import { withContinueProvider } from '../with-continue-provider';
@@ -46,14 +47,15 @@ export const YoutubeContinue = withContinueProvider<
   ],
   getItemId: (item) => item.id,
   getSelectionValue: (item) => ({ id: item.id }),
-  transformSaveData: (selection) => selection,
+  transformSaveData: (selection) =>
+    Array.isArray(selection) ? { pages: selection } : selection,
   isSelected: (item, selection) => selection?.id === item.id,
   renderItem: (item) => (
     <ContinuePickerItem
       pictureUrl={item.picture?.data?.url}
       name={item.name}
       meta={joinContinuePickerMeta(
-        item.username || 'YouTube',
+        continuePickerHandle(item.username),
         item.subscriberCount
           ? `${parseInt(item.subscriberCount, 10).toLocaleString()} subscribers`
           : undefined,

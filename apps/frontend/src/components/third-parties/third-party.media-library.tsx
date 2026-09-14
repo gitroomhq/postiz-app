@@ -143,11 +143,11 @@ const ThirdPartyMediaLibraryBrowser: FC<{
                   <div
                     key={item.id}
                     onClick={() => toggleSelect(item)}
-                    className="cursor-pointer aspect-square rounded-[6px] overflow-hidden relative group"
+                    className="relative aspect-square w-full cursor-pointer overflow-hidden rounded-[6px] group"
                   >
                     <div
                       className={clsx(
-                        'w-full h-full border-[4px] rounded-[6px]',
+                        'absolute inset-0 border-[4px] rounded-[6px]',
                         isSelected ? 'border-pqBrand' : 'border-transparent'
                       )}
                     >
@@ -155,7 +155,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
                         <VideoFrame url={item.thumbnail || item.url} />
                       ) : (
                         <img
-                          className="w-full h-full object-cover rounded-[4px]"
+                          className="h-full w-full object-cover rounded-[4px]"
                           src={item.thumbnail || item.url}
                           alt={item.name || ''}
                         />

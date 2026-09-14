@@ -4,7 +4,9 @@ import {
   FC,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -140,7 +142,7 @@ const CodeBlock: FC<{
           copy(rawCode ?? code);
           toaster.show(`${label} copied to clipboard`, 'success');
         }}
-        className="absolute end-[8px] top-[8px] flex h-[26px] w-[26px] items-center justify-center rounded-[7px] bg-pqSettings text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+        className="absolute end-[8px] top-[8px] flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-[7px] bg-pqSettings text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
       >
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
           <path
@@ -234,7 +236,7 @@ const CopySample: FC<{ text: string }> = ({ text }) => {
         copy(text);
         toaster.show(t('conn_examples_copied', 'Copied the sample'), 'success');
       }}
-      className="inline-flex h-[26px] shrink-0 items-center gap-[5px] rounded-[7px] bg-pqBtnSimple px-[8px] text-[11px] font-[700] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+      className="inline-flex h-[26px] shrink-0 cursor-pointer items-center gap-[5px] rounded-[7px] bg-pqBtnSimple px-[8px] text-[11px] font-[700] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
     >
       <CopyGlyph />
       {t('conn_examples_copy', 'Copy')}
@@ -343,7 +345,7 @@ const ExamplesBlock: FC<{
                 copy(ex.body);
                 toaster.show(t('conn_examples_copied', 'Copied the sample'), 'success');
               }}
-              className="absolute end-[8px] top-[8px] flex h-[22px] w-[22px] items-center justify-center rounded-[6px] text-pqOnBrand/70 transition-colors hover:bg-white/15 hover:text-pqOnBrand"
+              className="absolute end-[8px] top-[8px] flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-[6px] text-pqOnBrand/70 transition-colors hover:bg-white/15 hover:text-pqOnBrand"
             >
               <CopyGlyph />
             </button>
@@ -675,7 +677,7 @@ const CliSetupCallout: FC<{
         href="https://docs.postqueen.ai/cli/introduction"
         target="_blank"
         rel="noreferrer"
-        className="inline-flex items-center gap-[6px] text-[12.5px] font-[600] text-pqBrand hover:underline"
+        className="inline-flex cursor-pointer items-center gap-[6px] text-[12.5px] font-[600] text-pqBrand hover:underline"
       >
         {t('conn_docs_cli', 'CLI introduction')}
         <ExternalLinkIcon size={13} className="opacity-[0.85]" />
@@ -737,6 +739,15 @@ export const ConnectPanel: FC<{
   const [keyRevealed, setKeyRevealed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const paneRef = useRef<HTMLDivElement>(null);
+
+  // Hub and detail share one overflow pane. Without a reset, opening a card
+  // after scrolling Featured keeps the same scrollTop, so Back / title sit
+  // above the fold and How to connect is the first thing you see.
+  useLayoutEffect(() => {
+    const el = paneRef.current;
+    if (el) el.scrollTop = 0;
+  }, [nav, picked]);
 
   const apiKey = user?.publicApi || '';
   const apiUrl = useMemo(() => absoluteApiUrl(backendUrl), [backendUrl]);
@@ -914,7 +925,7 @@ export const ConnectPanel: FC<{
   }, [onClose, router]);
 
   const navItemBase =
-    'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
+    'flex h-[34px] cursor-pointer items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
 
   const navLabels = useMemo(
     (): Record<ConnectNavId, string> => ({
@@ -1033,7 +1044,7 @@ export const ConnectPanel: FC<{
   );
 
   const copyChipClass =
-    'flex h-[30px] items-center rounded-[8px] bg-pqBtnSimple px-[11px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover';
+    'flex h-[30px] shrink-0 cursor-pointer items-center rounded-[8px] bg-pqBtnSimple px-[11px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover';
 
   const credentialStrip = (
     cred: Connection['cred'] | 'hub',
@@ -1070,21 +1081,28 @@ export const ConnectPanel: FC<{
             >
               {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
-            {!!apiKey && (
-              <button
-                type="button"
-                onClick={() => {
-                  copy(apiKey);
-                  toaster.show('API key copied to clipboard', 'success');
-                }}
-                className={copyChipClass}
-              >
-                {t('conn_copy_key', 'Copy key')}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => selectNav('api-keys')}
+              className={copyChipClass}
+            >
+              {t('conn_go_api_keys', 'Go to API Keys')}
+            </button>
           </div>
           {(showMcp || showApi) && (
             <div className="flex flex-wrap gap-[8px] border-t border-pqLine bg-pqSettings px-[14px] py-[10px]">
+              {!!apiKey && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    copy(apiKey);
+                    toaster.show('API key copied to clipboard', 'success');
+                  }}
+                  className={copyChipClass}
+                >
+                  {t('conn_copy_key', 'Copy key')}
+                </button>
+              )}
               {showMcp && (
                 <button
                   type="button"
@@ -1185,7 +1203,7 @@ export const ConnectPanel: FC<{
         <button
           type="button"
           onClick={clearPicked}
-          className="flex h-[32px] w-fit items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[10px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+          className="flex h-[32px] w-fit cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[10px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
         >
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
             <path
@@ -1239,7 +1257,7 @@ export const ConnectPanel: FC<{
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="flex h-[34px] items-center gap-[6px] rounded-pqSm bg-pqBrand px-[12px] text-[12.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+              className="flex h-[34px] cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqBrand px-[12px] text-[12.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
             >
               {link.label}
               <ExternalLinkIcon size={13} className="opacity-[0.9]" />
@@ -1251,7 +1269,7 @@ export const ConnectPanel: FC<{
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              className="flex h-[34px] items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[12px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+              className="flex h-[34px] cursor-pointer items-center gap-[6px] rounded-pqSm bg-pqBtnSimple px-[12px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
             >
               {link.label}
               <ExternalLinkIcon size={13} className="opacity-[0.7]" />
@@ -1270,7 +1288,7 @@ export const ConnectPanel: FC<{
         {item.section === 'media' && (
           <Link
             href="/settings?tab=integrations"
-            className="flex h-[36px] w-fit items-center rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+            className="flex h-[36px] w-fit cursor-pointer items-center rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
           >
             {t('connect_open_integrations', 'Open Integrations')} →
           </Link>
@@ -1280,7 +1298,7 @@ export const ConnectPanel: FC<{
           <button
             type="button"
             onClick={() => selectNav('oauth-apps')}
-            className="flex h-[36px] w-fit items-center rounded-pqSm bg-pqBtnSimple px-[14px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+            className="flex h-[36px] w-fit cursor-pointer items-center rounded-pqSm bg-pqBtnSimple px-[14px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
           >
             {t('connect_open_oauth_apps', 'Open OAuth Apps')} →
           </button>
@@ -1410,7 +1428,7 @@ export const ConnectPanel: FC<{
           item.soon ? `${item.name}, ${item.method}, soon` : `${item.name}, ${item.method}`
         }
         className={clsx(
-          'flex min-w-0 items-center gap-[10px] rounded-pqLg bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
+          'flex min-w-0 cursor-pointer items-center gap-[10px] rounded-pqLg bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
           featured ? 'p-[16px]' : 'p-[13px_14px]'
         )}
       >
@@ -1516,7 +1534,7 @@ export const ConnectPanel: FC<{
 
   const chipClass = (id: ConnectNavId | string, activeChip: boolean) =>
     clsx(
-      'h-[30px] shrink-0 rounded-[999px] px-[12px] text-[12px] font-[600] transition-colors',
+      'h-[30px] shrink-0 cursor-pointer rounded-[999px] px-[12px] text-[12px] font-[600] transition-colors',
       activeChip && !picked
         ? 'bg-pqBrand text-pqOnBrand'
         : activeChip && picked
@@ -1769,6 +1787,7 @@ export const ConnectPanel: FC<{
       onClick={(e) => e.stopPropagation()}
       className={clsx(
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
+        '[&_a]:cursor-pointer [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed',
         mobile
           ? 'h-full w-full flex-col'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
@@ -1792,7 +1811,7 @@ export const ConnectPanel: FC<{
               <button
                 type="button"
                 onClick={() => setMobileNavOpen((v) => !v)}
-                className="rounded-pqSm bg-pqBtnSimple px-[10px] py-[6px] text-[12px] font-[600] text-pqText"
+                className="cursor-pointer rounded-pqSm bg-pqBtnSimple px-[10px] py-[6px] text-[12px] font-[600] text-pqText"
               >
                 {mobileNavOpen
                   ? t('hide', 'Hide')
@@ -1802,7 +1821,7 @@ export const ConnectPanel: FC<{
                 type="button"
                 onClick={close}
                 aria-label={t('close', 'Close')}
-                className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
                   <path
@@ -1857,7 +1876,7 @@ export const ConnectPanel: FC<{
               type="button"
               onClick={close}
               aria-label={t('close', 'Close')}
-              className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+              className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
             >
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
                 <path
@@ -1871,6 +1890,7 @@ export const ConnectPanel: FC<{
           </div>
         )}
         <div
+          ref={paneRef}
           className={clsx(
             'min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner',
             mobile ? 'p-[20px_16px_32px]' : 'p-[28px_32px_40px]'

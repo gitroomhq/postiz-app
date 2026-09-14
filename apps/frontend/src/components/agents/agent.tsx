@@ -30,6 +30,7 @@ import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-card';
 import { ChannelsListEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
+import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const needsAttention = (integration: {
   refreshNeeded?: boolean;
@@ -381,7 +382,7 @@ export const AgentList: FC<{
               <div
                 onClick={setIntegration(integration)}
                 key={integration.id}
-                title={integration.name}
+                title={channelNameWithHandle(integration)}
                 className={clsx(
                   'relative flex items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:justify-center group-[.sidebar]:px-0',
                   blocked
@@ -443,7 +444,7 @@ export const AgentList: FC<{
                   >
                     {integration.refreshNeeded || integration.inBetweenSteps
                       ? t('needs_reconnect', 'Needs reconnect')
-                      : integration.identifier}
+                      : channelListSubtitle(integration)}
                   </span>
                 </span>
                 {showKebab && (

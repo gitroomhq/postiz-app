@@ -45,6 +45,7 @@ import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe
 import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import clsx from 'clsx';
 
@@ -320,9 +321,9 @@ export const ShowAllProviders = forwardRef((props, ref) => {
                   <button
                     key={integration.id}
                     type="button"
-                    title={integration.name}
+                    title={channelNameWithHandle(integration)}
                     data-tooltip-id="tooltip"
-                    data-tooltip-content={integration.name}
+                    data-tooltip-content={channelNameWithHandle(integration)}
                     onClick={() =>
                       setPreviewFocus((prev) =>
                         prev === integration.id ? null : integration.id

@@ -2,6 +2,7 @@
 
 import {
   ContinuePickerItem,
+  continuePickerHandle,
   continuePickerInitial,
   joinContinuePickerMeta,
 } from '../continue-picker-item';
@@ -40,13 +41,16 @@ export const LinkedinContinue = withContinueProvider<
   ],
   getItemId: (item) => item.id,
   getSelectionValue: (item) => ({ id: item.id, pageId: item.pageId }),
-  transformSaveData: (selection) => ({ page: selection.id }),
+  transformSaveData: (selection) =>
+    Array.isArray(selection)
+      ? { pages: selection.map((item) => item.id) }
+      : { page: selection.id },
   isSelected: (item, selection) => selection?.id === item.id,
   renderItem: (item) => (
     <ContinuePickerItem
       pictureUrl={item.picture}
       name={item.name}
-      meta={joinContinuePickerMeta(item.username)}
+      meta={joinContinuePickerMeta(continuePickerHandle(item.username))}
       fallback={continuePickerInitial(item.name)}
     />
   ),

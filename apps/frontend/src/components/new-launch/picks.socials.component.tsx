@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
@@ -83,7 +84,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
                   className="flex gap-[8px] items-center"
                   {...(toolTip && {
                     'data-tooltip-id': 'tooltip',
-                    'data-tooltip-content': integration.name,
+                    'data-tooltip-content': channelNameWithHandle(integration),
                   })}
                 >
                   <div

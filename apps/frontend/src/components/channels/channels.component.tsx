@@ -34,7 +34,7 @@ import {
   ChannelsListEmpty,
   ChannelsPageEmpty,
 } from '@gitroom/frontend/components/ui/no-channels-art';
-import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
+import { formatChannelHandle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { selectAddedIntegration } from '@gitroom/frontend/components/channels/select-added-integration';
 
 /**
@@ -721,7 +721,7 @@ export const ChannelsComponent: FC = () => {
       focusedFromAdded.current = false;
       addedConsumed.current = true;
       setSelected((currentId) => (currentId === id ? '' : currentId));
-      stripChannelQuery(['added', 'msg']);
+      stripChannelQuery(['added', 'msg', 'focus']);
     },
     [stripChannelQuery]
   );
@@ -764,11 +764,17 @@ export const ChannelsComponent: FC = () => {
     const returningFromConnect = !!addedProvider && !addedConsumed.current;
 
     if (returningFromConnect) {
-      const match = selectAddedIntegration(list, addedProvider);
+      const match = selectAddedIntegration(
+        list,
+        addedProvider,
+        searchParams.get('focus'),
+      );
       // SWR keeps the pre-connect list (`revalidateIfStale` / `OnFocus` off).
       // After social-connect 201 the new row is missing until we mutate —
       // without this, a non-empty list shows the toast and never waits.
-      if (!match && !addedRefreshDone) {
+      // Stale cache after Facebook two-step is often still YouTube: do not
+      // consume or fall back to list[0] until the focused row is in the list.
+      if (!match?.id) {
         if (!addedRefreshStarted.current) {
           addedRefreshStarted.current = true;
           void mutate().finally(() => setAddedRefreshDone(true));
@@ -778,17 +784,13 @@ export const ChannelsComponent: FC = () => {
       addedConsumed.current = true;
       focusedFromAdded.current = true;
       closeAddPane();
-      if (match?.id) {
-        setSelected(match.id);
-      } else if (list[0]?.id) {
-        setSelected(list[0].id);
-      }
+      setSelected(match.id);
       setDetailOpen(true);
       const msg = searchParams.get('msg');
       if (msg) {
         toast.show(msg, 'success');
       }
-      stripChannelQuery(['added', 'msg']);
+      stripChannelQuery(['added', 'msg', 'focus']);
       return;
     }
 
@@ -1166,7 +1168,7 @@ export const ChannelsComponent: FC = () => {
             <div
               key={integration.id}
               data-channel={integration.id}
-              title={integration.name}
+              title={channelNameWithHandle(integration)}
               role="button"
               tabIndex={0}
               onClick={() => {
@@ -1200,7 +1202,7 @@ export const ChannelsComponent: FC = () => {
                   alt={integration.identifier}
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className="size-[32px] rounded-full object-cover"
                 />
                 <img
                   src={`/icons/platforms/${integration.identifier}.png`}
@@ -1370,14 +1372,12 @@ export const ChannelsComponent: FC = () => {
                     alt={current.identifier}
                     width={52}
                     height={52}
-                    className="size-[52px] rounded-[15px] object-cover"
+                    className="size-[52px] rounded-full object-cover"
                   />
-                  <span
-                    className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full bg-[length:13px] bg-center bg-no-repeat"
-                    style={{
-                      backgroundColor: 'var(--badgeRing)',
-                      backgroundImage: `url(/icons/platforms/${current.identifier}.png)`,
-                    }}
+                  <img
+                    src={`/icons/platforms/${current.identifier}.png`}
+                    alt=""
+                    className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full border border-pqInner object-cover"
                   />
                 </span>
                 <div className="min-w-0 max-w-[420px] flex-1">

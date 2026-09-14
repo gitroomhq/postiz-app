@@ -11,6 +11,7 @@ import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
+import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import type { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 
 export function useHasScroll(ref: RefObject<HTMLElement | null>): boolean {
@@ -199,9 +200,9 @@ export const SelectCurrent: FC = () => {
                 data-tooltip-content={
                   isGlobal
                     ? t('customize_for_channel', 'Customize · {{name}}', {
-                        name: integration.name,
+                        name: channelNameWithHandle(integration),
                       })
-                    : integration.name
+                    : channelNameWithHandle(integration)
                 }
                 className={clsx(
                   'group relative flex h-[44px] w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-[10px] bg-pqSettings transition-all duration-500',

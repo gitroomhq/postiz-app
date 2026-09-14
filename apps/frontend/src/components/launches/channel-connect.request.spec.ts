@@ -17,6 +17,13 @@ describe('channelConnectBody', () => {
   it('omits state when the callback has none', () => {
     assert.deepEqual(channelConnectBody({ id: 'UC123' }), { id: 'UC123' });
   });
+
+  it('keeps a pages array for multi-select connect', () => {
+    assert.deepEqual(
+      channelConnectBody({ pages: ['111', '222'] }, 'N6DA9WO'),
+      { pages: ['111', '222'], state: 'N6DA9WO' }
+    );
+  });
 });
 
 describe('channelConnectEndpoints', () => {

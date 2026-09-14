@@ -22,6 +22,7 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import type { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
+import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const allowedIntegrations = [
   'facebook',
@@ -425,7 +426,7 @@ export const PlatformAnalytics = () => {
               return (
                 <div
                   key={integration.id}
-                  title={integration.name}
+                  title={channelNameWithHandle(integration)}
                   onClick={() => {
                     if (integration.refreshNeeded) {
                       toaster.show(
@@ -477,7 +478,7 @@ export const PlatformAnalytics = () => {
                     >
                       {needsRefresh
                         ? t('needs_reconnect', 'Needs reconnect')
-                        : integration.identifier}
+                        : channelListSubtitle(integration)}
                     </span>
                   </span>
                   <div
@@ -527,14 +528,12 @@ export const PlatformAnalytics = () => {
                   alt=""
                   width={44}
                   height={44}
-                  className="size-[44px] rounded-[13px] object-cover"
+                  className="size-[44px] rounded-full object-cover"
                 />
-                <span
-                  className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full bg-[length:13px] bg-center bg-no-repeat"
-                  style={{
-                    backgroundColor: 'var(--badgeRing)',
-                    backgroundImage: `url(/icons/platforms/${currentIntegration.identifier}.png)`,
-                  }}
+                <img
+                  src={`/icons/platforms/${currentIntegration.identifier}.png`}
+                  alt=""
+                  className="absolute -bottom-[3px] -end-[3px] size-[19px] rounded-full border border-pqInner object-cover"
                 />
               </span>
               <div className="min-w-0">
@@ -545,7 +544,7 @@ export const PlatformAnalytics = () => {
                   {t('analytics_summary_range', '{meta} · last {days} days')
                     .replace(
                       '{meta}',
-                      `@${String(currentIntegration.name || currentIntegration.identifier).replace(/^@/, '')}`
+                      channelListSubtitle(currentIntegration)
                     )
                     .replace('{days}', String(keys))}
                 </div>

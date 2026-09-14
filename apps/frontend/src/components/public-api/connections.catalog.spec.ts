@@ -525,6 +525,35 @@ describe('Connect marketplace catalog', () => {
     }
   });
 
+  it('example replies answer the prompt, they do not teach which product this is', () => {
+    const banned =
+      /not Claude Code|not Codex|not ChatGPT|not Grok Build|not grok\.com|not Cursor|not the consumer Muse|Enable PostQueen from|Settings then Apps|Claude chat, not|ChatGPT web, not|Grok chat, not|Grok Bot, not|Muse Code, not|Agent mode, not|VS Code Copilot, not|Windsurf Cascade, not|used schedulePostTool|used the skill|used the public MCP|JSON shape for the client|Same MCP URL as|Cline, Continue, Goose|httpUrl in settings|Bearer header, not only|mcp\.json|connectors form|Write tools can stay blocked|Claude Code used|grok mcp add registered/i;
+    for (const item of all) {
+      if (item.id === 'cli' || item.id === 'api' || item.id === 'sdk') continue;
+      for (const ex of item.examples || []) {
+        if (!ex.reply) continue;
+        assert.doesNotMatch(
+          ex.reply,
+          banned,
+          `${item.id} reply still talks about the product: ${ex.reply}`
+        );
+      }
+    }
+    const claudeIg = (byId('claude-apps').examples || []).find((e) =>
+      /sunny terrace/i.test(e.body)
+    );
+    assert.match(claudeIg?.reply || '', /terrace/i);
+    assert.match(claudeIg?.reply || '', /Instagram/i);
+    assert.match(claudeIg?.reply || '', /19:00/);
+    const claudeMulti = (byId('claude-apps').examples || []).find((e) =>
+      /LinkedIn/.test(e.body)
+    );
+    assert.match(claudeMulti?.reply || '', /Instagram/);
+    assert.match(claudeMulti?.reply || '', /\bX\b/);
+    assert.match(claudeMulti?.reply || '', /LinkedIn/);
+    assert.doesNotMatch(claudeMulti?.reply || '', /Claude Code/i);
+  });
+
   it('maps nav filters to the job groups', () => {
     assert.deepEqual(
       connectionsForNav(catalog, 'agents').map((c) => c.id),
