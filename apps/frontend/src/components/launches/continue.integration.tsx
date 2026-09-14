@@ -300,10 +300,18 @@ export const ContinueIntegration: FC<{
             response.status === HttpStatusCode.Ok ||
             response.status === HttpStatusCode.Created
           ) {
+            const saved = await response.json().catch(() => ({}));
+            const savedIds = Array.isArray(saved?.ids)
+              ? saved.ids.filter((value: unknown) => typeof value === 'string')
+              : [];
+            const focus =
+              savedIds[savedIds.length - 1] ||
+              (typeof saved?.id === 'string' ? saved.id : '') ||
+              twoStepState.integrationId;
             navigateOrShow(
               oauthReturnPath({
                 added: provider,
-                focus: twoStepState.integrationId,
+                focus,
                 msg: 'Channel Added',
                 onboarding: twoStepState.onboarding,
               }),
@@ -425,7 +433,7 @@ export const ContinueIntegration: FC<{
           <div className="text-[13.5px] text-pqMuted">
             {t(
               'select_the_page_or_account',
-              `Select the ${providerDisplayName} page or account you want to connect.`
+              `Select one or more ${providerDisplayName} pages or accounts to connect.`
             )}
           </div>
         </div>

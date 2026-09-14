@@ -1320,3 +1320,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Channels: detail avatar is a circle, like the rail
 
 **i18n 0.** The rail already clipped the Facebook page photo to a circle. The detail header used `rounded-[15px]`, so the same square logo looked like a rounded tile. Channels detail and Analytics detail now use `rounded-full object-cover` and the same round platform badge as the rail.
+
+## Channels: pick several Facebook pages in one Save
+
+**i18n 0.** Configure Your Channel was a radio: one page, then Save, then `inBetweenSteps` was already false so a second page 400ed. Grid and list pickers are checkboxes (Select all / Clear). One POST sends `{ pages: [...] }`; the first page still fills the in-between row, extras get their own channel under the same Facebook (or Instagram / LinkedIn / YouTube / GMB / Tumblr) account. Page photos in that picker are square with a 12px radius, not circles and not stretched rectangles.

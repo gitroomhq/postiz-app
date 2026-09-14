@@ -211,6 +211,92 @@ export class IntegrationRepository {
     });
   }
 
+  // Extra pages from a two-step picker (Facebook, Instagram, …). The first
+  // selected page reuses the inBetweenSteps row; each extra page needs its own
+  // row with that page's token, grouped under the original account
+  // (`rootInternalId`). createOrUpdateIntegration would set rootInternalId to
+  // the page id, and refresh would then skip reConnect and store the user
+  // token as if it were the page token.
+  async createExtraProviderPage(
+    template: Integration,
+    page: {
+      name: string;
+      picture?: string;
+      internalId: string;
+      token: string;
+      username?: string;
+    }
+  ) {
+    const params: Partial<Integration> = {
+      picture: page.picture,
+    };
+    if (
+      params.picture &&
+      (params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1 ||
+        params.picture.indexOf(process.env.FRONTEND_URL!) === -1)
+    ) {
+      try {
+        params.picture = await this.storage.uploadSimple(params.picture);
+      } catch (err) {
+        console.log('Failed to upload profile picture:', params.picture, err);
+        params.picture = undefined;
+      }
+    }
+
+    const rootInternalId = template.rootInternalId || template.internalId;
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: template.organizationId,
+          internalId: page.internalId,
+        },
+      },
+    });
+
+    const shared = {
+      name: page.name,
+      ...(params.picture ? { picture: params.picture } : {}),
+      token: page.token,
+      refreshToken: template.refreshToken || template.token,
+      tokenExpiration: template.tokenExpiration,
+      profile: page.username,
+      inBetweenSteps: false,
+      refreshNeeded: false,
+      disabled: false,
+      autoDisabledAt: null,
+      deletedAt: null,
+    };
+
+    if (existing) {
+      return this._integration.model.integration.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          ...shared,
+          internalId: page.internalId,
+          providerIdentifier: template.providerIdentifier,
+          type: template.type,
+          ...(existing.deletedAt ? { rootInternalId } : {}),
+        },
+      });
+    }
+
+    return this._integration.model.integration.create({
+      data: {
+        ...shared,
+        organizationId: template.organizationId,
+        type: template.type,
+        providerIdentifier: template.providerIdentifier,
+        internalId: page.internalId,
+        rootInternalId,
+        additionalSettings: template.additionalSettings ?? '[]',
+        customInstanceDetails: template.customInstanceDetails,
+        postingTimes: template.postingTimes,
+      },
+    });
+  }
+
   disconnectChannel(org: string, id: string) {
     return this._integration.model.integration.update({
       where: {

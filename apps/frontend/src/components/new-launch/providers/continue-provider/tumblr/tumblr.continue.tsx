@@ -48,7 +48,8 @@ export const TumblrContinue = withContinueProvider<
   ],
   getItemId: (item) => item.id,
   getSelectionValue: (item) => ({ id: item.id }),
-  transformSaveData: (selection) => selection,
+  transformSaveData: (selection) =>
+    Array.isArray(selection) ? { pages: selection } : selection,
   isSelected: (item, selection) => selection?.id === item.id,
   renderItem: (item) => (
     <ContinuePickerItem

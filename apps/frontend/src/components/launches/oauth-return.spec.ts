@@ -56,6 +56,7 @@ describe('OAuth continue default return', () => {
 
   it('passes focus as the integration uuid on one-step and two-step success', () => {
     assert.match(continueSource, /focus:\s*id/);
-    assert.match(continueSource, /focus:\s*twoStepState\.integrationId/);
+    assert.match(continueSource, /savedIds\[savedIds\.length - 1\]/);
+    assert.match(continueSource, /twoStepState\.integrationId/);
   });
 });
