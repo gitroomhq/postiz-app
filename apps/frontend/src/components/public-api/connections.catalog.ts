@@ -12,7 +12,7 @@
 
 export type Kind = 'AGENT' | 'CHAT' | 'MCP' | 'SKILL' | 'FLOW' | 'API' | 'MEDIA';
 
-/** How the card connects, shown as a chip, not a destination. */
+/** How the connector talks to PostQueen. Shown on the detail pane, not the hub card. */
 export type MethodId = 'MCP' | 'Skill' | 'Chat' | 'HTTP' | 'CLI' | 'API';
 
 /** How examples render in the detail pane. */
@@ -269,6 +269,41 @@ export const CONNECT_NAV_ACCOUNT: {
   },
 ];
 
+/**
+ * Left-rail rows that leave Connect and open a Settings tab.
+ * Webhooks and RSS AutoPost are not catalog cards: the overlay would only
+ * tell you to open Settings.
+ */
+export const CONNECT_SETTINGS_EXITS: {
+  id: string;
+  href: string;
+  labelKey: string;
+  labelDefault: string;
+}[] = [
+  {
+    id: 'webhooks',
+    href: '/settings?tab=webhooks',
+    labelKey: 'conn_webhooks_name',
+    labelDefault: 'Webhooks',
+  },
+  {
+    id: 'rss',
+    href: '/settings?tab=autopost',
+    labelKey: 'conn_rss_name',
+    labelDefault: 'RSS AutoPost',
+  },
+];
+
+export const SETTINGS_EXIT_HREF: Record<string, string> = {
+  webhooks: '/settings?tab=webhooks',
+  rss: '/settings?tab=autopost',
+  autopost: '/settings?tab=autopost',
+};
+
+export function settingsExitHref(id: string): string | undefined {
+  return SETTINGS_EXIT_HREF[id];
+}
+
 export const CONNECT_NAV = [
   ...CONNECT_NAV_CONNECTORS,
   ...CONNECT_NAV_DEVELOP,
@@ -296,6 +331,8 @@ export const CONNECTOR_ALIASES: Record<string, string> = {
   'other-clients': 'other-mcp',
   'any-mcp': 'other-mcp',
   'make.com': 'make',
+  autopost: 'rss',
+  'rss-autopost': 'rss',
   grokbot: 'grok-bot',
   'grok bot': 'grok-bot',
   grokbuild: 'grok-build',
@@ -350,7 +387,8 @@ const HUB_SECTIONS: SectionId[] = [
 /**
  * Remaining cards on All, grouped like the rail. Featured ids are omitted.
  * Develop (Public API, CLI, Node SDK, OAuth Apps) and Account rows are
- * panel-only. Media stays in the catalog but is not a Connect nav.
+ * panel-only. Webhooks and RSS AutoPost are left-rail Settings exits, not
+ * cards. Media stays in the catalog but is not a Connect nav.
  */
 export function restGroupsForAllPage(
   groups: Group[]
@@ -368,9 +406,10 @@ export function connectionsForNav(
   navId: ConnectNavId
 ): Connection[] {
   const all = groups.flatMap((g) => g.items);
+  const hubCard = (c: Connection) => !SETTINGS_EXIT_HREF[c.id];
   switch (navId) {
     case 'all':
-      return all.filter((c) => HUB_SECTIONS.includes(c.section));
+      return all.filter((c) => HUB_SECTIONS.includes(c.section) && hubCard(c));
     case 'agents':
       return sortByIdOrder(
         all.filter((c) => c.section === 'agents'),
@@ -389,7 +428,7 @@ export function connectionsForNav(
         EDITORS_DISPLAY_ORDER
       );
     case 'automation':
-      return all.filter((c) => c.section === 'automation');
+      return all.filter((c) => c.section === 'automation' && hubCard(c));
     case 'public-api':
       return all.filter((c) => c.id === 'api');
     case 'cli':
@@ -502,13 +541,15 @@ export function buildConnectionsCatalog(
     title: t('conn_chat_step_try', 'Send it a message'),
     detail: t(
       'conn_chat_step_try_detail',
-      'From the connected chat app, in your own words. Ask for a draft if you want to review on the calendar first. Keep a human in the loop before anything publishes.'
+      'From the connected chat app, in your own words. The examples below show one channel, another channel, and several at once. Ask for a draft if you want to review on the calendar first.'
     ),
     code: t(
       'conn_bridge_example',
-      'Schedule this to LinkedIn and X tomorrow at 9am as a draft'
+      'Post this to Instagram tonight at 7, and to X and LinkedIn Friday at 10 as drafts'
     ),
   });
+
+  const sample = (ex: Example): Example => ex;
 
   const whatsappSteps = (): Step[] => [
     ...chatGroundworkSteps(),
@@ -629,17 +670,24 @@ openclaw pairing approve discord <CODE>`,
             'OpenClaw is a self hosted personal agent that stays running on your machine. Message it from WhatsApp, Telegram, Slack or Discord. It is a bot, not a coding session. It drives the postqueen CLI through an Agent Skill, not MCP.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_openclaw_ex',
-                'Post the blog cover to LinkedIn and X tomorrow at 9am'
-              ),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_openclaw_ex', 'Post the blog cover to Instagram tonight at 7 as a draft'),
+              reply: t('conn_openclaw_ex_reply', 'Instagram draft for 19:00. Confirm in WhatsApp before it publishes.'),
               code: 'postqueen posts:create',
-              reply: t(
-                'conn_openclaw_ex_reply',
-                'Queued as drafts on LinkedIn and X for 09:00. Confirm before they publish.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_openclaw_ex_x', 'Turn this into a thread on X tomorrow at 8am, draft only'),
+              reply: t('conn_openclaw_ex_x_reply', 'X draft for tomorrow 08:00. Open the calendar before it goes out.'),
+              code: 'postqueen posts:create',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_openclaw_ex_multi', 'Share this to Instagram, X and LinkedIn on Friday at 10, leave them as drafts'),
+              reply: t('conn_openclaw_ex_multi_reply', 'Three drafts for Friday 10:00: Instagram, X and LinkedIn. Confirm before they go out.'),
+              code: 'postqueen posts:create',
+            }),
           ],
           info: t(
             'conn_openclaw_note',
@@ -702,17 +750,24 @@ openclaw onboard --install-daemon`,
             'Hermes is Nous Research\'s open-source agent. It runs on your machine (Python, not Node), keeps memory across sessions, and drives the postqueen CLI. Hand it one brief and it can plan, write and schedule a week. It can also front the same chat apps as OpenClaw.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_hermes_ex',
-                'Draft a weekly digest for LinkedIn from this week\'s posts and save it for Monday morning'
-              ),
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_hermes_ex', 'Draft a weekly digest for Instagram from this week\'s posts and save it for Monday 9am'),
+              reply: t('conn_hermes_ex_reply', 'Instagram draft saved for Monday 09:00. Review it on the calendar before it goes out.'),
               code: 'postqueen posts:create -t draft',
-              reply: t(
-                'conn_hermes_ex_reply',
-                'LinkedIn draft saved for Monday 09:00. Review it on the calendar before it goes out.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_hermes_ex_x', 'Write an X thread from the digest and queue it for Tuesday 8am as a draft'),
+              reply: t('conn_hermes_ex_x_reply', 'X draft for Tuesday 08:00. Hermes planned it, you still confirm.'),
+              code: 'postqueen posts:create -t draft',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_hermes_ex_multi', 'Put the digest on Instagram, X and LinkedIn Wednesday at 10, all drafts'),
+              reply: t('conn_hermes_ex_multi_reply', 'Three drafts for Wednesday 10:00. Confirm each one on the calendar.'),
+              code: 'postqueen posts:create -t draft',
+            }),
           ],
           info: t(
             'conn_hermes_note',
@@ -776,18 +831,24 @@ openclaw onboard --install-daemon`,
             'Claude Code is Anthropic\'s terminal and IDE agent, not claude.ai or Claude Desktop. Same pairing as Codex vs ChatGPT. Point it at PostQueen over MCP with one command, then schedule from the session you already have open.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_cc_ex',
-                'Schedule the README changelog to LinkedIn for Tuesday 09:00'
-              ),
-              code: 'claude',
-              tool: 'schedulePostTool',
-              reply: t(
-                'conn_cc_ex_reply',
-                'Draft on LinkedIn, Tuesday 09:00. Check it on the calendar before it publishes.'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_cc_ex', 'Schedule the README screenshot to Instagram tonight at 7 as a draft'),
+              reply: t('conn_cc_ex_reply', 'Instagram draft for 19:00. Check it on the calendar before it publishes.'),
+              code: 'claude', tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_cc_ex_x', 'Turn CHANGELOG.md into an X thread for tomorrow 8am, draft only'),
+              reply: t('conn_cc_ex_x_reply', 'X draft for tomorrow 08:00. Claude Code used schedulePostTool.'),
+              code: 'claude', tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_cc_ex_multi', 'Share this release to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
+              reply: t('conn_cc_ex_multi_reply', 'Three drafts for Friday 10:00. Open the calendar before they go out.'),
+              code: 'claude', tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_cc_note',
@@ -843,18 +904,24 @@ openclaw onboard --install-daemon`,
             'Grok Build is xAI\'s terminal coding agent, not grok.com chat and not Grok Bot. Same split as Claude Code vs Claude. Register PostQueen with grok mcp add. A custom connector at grok.com/connectors does not register this product.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_grok_build_ex',
-                'Which PostQueen channels can I post to, then draft an X post from this file'
-              ),
-              code: 'grok',
-              tool: 'integrationList',
-              reply: t(
-                'conn_grok_build_ex_reply',
-                'LinkedIn, X, YouTube. X draft is on the calendar, waiting for you.'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_grok_build_ex', 'Which PostQueen channels can I post to, then draft an X post from this file for 8am'),
+              reply: t('conn_grok_build_ex_reply', 'Instagram, X, LinkedIn, YouTube. X draft for 08:00 is on the calendar.'),
+              code: 'grok', tool: 'integrationList',
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_grok_build_ex_ig', 'Post this screenshot to Instagram tonight at 7 as a draft'),
+              reply: t('conn_grok_build_ex_ig_reply', 'Instagram draft for 19:00. grok mcp add registered this, not grok.com/connectors.'),
+              code: 'grok', tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_grok_build_ex_multi', 'Queue this on Instagram, X and LinkedIn Friday at 10, all drafts'),
+              reply: t('conn_grok_build_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in the terminal session before they publish.'),
+              code: 'grok', tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_grok_build_note',
@@ -903,17 +970,24 @@ openclaw onboard --install-daemon`,
             'Codex is OpenAI\'s coding agent, not ChatGPT. Same pairing as Claude Code vs Claude. Teach it the postqueen CLI with the Agent Skill, or register MCP with the Codex CLI. Settings → Apps in ChatGPT does not install this product.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_codex_ex',
-                'list my PostQueen channels'
-              ),
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_codex_ex', 'list my PostQueen channels'),
+              reply: t('conn_codex_ex_reply', 'Instagram, X, LinkedIn, YouTube'),
               code: 'codex "list my PostQueen channels"',
-              reply: t(
-                'conn_codex_ex_reply',
-                'LinkedIn, X, YouTube'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_codex_ex_ig', 'draft this screenshot to Instagram tonight at 7'),
+              reply: t('conn_codex_ex_ig_reply', 'Instagram draft for 19:00. Codex used the skill, not ChatGPT Apps.'),
+              code: 'codex "draft this screenshot to Instagram tonight at 7"',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_codex_ex_multi', 'schedule this release to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_codex_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm on the calendar.'),
+              code: 'codex "schedule this release to Instagram, X and LinkedIn Friday at 10 as drafts"',
+            }),
           ],
           docs: [
             {
@@ -963,17 +1037,24 @@ openclaw onboard --install-daemon`,
             'Muse Code is Meta\'s coding agent. It loads remote MCP servers from ~/.config/muse/settings.json over streamable HTTP. This is the path that works today, the consumer Muse app does not take an MCP URL yet.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_muse_code_ex',
-                'List my PostQueen channels and draft a LinkedIn post from this file'
-              ),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_muse_code_ex', 'List my PostQueen channels and draft this file to Instagram tonight at 7'),
+              reply: t('conn_muse_code_ex_reply', 'Instagram draft for 19:00. Open it before anything publishes.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_muse_code_ex_reply',
-                'LinkedIn draft is on the calendar. Open it before anything publishes.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_muse_code_ex_x', 'Turn this PR into an X post for tomorrow 8am as a draft'),
+              reply: t('conn_muse_code_ex_x_reply', 'X draft for tomorrow 08:00. Muse Code, not the consumer Muse app.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_muse_code_ex_multi', 'Share this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              reply: t('conn_muse_code_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each on the calendar.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           docs: [
             {
@@ -1059,16 +1140,21 @@ openclaw onboard --install-daemon`,
             'Talk to your hosted OpenClaw or Hermes agent from WhatsApp. PostQueen does not sign into WhatsApp and does not publish into WhatsApp. Pairing is QR on your machine. The gateway has to stay awake.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_whatsapp_ex',
-                'Voice note: schedule this to LinkedIn tomorrow at 9'
-              ),
-              reply: t(
-                'conn_whatsapp_ex_reply',
-                'LinkedIn draft for tomorrow 09:00. Confirm in chat before it publishes.'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_whatsapp_ex', 'Voice note: post this photo to Instagram tonight at 7'),
+              reply: t('conn_whatsapp_ex_reply', 'Instagram draft for 19:00. Confirm in chat before it publishes.'),
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_whatsapp_ex_x', 'Schedule this as a thread on X tomorrow at 8am, draft only'),
+              reply: t('conn_whatsapp_ex_x_reply', 'X draft for tomorrow 08:00. Open it on the calendar first.'),
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_whatsapp_ex_multi', 'Voice note: post this to Instagram, X and LinkedIn Friday at 10, drafts only'),
+              reply: t('conn_whatsapp_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in WhatsApp before they go out.'),
+            }),
           ],
           info: t(
             'conn_bridge_note',
@@ -1098,16 +1184,21 @@ openclaw onboard --install-daemon`,
             'Talk to your hosted agent from Telegram. Create a bot with @BotFather and give the token to OpenClaw or Hermes. Telegram can also be a publishing channel under Channels. That is a separate setup.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_telegram_ex',
-                'What is going out this week?'
-              ),
-              reply: t(
-                'conn_telegram_ex_reply',
-                'Tuesday LinkedIn 09:00, Wednesday X, a YouTube draft still waiting.'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_telegram_ex', 'What is going out this week?'),
+              reply: t('conn_telegram_ex_reply', 'Tuesday Instagram 19:00, Wednesday X 08:00, a YouTube draft still waiting.'),
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_telegram_ex_ig', 'Post this carousel to Instagram tonight at 7 as a draft'),
+              reply: t('conn_telegram_ex_ig_reply', 'Instagram draft for 19:00. Confirm in Telegram before it publishes.'),
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_telegram_ex_multi', 'Send this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              reply: t('conn_telegram_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each one in this chat.'),
+            }),
           ],
           docs: [
             {
@@ -1133,16 +1224,21 @@ openclaw onboard --install-daemon`,
             'Ask your hosted agent from a Slack channel. You add a Slack app to the workspace and OpenClaw or Hermes keeps the gateway running. Connecting Slack as a publishing channel under Channels is a different setup.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_slack_chat_ex',
-                '@PostQueen what is on the calendar tomorrow?'
-              ),
-              reply: t(
-                'conn_slack_chat_ex_reply',
-                'One LinkedIn post at 09:00. Nothing else tomorrow.'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_slack_chat_ex', '@PostQueen what is on the calendar tomorrow?'),
+              reply: t('conn_slack_chat_ex_reply', 'One Instagram post at 19:00. Nothing else tomorrow.'),
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_slack_chat_ex_x', '@PostQueen queue this changelog to X tomorrow at 8am as a draft'),
+              reply: t('conn_slack_chat_ex_x_reply', 'X draft for tomorrow 08:00. Open the calendar in Slack before it goes out.'),
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_slack_chat_ex_multi', '@PostQueen share this to Instagram, X and LinkedIn Friday at 10, drafts only'),
+              reply: t('conn_slack_chat_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in this channel.'),
+            }),
           ],
           docs: [
             {
@@ -1168,17 +1264,24 @@ openclaw onboard --install-daemon`,
             'Ask your hosted agent from Discord. You run a bot with Message Content Intent and keep OpenClaw or Hermes awake. Publishing into Discord is a separate Channels setup.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_discord_chat_ex',
-                'Queue the changelog to X as a draft'
-              ),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_discord_chat_ex', '@PostQueen drop this changelog on X tomorrow at 8, draft only'),
+              reply: t('conn_discord_chat_ex_reply', 'X draft for tomorrow 08:00. Open it before it publishes.'),
               code: 'postqueen posts:create -t draft',
-              reply: t(
-                'conn_discord_chat_ex_reply',
-                'X draft is on the calendar. Open it before it publishes.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_discord_chat_ex_ig', '@PostQueen post this clip to Instagram tonight at 7 as a draft'),
+              reply: t('conn_discord_chat_ex_ig_reply', 'Instagram draft for 19:00. Confirm in Discord before it goes out.'),
+              code: 'postqueen posts:create -t draft',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_discord_chat_ex_multi', '@PostQueen share this to Instagram, X and LinkedIn Friday at 10, leave them as drafts'),
+              reply: t('conn_discord_chat_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm each in this channel.'),
+              code: 'postqueen posts:create -t draft',
+            }),
           ],
           docs: [
             {
@@ -1214,17 +1317,24 @@ openclaw onboard --install-daemon`,
             'This is Anthropic\'s chat: claude.ai, Claude Desktop, iOS and Android. One custom connector follows the account. She is not in Anthropic\'s Connectors Directory, add her from Customize → Connectors when the URL is public; use mcp-remote in the Desktop config for LAN or VPN. Claude Code is a different product, use that card under Agents, like Codex vs ChatGPT.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_claude_apps_ex',
-                'What is in my PostQueen queue this week?'
-              ),
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_claude_apps_ex', 'What is in my PostQueen queue this week?'),
+              reply: t('conn_claude_apps_ex_reply', 'Two scheduled, one draft. Instagram Tuesday 19:00, X Wednesday 08:00, a YouTube draft waiting.'),
               tool: 'ask_postqueen',
-              reply: t(
-                'conn_claude_apps_ex_reply',
-                'Two scheduled, one draft. LinkedIn Tuesday 09:00, X Wednesday, a LinkedIn draft waiting.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_claude_apps_ex_ig', 'Draft this photo to Instagram tonight at 7'),
+              reply: t('conn_claude_apps_ex_ig_reply', 'Instagram draft for 19:00. Enable PostQueen from + then Connectors first.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_claude_apps_ex_multi', 'Put this on Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_claude_apps_ex_multi_reply', 'Three drafts for Friday 10:00. Claude chat, not Claude Code.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_claude_apps_note',
@@ -1283,17 +1393,24 @@ openclaw onboard --install-daemon`,
             'ChatGPT reaches PostQueen as a custom MCP app in Developer mode. Create it under Settings → Apps, not Settings → Connectors. Web only, not the Free plan, not the mobile apps. Codex is a different product, use that card under Agents.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_chatgpt_ex',
-                'Draft a LinkedIn post from this changelog and schedule it for Tuesday 09:00'
-              ),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_chatgpt_ex', 'Draft an Instagram caption from this changelog and schedule it for tonight at 7'),
+              reply: t('conn_chatgpt_ex_reply', 'Instagram draft for 19:00. Open the calendar before it goes out. Write tools can stay blocked on Plus and Pro.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_chatgpt_ex_reply',
-                'LinkedIn draft for Tuesday 09:00. Open the calendar before it goes out. Write tools can stay blocked on Plus and Pro.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_chatgpt_ex_x', 'Turn this changelog into an X thread for tomorrow 8am as a draft'),
+              reply: t('conn_chatgpt_ex_x_reply', 'X draft for tomorrow 08:00. Settings then Apps, not Connectors, installed this.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_chatgpt_ex_multi', 'Schedule this to Instagram, X and LinkedIn Friday at 10, all drafts'),
+              reply: t('conn_chatgpt_ex_multi_reply', 'Three drafts for Friday 10:00. ChatGPT web, not Codex.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_chatgpt_note',
@@ -1355,17 +1472,24 @@ openclaw onboard --install-daemon`,
             'Grok on the web, iOS and Android can call remote MCP servers. Add PostQueen as a custom connector at grok.com/connectors (web: + → Connectors; iOS/Android: Settings → Connectors). The server must be reachable over the public internet. Grok Bot and Grok Build are different products, use those cards.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_grok_ex',
-                'Put tonight\'s thread on X and LinkedIn as drafts'
-              ),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_grok_ex', 'Put tonight\'s thread on X tomorrow at 8am as a draft'),
+              reply: t('conn_grok_ex_reply', 'X draft for tomorrow 08:00. Nothing publishes until you say so.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_grok_ex_reply',
-                'Two drafts on the calendar, X and LinkedIn. Nothing publishes until you say so.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_grok_ex_ig', 'Post this image to Instagram tonight at 7 as a draft'),
+              reply: t('conn_grok_ex_ig_reply', 'Instagram draft for 19:00. Added at grok.com/connectors, not Grok Bot.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_grok_ex_multi', 'Queue tonight\'s recap on Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_grok_ex_multi_reply', 'Three drafts for Friday 10:00. Grok chat, not Grok Build.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_grok_note',
@@ -1424,17 +1548,24 @@ openclaw onboard --install-daemon`,
             'Grok Bot is the cloud agent, not grok.com chat and not Grok Build. It does not read grok.com/connectors, Cursor mcp.json or ~/.grok/config.toml. Tell the Bot to add a remote MCP server. The URL must be public HTTPS, localhost and stdio do not work.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_grok_bot_ex',
-                'Add a LinkedIn draft that recaps what we shipped in this repo'
-              ),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_grok_bot_ex', 'Add an X draft that recaps what we shipped in this repo, tomorrow 8am'),
+              reply: t('conn_grok_bot_ex_reply', 'X draft for tomorrow 08:00. The Bot used the public MCP URL, not grok.com/connectors.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_grok_bot_ex_reply',
-                'LinkedIn draft is on the calendar. The Bot used the public MCP URL, not grok.com/connectors.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_grok_bot_ex_ig', 'Draft this screenshot to Instagram tonight at 7'),
+              reply: t('conn_grok_bot_ex_ig_reply', 'Instagram draft for 19:00. Tell the Bot in chat, there is no connectors form.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_grok_bot_ex_multi', 'Post this recap to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_grok_bot_ex_multi_reply', 'Three drafts for Friday 10:00. Grok Bot, not grok.com chat.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_grok_bot_note',
@@ -1493,17 +1624,24 @@ openclaw onboard --install-daemon`,
             'Cursor reads MCP servers from mcp.json. Add a remote streamable HTTP server with a url field, Cursor infers the transport. You can also add it from Customize → MCP, or Cursor Settings → Tools & MCP (older builds: Tools & Integrations → MCP); all write the same file.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_cursor_ex',
-                'Turn this README into a LinkedIn post and schedule it Tuesday 09:00'
-              ),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_cursor_ex', 'Turn this README into an Instagram caption and schedule it tonight at 7'),
+              reply: t('conn_cursor_ex_reply', 'Instagram draft for 19:00. Cursor asks before running schedulePostTool, keep that on.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_cursor_ex_reply',
-                'LinkedIn draft for Tuesday 09:00. Cursor asks before running schedulePostTool, keep that on.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_cursor_ex_x', 'Turn this README into an X thread for tomorrow 8am as a draft'),
+              reply: t('conn_cursor_ex_x_reply', 'X draft for tomorrow 08:00. Agent mode, not a chat connector.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_cursor_ex_multi', 'Schedule this README to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_cursor_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Cursor before they publish.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           docs: [
             {
@@ -1569,17 +1707,24 @@ openclaw onboard --install-daemon`,
             'VS Code Copilot reads MCP from mcp.json. The file uses a servers object and each remote entry needs type http. That is not Cursor\'s mcpServers url shape. Add it from the Command Palette (MCP: Add Server) or edit .vscode/mcp.json (this workspace) or the user mcp.json (MCP: Open User Configuration).'
           ),
           examples: [
-            {
-              body: t(
-                'conn_vscode_ex',
-                'List my PostQueen channels, then draft an X post from CHANGELOG.md'
-              ),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_vscode_ex', 'List my PostQueen channels, then draft an X post from CHANGELOG.md for 8am'),
+              reply: t('conn_vscode_ex_reply', 'Instagram, X, LinkedIn, YouTube. X draft for 08:00 is on the calendar from CHANGELOG.md.'),
               tool: 'integrationList',
-              reply: t(
-                'conn_vscode_ex_reply',
-                'LinkedIn, X, YouTube. X draft is on the calendar from CHANGELOG.md.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_vscode_ex_ig', 'Draft this screenshot to Instagram tonight at 7 from Copilot Chat'),
+              reply: t('conn_vscode_ex_ig_reply', 'Instagram draft for 19:00. VS Code Copilot, not Cursor mcp.json.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_vscode_ex_multi', 'Share CHANGELOG.md to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_vscode_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Copilot Chat agent mode.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_vscode_note',
@@ -1643,17 +1788,24 @@ openclaw onboard --install-daemon`,
             'Windsurf Cascade reads MCP from ~/.codeium/windsurf/mcp_config.json. Remote HTTP uses serverUrl (url also works). That is not Cursor mcp.json. Open MCPs in the Cascade panel, or Devin Settings → Cascade → MCP Servers, then edit the file. The newer Devin Local agent in Windsurf uses Devin CLI config instead of this file.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_windsurf_ex',
-                'In Cascade, save a LinkedIn draft of this PR title for Monday 09:00'
-              ),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_windsurf_ex', 'In Cascade, save an Instagram draft of this PR title for tonight at 7'),
+              reply: t('conn_windsurf_ex_reply', 'Instagram draft for 19:00. Cascade, not Devin Local, reads mcp_config.json.'),
               tool: 'schedulePostTool',
-              reply: t(
-                'conn_windsurf_ex_reply',
-                'LinkedIn draft for Monday 09:00. Cascade, not Devin Local, reads mcp_config.json.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_x', 'One channel: X'),
+              body: t('conn_windsurf_ex_x', 'In Cascade, queue this PR title on X tomorrow at 8am as a draft'),
+              reply: t('conn_windsurf_ex_x_reply', 'X draft for tomorrow 08:00. Windsurf Cascade, not Cursor.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_windsurf_ex_multi', 'In Cascade, post this PR to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_windsurf_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in Cascade.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_windsurf_note',
@@ -1714,17 +1866,24 @@ openclaw onboard --install-daemon`,
             'Zed is an editor with an Agent Panel. It stores remote MCP servers under context_servers, not mcpServers. Add PostQueen from Settings → AI → MCP Servers, or edit the settings file.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_zed_ex',
-                'In the Agent Panel, what is scheduled in PostQueen this week?'
-              ),
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_zed_ex', 'In the Agent Panel, what is scheduled in PostQueen this week?'),
+              reply: t('conn_zed_ex_reply', 'Instagram Tuesday 19:00, X Wednesday 08:00. The postqueen server shows green when it is active.'),
               tool: 'ask_postqueen',
-              reply: t(
-                'conn_zed_ex_reply',
-                'LinkedIn Tuesday 09:00, X Wednesday. The postqueen server shows green when it is active.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_zed_ex_ig', 'In the Agent Panel, draft this screenshot to Instagram tonight at 7'),
+              reply: t('conn_zed_ex_ig_reply', 'Instagram draft for 19:00. Zed needs the Bearer header, not only the URL.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_zed_ex_multi', 'In the Agent Panel, share this to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_zed_ex_multi_reply', 'Three drafts for Friday 10:00. Confirm in the Agent Panel.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_zed_note',
@@ -1788,18 +1947,24 @@ openclaw onboard --install-daemon`,
             'Gemini CLI reads MCP servers from ~/.gemini/settings.json. Streamable HTTP uses the httpUrl key, url is reserved for SSE and will not connect to PostQueen. This is the terminal CLI, not gemini.google.com.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_gemini_ex',
-                'Which PostQueen channels can I post to?'
-              ),
-              code: 'gemini',
-              tool: 'integrationList',
-              reply: t(
-                'conn_gemini_ex_reply',
-                'LinkedIn, X, YouTube'
-              ),
-            },
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_gemini_ex', 'Which PostQueen channels can I post to?'),
+              reply: t('conn_gemini_ex_reply', 'Instagram, X, LinkedIn, YouTube. Gemini CLI listed them with /mcp.'),
+              code: 'gemini', tool: 'integrationList',
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_gemini_ex_ig', 'Draft this screenshot to Instagram tonight at 7 from Gemini CLI'),
+              reply: t('conn_gemini_ex_ig_reply', 'Instagram draft for 19:00. Use httpUrl in settings.json, not url.'),
+              code: 'gemini', tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_gemini_ex_multi', 'Schedule this to Instagram, X and LinkedIn Friday at 10 as drafts from Gemini CLI'),
+              reply: t('conn_gemini_ex_multi_reply', 'Three drafts for Friday 10:00. /mcp should show postqueen connected.'),
+              code: 'gemini', tool: 'schedulePostTool',
+            }),
           ],
           info: t(
             'conn_gemini_note',
@@ -1917,17 +2082,24 @@ openclaw onboard --install-daemon`,
             'PostQueen exposes 14 tools at a single streamable HTTP endpoint (13 registry tools plus ask_postqueen). If your editor or agent can reach a remote MCP server, use the URL below (API key in the path or as a Bearer token). Get your key from Settings → API Keys.'
           ),
           examples: [
-            {
-              body: t(
-                'conn_other_mcp_ex',
-                'Ask the client to list your PostQueen channels'
-              ),
+            sample({
+              title: t('conn_ex_label_week', 'Check the calendar'),
+              body: t('conn_other_mcp_ex', 'Ask the client to list your PostQueen channels'),
+              reply: t('conn_other_mcp_ex_reply', 'Instagram, X, LinkedIn, YouTube. JSON shape for the client itself is in the steps below.'),
               tool: 'integrationList',
-              reply: t(
-                'conn_other_mcp_ex_reply',
-                'LinkedIn, X, YouTube. JSON shape for the client itself is in the steps below.'
-              ),
-            },
+            }),
+            sample({
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t('conn_other_mcp_ex_ig', 'Ask the client to draft this image to Instagram tonight at 7'),
+              reply: t('conn_other_mcp_ex_ig_reply', 'Instagram draft for 19:00. Same MCP URL as the other editor cards.'),
+              tool: 'schedulePostTool',
+            }),
+            sample({
+              title: t('conn_ex_label_multi', 'Several channels'),
+              body: t('conn_other_mcp_ex_multi', 'Ask the client to share this to Instagram, X and LinkedIn Friday at 10 as drafts'),
+              reply: t('conn_other_mcp_ex_multi_reply', 'Three drafts for Friday 10:00. Cline, Continue, Goose and the rest share this shape.'),
+              tool: 'schedulePostTool',
+            }),
           ],
           note: t(
             'conn_other_mcp_note',
@@ -1961,7 +2133,7 @@ openclaw onboard --install-daemon`,
       label: t('conn_group_automation', 'Automation'),
       blurb: t(
         'conn_group_automation_blurb',
-        'Workflows in, webhooks and RSS out. Official Zapier/Make apps are not shipped yet, HTTP still works.'
+        'n8n is live. Zapier and Make official apps are coming soon. Webhooks and RSS AutoPost open from the left rail.'
       ),
       items: [
         {
@@ -1981,10 +2153,10 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              title: t('conn_n8n_ex_1_title', 'GitHub Release → Create Post (LinkedIn + X)'),
+              title: t('conn_n8n_ex_1_title', 'GitHub Release → Instagram and X'),
               body: t(
                 'conn_n8n_ex_1_body',
-                'GitHub Release published → Get Channels → Create Post on LinkedIn and X.'
+                'GitHub Release published → Get Channels → Create Post on Instagram and X.'
               ),
             },
             {
@@ -2085,7 +2257,7 @@ openclaw onboard --install-daemon`,
               title: t('conn_zapier_ex_2_title', 'Shopify → announce'),
               body: t(
                 'conn_zapier_ex_2_body',
-                'When a Shopify product goes live → schedule a launch post.'
+                'When a Shopify product goes live → schedule an Instagram and X launch post.'
               ),
             },
           ],
@@ -2139,10 +2311,10 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
-              title: t('conn_make_ex_1_title', 'Typeform → LinkedIn'),
+              title: t('conn_make_ex_1_title', 'Typeform → Instagram'),
               body: t(
                 'conn_make_ex_1_body',
-                'New Typeform response → HTTP Make a request → POST /public/v1/posts.'
+                'New Typeform response → HTTP Make a request → POST /public/v1/posts to Instagram.'
               ),
               code: `${backendUrl}/public/v1/posts`,
             },
@@ -2312,16 +2484,27 @@ openclaw onboard --install-daemon`,
           ),
           examples: [
             {
+              title: t('conn_ex_label_week', 'Check the calendar'),
               body: t('conn_cli_ex_list', 'List connected channels'),
               code: 'postqueen integrations:list',
               reply: `[
-  { "name": "LinkedIn", "identifier": "acme" },
-  { "name": "X", "identifier": "acme" }
+  { "name": "Instagram", "identifier": "acme" },
+  { "name": "X", "identifier": "acme" },
+  { "name": "LinkedIn", "identifier": "acme" }
 ]`,
             },
             {
+              title: t('conn_ex_label_ig', 'One channel: Instagram'),
+              body: t(
+                'conn_cli_ex_ig',
+                'Schedule an Instagram draft'
+              ),
+              code: 'postqueen posts:create -c "Tonight\'s still" -s "2026-08-01T19:00:00Z" -i <instagram-id> -t draft',
+            },
+            {
+              title: t('conn_ex_label_multi', 'Several channels'),
               body: t('conn_cli_ex_create', 'Schedule a post'),
-              code: 'postqueen posts:create -c "Hello world" -s "2026-08-01T09:00:00Z" -i <integration-id>',
+              code: 'postqueen posts:create -c "Hello world" -s "2026-08-01T10:00:00Z" -i <instagram-id>,<x-id>,<linkedin-id> -t draft',
             },
           ],
           docs: [
