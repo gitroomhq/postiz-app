@@ -206,18 +206,18 @@ export default function OAuthAuthorizePage() {
             </ul>
           </div>
 
-          <div className="flex gap-[12px]">
+          <div className="flex flex-col gap-[12px] sm:flex-row">
             <button
               onClick={() => handleAction('approve')}
               disabled={submitting}
-              className="flex-1 bg-btnPrimary hover:opacity-90 disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-opacity"
+              className="flex-1 min-h-[44px] bg-btnPrimary hover:opacity-90 disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-opacity"
             >
               Authorize
             </button>
             <button
               onClick={() => handleAction('deny')}
               disabled={submitting}
-              className="flex-1 bg-btnSimple hover:opacity-90 disabled:opacity-50 text-btnText rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-opacity"
+              className="flex-1 min-h-[44px] bg-btnSimple hover:opacity-90 disabled:opacity-50 text-btnText rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-opacity"
             >
               Deny
             </button>

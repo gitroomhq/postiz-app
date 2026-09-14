@@ -737,7 +737,7 @@ export const ConnectPanel: FC<{
   const [nav, setNav] = useState<ConnectNavId>('all');
   const [picked, setPicked] = useState('');
   const [keyRevealed, setKeyRevealed] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobilePane, setMobilePane] = useState(false);
   const [query, setQuery] = useState('');
   const paneRef = useRef<HTMLDivElement>(null);
 
@@ -775,7 +775,7 @@ export const ConnectPanel: FC<{
     setNav('all');
     setPicked('');
     setQuery('');
-    setMobileNavOpen(false);
+    setMobilePane(true);
   }, [tourHub]);
 
   useEffect(() => {
@@ -808,13 +808,19 @@ export const ConnectPanel: FC<{
           return;
         }
         setPicked(found.id);
+        setMobilePane(true);
         if (!resolvedNav) setNav(defaultNavForConnection(found));
         return;
       }
     }
 
     const auto = resolvedNav ? DEVELOP_NAV_ITEM[resolvedNav] : undefined;
-    if (auto) setPicked(auto);
+    if (auto) {
+      setPicked(auto);
+      setMobilePane(true);
+    } else if (resolvedNav) {
+      setMobilePane(true);
+    }
   }, [searchParams, groups, tourHub, router]);
 
   const syncUrl = useCallback(
@@ -833,7 +839,7 @@ export const ConnectPanel: FC<{
       setNav(id);
       setPicked(auto);
       setKeyRevealed(false);
-      setMobileNavOpen(false);
+      setMobilePane(true);
       syncUrl(id, auto);
     },
     [syncUrl]
@@ -841,7 +847,6 @@ export const ConnectPanel: FC<{
 
   const openSettingsExit = useCallback(
     (href: string) => {
-      setMobileNavOpen(false);
       leaveSettingsFor(href, router);
     },
     [router]
@@ -858,7 +863,7 @@ export const ConnectPanel: FC<{
       setNav(nextNav);
       setPicked(id);
       setKeyRevealed(false);
-      setMobileNavOpen(false);
+      setMobilePane(true);
       syncUrl(nextNav, id);
     },
     [nav, syncUrl, openSettingsExit]
@@ -869,7 +874,6 @@ export const ConnectPanel: FC<{
       setNav('all');
       setPicked('');
       setKeyRevealed(false);
-      setMobileNavOpen(false);
       syncUrl('all', '');
       return;
     }
@@ -924,8 +928,10 @@ export const ConnectPanel: FC<{
     }
   }, [onClose, router]);
 
-  const navItemBase =
-    'flex h-[34px] cursor-pointer items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
+  const navItemBase = clsx(
+    'flex cursor-pointer items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]',
+    mobile ? 'h-[44px]' : 'h-[34px]'
+  );
 
   const navLabels = useMemo(
     (): Record<ConnectNavId, string> => ({
@@ -1200,6 +1206,7 @@ export const ConnectPanel: FC<{
   const renderDetail = (item: Connection) => {
     return (
       <div className="flex flex-col gap-[20px]">
+        {!mobile && (
         <button
           type="button"
           onClick={clearPicked}
@@ -1216,6 +1223,7 @@ export const ConnectPanel: FC<{
           </svg>
           {t('conn_back', 'Back')}
         </button>
+        )}
 
         <div className="flex flex-wrap items-center gap-[16px]">
           <ConnIcon item={item} size="lg" />
@@ -1532,16 +1540,6 @@ export const ConnectPanel: FC<{
     );
   };
 
-  const chipClass = (id: ConnectNavId | string, activeChip: boolean) =>
-    clsx(
-      'h-[30px] shrink-0 cursor-pointer rounded-[999px] px-[12px] text-[12px] font-[600] transition-colors',
-      activeChip && !picked
-        ? 'bg-pqBrand text-pqOnBrand'
-        : activeChip && picked
-          ? 'bg-pqBrandSoft text-pqFocused'
-          : 'bg-pqBtnSimple text-pqMuted hover:bg-pqHover hover:text-pqText'
-    );
-
   const leftNav = (
     <nav
       className={clsx(
@@ -1556,30 +1554,18 @@ export const ConnectPanel: FC<{
       <div
         className={clsx(
           'flex',
-          mobile
-            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto'
-            : 'flex-col gap-[1px]'
+          'flex flex-col gap-[1px]'
         )}
       >
         <div
           className={clsx(
             'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
-            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+            'px-[9px] pb-[5px]'
           )}
         >
           {t('connect_nav_section', 'Connectors')}
         </div>
-        {visibleConnectors.map(({ id }) =>
-          mobile ? (
-            <button
-              key={id}
-              type="button"
-              onClick={() => selectNav(id)}
-              className={chipClass(id, connectorsActive)}
-            >
-              {navLabels[id]}
-            </button>
-          ) : (
+        {visibleConnectors.map(({ id }) => (
             <button
               key={id}
               type="button"
@@ -1595,8 +1581,7 @@ export const ConnectPanel: FC<{
               <NavIcon id={id} />
               <span className="min-w-0 flex-1 truncate">{navLabels[id]}</span>
             </button>
-          )
-        )}
+        ))}
       </div>
       )}
 
@@ -1606,30 +1591,18 @@ export const ConnectPanel: FC<{
       <div
         className={clsx(
           'flex',
-          mobile
-            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto pt-[2px]'
-            : 'flex-col gap-[1px] border-t border-pqLine pt-[12px]'
+          'flex flex-col gap-[1px] border-t border-pqLine pt-[12px]'
         )}
       >
         <div
           className={clsx(
             'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
-            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+            'px-[9px] pb-[5px]'
           )}
         >
           {t('connect_nav_automation', 'Automation')}
         </div>
-        {visibleAutomationShortcuts.map((item) =>
-          mobile ? (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => selectItem(item.id)}
-              className={chipClass(item.id, picked === item.id)}
-            >
-              {item.name}
-            </button>
-          ) : (
+        {visibleAutomationShortcuts.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -1650,19 +1623,8 @@ export const ConnectPanel: FC<{
                 </span>
               ) : null}
             </button>
-          )
-        )}
-        {visibleSettingsExits.map((item) =>
-          mobile ? (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => openSettingsExit(item.href)}
-              className={chipClass(item.id, false)}
-            >
-              {settingsExitLabels[item.id]}
-            </button>
-          ) : (
+        ))}
+        {visibleSettingsExits.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -1676,8 +1638,7 @@ export const ConnectPanel: FC<{
                 {settingsExitLabels[item.id]}
               </span>
             </button>
-          )
-        )}
+        ))}
       </div>
       )}
 
@@ -1686,30 +1647,18 @@ export const ConnectPanel: FC<{
       <div
         className={clsx(
           'flex',
-          mobile
-            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto pt-[2px]'
-            : 'flex-col gap-[1px] border-t border-pqLine pt-[12px]'
+          'flex flex-col gap-[1px] border-t border-pqLine pt-[12px]'
         )}
       >
         <div
           className={clsx(
             'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
-            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+            'px-[9px] pb-[5px]'
           )}
         >
           {t('connect_nav_develop', 'Develop')}
         </div>
-        {visibleDevelop.map(({ id }) =>
-          mobile ? (
-            <button
-              key={id}
-              type="button"
-              onClick={() => selectNav(id)}
-              className={chipClass(id, nav === id)}
-            >
-              {navLabels[id]}
-            </button>
-          ) : (
+        {visibleDevelop.map(({ id }) => (
             <button
               key={id}
               type="button"
@@ -1725,8 +1674,7 @@ export const ConnectPanel: FC<{
               <NavIcon id={id} />
               <span className="min-w-0 flex-1 truncate">{navLabels[id]}</span>
             </button>
-          )
-        )}
+        ))}
       </div>
       )}
 
@@ -1735,30 +1683,18 @@ export const ConnectPanel: FC<{
       <div
         className={clsx(
           'flex',
-          mobile
-            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto pt-[2px]'
-            : 'flex-col gap-[1px] border-t border-pqLine pt-[12px]'
+          'flex flex-col gap-[1px] border-t border-pqLine pt-[12px]'
         )}
       >
         <div
           className={clsx(
             'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
-            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+            'px-[9px] pb-[5px]'
           )}
         >
           {t('connect_nav_account', 'Account')}
         </div>
-        {visibleAccount.map(({ id }) =>
-          mobile ? (
-            <button
-              key={id}
-              type="button"
-              onClick={() => selectNav(id)}
-              className={chipClass(id, nav === id)}
-            >
-              {navLabels[id]}
-            </button>
-          ) : (
+        {visibleAccount.map(({ id }) => (
             <button
               key={id}
               type="button"
@@ -1774,12 +1710,13 @@ export const ConnectPanel: FC<{
               <NavIcon id={id} />
               <span className="min-w-0 flex-1 truncate">{navLabels[id]}</span>
             </button>
-          )
-        )}
+        ))}
       </div>
       )}
     </nav>
   );
+
+  const showConnectIndex = mobile && !mobilePane && !picked;
 
   return (
     <div
@@ -1789,54 +1726,47 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         '[&_a]:cursor-pointer [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed',
         mobile
-          ? 'h-full w-full flex-col'
+          ? 'h-full w-full flex-col pb-[env(safe-area-inset-bottom)]'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >
-      {/* Left nav / mobile chips, Settings chrome: search above, then groups */}
+      {/* Left nav. Phone: full-screen index, then a pushed pane. */}
       <div
         className={clsx(
           'flex min-h-0 flex-col bg-pqSettings',
           mobile
-            ? 'w-full shrink-0 border-b border-pqLine'
+            ? showConnectIndex
+              ? 'min-h-0 w-full flex-1'
+              : 'hidden'
             : 'w-[236px] shrink-0 border-e border-pqLine'
         )}
       >
-        {mobile && (
-          <div className="flex items-center justify-between gap-[8px] p-[12px_14px_8px]">
-            <div className="text-[15px] font-[600] text-pqText">
+        {showConnectIndex && (
+          <div className="flex h-[52px] shrink-0 items-center gap-[8px] px-[8px] pt-[6px]">
+            <div className="min-w-0 flex-1 px-[8px] text-[16px] font-[600] text-pqText">
               {t('connect_postqueen', 'Connect PostQueen')}
+              <span className="sr-only">
+                {t('connect_categories', 'Categories')}
+              </span>
             </div>
-            <div className="flex items-center gap-[6px]">
-              <button
-                type="button"
-                onClick={() => setMobileNavOpen((v) => !v)}
-                className="cursor-pointer rounded-pqSm bg-pqBtnSimple px-[10px] py-[6px] text-[12px] font-[600] text-pqText"
-              >
-                {mobileNavOpen
-                  ? t('hide', 'Hide')
-                  : t('connect_categories', 'Categories')}
-              </button>
-              <button
-                type="button"
-                onClick={close}
-                aria-label={t('close', 'Close')}
-                className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
-              >
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
-                  <path
-                    d="M6 6l12 12M18 6 6 18"
-                    stroke="currentColor"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label={t('close', 'Close')}
+              className="grid size-[44px] cursor-pointer place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
           </div>
         )}
-        {(!mobile || mobileNavOpen) && (
-          <div className="shrink-0 p-[14px_12px_10px]">
+        <div className="shrink-0 p-[14px_12px_10px]">
             <div className="relative">
               <svg
                 viewBox="0 0 24 24"
@@ -1857,17 +1787,64 @@ export const ConnectPanel: FC<{
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('search_connectors', 'Search connectors')}
-                className="h-[34px] w-full rounded-pqSm bg-pqInner pe-[11px] ps-[31px] text-[13px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus-visible:shadow-[inset_0_0_0_1px_var(--brand)]"
+                className={clsx(
+                  'w-full rounded-pqSm bg-pqInner pe-[11px] ps-[31px] text-[13px] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus-visible:shadow-[inset_0_0_0_1px_var(--brand)]',
+                  mobile ? 'h-[44px]' : 'h-[34px]'
+                )}
               />
             </div>
           </div>
-        )}
-        {(!mobile || mobileNavOpen || !picked) && leftNav}
+        {leftNav}
       </div>
 
       {/* Right content */}
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        {!mobile && (
+      <div
+        className={clsx(
+          'relative flex min-h-0 min-w-0 flex-col',
+          showConnectIndex ? 'hidden' : 'flex-1'
+        )}
+      >
+        {mobile ? (
+          <div className="flex h-[52px] shrink-0 items-center gap-[4px] border-b border-pqLine px-[6px]">
+            <button
+              type="button"
+              aria-label={t('back', 'Back')}
+              onClick={() => {
+                if (picked) clearPicked();
+                else setMobilePane(false);
+              }}
+              className="grid size-[44px] place-items-center rounded-[8px] text-pqText transition-colors hover:bg-pqHover"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                <path
+                  d="M15 6l-6 6 6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div className="min-w-0 flex-1 truncate text-[15px] font-[600] text-pqText">
+              {t('connect_postqueen', 'Connect PostQueen')}
+            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label={t('close', 'Close')}
+              className="grid size-[44px] cursor-pointer place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        ) : (
           <div className="flex h-[52px] shrink-0 items-center justify-between border-b border-pqLine px-[24px]">
             <div className="text-[14.5px] font-[600] text-pqText">
               {t('connect_postqueen', 'Connect PostQueen')}

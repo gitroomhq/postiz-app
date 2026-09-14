@@ -55,6 +55,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const fetch = useFetch();
   const aiOk = useAiAvailable();
   const { mobile } = useViewport();
+  const [composerPane, setComposerPane] = useState<'edit' | 'preview'>('edit');
   const ref = useRef(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
@@ -629,7 +630,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div
             className={clsx(
               'flex min-h-0 flex-1 flex-col',
-              !mobile && 'border-e border-pqBorder'
+              !mobile && 'border-e border-pqBorder',
+              mobile && composerPane !== 'edit' && 'hidden'
             )}
           >
             <div className="flex h-[65px] items-center gap-[12px] rounded-ss-[20px] border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none">
@@ -640,6 +642,44 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
               />
+              {mobile && (
+                <div className="ms-auto flex items-center gap-[8px]">
+                  <div className="flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
+                    <button
+                      type="button"
+                      onClick={() => setComposerPane('edit')}
+                      className={clsx(
+                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                        composerPane === 'edit'
+                          ? 'bg-pqInner text-pqText shadow-pqE1'
+                          : 'text-pqSoft'
+                      )}
+                    >
+                      {t('edit', 'Edit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setComposerPane('preview')}
+                      className={clsx(
+                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                        composerPane === 'preview'
+                          ? 'bg-pqInner text-pqText shadow-pqE1'
+                          : 'text-pqSoft'
+                      )}
+                    >
+                      {t('preview', 'Preview')}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={askClose}
+                    aria-label={t('close', 'Close')}
+                    className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                  >
+                    <CloseIcon size={16} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
@@ -742,7 +782,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             className={clsx(
               'flex flex-col',
               mobile
-                ? 'w-full max-h-[340px] shrink-0 border-t border-pqBorder'
+                ? clsx(
+                    'w-full min-h-0 flex-1',
+                    composerPane !== 'preview' && 'hidden'
+                  )
                 : 'w-[580px]'
             )}
           >
@@ -753,11 +796,39 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               )}
             >
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
+              {mobile && (
+                <div className="me-[8px] flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
+                  <button
+                    type="button"
+                    onClick={() => setComposerPane('edit')}
+                    className={clsx(
+                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                      composerPane === 'edit'
+                        ? 'bg-pqInner text-pqText shadow-pqE1'
+                        : 'text-pqSoft'
+                    )}
+                  >
+                    {t('edit', 'Edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComposerPane('preview')}
+                    className={clsx(
+                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                      composerPane === 'preview'
+                        ? 'bg-pqInner text-pqText shadow-pqE1'
+                        : 'text-pqSoft'
+                    )}
+                  >
+                    {t('preview', 'Preview')}
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={askClose}
                 aria-label={t('close', 'Close')}
-                className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <CloseIcon size={16} />
               </button>
@@ -772,7 +843,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center overflow-x-auto overflow-y-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent">
+        <div className="select-none min-h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center overflow-x-auto overflow-y-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent pb-[max(12px,env(safe-area-inset-bottom))]">
           <div className="flex min-w-0 flex-1 items-center gap-[8px] ps-[20px]">
             {!dummy && (
               <TagsComponent

@@ -33,6 +33,7 @@ import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
 import { Spinner } from '@gitroom/react/ui/spinner';
 import { createPortal } from 'react-dom';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 
@@ -154,6 +155,7 @@ export const MediaBox: FC<{
   const modals = useModals();
   const toaster = useToaster();
   const t = useT();
+  const { mobile } = useViewport();
   const uploaderRef = useRef<HTMLInputElement>(null);
   const mediaDirectory = useMediaDirectory();
   const [loading, setLoading] = useState(false);
@@ -651,7 +653,12 @@ export const MediaBox: FC<{
               ) : (
                 <>
                 {isLoading && !data && (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-x-[14px] gap-y-[14px]">
+                  <div className={clsx(
+                    'grid gap-x-[14px] gap-y-[14px]',
+                    mobile
+                      ? 'grid-cols-[repeat(auto-fill,minmax(140px,1fr))]'
+                      : 'grid-cols-[repeat(auto-fill,minmax(168px,1fr))]'
+                  )}>
                     {[...new Array(8)].map((_, i) => (
                       <Skeleton
                         key={i}
@@ -666,7 +673,12 @@ export const MediaBox: FC<{
 
                 {view === 'grid' && (
                   <div
-                    className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] items-start gap-x-[14px] gap-y-[14px]"
+                    className={clsx(
+                      'grid items-start gap-x-[14px] gap-y-[14px]',
+                      mobile
+                        ? 'grid-cols-[repeat(auto-fill,minmax(140px,1fr))]'
+                        : 'grid-cols-[repeat(auto-fill,minmax(168px,1fr))]'
+                    )}
                     data-pq="media-grid"
                   >
                     {visibleMedia.map((media) => {
@@ -745,6 +757,8 @@ export const MediaBox: FC<{
                       <span className="min-w-0 flex-1">
                         {t('alt_text', 'Alt text')}
                       </span>
+                      {!mobile && (
+                        <>
                       <span className="w-[64px] shrink-0">
                         {t('format', 'Format')}
                       </span>
@@ -754,6 +768,8 @@ export const MediaBox: FC<{
                       <span className="w-[80px] shrink-0 text-end">
                         {t('size', 'Size')}
                       </span>
+                        </>
+                      )}
                       <span className="w-[36px] shrink-0" />
                     </div>
                     {visibleMedia.map((media) => (
@@ -762,7 +778,7 @@ export const MediaBox: FC<{
                         data-media-row={media.id}
                         data-ci="1"
                         onClick={openLightbox(media)}
-                        className="group flex cursor-pointer items-center gap-[12px] rounded-pqSm border-b border-pqLine p-[8px] hover:bg-pqHover"
+                        className="group flex min-h-[44px] cursor-pointer items-center gap-[12px] rounded-pqSm border-b border-pqLine p-[8px] hover:bg-pqHover"
                       >
                         <span className="grid h-[36px] w-[36px] shrink-0 place-items-center overflow-hidden rounded-[8px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1">
                           <MediaThumb media={media} />
@@ -772,6 +788,8 @@ export const MediaBox: FC<{
                             ? media.alt
                             : t('no_alt_text', '—')}
                         </span>
+                        {!mobile && (
+                          <>
                         <span className="w-[64px] shrink-0 text-[12.5px] uppercase tabular-nums text-pqMuted">
                           {mediaFormatLabel(media)}
                         </span>
@@ -784,6 +802,8 @@ export const MediaBox: FC<{
                         <span className="w-[80px] shrink-0 text-end text-[12.5px] tabular-nums text-pqMuted">
                           {mediaSizeLabel(media)}
                         </span>
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={openMenu(media)}

@@ -121,7 +121,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
               "loading, and what we're holding is empty" matching nothing at
               all — a blank pane. */}
           {isLoading && !data?.results?.length && (
-            <div className="grid grid-cols-4 gap-[8px]">
+            <div className="grid grid-cols-2 gap-[8px] sm:grid-cols-4">
               {[...new Array(8)].map((_, i) => (
                 <Skeleton key={i} className="aspect-square rounded-[6px]" />
               ))}
@@ -136,7 +136,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
             </div>
           )}
           {!!data?.results?.length && (
-            <div className="grid grid-cols-4 gap-[8px]">
+            <div className="grid grid-cols-2 gap-[8px] sm:grid-cols-4">
               {data.results.map((item: any) => {
                 const isSelected = !!selected.find((s) => s.id === item.id);
                 return (

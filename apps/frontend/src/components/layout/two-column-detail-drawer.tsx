@@ -117,7 +117,7 @@ export const TwoColumnDetailDrawer: FC<{
           aria-label={label}
           aria-hidden={!open}
           className={clsx(
-            'pointer-events-auto absolute inset-y-0 end-0 flex w-full max-w-full flex-col bg-pqInner shadow-pqE3 transition-transform duration-200 ease-out',
+          'pointer-events-auto absolute inset-y-0 end-0 flex w-full max-w-full flex-col bg-pqInner pb-[env(safe-area-inset-bottom)] shadow-pqE3 transition-transform duration-200 ease-out',
             !open && 'translate-x-[104%] rtl:-translate-x-[104%]'
           )}
         >
@@ -125,7 +125,7 @@ export const TwoColumnDetailDrawer: FC<{
             <button
               type="button"
               onClick={onClose}
-              className="flex h-[32px] items-center gap-[6px] rounded-pqSm border border-pqBorder bg-pqInner pe-[12px] ps-[10px] text-[12.5px] font-[500] text-pqText"
+              className="flex min-h-[44px] items-center gap-[6px] rounded-pqSm border border-pqBorder bg-pqInner pe-[12px] ps-[10px] text-[12.5px] font-[500] text-pqText"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
                 <path

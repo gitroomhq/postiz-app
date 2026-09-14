@@ -94,6 +94,19 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Phone native chrome: notch / home indicator. Used by sheets, sticky
+   composer/pay bars, and the settings stack. Harmless on desktop. */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pq-tap {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 body {
   background: var(--new-bgColor) !important;
   color: var(--new-btn-text);
@@ -288,8 +301,8 @@ body *::-webkit-scrollbar-thumb {
 }
 
 [data-mobile='1'] [data-ci-actions] button {
-  min-width: 34px !important;
-  min-height: 34px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
 }
 
 @media (hover: none) {

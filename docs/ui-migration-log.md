@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Phone native UX (viewport, sheets, Settings stack, calendar agenda, composer tabs).** The redesign already had a 760px drawer, but Settings capped nav at 132px, week/month stayed 7-column grids, and the composer stacked a 340px preview on the editor. Phone now uses `viewport-fit: cover` + safe-area utilities, a shared `MobileSheet`, edge-to-edge modals, an iOS-style Settings/Connect push stack, week-as-day-chips + agenda, month as a compact date picker, Edit/Preview composer tabs, and 44px taps. i18n 0 — reused existing keys (`back`, `close`, `edit`, `preview`, `move`, `posts`, `date`).
+
 **Stripe finalize pass: what turning tax on broke, and what the webhook hardening
 got wrong.** A review of the pass below found real defects *in that pass*. They are
 listed here because the mistakes are more instructive than the fixes.

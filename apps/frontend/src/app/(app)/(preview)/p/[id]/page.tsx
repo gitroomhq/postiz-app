@@ -5,7 +5,7 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
-import { CommentsComponents } from '@gitroom/frontend/components/preview/comments.components';
+import { PreviewCommentsPane } from '@gitroom/frontend/components/preview/comments.components';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { CopyClient } from '@gitroom/frontend/components/preview/copy.client';
 import { getT } from '@gitroom/react/translation/get.translation.service.backend';
@@ -175,11 +175,11 @@ export default async function Auth(
                     }}
                   />
                   {!!JSON.parse(p?.image || '[]').length && (
-                    <div className="flex w-full gap-[10px]">
+                    <div className="flex w-full snap-x snap-mandatory gap-[10px] overflow-x-auto">
                       {JSON.parse(p?.image || '[]').map((media: any) => (
                         <div
                           key={media.name}
-                          className="max-h-[500px] flex-1 overflow-hidden rounded-[10px]"
+                          className="max-h-[500px] min-w-[80%] flex-none snap-center overflow-hidden rounded-[10px] sm:min-w-0 sm:flex-1"
                         >
                           <VideoOrImage
                             isContain={true}
@@ -198,7 +198,7 @@ export default async function Auth(
 
         <aside className="w-full shrink-0 lg:w-[320px]">
           <div className="rounded-[14px] border border-pqBorder bg-pqInner p-[18px]">
-            <CommentsComponents postId={id} />
+            <PreviewCommentsPane postId={id} />
           </div>
         </aside>
       </div>

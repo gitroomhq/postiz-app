@@ -18,3 +18,11 @@ describe('global pointer cursor', () => {
     assert.match(source, /:disabled[\s\S]*cursor:\s*not-allowed/);
   });
 });
+
+describe('mobile safe-area utilities', () => {
+  it('declares pt-safe, pb-safe and 44px tap floor', () => {
+    assert.match(source, /\.pt-safe \{[\s\S]*safe-area-inset-top/);
+    assert.match(source, /\.pb-safe \{[\s\S]*safe-area-inset-bottom/);
+    assert.match(source, /\.pq-tap \{[\s\S]*min-height:\s*44px/);
+  });
+});

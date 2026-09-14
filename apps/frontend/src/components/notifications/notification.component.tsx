@@ -19,6 +19,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
 import { splitNotificationContent } from '@gitroom/frontend/components/notifications/notification.look';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
 
 export const ShowNotification: FC<{
   notification: {
@@ -128,9 +130,10 @@ export const NotificationOpenComponent = forwardRef<
     listSession: number;
     unreadCutoff: string | null;
     onUnreadCutoff: (cutoff: string) => void;
+    embedded?: boolean;
   }
 >(function NotificationOpenComponent(
-  { markedAllRead, onMarkAllRead, listSession, unreadCutoff, onUnreadCutoff },
+  { markedAllRead, onMarkAllRead, listSession, unreadCutoff, onUnreadCutoff, embedded },
   ref
 ) {
   const fetch = useFetch();
@@ -177,18 +180,26 @@ export const NotificationOpenComponent = forwardRef<
     <div
       ref={ref}
       id="notification-popup"
-      className="z-[600] flex min-h-[200px] w-[380px] max-w-[calc(100vw-16px)] cursor-default flex-col overflow-hidden rounded-pqLg border border-pqBorder bg-pqInner text-pqText shadow-pq animate-pqPop"
+      className={clsx(
+        'flex min-h-[200px] cursor-default flex-col overflow-hidden bg-pqInner text-pqText',
+        embedded
+          ? 'w-full'
+          : 'z-[600] w-[380px] max-w-[calc(100vw-16px)] rounded-pqLg border border-pqBorder shadow-pq animate-pqPop'
+      )}
     >
       <div className="flex items-center border-b border-pqLine px-[16px] py-[12px]">
-        <span className="flex-1 text-[14px] font-[600]">
-          {t('notifications', 'Notifications')}
-        </span>
+        {!embedded && (
+          <span className="flex-1 text-[14px] font-[600]">
+            {t('notifications', 'Notifications')}
+          </span>
+        )}
         <button
           type="button"
           onClick={onMarkAllRead}
           disabled={!hasUnread}
           className={clsx(
             'border-0 bg-transparent font-inherit text-[12.5px] text-pqBrand',
+            embedded && 'ms-auto',
             hasUnread
               ? 'cursor-pointer hover:underline'
               : 'cursor-default opacity-40'
@@ -198,7 +209,12 @@ export const NotificationOpenComponent = forwardRef<
         </button>
       </div>
 
-      <div className="flex max-h-[380px] flex-col overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+      <div
+        className={clsx(
+          'flex flex-col overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor',
+          embedded ? 'max-h-none' : 'max-h-[380px]'
+        )}
+      >
         {isLoading && (
           <div className="flex flex-1 justify-center pt-12 text-pqText">
             <ReactLoading width={36} height={36} />
@@ -238,6 +254,7 @@ const NotificationComponent = () => {
   const fetch = useFetch();
   const t = useT();
   const toaster = useToaster();
+  const { mobile } = useViewport();
   const [show, setShow] = useState(false);
   const [markedAllRead, setMarkedAllRead] = useState(false);
   const [unreadCutoff, setUnreadCutoff] = useState<string | null>(null);
@@ -283,7 +300,9 @@ const NotificationComponent = () => {
   const onUnreadCutoff = useCallback((cutoff: string) => {
     setUnreadCutoff(cutoff);
   }, []);
-  const ref = useClickAway<HTMLDivElement>(() => setShow(false));
+  const ref = useClickAway<HTMLDivElement>(() => {
+    if (!mobile) setShow(false);
+  });
   const { referenceRef, floatingRef } = useAnchoredPopover<
     HTMLDivElement,
     HTMLDivElement
@@ -294,7 +313,8 @@ const NotificationComponent = () => {
         ref={referenceRef}
         onClick={changeShow}
         className={clsx(
-          'relative grid size-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText',
+          'relative grid place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText',
+          mobile ? 'size-[44px]' : 'size-[30px]',
           show && 'bg-pqHover text-pqText'
         )}
       >
@@ -321,16 +341,32 @@ const NotificationComponent = () => {
           />
         )}
       </div>
-      {show && (
-        <NotificationOpenComponent
-          ref={floatingRef}
-          markedAllRead={markedAllRead}
-          onMarkAllRead={markAllRead}
-          listSession={listSession}
-          unreadCutoff={unreadCutoff}
-          onUnreadCutoff={onUnreadCutoff}
-        />
-      )}
+      {show &&
+        (mobile ? (
+          <MobileSheet
+            open={show}
+            onClose={() => setShow(false)}
+            title={t('notifications', 'Notifications')}
+          >
+            <NotificationOpenComponent
+              markedAllRead={markedAllRead}
+              onMarkAllRead={markAllRead}
+              listSession={listSession}
+              unreadCutoff={unreadCutoff}
+              onUnreadCutoff={onUnreadCutoff}
+              embedded
+            />
+          </MobileSheet>
+        ) : (
+          <NotificationOpenComponent
+            ref={floatingRef}
+            markedAllRead={markedAllRead}
+            onMarkAllRead={markAllRead}
+            listSession={listSession}
+            unreadCutoff={unreadCutoff}
+            onUnreadCutoff={onUnreadCutoff}
+          />
+        ))}
     </div>
   );
 };

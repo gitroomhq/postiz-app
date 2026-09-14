@@ -172,11 +172,19 @@ const MissingBackendUrlNotice = () => (
  * this wrapper. No `overflow-hidden`: notifications hang an absolutely
  * positioned panel off itself.
  */
-const HeaderIcon = ({ children }: { children: ReactNode }) => (
-  <div className="grid size-[30px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText empty:hidden">
-    {children}
-  </div>
-);
+const HeaderIcon = ({ children }: { children: ReactNode }) => {
+  const { mobile } = useViewport();
+  return (
+    <div
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText empty:hidden',
+        mobile ? 'size-[44px]' : 'size-[30px]'
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
 /**
  * Header, rail and page body.
@@ -264,7 +272,7 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
             onClick={() => setDrawer((d) => !d)}
             aria-label={t('menu', 'Menu')}
             aria-expanded={drawer}
-            className="ms-[8px] grid size-[40px] shrink-0 place-items-center rounded-[10px] text-pqText transition-colors hover:bg-pqHover"
+            className="ms-[8px] grid size-[44px] shrink-0 place-items-center rounded-[10px] text-pqText transition-colors hover:bg-pqHover"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
               <path

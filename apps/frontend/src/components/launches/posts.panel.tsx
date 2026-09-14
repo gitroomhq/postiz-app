@@ -27,6 +27,7 @@ import {
   useTourStepKey,
 } from '@gitroom/frontend/components/onboarding/tour';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
@@ -180,6 +181,7 @@ export const PostsPanel: FC = () => {
   );
 
   if (!showPanel) {
+    if (mobile) return null;
     return (
       <div className="flex w-[44px] shrink-0 flex-col items-center bg-pqInner py-[16px]">
         <button
@@ -420,7 +422,7 @@ const QueueCard: FC<{
         state: post.state,
         source: 'list' as const,
       },
-      canDrag: !demo && post.state !== 'PUBLISHED',
+      canDrag: !demo && post.state !== 'PUBLISHED' && typeof window !== 'undefined' && window.innerWidth >= 760,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
@@ -504,6 +506,15 @@ const QueueCard: FC<{
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-[8px] end-[8px] z-[5] flex gap-[2px] opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
+        {post.state !== 'PUBLISHED' && !demo && (
+          <CalendarMoveButton
+            post={post}
+            className={clsx(
+              actionButton,
+              'min-w-[44px] px-[8px] text-[11px] font-[600]'
+            )}
+          />
+        )}
         {post.state !== 'PUBLISHED' && (
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />

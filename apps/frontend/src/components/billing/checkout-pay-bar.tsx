@@ -28,7 +28,7 @@ export const CheckoutPayBarShell: FC<{
   <div
     data-pay-bar={dataPayBar}
     className={clsx(
-      'animate-fadeIn fixed bottom-0 left-0 z-[100] w-full border-t border-pqLine bg-pqInner',
+      'animate-fadeIn fixed bottom-0 left-0 z-[100] w-full border-t border-pqLine bg-pqInner pb-[env(safe-area-inset-bottom)]',
       className
     )}
   >
