@@ -495,7 +495,7 @@ importers:
         specifier: ^1.178.0
         version: 1.359.1
       qrcode:
-        specifier: 1.5.4
+        specifier: ^1.5.4
         version: 1.5.4
       react:
         specifier: 19.2.4
@@ -709,7 +709,7 @@ importers:
         specifier: ^0.64.7
         version: 0.64.14
       '@types/qrcode':
-        specifier: 1.5.5
+        specifier: ^1.5.5
         version: 1.5.5
       '@types/react':
         specifier: 19.1.8
