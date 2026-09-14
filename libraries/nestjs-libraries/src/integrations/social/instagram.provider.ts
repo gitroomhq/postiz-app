@@ -473,7 +473,7 @@ export class InstagramProvider
 
     const { id, name, picture } = await (
       await fetch(
-        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me?fields=id,name,picture&access_token=${access_token}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me?fields=id,name,picture.type(large)&access_token=${access_token}`
       )
     ).json();
 

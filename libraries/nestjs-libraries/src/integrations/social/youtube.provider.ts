@@ -24,6 +24,10 @@ import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import {
+  upgradeProfileImageUrl,
+  youtubeChannelPictureUrl,
+} from '@gitroom/nestjs-libraries/integrations/upgrade.profile.image.url';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -278,7 +282,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: credentials.refresh_token ?? refresh_token,
       id: data.id!,
       name: data.name!,
-      picture: data?.picture || '',
+      picture: upgradeProfileImageUrl(data?.picture),
       username: '',
     };
   }
@@ -324,7 +328,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       refreshToken: tokens.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data?.picture || '',
+      picture: upgradeProfileImageUrl(data?.picture),
       username: '',
     };
   }
@@ -348,7 +352,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         name: channel.snippet?.title || 'Unnamed Channel',
         picture: {
           data: {
-            url: channel.snippet?.thumbnails?.default?.url || '',
+            url: youtubeChannelPictureUrl(channel.snippet?.thumbnails),
           },
         },
         username: channel.snippet?.customUrl || '',
@@ -385,7 +389,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         id: channel.id!,
         name: channel.snippet?.title || 'Unnamed Channel',
         access_token: accessToken,
-        picture: channel.snippet?.thumbnails?.default?.url || '',
+        picture: youtubeChannelPictureUrl(channel.snippet?.thumbnails),
         username: channel.snippet?.customUrl || '',
       };
     } catch (error) {

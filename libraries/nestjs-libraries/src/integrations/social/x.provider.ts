@@ -30,6 +30,7 @@ import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { upgradeProfileImageUrl } from '@gitroom/nestjs-libraries/integrations/upgrade.profile.image.url';
 
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media ids and the tweet content).
@@ -438,7 +439,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       name,
       refreshToken: '',
       expiresIn: 999999999,
-      picture: profile_image_url || '',
+      picture: upgradeProfileImageUrl(profile_image_url),
       username,
       additionalSettings: [
         {
@@ -1624,7 +1625,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       return [
         {
           id: data.data.username,
-          image: data.data.profile_image_url,
+          image: upgradeProfileImageUrl(data.data.profile_image_url),
           label: data.data.name,
         },
       ];

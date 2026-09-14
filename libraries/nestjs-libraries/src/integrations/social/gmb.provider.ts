@@ -17,6 +17,7 @@ import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { GmbSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/gmb.settings.dto';
+import { upgradeProfileImageUrl } from '@gitroom/nestjs-libraries/integrations/upgrade.profile.image.url';
 
 const clientAndGmb = () => {
   const client = new google.auth.OAuth2({
@@ -152,7 +153,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       refreshToken: credentials.refresh_token || refresh_token,
       id: data.id!,
       name: data.name!,
-      picture: data?.picture || '',
+      picture: upgradeProfileImageUrl(data?.picture),
       username: '',
     };
   }
@@ -198,7 +199,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       refreshToken: tokens.refresh_token!,
       id: data.id!,
       name: data.name!,
-      picture: data?.picture || '',
+      picture: upgradeProfileImageUrl(data?.picture),
       username: '',
     };
   }
