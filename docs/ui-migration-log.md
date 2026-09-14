@@ -1292,3 +1292,5 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Connect: examples last, after How to connect
 
 **i18n 0.** Same keys. The Examples frame stays visually distinct, but it is the last block on the detail pane: intro, credentials, How to connect, then samples. It no longer sits between the info note and the install steps.
+
+**Method is under the title, not stuck on the logo.** The MCP/Skill/Chat chip on the large icon overlapped the artwork. The icon is clean; method (and Coming soon) sit on a second line under the name.

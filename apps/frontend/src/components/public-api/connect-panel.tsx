@@ -500,23 +500,24 @@ const ExamplesBlock: FC<{
 };
 
 const ConnIcon: FC<{
-  item: Pick<Connection, 'icon' | 'glyph' | 'name' | 'method'>;
+  item: Pick<Connection, 'icon' | 'glyph' | 'name'>;
   size?: 'xs' | 'sm' | 'lg';
-  /** Method sits on the icon, not as a separate chip that steals the name. */
-  showMethod?: boolean;
-}> = ({ item, size = 'sm', showMethod = false }) => {
+}> = ({ item, size = 'sm' }) => {
   const img = size === 'lg' ? 48 : size === 'xs' ? 22 : 40;
-  const iconEl = item.icon ? (
-    <span className="flex shrink-0 items-center justify-center">
-      <SafeImage
-        src={item.icon}
-        alt={item.name}
-        width={img}
-        height={img}
-        className="object-contain"
-      />
-    </span>
-  ) : (
+  if (item.icon) {
+    return (
+      <span className="flex shrink-0 items-center justify-center">
+        <SafeImage
+          src={item.icon}
+          alt={item.name}
+          width={img}
+          height={img}
+          className="object-contain"
+        />
+      </span>
+    );
+  }
+  return (
     <span
       className={clsx(
         'flex shrink-0 items-center justify-center bg-pqSettings font-[700] text-pqText ring-1 ring-pqBorder',
@@ -528,20 +529,6 @@ const ConnIcon: FC<{
       )}
     >
       {item.glyph}
-    </span>
-  );
-  if (!showMethod) return iconEl;
-  return (
-    <span className="relative mb-[6px] inline-flex shrink-0">
-      {iconEl}
-      <span
-        className={clsx(
-          'pointer-events-none absolute -bottom-[6px] start-1/2 -translate-x-1/2 whitespace-nowrap rounded-[4px] px-[5px] py-[1px] text-[8px] font-[700] leading-none tracking-[0.04em] ring-2 ring-pqInner',
-          METHOD_STYLE[item.method]
-        )}
-      >
-        {item.method}
-      </span>
     </span>
   );
 };
@@ -1240,14 +1227,22 @@ export const ConnectPanel: FC<{
         </button>
 
         <div className="flex flex-wrap items-center gap-[16px]">
-          <ConnIcon item={item} size="lg" showMethod />
+          <ConnIcon item={item} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-[8px]">
-              <h2 className="text-[22px] font-[600] text-pqText -tracking-[0.02em]">
-                {item.name}
-              </h2>
+            <h2 className="text-[22px] font-[600] text-pqText -tracking-[0.02em]">
+              {item.name}
+            </h2>
+            <div className="mt-[6px] flex flex-wrap items-center gap-[6px]">
+              <span
+                className={clsx(
+                  'rounded-[6px] px-[8px] py-[3px] text-[10.5px] font-[700] tracking-[0.06em]',
+                  METHOD_STYLE[item.method]
+                )}
+              >
+                {item.method}
+              </span>
               {item.soon && (
-                <span className="rounded-[5px] bg-pqAmberSoft px-[6px] py-[2px] text-[9.5px] font-[700] tracking-[0.06em] text-pqAmber">
+                <span className="rounded-[6px] bg-pqAmberSoft px-[8px] py-[3px] text-[10.5px] font-[700] tracking-[0.06em] text-pqAmber">
                   {t('conn_soon', 'COMING SOON')}
                 </span>
               )}
