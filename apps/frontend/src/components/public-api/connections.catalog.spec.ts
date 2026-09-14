@@ -7,6 +7,8 @@ import {
   AUTOMATION_CHILD_IDS,
   FEATURED_IDS,
   ALL_PAGE_NAV_IDS,
+  CONNECT_AUTOMATION_SHORTCUTS,
+  CONNECT_NAV_CONNECTORS,
   CONNECT_NAV_DEVELOP,
   CONNECT_SETTINGS_EXITS,
   DEVELOP_NAV_ITEM,
@@ -15,6 +17,7 @@ import {
   restGroupsForAllPage,
   defaultNavForConnection,
   findConnection,
+  isAutomationShortcut,
   resolveConnectNavId,
   resolveConnectorId,
   settingsExitHref,
@@ -35,7 +38,7 @@ const byId = (id: string) => {
 };
 
 describe('Connect marketplace catalog', () => {
-  it('groups the All page leftovers by rail category, without repeating Featured', () => {
+  it('groups Connectors leftovers by category, without repeating Featured', () => {
     assert.deepEqual([...ALL_PAGE_NAV_IDS], [
       'agents',
       'bots',
@@ -67,8 +70,12 @@ describe('Connect marketplace catalog', () => {
     assert.ok(leftover.find((g) => g.nav === 'chat')?.items.some((c) => c.id === 'whatsapp'));
     assert.ok(!leftover.some((g) => g.items.some((c) => c.section === 'developer')));
     assert.ok(
+      leftover.some((g) => g.items.some((c) => c.id === 'n8n')),
+      'n8n stays a Connectors card and a left-rail shortcut'
+    );
+    assert.ok(
       !leftover.some((g) => g.items.some((c) => c.id === 'webhooks' || c.id === 'rss')),
-      'Webhooks and RSS AutoPost belong on the left rail, not All cards'
+      'Webhooks and RSS AutoPost belong on the left rail, not Connectors cards'
     );
   });
 
@@ -162,6 +169,17 @@ describe('Connect marketplace catalog', () => {
       connectionsForNav(catalog, 'automation').map((c) => c.id),
       ['n8n', 'zapier', 'make']
     );
+    assert.deepEqual(
+      CONNECT_NAV_CONNECTORS.map((n) => n.id),
+      ['all']
+    );
+    assert.equal(CONNECT_NAV_CONNECTORS[0].labelDefault, 'Connectors');
+    assert.deepEqual(
+      CONNECT_AUTOMATION_SHORTCUTS.map((x) => x.id),
+      ['n8n', 'zapier', 'make']
+    );
+    assert.equal(isAutomationShortcut('n8n'), true);
+    assert.equal(isAutomationShortcut('webhooks'), false);
     assert.deepEqual(
       CONNECT_SETTINGS_EXITS.map((x) => x.id),
       ['webhooks', 'rss']
@@ -521,11 +539,14 @@ describe('Connect marketplace catalog', () => {
     assert.equal(connectionsForNav(catalog, 'api-keys').length, 0);
   });
 
-  it('resolves legacy deep-links onto All / Bots / Develop and the right card', () => {
+  it('resolves legacy deep-links onto Connectors / Develop and the right card', () => {
     assert.equal(resolveConnectNavId('mcp'), 'all');
     assert.equal(resolveConnectNavId('ai-agents'), 'all');
     assert.equal(resolveConnectNavId('assistants'), 'all');
-    assert.equal(resolveConnectNavId('agent-skills'), 'bots');
+    assert.equal(resolveConnectNavId('agent-skills'), 'all');
+    assert.equal(resolveConnectNavId('agents'), 'all');
+    assert.equal(resolveConnectNavId('bots'), 'all');
+    assert.equal(resolveConnectNavId('automation'), 'all');
     assert.equal(resolveConnectNavId('cli'), 'cli');
     assert.equal(resolveConnectNavId('api'), 'public-api');
     assert.equal(resolveConnectNavId('build'), 'public-api');
@@ -534,10 +555,10 @@ describe('Connect marketplace catalog', () => {
     assert.equal(resolveConnectorId('grok-bot'), 'grok-bot');
     assert.equal(resolveConnectorId('muse-app'), 'muse');
     assert.equal(resolveConnectorId('gemini-cli'), 'gemini');
-    assert.equal(defaultNavForConnection(byId('n8n')), 'automation');
-    assert.equal(defaultNavForConnection(byId('openclaw')), 'bots');
+    assert.equal(defaultNavForConnection(byId('n8n')), 'all');
+    assert.equal(defaultNavForConnection(byId('openclaw')), 'all');
     assert.equal(defaultNavForConnection(byId('chatgpt')), 'all');
-    assert.equal(defaultNavForConnection(byId('claude-code')), 'agents');
-    assert.equal(defaultNavForConnection(byId('vscode')), 'editors');
+    assert.equal(defaultNavForConnection(byId('claude-code')), 'all');
+    assert.equal(defaultNavForConnection(byId('vscode')), 'all');
   });
 });

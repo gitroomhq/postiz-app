@@ -37,6 +37,7 @@ import {
   buildConnectionsCatalog,
   FEATURED_IDS,
   restGroupsForAllPage,
+  CONNECT_AUTOMATION_SHORTCUTS,
   CONNECT_NAV_ACCOUNT,
   CONNECT_NAV_CONNECTORS,
   CONNECT_NAV_DEVELOP,
@@ -46,6 +47,7 @@ import {
   connectionsForNav,
   defaultNavForConnection,
   findConnection,
+  isAutomationShortcut,
   METHOD_STYLE,
   resolveConnectNavId,
   resolveConnectorId,
@@ -500,23 +502,24 @@ const ExamplesBlock: FC<{
 };
 
 const ConnIcon: FC<{
-  item: Pick<Connection, 'icon' | 'glyph' | 'name' | 'method'>;
+  item: Pick<Connection, 'icon' | 'glyph' | 'name'>;
   size?: 'xs' | 'sm' | 'lg';
-  /** Method sits on the icon, not as a separate chip that steals the name. */
-  showMethod?: boolean;
-}> = ({ item, size = 'sm', showMethod = false }) => {
+}> = ({ item, size = 'sm' }) => {
   const img = size === 'lg' ? 48 : size === 'xs' ? 22 : 40;
-  const iconEl = item.icon ? (
-    <span className="flex shrink-0 items-center justify-center">
-      <SafeImage
-        src={item.icon}
-        alt={item.name}
-        width={img}
-        height={img}
-        className="object-contain"
-      />
-    </span>
-  ) : (
+  if (item.icon) {
+    return (
+      <span className="flex shrink-0 items-center justify-center">
+        <SafeImage
+          src={item.icon}
+          alt={item.name}
+          width={img}
+          height={img}
+          className="object-contain"
+        />
+      </span>
+    );
+  }
+  return (
     <span
       className={clsx(
         'flex shrink-0 items-center justify-center bg-pqSettings font-[700] text-pqText ring-1 ring-pqBorder',
@@ -528,20 +531,6 @@ const ConnIcon: FC<{
       )}
     >
       {item.glyph}
-    </span>
-  );
-  if (!showMethod) return iconEl;
-  return (
-    <span className="relative mb-[6px] inline-flex shrink-0">
-      {iconEl}
-      <span
-        className={clsx(
-          'pointer-events-none absolute -bottom-[6px] start-1/2 -translate-x-1/2 whitespace-nowrap rounded-[4px] px-[5px] py-[1px] text-[8px] font-[700] leading-none tracking-[0.04em] ring-2 ring-pqInner',
-          METHOD_STYLE[item.method]
-        )}
-      >
-        {item.method}
-      </span>
     </span>
   );
 };
@@ -572,6 +561,12 @@ const NavIcon: FC<{ id: ConnectNavId }> = ({ id }) => (
   <StrokeIcon paths={NAV_ICONS[id] || NAV_ICONS.all} />
 );
 
+const RailBrandIcon: FC<{ src: string }> = ({ src }) => (
+  <span className="flex h-[16px] w-[16px] shrink-0 items-center justify-center overflow-hidden rounded-[3px]">
+    <SafeImage src={src} alt="" width={16} height={16} className="h-[16px] w-[16px] object-contain" />
+  </span>
+);
+
 /** Same mark as Settings → Connect PostQueen external-link affordance. */
 const ExternalLinkIcon: FC<{ size?: number; className?: string }> = ({
   size = 14,
@@ -595,78 +590,6 @@ const ExternalLinkIcon: FC<{ size?: number; className?: string }> = ({
   </svg>
 );
 
-const SkillInstallCallout: FC<{
-  apiKey: string;
-  keyRevealed: boolean;
-  /** Only when the tools must be told where the API is (see needsApiUrl). */
-  apiUrl?: string;
-}> = ({ apiKey, keyRevealed, apiUrl }) => {
-  const t = useT();
-  const code = 'npx skills add GkhanKINAY/postqueen-agent';
-  const keyCode = `export POSTQUEEN_API_KEY="${apiKey}"`;
-  // `!apiKey` is not just the empty case, it is the member case: the server
-  // withholds the key from non-admins. `''.replace` matches at position zero,
-  // so masking an absent key prepends the stars to the command instead of
-  // hiding anything.
-  const maskedKey =
-    keyRevealed || !apiKey
-      ? keyCode
-      : keyCode.replace(apiKey, '*'.repeat(Math.min(apiKey.length, 24)));
-  return (
-    <div className="mb-[16px] flex flex-col gap-[12px] rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
-      <div>
-        <div className="text-[14px] font-[600] text-pqText">
-          {t('conn_step_skill_install', 'Install the PostQueen skill')}
-        </div>
-        <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
-          {t(
-            'conn_step_skill_install_detail',
-            'One command, once per machine. It installs the skill playbook, not the CLI. Install the CLI separately with npm i -g postqueen if you want shell commands.'
-          )}
-        </div>
-      </div>
-      <CodeBlock code={code} label="Skill" />
-      <div>
-        <div className="text-[13px] font-[600] text-pqText">
-          {t('conn_step_skill_key', 'Give it your API key')}
-        </div>
-        <CodeBlock
-          code={maskedKey}
-          rawCode={keyCode}
-          label="API key"
-        />
-        {!apiKey && <ApiKeyMissingNote />}
-      </div>
-      {!!apiUrl && (
-        <div>
-          <div className="text-[13px] font-[600] text-pqText">
-            {t('conn_step_api_url', 'Point it at your server')}
-          </div>
-          <div className="mt-[2px] text-[12.5px] leading-[1.5] text-pqMuted">
-            {t(
-              'conn_step_api_url_detail',
-              'The skill, the CLI and the SDK call the hosted API unless told otherwise. Export this next to the key.'
-            )}
-          </div>
-          <CodeBlock
-            code={`export POSTQUEEN_API_URL="${apiUrl}"`}
-            label="API URL"
-          />
-        </div>
-      )}
-      <a
-        href="https://docs.postqueen.ai/agents/skill-install"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-[6px] text-[12.5px] font-[600] text-pqBrand hover:underline"
-      >
-        {t('conn_docs_cta', 'Docs')}
-        <ExternalLinkIcon size={13} className="opacity-[0.85]" />
-      </a>
-    </div>
-  );
-};
-
 const CliSetupCallout: FC<{
   apiKey: string;
   keyRevealed: boolean;
@@ -675,7 +598,8 @@ const CliSetupCallout: FC<{
 }> = ({ apiKey, keyRevealed, apiUrl }) => {
   const t = useT();
   const keyCode = `export POSTQUEEN_API_KEY="${apiKey}"`;
-  // See SkillInstallCallout, masking an absent key would prepend the stars.
+  // `!apiKey` is the member case: the server withholds the key from non-admins.
+  // Masking an absent key would prepend the stars instead of hiding anything.
   const maskedKey =
     keyRevealed || !apiKey
       ? keyCode
@@ -762,8 +686,8 @@ const CliSetupCallout: FC<{
 
 /**
  * Dual-pane Connect PostQueen marketplace.
- * Same card size as Settings (`1040×680`). All: Featured four-up, then
- * rail groups of compact cards (name only; method lives on the detail pane).
+ * Same card size as Settings (`1040×680`). Connectors: Featured four-up, then
+ * category groups of compact cards (name only; method lives on the detail pane).
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -919,10 +843,12 @@ export const ConnectPanel: FC<{
         openSettingsExit(exit);
         return;
       }
+      const nextNav = isAutomationShortcut(id) ? 'all' : nav;
+      setNav(nextNav);
       setPicked(id);
       setKeyRevealed(false);
       setMobileNavOpen(false);
-      syncUrl(nav, id);
+      syncUrl(nextNav, id);
     },
     [nav, syncUrl, openSettingsExit]
   );
@@ -992,7 +918,7 @@ export const ConnectPanel: FC<{
 
   const navLabels = useMemo(
     (): Record<ConnectNavId, string> => ({
-      all: t('connect_nav_all', 'All'),
+      all: t('connect_nav_all', 'Connectors'),
       agents: t('connect_nav_agents', 'Agents'),
       bots: t('connect_nav_bots', 'Bots'),
       chat: t('connect_nav_chat', 'Chat'),
@@ -1049,6 +975,15 @@ export const ConnectPanel: FC<{
     );
   }, [navQuery, settingsExitLabels]);
 
+  const visibleAutomationShortcuts = useMemo(() => {
+    if (!navQuery) return CONNECT_AUTOMATION_SHORTCUTS;
+    return CONNECT_AUTOMATION_SHORTCUTS.filter(({ name }) =>
+      name.toLowerCase().includes(navQuery)
+    );
+  }, [navQuery]);
+
+  const connectorsActive = nav === 'all' && !isAutomationShortcut(picked);
+
   const hubTitles = useMemo(
     (): Partial<Record<ConnectNavId, { title: string; blurb: string }>> => ({
       all: {
@@ -1090,7 +1025,7 @@ export const ConnectPanel: FC<{
         title: t('connect_hub_automation', 'Automation'),
         blurb: t(
           'connect_hub_automation_blurb',
-          'n8n is live. Zapier and Make official apps are coming soon. Webhooks and RSS AutoPost are in the left rail.'
+          'n8n is live. Zapier and Make official apps are coming soon. All three open from the left rail, next to Webhooks and RSS AutoPost.'
         ),
       },
     }),
@@ -1098,7 +1033,7 @@ export const ConnectPanel: FC<{
   );
 
   const copyChipClass =
-    'flex h-[28px] items-center rounded-pqSm bg-pqSettings px-[10px] text-[12px] font-[500] text-pqText transition-colors hover:bg-pqHover';
+    'flex h-[30px] items-center rounded-[8px] bg-pqBtnSimple px-[11px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover';
 
   const credentialStrip = (
     cred: Connection['cred'] | 'hub',
@@ -1111,48 +1046,73 @@ export const ConnectPanel: FC<{
     const maskedKey = keyRevealed
       ? apiKey
       : apiKey
-        ? `${'•'.repeat(Math.max(apiKey.length - 5, 8))}${apiKey.slice(-5)}`
-        : '•'.repeat(32);
+        ? `••••••••${apiKey.slice(-4)}`
+        : '••••••••••••';
 
     if (compact) {
       return (
         <div
-          className="flex flex-wrap items-center gap-[8px] rounded-pqLg bg-pqPop px-[14px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
+          className="overflow-hidden rounded-[16px] bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]"
           aria-label={t('conn_your_connection', 'Your connection')}
           data-tour={compact ? 'connect-creds' : undefined}
         >
-          <span className="text-[12px] font-[600] text-pqMuted">
-            {t('api_key', 'API key')}
-          </span>
-          <code className="min-w-0 max-w-[min(100%,280px)] truncate rounded-pqSm bg-pqInner px-[10px] py-[5px] font-mono text-[12.5px] text-pqText">
-            {maskedKey || '•'.repeat(32)}
-          </code>
-          <button
-            type="button"
-            onClick={() => setKeyRevealed((v) => !v)}
-            className={copyChipClass}
-          >
-            {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
-          </button>
-          {showMcp && (
+          <div className="flex flex-wrap items-center gap-[8px] px-[14px] py-[11px]">
+            <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+              {t('api_key', 'API key')}
+            </span>
+            <code className="min-w-0 flex-1 truncate font-mono text-[13px] tracking-[0.04em] text-pqText">
+              {maskedKey || '••••••••••••'}
+            </code>
             <button
               type="button"
-              onClick={() => {
-                copy(mcpUrlWithKey);
-                toaster.show('MCP URL copied to clipboard', 'success');
-              }}
+              onClick={() => setKeyRevealed((v) => !v)}
               className={copyChipClass}
             >
-              {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
+              {keyRevealed ? t('hide', 'Hide') : t('reveal', 'Reveal')}
             </button>
-          )}
-          {showApi && (
-            <code className="rounded-pqSm bg-pqInner px-[10px] py-[4px] font-mono text-[11.5px] text-pqMuted">
-              Authorization: KEY
-            </code>
+            {!!apiKey && (
+              <button
+                type="button"
+                onClick={() => {
+                  copy(apiKey);
+                  toaster.show('API key copied to clipboard', 'success');
+                }}
+                className={copyChipClass}
+              >
+                {t('conn_copy_key', 'Copy key')}
+              </button>
+            )}
+          </div>
+          {(showMcp || showApi) && (
+            <div className="flex flex-wrap gap-[8px] border-t border-pqLine bg-pqSettings px-[14px] py-[10px]">
+              {showMcp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    copy(mcpUrlWithKey);
+                    toaster.show('MCP URL copied to clipboard', 'success');
+                  }}
+                  className={copyChipClass}
+                >
+                  {t('copy', 'Copy')} {t('conn_copy_mcp', 'MCP URL')}
+                </button>
+              )}
+              {showApi && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    copy(apiHeader);
+                    toaster.show('API header copied to clipboard', 'success');
+                  }}
+                  className={copyChipClass}
+                >
+                  {t('conn_copy_header', 'Copy API header')}
+                </button>
+              )}
+            </div>
           )}
           {!apiKey && (
-            <div className="basis-full">
+            <div className="border-t border-pqLine px-[14px] py-[10px]">
               <ApiKeyMissingNote />
             </div>
           )}
@@ -1240,14 +1200,22 @@ export const ConnectPanel: FC<{
         </button>
 
         <div className="flex flex-wrap items-center gap-[16px]">
-          <ConnIcon item={item} size="lg" showMethod />
+          <ConnIcon item={item} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-[8px]">
-              <h2 className="text-[22px] font-[600] text-pqText -tracking-[0.02em]">
-                {item.name}
-              </h2>
+            <h2 className="text-[22px] font-[600] text-pqText -tracking-[0.02em]">
+              {item.name}
+            </h2>
+            <div className="mt-[6px] flex flex-wrap items-center gap-[6px]">
+              <span
+                className={clsx(
+                  'rounded-[6px] px-[8px] py-[3px] text-[10.5px] font-[700] tracking-[0.06em]',
+                  METHOD_STYLE[item.method]
+                )}
+              >
+                {item.method}
+              </span>
               {item.soon && (
-                <span className="rounded-[5px] bg-pqAmberSoft px-[6px] py-[2px] text-[9.5px] font-[700] tracking-[0.06em] text-pqAmber">
+                <span className="rounded-[6px] bg-pqAmberSoft px-[8px] py-[3px] text-[10.5px] font-[700] tracking-[0.06em] text-pqAmber">
                   {t('conn_soon', 'COMING SOON')}
                 </span>
               )}
@@ -1318,15 +1286,6 @@ export const ConnectPanel: FC<{
           </button>
         )}
 
-        {!!item.examples?.length && (
-          <ExamplesBlock
-            kind={item.exampleKind}
-            examples={item.examples}
-            name={item.name}
-            mask={maskCode}
-          />
-        )}
-
         <div className="flex flex-col gap-[16px] rounded-[18px] bg-pqInner p-[22px] shadow-[inset_0_0_0_1px_var(--border)]">
           <div className="text-[15px] font-[600] text-pqText">
             {t('conn_how_to_connect', 'How to connect')}
@@ -1359,6 +1318,15 @@ export const ConnectPanel: FC<{
           <div className="rounded-pqSm bg-pqBrandFaint p-[12px] text-[12.5px] leading-[1.55] text-pqMuted">
             {item.note}
           </div>
+        )}
+
+        {!!item.examples?.length && (
+          <ExamplesBlock
+            kind={item.exampleKind}
+            examples={item.examples}
+            name={item.name}
+            mask={maskCode}
+          />
         )}
       </div>
     );
@@ -1514,13 +1482,6 @@ export const ConnectPanel: FC<{
           </div>
         )}
 
-        {(nav === 'agents' || nav === 'bots') && (
-          <SkillInstallCallout
-            apiKey={apiKey}
-            keyRevealed={keyRevealed}
-            apiUrl={customApiUrl}
-          />
-        )}
         {nav === 'cli' && !picked && (
           <CliSetupCallout
             apiKey={apiKey}
@@ -1533,17 +1494,8 @@ export const ConnectPanel: FC<{
           <div className="flex flex-col gap-[22px]">
             {allPageGroups.map((group) => (
               <div key={group.nav} className="flex flex-col gap-[8px]">
-                <div className="flex items-baseline justify-between gap-[12px]">
-                  <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-                    {navLabels[group.nav]}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => selectNav(group.nav)}
-                    className="shrink-0 text-[12px] font-[600] text-pqBrand hover:underline"
-                  >
-                    {t('connect_view_all', 'View')}
-                  </button>
+                <div className="text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
+                  {navLabels[group.nav]}
                 </div>
                 {hubGrid(group.items)}
               </div>
@@ -1581,7 +1533,7 @@ export const ConnectPanel: FC<{
           : 'flex-1 flex-col gap-[16px] p-[0_8px_14px]'
       )}
     >
-      {/* Connectors */}
+      {/* Connectors: section heading + one row labeled Connectors (not All) */}
       {visibleConnectors.length > 0 && (
       <div
         className={clsx(
@@ -1605,7 +1557,7 @@ export const ConnectPanel: FC<{
               key={id}
               type="button"
               onClick={() => selectNav(id)}
-              className={chipClass(id, nav === id)}
+              className={chipClass(id, connectorsActive)}
             >
               {navLabels[id]}
             </button>
@@ -1614,10 +1566,10 @@ export const ConnectPanel: FC<{
               key={id}
               type="button"
               onClick={() => selectNav(id)}
-              aria-current={id === nav ? 'page' : undefined}
+              aria-current={connectorsActive ? 'page' : undefined}
               className={clsx(
                 navItemBase,
-                id === nav
+                connectorsActive
                   ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
                   : 'text-pqMuted'
               )}
@@ -1630,8 +1582,9 @@ export const ConnectPanel: FC<{
       </div>
       )}
 
-      {/* Settings tabs: leave Connect and open the real pane */}
-      {visibleSettingsExits.length > 0 && (
+      {/* Automation: n8n / Zapier / Make open cards; Webhooks / RSS leave to Settings */}
+      {(visibleAutomationShortcuts.length > 0 ||
+        visibleSettingsExits.length > 0) && (
       <div
         className={clsx(
           'flex',
@@ -1646,8 +1599,41 @@ export const ConnectPanel: FC<{
             mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
           )}
         >
-          {t('connect_nav_settings', 'Settings')}
+          {t('connect_nav_automation', 'Automation')}
         </div>
+        {visibleAutomationShortcuts.map((item) =>
+          mobile ? (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => selectItem(item.id)}
+              className={chipClass(item.id, picked === item.id)}
+            >
+              {item.name}
+            </button>
+          ) : (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => selectItem(item.id)}
+              aria-current={picked === item.id ? 'page' : undefined}
+              className={clsx(
+                navItemBase,
+                picked === item.id
+                  ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                  : 'text-pqMuted'
+              )}
+            >
+              <RailBrandIcon src={item.icon} />
+              <span className="min-w-0 flex-1 truncate">{item.name}</span>
+              {item.soon ? (
+                <span className="shrink-0 text-[11px] font-[500] text-pqMuted">
+                  {t('conn_soon_short', 'Soon')}
+                </span>
+              ) : null}
+            </button>
+          )
+        )}
         {visibleSettingsExits.map((item) =>
           mobile ? (
             <button

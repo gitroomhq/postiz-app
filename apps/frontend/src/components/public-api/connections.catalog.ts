@@ -72,7 +72,7 @@ export const FEATURED_IDS = [
   'grok',
 ] as const;
 
-/** Category order on the All hub, after Featured. Matches the left rail. */
+/** Category order on the Connectors hub, after Featured. */
 export const ALL_PAGE_NAV_IDS = [
   'agents',
   'bots',
@@ -216,22 +216,51 @@ export const needsApiUrl = (apiUrl: string) => {
   }
 };
 
+/**
+ * Left-rail Connectors group. One row (labeled Connectors, not All) opens the
+ * marketplace. Agents / Bots / Chat / Editors are headings inside that panel,
+ * not extra rail rows.
+ */
 export const CONNECT_NAV_CONNECTORS: {
   id: ConnectNavId;
   labelKey: string;
   labelDefault: string;
 }[] = [
-  { id: 'all', labelKey: 'connect_nav_all', labelDefault: 'All' },
-  { id: 'agents', labelKey: 'connect_nav_agents', labelDefault: 'Agents' },
-  { id: 'bots', labelKey: 'connect_nav_bots', labelDefault: 'Bots' },
-  { id: 'chat', labelKey: 'connect_nav_chat', labelDefault: 'Chat' },
-  { id: 'editors', labelKey: 'connect_nav_editors', labelDefault: 'Editors' },
   {
-    id: 'automation',
-    labelKey: 'connect_nav_automation',
-    labelDefault: 'Automation',
+    id: 'all',
+    labelKey: 'connect_nav_all',
+    labelDefault: 'Connectors',
   },
 ];
+
+/**
+ * n8n, Zapier and Make stay catalog cards (they have real setup). The rail
+ * opens those cards the same way Webhooks / RSS leave to Settings.
+ */
+export const CONNECT_AUTOMATION_SHORTCUTS: {
+  id: 'n8n' | 'zapier' | 'make';
+  icon: string;
+  name: string;
+  soon?: boolean;
+}[] = [
+  { id: 'n8n', icon: '/icons/connections/n8n.svg', name: 'n8n' },
+  {
+    id: 'zapier',
+    icon: '/icons/connections/zapier.svg',
+    name: 'Zapier',
+    soon: true,
+  },
+  {
+    id: 'make',
+    icon: '/icons/connections/make.svg',
+    name: 'Make',
+    soon: true,
+  },
+];
+
+export function isAutomationShortcut(id: string): boolean {
+  return CONNECT_AUTOMATION_SHORTCUTS.some((item) => item.id === id);
+}
 
 export const CONNECT_NAV_DEVELOP: {
   id: ConnectNavId;
@@ -363,11 +392,12 @@ export function resolveConnectNavId(raw: string | null): ConnectNavId | null {
     key === 'media' ||
     key === 'ai-agents' ||
     key === 'mcp' ||
-    key === 'assistants'
+    key === 'assistants' ||
+    key === 'agent-skills' ||
+    (ALL_PAGE_NAV_IDS as readonly string[]).includes(key)
   ) {
     return 'all';
   }
-  if (key === 'agent-skills') return 'bots';
   if (key === 'developers') return 'oauth-apps';
   if (CONNECT_NAV.some((n) => n.id === key)) return key as ConnectNavId;
   return null;
@@ -385,9 +415,10 @@ const HUB_SECTIONS: SectionId[] = [
 ];
 
 /**
- * Remaining cards on All, grouped like the rail. Featured ids are omitted.
+ * Remaining cards on Connectors, grouped by category. Featured ids are omitted.
  * Develop (Public API, CLI, Node SDK, OAuth Apps) and Account rows are
- * panel-only. Webhooks and RSS AutoPost are left-rail Settings exits, not
+ * panel-only. n8n / Zapier / Make are both grouped here and left-rail
+ * shortcuts. Webhooks and RSS AutoPost are left-rail Settings exits, not
  * cards. Media stays in the catalog but is not a Connect nav.
  */
 export function restGroupsForAllPage(
@@ -456,11 +487,6 @@ export function findConnection(
 }
 
 export function defaultNavForConnection(item: Connection): ConnectNavId {
-  if (item.section === 'chat') return 'chat';
-  if (item.section === 'automation') return 'automation';
-  if (item.section === 'agents') return 'agents';
-  if (item.section === 'bots') return 'bots';
-  if (item.section === 'editors') return 'editors';
   if (item.id === 'api') return 'public-api';
   if (item.id === 'cli') return 'cli';
   if (item.id === 'sdk') return 'sdk';
@@ -2133,7 +2159,7 @@ openclaw onboard --install-daemon`,
       label: t('conn_group_automation', 'Automation'),
       blurb: t(
         'conn_group_automation_blurb',
-        'n8n is live. Zapier and Make official apps are coming soon. Webhooks and RSS AutoPost open from the left rail.'
+        'n8n is live. Zapier and Make official apps are coming soon. All three open from the left rail, next to Webhooks and RSS AutoPost.'
       ),
       items: [
         {
