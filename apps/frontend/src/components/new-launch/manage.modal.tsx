@@ -30,9 +30,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
-import { CopilotPopup } from '@copilotkit/react-ui';
-import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
+import { ComposeAiAssistant } from '@gitroom/frontend/components/new-launch/compose.ai.assistant';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
   SettingsIcon,
@@ -45,7 +44,6 @@ import { useShortlinkPreference } from '@gitroom/frontend/components/settings/sh
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
-import NextLink from 'next/link';
 import { useClickOutside } from '@mantine/hooks';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { Spinner } from '@gitroom/react/ui/spinner';
@@ -53,7 +51,6 @@ import { Spinner } from '@gitroom/react/ui/spinner';
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
-  const aiOk = useAiAvailable();
   const { mobile } = useViewport();
   const ref = useRef(null);
   const existingData = useExistingData();
@@ -772,8 +769,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center overflow-x-auto overflow-y-hidden scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent">
-          <div className="flex min-w-0 flex-1 items-center gap-[8px] ps-[20px]">
+        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-[8px] overflow-x-auto overflow-y-hidden ps-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent">
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -790,6 +787,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
           </div>
           <div className="flex shrink-0 items-center justify-end gap-[8px] pe-[20px]">
+            <ComposeAiAssistant />
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -914,60 +912,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
       </div>
-      {/* Only when the provider above is mounted — same answer, same hook —
-          otherwise show the discoverability shell. */}
-      {aiOk ? (
-        <CopilotPopup
-          hitEscapeToClose={false}
-          clickOutsideToClose={true}
-          instructions={`
-You are an assistant that helps the user schedule social media posts.
-You can only edit post text in the compose thread. You cannot generate images or video.
-Here are the things you can do:
-- Add a new comment / post to the list of posts
-- Delete a comment / post from the list of posts
-- Add content to the comment / post
-- Activate or deactivate the comment / post
-
-Post content can be added using the addPostContentFor{num} function.
-After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} function.
-`}
-          labels={{
-            title: t('your_assistant', 'AI writing help'),
-            initial: t(
-              'assistant_initial_message',
-              'Hi! I can refine or rewrite your post text. I cannot generate images — use AI Image / AI Video in the toolbar for that.'
-            ),
-          }}
-        />
-      ) : (
-        <NextLink
-          href="/connections"
-          data-tooltip-id="tooltip"
-          data-tooltip-content={t(
-            'compose_ai_unconfigured_tip',
-            'AI assistant needs OpenAI configured. Discover Claude, ChatGPT, and MCP agents in Connections.'
-          )}
-          className="absolute bottom-[104px] end-[24px] z-[40] grid h-[56px] w-[56px] place-items-center rounded-full bg-pqBrand text-pqOnBrand shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--brand)_80%,transparent)] transition-transform hover:scale-[1.04]"
-          aria-label={t('compose_ai_unconfigured_tip', 'AI writing help')}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="26"
-            height="26"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.6 6.6 5.2 5.2M18.8 18.8l-1.4-1.4M17.4 6.6l1.4-1.4M5.2 18.8l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </NextLink>
-      )}
     </div>
   );
 };
