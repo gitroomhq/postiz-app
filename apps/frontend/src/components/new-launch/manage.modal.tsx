@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import dynamic from 'next/dynamic';
 import { AddEditModalProps } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -30,7 +31,6 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { SelectCustomer } from '@gitroom/frontend/components/launches/select.customer';
-import { CopilotPopup } from '@copilotkit/react-ui';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dummy.code.component';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
@@ -49,6 +49,13 @@ import NextLink from 'next/link';
 import { useClickOutside } from '@mantine/hooks';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { Spinner } from '@gitroom/react/ui/spinner';
+
+// Desktop-only floating chip. Keep it out of the phone/tablet composer chunk.
+const CopilotPopup = dynamic(
+  () =>
+    import('@copilotkit/react-ui').then((mod) => mod.CopilotPopup),
+  { ssr: false }
+);
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();

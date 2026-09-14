@@ -16,6 +16,7 @@ describe('MobileSheet', () => {
     assert.match(source, /size-\[44px\]/);
     assert.match(source, /env\(safe-area-inset-bottom\)/);
     assert.match(source, /overscroll-contain/);
+    assert.match(source, /document\.body\.style\.overflow = 'hidden'/);
   });
 });
 

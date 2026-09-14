@@ -30,9 +30,9 @@ describe('phone calendar and composer', () => {
     assert.match(calendar, /grid-cols-7/);
   });
 
-  it('disables HTML5 drag below the tablet max', () => {
-    assert.match(calendar, /window\.innerWidth >= PQ_TABLET_MAX/);
-    assert.match(posts, /window\.innerWidth >= PQ_TABLET_MAX/);
+  it('disables HTML5 drag on phone and tablet', () => {
+    assert.match(calendar, /canDrag: !demo && !touch/);
+    assert.match(posts, /canDrag: !demo && post.state !== 'PUBLISHED' && !touch/);
   });
 
   it('hides the collapsed 44px posts rail on phone and tablet', () => {
@@ -44,6 +44,7 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /setComposerPane\('preview'\)/);
     assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
     assert.match(manage, /!touch &&/);
+    assert.match(manage, /import\('@copilotkit\/react-ui'\)/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });
 

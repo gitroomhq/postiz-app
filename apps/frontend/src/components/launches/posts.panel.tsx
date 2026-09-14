@@ -26,7 +26,7 @@ import {
   useTourNeeds,
   useTourStepKey,
 } from '@gitroom/frontend/components/onboarding/tour';
-import { PQ_TABLET_MAX, useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -385,6 +385,7 @@ const QueueCard: FC<{
   deletePost: () => void;
 }> = ({ post, editPost, duplicatePost, deletePost }) => {
   const t = useT();
+  const { touch } = useViewport();
   const { formatShortWeekdayTime } = useDateFormat();
   const demo = isClientDemoPost(post.id);
   const { explain: explainDemo, demoTooltip } = useDemoPostAction();
@@ -422,12 +423,12 @@ const QueueCard: FC<{
         state: post.state,
         source: 'list' as const,
       },
-      canDrag: !demo && post.state !== 'PUBLISHED' && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
+      canDrag: !demo && post.state !== 'PUBLISHED' && !touch,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.publishDate, post.state]
+    [demo, post.id, post.intervalInDays, post.publishDate, post.state, touch]
   );
 
   const state = displayPostState(post.state, post.publishDate);

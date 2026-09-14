@@ -64,7 +64,7 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { PostQueenLogo } from '@gitroom/frontend/components/ui/logo.component';
 import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
-import { PQ_TABLET_MAX, useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { Pagination } from '@gitroom/frontend/components/media/media.pagination';
 import { useRouter } from 'next/navigation';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
@@ -1735,6 +1735,7 @@ const CalendarItem: FC<{
   };
 }> = memo((props) => {
   const t = useT();
+  const { touch } = useViewport();
   const { timePattern } = useDateFormat();
   const {
     editPost,
@@ -1804,7 +1805,7 @@ const CalendarItem: FC<{
         // from list→Scheduled (put-back / cancel reschedule, leave QUEUE).
         source: 'calendar' as const,
       },
-      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
+      canDrag: !demo && !touch,
       collect: (monitor) => ({
         // 40%, not invisible: the design keeps the card faintly in place so you
         // can still see where it came from. (Doc 02 says "fully transparent" —
@@ -1812,7 +1813,7 @@ const CalendarItem: FC<{
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.state, date]
+    [demo, post.id, post.intervalInDays, post.state, date, touch]
   );
   // The accent stripe: tag colour when tagged; else published → ok, draft →
   // soft brand stripe (day view), otherwise brand for scheduled.
@@ -2804,11 +2805,10 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
  */
 const MobileWeekAgenda = () => {
   const { startDate } = useCalendar();
-  const weekStart = newDayjs(startDate).startOf('day');
-  const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day')),
-    [weekStart]
-  );
+  const days = useMemo(() => {
+    const weekStart = newDayjs(startDate).startOf('day');
+    return Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
+  }, [startDate]);
   const today = newDayjs();
   const defaultDay = days.find((d) => d.isSame(today, 'day')) ?? days[0];
   const [selectedKey, setSelectedKey] = useState(defaultDay.format('YYYY-MM-DD'));
@@ -2981,6 +2981,7 @@ const DayDraggableListItem: FC<{
 }> = memo((props) => {
   const { post, ...rest } = props;
   const demo = isClientDemoPost(post.id);
+  const { touch } = useViewport();
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -2990,12 +2991,12 @@ const DayDraggableListItem: FC<{
         state: post.state,
         source: 'calendar' as const,
       },
-      canDrag: !demo && typeof window !== 'undefined' && window.innerWidth >= PQ_TABLET_MAX,
+      canDrag: !demo && !touch,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.state]
+    [demo, post.id, post.intervalInDays, post.state, touch]
   );
   return (
     <div ref={dragRef as any} style={{ opacity }} className="min-w-0">

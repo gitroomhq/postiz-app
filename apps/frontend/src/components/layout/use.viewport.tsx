@@ -7,7 +7,6 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useState,
 } from 'react';
 
@@ -43,7 +42,7 @@ export interface Viewport {
   touch: boolean;
 }
 
-const measure = (width: number): Viewport => ({
+export const measureViewport = (width: number): Viewport => ({
   width,
   mobile: width < PQ_MOBILE_MAX,
   tablet: width >= PQ_MOBILE_MAX && width < PQ_TABLET_MAX,
@@ -51,12 +50,18 @@ const measure = (width: number): Viewport => ({
   touch: width < PQ_TABLET_MAX,
 });
 
+const sameBucket = (a: Viewport, b: Viewport) =>
+  a.mobile === b.mobile &&
+  a.tablet === b.tablet &&
+  a.desktop === b.desktop &&
+  a.touch === b.touch;
+
 // The server has no width. The design's own fallback is 1440, and desktop is
 // the layout that degrades most gracefully if the first client measurement
 // disagrees.
 const SSR_WIDTH = 1440;
 
-const ViewportContext = createContext<Viewport>(measure(SSR_WIDTH));
+const ViewportContext = createContext<Viewport>(measureViewport(SSR_WIDTH));
 
 /**
  * The first measurement has to land before the browser paints, or a phone shows
@@ -71,29 +76,34 @@ const useIsomorphicLayoutEffect =
  * One listener for the whole app, and the only place the root attributes are
  * written. Mounted high enough that `[data-mobile="1"] …` descendant selectors
  * reach every surface, including portalled modals and drawers.
+ *
+ * Listen with `matchMedia`, not `resize`. Every `useViewport()` consumer
+ * re-renders when this context changes, and a drag-resize fires hundreds of
+ * pixel widths that do not change phone/tablet/desktop. `change` only fires
+ * when a breakpoint is crossed.
  */
 export const ViewportProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [width, setWidth] = useState(SSR_WIDTH);
+  const [viewport, setViewport] = useState(() => measureViewport(SSR_WIDTH));
 
   useIsomorphicLayoutEffect(() => {
-    // Coalesce to one update per frame: a drag-resize fires resize far faster
-    // than React can usefully re-render, and every consumer of this context
-    // re-renders with it.
-    let frame = 0;
-    const read = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setWidth(window.innerWidth));
+    const apply = () => {
+      const next = measureViewport(window.innerWidth);
+      setViewport((prev) => (sameBucket(prev, next) ? prev : next));
     };
-
-    setWidth(window.innerWidth);
-    window.addEventListener('resize', read);
+    const mobileMq = window.matchMedia(
+      `(max-width: ${PQ_MOBILE_MAX - 1}px)`
+    );
+    const tabletMq = window.matchMedia(
+      `(min-width: ${PQ_MOBILE_MAX}px) and (max-width: ${PQ_TABLET_MAX - 1}px)`
+    );
+    apply();
+    mobileMq.addEventListener('change', apply);
+    tabletMq.addEventListener('change', apply);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', read);
+      mobileMq.removeEventListener('change', apply);
+      tabletMq.removeEventListener('change', apply);
     };
   }, []);
-
-  const viewport = useMemo(() => measure(width), [width]);
 
   // Also before paint: the `[data-mobile="1"] …` rules in global.css hide
   // header labels, and doing it after paint would flash them too.
