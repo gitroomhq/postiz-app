@@ -1111,7 +1111,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // response doesn't throw an ApplicationFailure — we want a quiet `[]` instead.
       const { data, error } = await (
         await fetch(
-          `https://graph.facebook.com/v23.0/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total&access_token=${accessToken}`
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total&access_token=${accessToken}`
         )
       ).json();
 
