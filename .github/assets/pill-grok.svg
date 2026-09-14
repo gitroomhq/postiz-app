@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="52" viewBox="0 0 120 52" role="img" aria-label="Works with Grok">
+  <rect x="1" y="1" width="118" height="50" rx="25" fill="#1b1430" stroke="#7c3aed" stroke-width="1.5"/>
+  <rect x="14" y="9" width="34" height="34" rx="9" fill="#e2e4e9" stroke="#c9ccd6" stroke-width="1"/>
+  <g transform="translate(16,11) scale(0.933)">
+    <rect x="0.75" y="0.75" width="28.5" height="28.5" rx="8" fill="#111111" stroke="#2a2a2a" stroke-width="1.5"/>
+    <path d="M15 6.5 17.2 12.3l6.3.5-4.8 3.9 1.5 6.1L15 19.6l-5.2 3.2 1.5-6.1-4.8-3.9 6.3-.5L15 6.5Z" fill="#fff"/>
+  </g>
+  <text x="55" y="32" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="17" font-weight="700" fill="#ffffff">Grok</text>
+</svg>

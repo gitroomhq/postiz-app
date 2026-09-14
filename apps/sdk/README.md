@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://postqueen.ai">
-    <img src="https://raw.githubusercontent.com/GkhanKINAY/postqueen-app/main/.github/assets/header.svg" width="840" alt="PostQueen: the queen of your posts, your AI social media assistant" />
+    <img src="https://raw.githubusercontent.com/GkhanKINAY/postqueen-app/main/.github/assets/header.svg" width="840" alt="PostQueen: the queen of your posts, your AI social media manager" />
   </a>
 </p>
 
