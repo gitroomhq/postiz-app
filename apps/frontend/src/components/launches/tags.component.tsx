@@ -19,6 +19,7 @@ import {
   CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 export const TagsComponent: FC<{
   name: string;
@@ -60,6 +61,7 @@ export const TagsComponentInner: FC<{
   }) => void;
 }> = ({ initial, onChange, name, mutate, allTags: data }) => {
   const t = useT();
+  const { mobile } = useViewport();
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
   const [allowClose, setAllowClose] = useState(true);
@@ -173,15 +175,26 @@ export const TagsComponentInner: FC<{
     >
       <div
         ref={referenceRef}
+        role="button"
+        aria-label={
+          tagValue.length === 0
+            ? mobile
+              ? t('tags', 'Tags')
+              : t('add_new_tag', 'Add New Tag')
+            : tagValue[0].name
+        }
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px] px-[16px]"
+        className={clsx(
+          'flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px]',
+          mobile ? 'px-[10px]' : 'px-[16px]'
+        )}
       >
         <div className="cursor-pointer">
           <TagIcon />
         </div>
         <div className="flex min-w-0 cursor-pointer gap-[4px] truncate">
           {tagValue.length === 0 ? (
-            t('add_new_tag', 'Add New Tag')
+            mobile ? t('tags', 'Tags') : t('add_new_tag', 'Add New Tag')
           ) : (
             <>
               <div

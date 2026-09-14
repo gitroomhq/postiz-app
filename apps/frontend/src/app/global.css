@@ -92,6 +92,7 @@
    overflow only when `.pq-modal-open` is set (see new-modal.tsx). */
 html {
   scrollbar-gutter: stable;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Phone native chrome: notch / home indicator. Used by sheets, sticky

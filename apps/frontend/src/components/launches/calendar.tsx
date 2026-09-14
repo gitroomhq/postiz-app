@@ -2835,7 +2835,7 @@ const MobileWeekAgenda = () => {
       data-tour="cal-grid"
       className="relative flex min-h-0 min-w-0 flex-1 flex-col text-pqText"
     >
-      <div className="flex shrink-0 gap-[6px] overflow-x-auto overscroll-x-contain px-[4px] pb-[10px]">
+      <div className="z-[1] flex shrink-0 gap-[4px] overflow-x-auto overscroll-x-contain bg-pqInner px-[4px] pb-[10px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {days.map((day) => {
           const key = day.format('YYYY-MM-DD');
           const on = key === selected.format('YYYY-MM-DD');
@@ -2847,12 +2847,12 @@ const MobileWeekAgenda = () => {
               data-cal-today={todayChip ? '1' : undefined}
               onClick={() => setSelectedKey(key)}
               className={clsx(
-                'flex min-w-[52px] flex-col items-center rounded-[12px] px-[8px] py-[8px]',
+                'flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center rounded-[12px] px-[2px] py-[8px]',
                 on ? 'bg-pqBrand text-pqOnBrand' : 'bg-pqSettings text-pqText'
               )}
             >
               <span className="text-[11px] font-[600] uppercase tracking-[0.04em] opacity-80">
-                {day.format('ddd')}
+                {day.format('dd')}
               </span>
               <span className="text-[16px] font-[700]">{day.format('D')}</span>
             </button>
@@ -2863,7 +2863,7 @@ const MobileWeekAgenda = () => {
         <div
           data-tour="cal-day"
           ref={setScrollerRef}
-          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner [scrollbar-gutter:stable]"
+          className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
         >
           <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px] pt-[4px]">
             {hours.map((hour) => (

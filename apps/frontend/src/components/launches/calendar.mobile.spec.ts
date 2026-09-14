@@ -23,6 +23,9 @@ describe('phone calendar and composer', () => {
     assert.match(calendar, /const MobileWeekAgenda/);
     assert.match(calendar, /mobile \? \(\s*<MobileWeekAgenda/);
     assert.match(calendar, /data-tour="cal-grid"/);
+    assert.match(calendar, /flex min-h-\[44px\] min-w-0 flex-1/);
+    assert.match(calendar, /day\.format\('dd'\)/);
+    assert.doesNotMatch(calendar, /min-w-\[52px\]/);
   });
 
   it('renders month as a compact date picker on phone', () => {
@@ -52,6 +55,25 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /grid w-full grid-cols-2/);
     assert.match(manage, /touch\s*\n\s*\? t\('select_channels'/);
     assert.match(manage, /!ml-0 w-full flex-none/);
+    const tags = readFileSync(
+      fileURLToPath(new URL('./tags.component.tsx', import.meta.url)),
+      'utf8',
+    );
+    const repeat = readFileSync(
+      fileURLToPath(new URL('./repeat.component.tsx', import.meta.url)),
+      'utf8',
+    );
+    const editor = readFileSync(
+      fileURLToPath(
+        new URL('../new-launch/editor.tsx', import.meta.url)
+      ),
+      'utf8',
+    );
+    assert.match(tags, /mobile \? t\('tags', 'Tags'\)/);
+    assert.match(repeat, /mobile \? \(\s*repeat \?/);
+    assert.match(repeat, /aria-label=\{triggerLabel\}/);
+    assert.match(editor, /flex flex-col gap-\[10px\] border-t border-pqLine/);
+    assert.match(editor, /flex items-start gap-\[12px\]/);
   });
 
   it('opens Day/Week/Month from a single View sheet on phone', () => {
