@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from 'react';
 import copy from 'copy-to-clipboard';
 import useSWR from 'swr';
@@ -36,9 +37,10 @@ import {
   buildConnectionsCatalog,
   FEATURED_IDS,
   restGroupsForAllPage,
-  CONNECT_NAV,
   CONNECT_NAV_ACCOUNT,
   CONNECT_NAV_CONNECTORS,
+  CONNECT_NAV_DEVELOP,
+  DEVELOP_NAV_ITEM,
   connectionsForNav,
   defaultNavForConnection,
   findConnection,
@@ -62,25 +64,41 @@ const NAV_ICONS: Record<ConnectNavId, string[]> = {
   all: [
     'M4 5.5h6.5A1.5 1.5 0 0 1 12 7v4.5A1.5 1.5 0 0 1 10.5 13H4A1.5 1.5 0 0 1 2.5 11.5V7A1.5 1.5 0 0 1 4 5.5ZM13.5 5.5H20A1.5 1.5 0 0 1 21.5 7v2A1.5 1.5 0 0 1 20 10.5h-6.5A1.5 1.5 0 0 1 12 9V7A1.5 1.5 0 0 1 13.5 5.5ZM4 16h6.5A1.5 1.5 0 0 1 12 17.5V20A1.5 1.5 0 0 1 10.5 21.5H4A1.5 1.5 0 0 1 2.5 20v-2.5A1.5 1.5 0 0 1 4 16ZM13.5 13.5H20A1.5 1.5 0 0 1 21.5 15v5A1.5 1.5 0 0 1 20 21.5h-6.5A1.5 1.5 0 0 1 12 20v-5a1.5 1.5 0 0 1 1.5-1.5Z',
   ],
-  assistants: [
-    'M12 8a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 20a8 8 0 0 1 16 0',
-  ],
   agents: [
     'M12 3l2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 16.7l.9-5L4.8 8.2l5-.7L12 3Z',
+  ],
+  bots: [
+    'M12 7.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM4 20.5a8 8 0 0 1 16 0',
+    'M9 11.5h6M8 14.5h8',
   ],
   chat: [
     'M5 6.5h10.5A2.5 2.5 0 0 1 18 9v5a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16.5H5A2.5 2.5 0 0 1 2.5 14V9A2.5 2.5 0 0 1 5 6.5Z',
   ],
+  editors: [
+    'M14 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H17A1.5 1.5 0 0 0 18.5 18v-8',
+    'm13.5 12.5 6-6M16 6.5h3.5V10',
+  ],
   automation: [
     'M5 19.5h.01M5 12a7.5 7.5 0 0 1 7.5 7.5M5 5a14.5 14.5 0 0 1 14.5 14.5',
   ],
-  build: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
+  'public-api': [
+    'M5 6.5h14A1.5 1.5 0 0 1 20.5 8v10A1.5 1.5 0 0 1 19 19.5H5A1.5 1.5 0 0 1 3.5 18V8A1.5 1.5 0 0 1 5 6.5Z',
+    'M8 11.5h8M8 15h5',
+  ],
+  cli: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
+  sdk: [
+    'M4.5 8.5 12 4l7.5 4.5v7L12 20l-7.5-4.5v-7Z',
+    'M12 12v8M4.5 8.5 12 12l7.5-3.5',
+  ],
+  'oauth-apps': [
+    'M5 7.5h6.5A1.5 1.5 0 0 1 13 9v9.5A1.5 1.5 0 0 1 11.5 20H5A1.5 1.5 0 0 1 3.5 18.5V9A1.5 1.5 0 0 1 5 7.5Z',
+    'M14.5 4.5H19A1.5 1.5 0 0 1 20.5 6v9A1.5 1.5 0 0 1 19 16.5h-4.5',
+  ],
   'api-keys': [
     'M7.5 21a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Z',
     'm21 2-9.6 9.6',
     'm15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4',
   ],
-  developers: ['m8 8-4 4 4 4M16 8l4 4-4 4M13.6 5.5l-3.2 13'],
   'approved-apps': [
     'M9 12.5l2.5 2.5 5-5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
   ],
@@ -140,43 +158,137 @@ const ApiKeyMissingNote: FC = () => {
   );
 };
 
+const ToolChip: FC<{ name: string }> = ({ name }) => (
+  <span className="inline-flex w-fit items-center rounded-[5px] bg-pqBrandSoft px-[7px] py-[2px] font-mono text-[10.5px] font-[600] tracking-[0.02em] text-pqFocused">
+    {name}
+  </span>
+);
+
+const TerminalFrame: FC<{
+  title: string;
+  children: ReactNode;
+}> = ({ title, children }) => (
+  <div className="overflow-hidden rounded-pqLg bg-pqBg shadow-[inset_0_0_0_1px_var(--border)]">
+    <div className="flex items-center gap-[7px] border-b border-pqLine px-[12px] py-[8px]">
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="h-[7px] w-[7px] rounded-full bg-pqMuted/45" />
+      <span className="ms-[4px] text-[11px] font-[600] text-pqMuted">{title}</span>
+    </div>
+    <div className="p-[14px_16px] font-mono text-[12.5px] leading-[1.65] text-pqText">
+      {children}
+    </div>
+  </div>
+);
+
 const ExamplesBlock: FC<{
   kind: ExampleKind;
   examples: Example[];
+  name: string;
   mask?: (text: string) => string;
-}> = ({ kind, examples, mask }) => {
+}> = ({ kind, examples, name, mask }) => {
   const t = useT();
   if (!examples.length) return null;
-  const chatLike = kind === 'chat' || kind === 'skill';
+
+  const heading =
+    kind === 'chat'
+      ? t('conn_examples_chat', 'In chat')
+      : kind === 'bot'
+        ? t('conn_examples_bot', 'Send a message')
+        : kind === 'agent'
+          ? t('conn_examples_agent', 'In the agent')
+          : kind === 'cli'
+            ? t('conn_examples_cli', 'In the terminal')
+            : kind === 'workflow'
+              ? t('conn_examples_flow', 'Example workflows')
+              : t('conn_examples_http', 'Example request');
+
+  const renderTurn = (ex: Example, i: number) => (
+    <div key={`${ex.body}-${i}`} className="flex flex-col gap-[10px]">
+      <div className="flex justify-end">
+        <div className="max-w-[92%] rounded-[16px_16px_6px_16px] bg-pqPop px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
+          {ex.body}
+        </div>
+      </div>
+      {(ex.tool || ex.reply) && (
+        <div className="flex max-w-[92%] flex-col gap-[6px]">
+          <div className="text-[11px] font-[600] text-pqMuted">{name}</div>
+          {!!ex.tool && <ToolChip name={ex.tool} />}
+          {!!ex.reply && (
+            <div className="rounded-[6px_16px_16px_16px] bg-pqSettings px-[14px] py-[10px] text-[13.5px] leading-[1.45] text-pqText">
+              {ex.reply}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-[10px]">
-      <div className="text-[11px] font-[600] uppercase tracking-[0.07em] text-pqMuted">
-        {chatLike
-          ? t('conn_examples_try', 'Try saying')
-          : kind === 'workflow'
-            ? t('conn_examples_flow', 'Example workflows')
-            : kind === 'http' || kind === 'api'
-              ? t('conn_examples_http', 'Example requests')
-              : t('conn_examples_cli', 'Example commands')}
-      </div>
-      {chatLike ? (
-        <div
-          className="flex flex-col items-end gap-[10px] rounded-[18px] p-[20px_18px] shadow-pqE2"
-          style={{
-            backgroundImage:
-              'linear-gradient(135deg, var(--brandSoft) 0%, var(--brand) 55%, var(--focused) 100%)',
-          }}
-        >
-          {examples.map((ex) => (
-            <div
-              key={ex.body}
-              className="flex max-w-[90%] items-center gap-[11px] rounded-[16px] bg-pqOnBrand px-[15px] py-[11px] shadow-pqE1"
-            >
-              <span className="light min-w-0 flex-1 text-[13.5px] leading-[1.45] text-pqText">
-                {ex.body}
-              </span>
-            </div>
-          ))}
+      <div className="text-[15px] font-[600] text-pqText">{heading}</div>
+      {kind === 'chat' || kind === 'bot' ? (
+        <div className="flex flex-col gap-[14px] rounded-pqLg bg-pqInner p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
+          {examples.map(renderTurn)}
+        </div>
+      ) : kind === 'agent' ? (
+        <div className="overflow-hidden rounded-pqLg bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]">
+          <div className="border-b border-pqLine px-[14px] py-[8px] text-[11px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
+            {t('conn_examples_agent_panel', 'Agent')}
+          </div>
+          <div className="flex flex-col gap-[12px] p-[14px]">
+            {examples.map((ex, i) => (
+              <div key={`${ex.body}-${i}`} className="flex flex-col gap-[8px]">
+                <div className="text-[13.5px] leading-[1.5] text-pqText">{ex.body}</div>
+                {!!ex.tool && <ToolChip name={ex.tool} />}
+                {!!ex.reply && (
+                  <div className="text-[13px] leading-[1.5] text-pqMuted">{ex.reply}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : kind === 'cli' ? (
+        <div className="flex flex-col gap-[10px]">
+          {examples.map((ex, i) => {
+            const launch = ex.code && ex.body && !ex.code.includes(' ') ? ex.code : null;
+            const shell = ex.code && (!ex.body || ex.code.includes(' ')) ? ex.code : null;
+            return (
+              <TerminalFrame
+                key={`${ex.code ?? ex.body}-${i}`}
+                title={t('conn_examples_terminal', 'Terminal')}
+              >
+                {launch && (
+                  <div>
+                    <span className="text-pqMuted">$ </span>
+                    {launch}
+                  </div>
+                )}
+                {shell && (
+                  <div>
+                    <span className="text-pqMuted">$ </span>
+                    {mask ? mask(shell) : shell}
+                  </div>
+                )}
+                {!!ex.body && !!launch && (
+                  <div>
+                    <span className="text-pqMuted">{'> '}</span>
+                    {ex.body}
+                  </div>
+                )}
+                {!!ex.tool && (
+                  <div className="pt-[4px]">
+                    <ToolChip name={ex.tool} />
+                  </div>
+                )}
+                {!!ex.reply && (
+                  <pre className="m-0 mt-[6px] whitespace-pre-wrap break-all text-pqMuted">
+                    {mask ? mask(ex.reply) : ex.reply}
+                  </pre>
+                )}
+              </TerminalFrame>
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col gap-[8px]">
@@ -186,9 +298,7 @@ const ExamplesBlock: FC<{
               className="rounded-pqMd bg-pqInner p-[14px_16px] shadow-[inset_0_0_0_1px_var(--border)]"
             >
               {!!ex.title && (
-                <div className="text-[13px] font-[600] text-pqText">
-                  {ex.title}
-                </div>
+                <div className="text-[13px] font-[600] text-pqText">{ex.title}</div>
               )}
               <div
                 className={clsx(
@@ -461,7 +571,8 @@ const CliSetupCallout: FC<{
 
 /**
  * Dual-pane Connect PostQueen marketplace.
- * Desktop fills the viewport. All: Featured four-up, then rail groups of compact cards.
+ * Same card size as Settings (`1040×680`). All: Featured four-up, then
+ * rail groups of compact cards (name + method, no card description).
  */
 // Its own hook, as the repo requires of every SWR call. Same key and options as
 // `organization.selector` so the two share one cache entry rather than each
@@ -546,6 +657,12 @@ export const ConnectPanel: FC<{
     const resolvedNav = resolveConnectNavId(searchParams.get('nav'));
     const connectorId = resolveConnectorId(searchParams.get('connector'));
 
+    if (connectorId === 'oauth') {
+      setNav('oauth-apps');
+      setPicked('');
+      return;
+    }
+
     if (resolvedNav) {
       setNav(resolvedNav);
     }
@@ -555,8 +672,12 @@ export const ConnectPanel: FC<{
       if (found) {
         setPicked(found.id);
         if (!resolvedNav) setNav(defaultNavForConnection(found));
+        return;
       }
     }
+
+    const auto = resolvedNav ? DEVELOP_NAV_ITEM[resolvedNav] : undefined;
+    if (auto) setPicked(auto);
   }, [searchParams, groups, tourHub]);
 
   const syncUrl = useCallback(
@@ -571,11 +692,12 @@ export const ConnectPanel: FC<{
 
   const selectNav = useCallback(
     (id: ConnectNavId) => {
+      const auto = DEVELOP_NAV_ITEM[id] ?? '';
       setNav(id);
-      setPicked('');
+      setPicked(auto);
       setKeyRevealed(false);
       setMobileNavOpen(false);
-      syncUrl(id, '');
+      syncUrl(id, auto);
     },
     [syncUrl]
   );
@@ -591,6 +713,14 @@ export const ConnectPanel: FC<{
   );
 
   const clearPicked = useCallback(() => {
+    if (DEVELOP_NAV_ITEM[nav]) {
+      setNav('all');
+      setPicked('');
+      setKeyRevealed(false);
+      setMobileNavOpen(false);
+      syncUrl('all', '');
+      return;
+    }
     setPicked('');
     setKeyRevealed(false);
     syncUrl(nav, '');
@@ -648,13 +778,16 @@ export const ConnectPanel: FC<{
   const navLabels = useMemo(
     (): Record<ConnectNavId, string> => ({
       all: t('connect_nav_all', 'All'),
-      assistants: t('connect_nav_assistants', 'Assistants'),
       agents: t('connect_nav_agents', 'Agents'),
+      bots: t('connect_nav_bots', 'Bots'),
       chat: t('connect_nav_chat', 'Chat'),
+      editors: t('connect_nav_editors', 'Editors'),
       automation: t('connect_nav_automation', 'Automation'),
-      build: t('connect_nav_build', 'Build'),
+      'public-api': t('connect_nav_public_api', 'Public API'),
+      cli: t('connect_nav_cli', 'CLI'),
+      sdk: t('connect_nav_sdk', 'Node SDK'),
+      'oauth-apps': t('connect_nav_oauth_apps', 'OAuth Apps'),
       'api-keys': t('connect_nav_api_keys', 'API Keys'),
-      developers: t('connect_nav_developers', 'Developers'),
       'approved-apps': t('connect_nav_approved_apps', 'Approved Apps'),
     }),
     [t]
@@ -665,6 +798,13 @@ export const ConnectPanel: FC<{
   const visibleConnectors = useMemo(() => {
     if (!navQuery) return CONNECT_NAV_CONNECTORS;
     return CONNECT_NAV_CONNECTORS.filter(({ id }) =>
+      navLabels[id].toLowerCase().includes(navQuery)
+    );
+  }, [navQuery, navLabels]);
+
+  const visibleDevelop = useMemo(() => {
+    if (!navQuery) return CONNECT_NAV_DEVELOP;
+    return CONNECT_NAV_DEVELOP.filter(({ id }) =>
       navLabels[id].toLowerCase().includes(navQuery)
     );
   }, [navQuery, navLabels]);
@@ -685,18 +825,18 @@ export const ConnectPanel: FC<{
           'Connect once. Then ask, run an agent, or automate.'
         ),
       },
-      assistants: {
-        title: t('connect_hub_assistants', 'Assistants'),
-        blurb: t(
-          'connect_hub_assistants_blurb',
-          'Claude, ChatGPT, Grok, Grok Bot, Cursor and Gemini. One MCP URL, 14 tools.'
-        ),
-      },
       agents: {
         title: t('connect_hub_agents', 'Agents'),
         blurb: t(
           'connect_hub_agents_blurb',
-          'OpenClaw is a chat bot you host. Claude Code, Grok Build and Codex run in a coding session.'
+          'Coding agents you run in an editor or a terminal. Claude Code, Codex, Cursor, Grok Build, Muse Code.'
+        ),
+      },
+      bots: {
+        title: t('connect_hub_bots', 'Bots'),
+        blurb: t(
+          'connect_hub_bots_blurb',
+          'Bots you host or message. OpenClaw, Grok Bot, Hermes, and Muse.'
         ),
       },
       chat: {
@@ -706,18 +846,18 @@ export const ConnectPanel: FC<{
           'Message an agent from WhatsApp, Telegram, Slack or Discord. Publishing channels live under Channels.'
         ),
       },
+      editors: {
+        title: t('connect_hub_editors', 'Editors'),
+        blurb: t(
+          'connect_hub_editors_blurb',
+          'Editor and MCP clients. VS Code, Windsurf, Zed, Gemini CLI, and any other MCP client.'
+        ),
+      },
       automation: {
         title: t('connect_hub_automation', 'Automation'),
         blurb: t(
           'connect_hub_automation_blurb',
           'n8n is live. Zapier and Make official apps are coming soon, HTTP still works today.'
-        ),
-      },
-      build: {
-        title: t('connect_hub_build', 'Build'),
-        blurb: t(
-          'connect_hub_build_blurb',
-          'CLI, Public API, Node SDK and OAuth apps, the same surface every other connection rides.'
         ),
       },
     }),
@@ -891,10 +1031,16 @@ export const ConnectPanel: FC<{
                 </span>
               )}
             </div>
-            <div className="mt-[3px] text-[13.5px] leading-[1.5] text-pqMuted">
-              {item.intro}
-            </div>
           </div>
+        </div>
+
+        <div>
+          <div className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqMuted">
+            {t('conn_what_this_is', 'What this is')}
+          </div>
+          <p className="mt-[6px] text-[14px] leading-[1.65] text-pqText">
+            {item.intro}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-[8px]">
@@ -944,10 +1090,10 @@ export const ConnectPanel: FC<{
         {item.id === 'oauth' && (
           <button
             type="button"
-            onClick={() => selectNav('developers')}
+            onClick={() => selectNav('oauth-apps')}
             className="flex h-[36px] w-fit items-center rounded-pqSm bg-pqBtnSimple px-[14px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
           >
-            {t('connect_open_developers', 'Open Developers')} →
+            {t('connect_open_oauth_apps', 'Open OAuth Apps')} →
           </button>
         )}
 
@@ -983,6 +1129,7 @@ export const ConnectPanel: FC<{
           <ExamplesBlock
             kind={item.exampleKind}
             examples={item.examples}
+            name={item.name}
             mask={maskCode}
           />
         )}
@@ -1017,11 +1164,11 @@ export const ConnectPanel: FC<{
       );
     }
 
-    if (nav === 'developers') {
+    if (nav === 'oauth-apps') {
       return (
         <div>
           <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
-            {t('developers', 'Developers')}
+            {t('connect_nav_oauth_apps', 'OAuth Apps')}
             {/* Upstream 6c1c5dd6: an OAuth app belongs to one organization, and
                 someone with the same email in two of them needs to see which
                 one they are about to create it in. */}
@@ -1071,25 +1218,20 @@ export const ConnectPanel: FC<{
         }
         onClick={() => selectItem(item.id)}
         className={clsx(
-          'flex flex-col gap-[8px] rounded-pqLg bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
+          'flex min-w-0 items-center gap-[10px] rounded-pqLg bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand)]',
           featured ? 'p-[16px]' : 'p-[13px_14px]'
         )}
       >
-        <span className="flex min-w-0 items-center gap-[10px]">
-          <ConnIcon item={item} size={featured ? 'sm' : 'xs'} />
-          <span className="min-w-0 flex-1 truncate text-[14px] font-[600] leading-[1.2] text-pqText">
-            {item.name}
+        <ConnIcon item={item} size={featured ? 'sm' : 'xs'} />
+        <span className="min-w-0 flex-1 truncate text-[14px] font-[600] leading-[1.2] text-pqText">
+          {item.name}
+        </span>
+        {methodChip(item)}
+        {item.soon && (
+          <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
+            {t('conn_soon_short', 'SOON')}
           </span>
-          {methodChip(item)}
-          {item.soon && (
-            <span className="shrink-0 rounded-[5px] bg-pqAmberSoft px-[5px] py-[1px] text-[9px] font-[700] tracking-[0.05em] text-pqAmber">
-              {t('conn_soon_short', 'SOON')}
-            </span>
-          )}
-        </span>
-        <span className="text-[12.5px] leading-[1.4] text-pqMuted">
-          {item.short}
-        </span>
+        )}
       </button>
     );
 
@@ -1149,14 +1291,14 @@ export const ConnectPanel: FC<{
           </div>
         )}
 
-        {nav === 'agents' && (
+        {(nav === 'agents' || nav === 'bots') && (
           <SkillInstallCallout
             apiKey={apiKey}
             keyRevealed={keyRevealed}
             apiUrl={customApiUrl}
           />
         )}
-        {nav === 'build' && (
+        {nav === 'cli' && !picked && (
           <CliSetupCallout
             apiKey={apiKey}
             keyRevealed={keyRevealed}
@@ -1265,6 +1407,55 @@ export const ConnectPanel: FC<{
       </div>
       )}
 
+      {/* Develop */}
+      {visibleDevelop.length > 0 && (
+      <div
+        className={clsx(
+          'flex',
+          mobile
+            ? 'flex-row flex-nowrap items-center gap-[6px] overflow-x-auto pt-[2px]'
+            : 'flex-col gap-[1px] border-t border-pqLine pt-[12px]'
+        )}
+      >
+        <div
+          className={clsx(
+            'text-[10.5px] font-[600] uppercase tracking-[0.07em] text-pqMuted',
+            mobile ? 'shrink-0 px-[2px]' : 'px-[9px] pb-[5px]'
+          )}
+        >
+          {t('connect_nav_develop', 'Develop')}
+        </div>
+        {visibleDevelop.map(({ id }) =>
+          mobile ? (
+            <button
+              key={id}
+              type="button"
+              onClick={() => selectNav(id)}
+              className={chipClass(id, nav === id)}
+            >
+              {navLabels[id]}
+            </button>
+          ) : (
+            <button
+              key={id}
+              type="button"
+              onClick={() => selectNav(id)}
+              aria-current={id === nav ? 'page' : undefined}
+              className={clsx(
+                navItemBase,
+                id === nav
+                  ? 'bg-[rgba(124,58,237,.15)] font-[600] text-pqFocused'
+                  : 'text-pqMuted'
+              )}
+            >
+              <NavIcon id={id} />
+              <span className="min-w-0 flex-1 truncate">{navLabels[id]}</span>
+            </button>
+          )
+        )}
+      </div>
+      )}
+
       {/* Account */}
       {visibleAccount.length > 0 && (
       <div
@@ -1324,7 +1515,7 @@ export const ConnectPanel: FC<{
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
           ? 'h-full w-full flex-col'
-          : 'h-full w-full rounded-[16px]'
+          : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >
       {/* Left nav / mobile chips, Settings chrome: search above, then groups */}

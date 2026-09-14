@@ -1266,3 +1266,17 @@ so the shared confirm/grid/list CSS can actually size them.
 ## Auth: one screen on every viewport
 
 **i18n -1 (`continue_with_email`).** Phone no longer hides email behind Continue with email. Sign in and Create account show Google (then Apple when `APPLE_CLIENT_ID` is set), or, then email and password on one screen. OTP still replaces only the email block. `DISABLE_REGISTRATION` hides the Create account tab and footer sentence. `scripts/ui-migration-check.sh --update` wrote `i18n.txt`.
+
+## Connect: recategorize by what the thing is
+
+**i18n +4 net.** Dropped Assistants and Build as destinations (`connect_nav_assistants`, `connect_hub_assistants*`, `connect_nav_build`, `connect_hub_build*`, `connect_nav_developers`, `connect_open_developers`, `conn_group_assistants*`, `conn_group_mcp_more*`). Added Bots, Editors, and a Develop rail (`connect_nav_bots`, `connect_nav_editors`, `connect_nav_public_api`, `connect_nav_cli`, `connect_nav_sdk`, `connect_nav_oauth_apps`, `connect_nav_develop`, matching hub/group keys, `connect_open_oauth_apps`).
+
+All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents (Claude Code, Codex, Cursor, Grok Build, Muse Code) sit under Agents. Hosted/message bots (OpenClaw, Grok Bot, Hermes, Muse) sit under Bots. VS Code, Windsurf, Zed, Gemini CLI and Any MCP sit under Editors. Public API, CLI, Node SDK and OAuth Apps are left-nav Develop rows, not Build cards. Hub cards dropped the short description; the intro stays on the detail pane. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: usage examples match the surface
+
+**i18n +22 net.** Dropped the shared three-bubble prompts (`conn_ex_list_channels`, `conn_ex_schedule_launch`, `conn_ex_cross_post`, `conn_examples_try`, `conn_bridge_prompt_*`) and the fake Muse/OAuth examples. Each live client now has its own prompt plus a reply or stdout, rendered as chat, a hosted bot thread, an agent panel, or a terminal, matching how you actually use it. Claude Code is `claude` in a session, not `claude mcp list`. The PostQueen CLI shows `integrations:list` JSON and `posts:create`. The Node SDK shows `new PostQueen` plus `integrations()` / `post()`. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Connect: documentation that matches the real setup
+
+**i18n +34 net.** Detail pane intro is full-width under **What this is**, not cramped next to the icon. Chat cards gained per-app pairing keys (WhatsApp QR, BotFather, Slack/Discord plugins) and dropped the generic `conn_chat_step_channel*` pair. Skill bots now install the CLI as its own step. Codex can `codex mcp add`. Gemini verify is `/mcp`. API / CLI / Zapier notes state which surface can generate video, images, or analytics. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
