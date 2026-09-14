@@ -4,7 +4,9 @@ import {
   FC,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -737,6 +739,15 @@ export const ConnectPanel: FC<{
   const [keyRevealed, setKeyRevealed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const paneRef = useRef<HTMLDivElement>(null);
+
+  // Hub and detail share one overflow pane. Without a reset, opening a card
+  // after scrolling Featured keeps the same scrollTop, so Back / title sit
+  // above the fold and How to connect is the first thing you see.
+  useLayoutEffect(() => {
+    const el = paneRef.current;
+    if (el) el.scrollTop = 0;
+  }, [nav, picked]);
 
   const apiKey = user?.publicApi || '';
   const apiUrl = useMemo(() => absoluteApiUrl(backendUrl), [backendUrl]);
@@ -1879,6 +1890,7 @@ export const ConnectPanel: FC<{
           </div>
         )}
         <div
+          ref={paneRef}
           className={clsx(
             'min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner',
             mobile ? 'p-[20px_16px_32px]' : 'p-[28px_32px_40px]'
