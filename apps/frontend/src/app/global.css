@@ -40,6 +40,30 @@
 @import 'tailwindcss';
 @config '../../tailwind.config.cjs';
 
+/* Tailwind 4 preflight sets `button { cursor: default }`. Connect already
+   patched that locally; every other native `<button>` still looked inert.
+   Base layer, after the import, so it beats preflight. Utilities (`cursor-move`
+   on a drag handle) still win. Text inputs stay the I-beam. */
+@layer base {
+  :is(
+    a[href],
+    button,
+    summary,
+    label[for],
+    select,
+    [role='button'],
+    [type='button'],
+    [type='submit'],
+    [type='reset']
+  ):not(:disabled):not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  :is(button, [type='button'], [type='submit'], [type='reset'], [role='button']):disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
 /* The responsive variants, moved out of the config's `screens` block.
    Tailwind 4's legacy-config bridge cannot express a `raw` media query: it
    wraps whatever it is given in a width comparison and emits

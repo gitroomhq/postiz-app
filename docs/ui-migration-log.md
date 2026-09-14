@@ -1340,3 +1340,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Composer media: corner remove, not three overlay chips
 
 **i18n +1 net.** A 48px attachment cannot hold grab dots, a close chip and an alt/sun control. Hover now leaves the image alone: the whole thumb is the drag handle, and a 16px remove sits on the top-end corner (same hanging-X pattern as the comment composer). Alt text stays in the Media Library ⋯ menu. Dropped `reorder_media` and `media_settings`. Added `copy_debug_json_admin`, `open_link`, `view_post` from the calendar / notification pass that had not updated this baseline. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Buttons look clickable on hover
+
+**i18n 0.** Tailwind 4 preflight leaves `cursor: default` on `<button>`. Connect had a local `[&_button]:cursor-pointer` patch; Channel Edit / Move / Copy / Set up plug did not. One `@layer base` rule after the Tailwind import sets pointer on links, buttons, `[role=button]`, `summary`, `label[for]`, and `select`, and `not-allowed` on disabled. Channel detail rows are the control (no nested CTA button). Set up plug uses `hover:bg-pqBrandHover`.

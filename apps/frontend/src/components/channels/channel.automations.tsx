@@ -135,7 +135,7 @@ const ChannelPlugRow: FC<{
             'h-[30px] self-start rounded-pqSm px-[12px] text-[12.5px] font-[600]',
             data
               ? 'bg-pqBtnSimple text-pqText hover:bg-pqHover'
-              : 'bg-pqBrand text-pqOnBrand'
+              : 'bg-pqBrand text-pqOnBrand hover:bg-pqBrandHover'
           )}
         >
           {data ? t('edit', 'Edit') : t('set_up_plug', 'Set up plug')}
