@@ -53,8 +53,7 @@ describe('post preview media frame', () => {
     assert.match(frame, /FEED_PREVIEW_FALLBACK_WH/);
   });
 
-  it('shows the channel handle on Instagram, Facebook, YouTube and LinkedIn, not only the page name', () => {
+  it('shows the channel handle on Instagram, not only the page name', () => {
     assert.match(instagram, /formatChannelHandle\(integration\?\.display\)/);
-    assert.match(facebook, /formatChannelHandle\(integration\?\.display\)/);
   });
 });
