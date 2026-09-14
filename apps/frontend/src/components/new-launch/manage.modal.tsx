@@ -1019,7 +1019,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       </div>
       {/* Only when the provider above is mounted — same answer, same hook —
           otherwise show the discoverability shell. */}
-      {aiOk ? (
+      {/* Floating Copilot / "configure AI" chip sits over the stacked
+          touch footer. The editor already has Draft with your AI inline. */}
+      {!touch &&
+        (aiOk ? (
         <CopilotPopup
           hitEscapeToClose={false}
           clickOutsideToClose={true}
@@ -1070,7 +1073,7 @@ After using the addPostFor{num} it will create a new addPostContentFor{num+ 1} f
             />
           </svg>
         </NextLink>
-      )}
+      ))}
     </div>
   );
 };

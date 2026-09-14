@@ -43,6 +43,7 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /composerPane/);
     assert.match(manage, /setComposerPane\('preview'\)/);
     assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
+    assert.match(manage, /!touch &&/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });
 
