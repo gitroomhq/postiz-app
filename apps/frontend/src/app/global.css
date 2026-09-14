@@ -1321,16 +1321,18 @@ html[dir='rtl'] .lbox {
   }
 }
 
-/* Toast entry. Paired with the -50% X translate the toast already carries, so
-   the keyframe has to restate it or the toast jumps left as it animates. */
+/* Toast / drop-in entry. Y-only: the toaster is `fixed` + `end-[24px]`, not
+   centered with `translateX(-50%)`. Restating a -50% X translate here used to
+   park the toast left of its final slot for 0.24s, then snap it right when the
+   animation (no `forwards`) dropped the transform. */
 @keyframes pqfadeDown {
   from {
     opacity: 0;
-    transform: translate(-50%, -16px);
+    transform: translateY(-16px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 
