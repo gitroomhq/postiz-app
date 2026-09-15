@@ -448,7 +448,7 @@ export class IntegrationService {
     const getIntegration = await this.getIntegrationById(org.id, integration);
 
     if (!getIntegration) {
-      throw new Error('Invalid integration');
+      throw new HttpException('Integration not found', HttpStatus.NOT_FOUND);
     }
 
     if (getIntegration.type !== 'social') {
