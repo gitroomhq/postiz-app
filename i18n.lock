@@ -579,7 +579,14 @@ checksums:
     email_address: 0ee22bbbe989a0c61a18023407d12dc2
     email_already_exists: ad25f0ca7a16c0d37e566a9c090a0fd2
     google: 6cc462fb53d90d404f48d5a6695c1de1
+    apple: 4e2ced07ca66bd1cf0562882d019aff2
     farcaster: b09af25fcb497663e8594b9fc514b969
+    farcaster_approve_instructions: 97061425f4de396ed7fdbca1f59fe702
+    farcaster_open_in_farcaster: cc32bd29fef8129fbd9a30385b163c49
+    farcaster_waiting_for_approval: 2ee1cd6c0ff8d0db1a4924c08b80e498
+    farcaster_signer_revoked: 0eff3e12951a952f8db78f54be25cf2d
+    farcaster_signer_failed: d3274186449d73fb6ffb37b2f47bb9d4
+    farcaster_approval_timeout: 2a434e0962661820d56dba28a88ec18d
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9
     webhook_deleted_successfully: fcefd247ec76a372002d2cffac3c5b0f
@@ -697,10 +704,31 @@ checksums:
     connected_channels: b64d400364bb3ccb4b1d4b547673f4c3
     continue: 3cfba90b4600131e82fc4260c568d044
     continue_without_channels: fa9c2e19c59e2eac86c1fcac35611337
+    connect_agents: 3272e6e7b043cd9bd5626dc57892b4b2
+    connect_your_ai_agent: 29cfdf27911e816ade81f5dc3ba948eb
+    connect_agent_description: 087b814876d35ea71d2f63d54cc39788
+    agent_access_unavailable: 80a529742f86d7cacb9bb44d5e06be04
+    sign_in_no_api_key: b17680d7465d120632114d25217e0e2e
+    oauth_sign_in_hint: 92797174fbc54b56b7c81f485dc9008b
+    add_to_cursor: da1a4472a29f82361b48e26842c05a0e
+    cli: 6bfaaf925aa1c902820f2059a234e467
+    other_agents: e85458e10eb4bd29157a1f77568a3845
+    documentation: 1563fcb5ddb5037b0709ccd3dd384a92
+    read_the_api_docs: 016e8f560539f8c57727cab2b2e4fc1d
+    api_key_onboarding_description: 426162950cd838b5ebd90d22151ae4b0
+    api_onboarding_description: 97cc31ad6bfe6ef3f479e72987ea69a4
+    chat: 1171b63c16b3431dca319af1804de2a0
+    chat_onboarding_description: 9da74037342cd6adb283e8205299b986
+    connector: 7abb5584501ce0e3cc51ba19f0561ca8
+    connector_onboarding_description: eb8027296b46bf58475f6b4925bd6351
+    mcp_onboarding_description: 5b33036d174222d86ac50039a3a31724
+    cli_onboarding_description: b4aba065e5a8410ee2c365ee4d7aa87c
+    agent_settings_later: bbdd45a80cc5218809363348e0b03a32
     watch_tutorial: 7f202b82c805285109187f099d22e863
     watch_tutorial_title: c3c0d814f10a3325a7fd52a7fb44ae38
     watch_tutorial_description: 25dd65235d9603f6d65d62f953791722
     back: f541015a827e37cb3b1234e56bc2aa3c
+    continue_skip: 82edfa21507a88b8788d33cc632d64af
     get_started: 1d5f030c4ec9c869e647ae060518b948
     kick_select_channel: 13fa95c439addeb6674e571e37c96b79
     annual: 5d4f1c56f4e9e579ec9967ca68cc64ac
