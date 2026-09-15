@@ -103,7 +103,7 @@ export class InstagramProvider
     status: number
   ):
     | {
-        type: 'refresh-token' | 'bad-body' | 'retry';
+        type: 'refresh-token' | 'bad-body' | 'retry' | 'disconnect';
         value: string;
       }
     | undefined {
@@ -327,6 +327,20 @@ export class InstagramProvider
       return {
         type: 'bad-body' as const,
         value: 'Aspect ratio not supported, must be between 4:5 to 1.91:1',
+      };
+    }
+
+    // Meta put the account behind a checkpoint: the token is still valid, so a
+    // refresh cannot help and every post fails until the user logs in on
+    // Instagram and re-connects the channel.
+    if (
+      body.indexOf('You cannot access the app till you log in to') > -1 ||
+      body.indexOf('Session key is malformed') > -1
+    ) {
+      return {
+        type: 'disconnect' as const,
+        value:
+          'Instagram requires you to log in at instagram.com and follow its instructions before posting can resume. After that, please reconnect this channel.',
       };
     }
 

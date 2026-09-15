@@ -68,7 +68,10 @@ export class InstagramStandaloneProvider
     body: string,
     status: number
   ):
-    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | {
+        type: 'refresh-token' | 'bad-body' | 'retry' | 'disconnect';
+        value: string;
+      }
     | undefined {
     return instagramProvider.handleErrors(body, status);
   }
