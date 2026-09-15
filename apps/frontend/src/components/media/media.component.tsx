@@ -203,7 +203,7 @@ const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
-  type?: 'image' | 'video';
+  type?: 'image' | 'image-static' | 'video';
   closeModal: () => void;
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
@@ -236,6 +236,8 @@ export const MediaBox: FC<{
     allowedFileTypes:
       type == 'image'
         ? 'image/*'
+        : type == 'image-static'
+        ? 'image/jpeg,image/png'
         : type == 'video'
         ? 'video/mp4'
         : 'image/*,video/mp4',
@@ -529,6 +531,10 @@ export const MediaBox: FC<{
                   return hasExtension(f.path, 'mp4');
                 } else if (type === 'image') {
                   return !hasExtension(f.path, 'mp4');
+                } else if (type === 'image-static') {
+                  return ['jpg', 'jpeg', 'png'].some((ext) =>
+                    hasExtension(f.path, ext)
+                  );
                 }
                 return true;
               })
@@ -776,6 +782,7 @@ export const MultiMediaComponent: FC<{
                         onClick={async () => {
                           modals.openModal({
                             title: t('media_settings', 'Media Settings'),
+                            size: '720px',
                             children: (close) => (
                               <MediaComponentInner
                                 media={media as any}
