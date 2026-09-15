@@ -25,6 +25,10 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 import {
+  pickPostsPanelTab,
+  postsListHasRows,
+} from '@gitroom/frontend/components/launches/posts-panel-tab';
+import {
   TOUR_DEMO_PICTURE,
   useTourDemo,
   useTourRunning,
@@ -297,6 +301,9 @@ export const CalendarWeekProvider: FC<{
   const [listState, setListStateRaw] = useState<ListStateFilter>('all');
   const [panelListState, setPanelListStateRaw] =
     useState<PanelListStateFilter>('scheduled');
+  // Welcome-tab probe must finish before the list fetch, or Scheduled paints
+  // empty while we still do not know Drafts/Posted have rows.
+  const [panelTabResolved, setPanelTabResolved] = useState(false);
   // Last org|customer scope we auto-pinned (or manually stuck) for the panel.
   const pinnedPanelScope = useRef<string | null>(null);
   // Bumped to drop a stale probe result after a manual tab click.
@@ -369,6 +376,7 @@ export const CalendarWeekProvider: FC<{
       pinnedPanelScope.current = panelPinScope;
       setPanelListStateRaw(next);
       setListPage(0);
+      setPanelTabResolved(true);
     },
     [panelPinScope]
   );
@@ -432,11 +440,15 @@ export const CalendarWeekProvider: FC<{
   // pinnedPanelScope. List toolbar All default is untouched.
   useEffect(() => {
     if (!postsPanelOpen || filters.display === 'list') return;
-    if (pinnedPanelScope.current === panelPinScope) return;
+    if (pinnedPanelScope.current === panelPinScope) {
+      setPanelTabResolved(true);
+      return;
+    }
 
     let cancelled = false;
     const generation = ++panelPinGeneration.current;
     const scopeAtStart = panelPinScope;
+    setPanelTabResolved(false);
 
     const customer = filters?.customer?.toString() || '';
     const probe = async (state: PanelListStateFilter) => {
@@ -453,8 +465,7 @@ export const CalendarWeekProvider: FC<{
       try {
         const response = await fetch(`/posts/list?${params}`);
         if (!response.ok) return false;
-        const data = await response.json();
-        return (data?.total || 0) > 0;
+        return postsListHasRows(await response.json());
       } catch {
         return false;
       }
@@ -465,14 +476,15 @@ export const CalendarWeekProvider: FC<{
       // posts at all has never posted either, and "nothing published yet" is a
       // worse first thing to say than "nothing scheduled yet". The tour's first
       // queue step meets exactly this state.
-      let next: PanelListStateFilter = 'scheduled';
-      if (await probe('scheduled')) next = 'scheduled';
-      else if (await probe('draft')) next = 'draft';
-      else if (await probe('published')) next = 'published';
+      const scheduled = await probe('scheduled');
+      const draft = scheduled ? false : await probe('draft');
+      const published = scheduled || draft ? false : await probe('published');
+      const next = pickPostsPanelTab({ scheduled, draft, published });
       if (cancelled || generation !== panelPinGeneration.current) return;
       pinnedPanelScope.current = scopeAtStart;
       setPanelListStateRaw(next);
       setListPage(0);
+      setPanelTabResolved(true);
     })();
 
     return () => {
@@ -506,7 +518,7 @@ export const CalendarWeekProvider: FC<{
     isLoading: listIsLoading,
     mutate: mutateList,
   } = useSWR(
-    filters.display === 'list' || postsPanelOpen
+    filters.display === 'list' || (postsPanelOpen && panelTabResolved)
       ? `/posts-list-${listParams}`
       : null,
     loadListData,
@@ -889,7 +901,9 @@ export const CalendarWeekProvider: FC<{
         signature: sign,
         // List view specific
         listPosts,
-        listLoading: listIsLoading,
+        listLoading:
+          listIsLoading ||
+          (postsPanelOpen && filters.display !== 'list' && !panelTabResolved),
         listPage,
         listTotalPages,
         listTotal,
