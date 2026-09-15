@@ -22,12 +22,14 @@ import { CopilotPopup, useChatContext } from '@copilotkit/react-ui';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 import { CloseIcon } from '@gitroom/frontend/components/ui/icons';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 const COPILOT_DESKTOP_PX = 640;
 
-const triggerClassName = (open: boolean) =>
+const triggerClassName = (open: boolean, touch = false) =>
   clsx(
-    'flex h-[42px] shrink-0 items-center gap-[8px] rounded-[10px] border-0 bg-btnSimple px-[16px] text-[14px] font-[600] text-pqText transition-colors hover:bg-pqHover',
+    'flex shrink-0 items-center gap-[8px] rounded-[10px] border-0 bg-btnSimple px-[16px] text-[14px] font-[600] text-pqText transition-colors hover:bg-pqHover',
+    touch ? 'h-[44px] w-full justify-center' : 'h-[42px]',
     open &&
       'bg-pqBrandSoft shadow-[inset_0_0_0_1px_var(--focused)] hover:bg-pqBrandSoft'
   );
@@ -69,6 +71,7 @@ const ComposeAiTriggerFace: FC<{
  */
 const ComposeAiPopupButton: FC = () => {
   const t = useT();
+  const { touch } = useViewport();
   const { open, setOpen } = useChatContext();
   const label = t('your_assistant', 'AI assistant');
   return (
@@ -78,7 +81,7 @@ const ComposeAiPopupButton: FC = () => {
       aria-expanded={open}
       aria-label={label}
       onClick={() => setOpen(!open)}
-      className={triggerClassName(open)}
+      className={triggerClassName(open, touch)}
     >
       <ComposeAiTriggerFace open={open} />
     </button>
@@ -208,6 +211,7 @@ function usePinCopilotWindow(
  */
 export const ComposeAiAssistant: FC = () => {
   const t = useT();
+  const { touch } = useViewport();
   const aiOk = useAiAvailable();
   const hostRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -270,7 +274,7 @@ export const ComposeAiAssistant: FC = () => {
           data-tooltip-id="tooltip"
           data-tooltip-content={unconfiguredTip}
           aria-label={label}
-          className={triggerClassName(false)}
+          className={triggerClassName(false, touch)}
         >
           <ComposeAiTriggerFace open={false} />
         </NextLink>

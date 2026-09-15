@@ -46,11 +46,26 @@ describe('phone calendar and composer', () => {
   it('splits composer into Edit and Preview panes on phone and tablet', () => {
     assert.match(manage, /composerPane/);
     assert.match(manage, /setComposerPane\('preview'\)/);
-    assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
+    assert.match(manage, /COMPOSER_SPLIT_MIN = 1024/);
+    assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row'/);
     assert.match(manage, /flex min-h-0 flex-1/);
-    assert.match(manage, /!touch &&/);
     assert.match(manage, /<ComposeAiAssistant \/>/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
+  });
+
+  it('lets desktop maximize the composer to the viewport', () => {
+    assert.match(manage, /ExpandIcon/);
+    assert.match(manage, /RestoreIcon/);
+    assert.match(manage, /t\('full_screen', 'Full screen'\)/);
+    assert.match(manage, /fixed inset-0 z-\[401\]/);
+  });
+
+  it('uses a three-step Write / Preview / Post flow on phone', () => {
+    assert.match(manage, /'schedule'/);
+    assert.match(manage, /phoneFlow/);
+    assert.match(manage, /t\('write', 'Write'\)/);
+    assert.match(manage, /t\('schedule', 'Schedule'\)/);
+    assert.match(manage, /data-pq="composer"/);
   });
 
   it('keeps X/general preview photos inside a feed aspect frame', () => {
@@ -75,7 +90,6 @@ describe('phone calendar and composer', () => {
   it('keeps the composer footer from overlapping on phone and tablet', () => {
     assert.match(manage, /grid w-full grid-cols-2/);
     assert.match(manage, /t\('select_channels', 'Select channels'\)/);
-    assert.match(manage, /max-\[1179px\]:!ml-0 max-\[1179px\]:w-full max-\[1179px\]:!flex-none/);
     const tags = readFileSync(
       fileURLToPath(new URL('./tags.component.tsx', import.meta.url)),
       'utf8',

@@ -1148,6 +1148,7 @@ ft_thanks_founding
 ft_thanks_plan
 ft_title_founding
 ft_title_plan
+full_screen
 generate
 generate_ai_image
 generate_image
@@ -1644,6 +1645,7 @@ researching_your_content
 resend_activation_email
 resend_available_in
 resend_code
+restore
 resume_publishing_to_this_channel
 retry
 reveal
@@ -1951,6 +1953,7 @@ what_do_you_want_to_do
 whats_new
 workspace
 would_you_mind_shortly_tell_us_what_we_could_have_done_better
+write
 write_anything
 write_something
 write_your_post_placeholder
