@@ -1374,3 +1374,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Analytics: workspace charts and post-performance copy
 
 **i18n +17 net.** Added the channel-mix, daily-chart, weekday, engagement-mix, follower, metric-availability, and workspace chart-hint keys used by the new analytics dashboard. Removed the superseded generic `summary`, `no_top_posts_hint`, and `no_post_performance_hint` keys. This is an intentional copy-set change for the analytics workspace and responsive post-performance views. `scripts/ui-migration-check.sh --update` changed `i18n.txt` only.
+
+## Analytics: unknown metrics are visually absent
+
+**i18n -1 (`metric_not_available`).** A dot labeled “Not available” still rendered a visible value for an unknown metric. Missing post fields now leave the table cell empty and mobile omits the metric chip, matching the analytics contract: null is unknown, never a dash or a synthetic zero. `scripts/ui-migration-check.sh --update` changed `i18n.txt` only.

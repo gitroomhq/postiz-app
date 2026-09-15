@@ -1420,7 +1420,6 @@ media_upload_failed
 member_added
 menu
 merge_comments_into_one_post
-metric_not_available
 minutes
 moltbook_claim_instructions
 moltbook_register_description
