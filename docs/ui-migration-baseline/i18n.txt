@@ -1455,6 +1455,7 @@ no_media_found
 no_media_library_integrations_description
 no_missing_content
 no_notifications
+no_notifications_hint
 no_original_urls
 no_pickable_channels
 no_plugs_for_these_channels
@@ -1486,6 +1487,8 @@ one_selected
 only_option_to_connect
 open_auto_plugs
 open_billing_portal
+open_calendar
+open_channel
 open_claim_page
 open_connections
 open_link

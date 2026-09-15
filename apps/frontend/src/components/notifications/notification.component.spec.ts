@@ -16,4 +16,14 @@ describe('notification panel rows', () => {
     assert.match(source, /view_post/);
     assert.doesNotMatch(source, /dangerouslySetInnerHTML/);
   });
+
+  it('uses readable Mark all read colour and distinct error/warning icons', () => {
+    assert.match(source, /text-pqFocused/);
+    assert.match(source, /kind === 'fail'/);
+    assert.match(source, /kind === 'warning'/);
+    assert.match(source, /bg-pqDanger/);
+    assert.match(source, /bg-pqAmber/);
+    assert.match(source, /t\('reconnect'/);
+    assert.doesNotMatch(source, /text-pqBrand/);
+  });
 });

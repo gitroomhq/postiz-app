@@ -638,7 +638,8 @@ export class PostActivity {
             }. Open the post on your calendar to see the details.`,
         true,
         false,
-        lapsed ? 'info' : 'fail'
+        lapsed ? 'info' : 'fail',
+        lapsed ? '/billing' : '/launches'
       );
     } catch (e) {
       // Never let the notification take down the state change itself.

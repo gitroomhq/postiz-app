@@ -98,11 +98,15 @@ describe('Channels added= focus contract', () => {
   it('waits for a matching row and does not fall back to list[0]', () => {
     assert.match(
       channelsSource,
-      /selectAddedIntegration\(\s*list,\s*addedProvider,\s*searchParams\.get\('focus'\)/,
+      /selectAddedIntegration\(\s*list,\s*providerHint,\s*focusId/,
     );
+    assert.match(channelsSource, /searchParams\.get\('channel'\)/);
     assert.match(channelsSource, /if \(!match\?\.id\) \{/);
     assert.match(channelsSource, /void mutate\(\)\.finally/);
-    assert.match(channelsSource, /stripChannelQuery\(\['added', 'msg', 'focus'\]\)/);
+    assert.match(
+      channelsSource,
+      /stripChannelQuery\(\['added', 'msg', 'focus', 'channel'\]\)/,
+    );
     assert.doesNotMatch(
       channelsSource,
       /else if \(list\[0\]\?\.id\) \{\s*setSelected\(list\[0\]\.id\)/,

@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import Link from 'next/link';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useClickAway } from '@uidotdev/usehooks';
@@ -18,22 +19,127 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
-import { splitNotificationContent } from '@gitroom/frontend/components/notifications/notification.look';
+import {
+  NotificationAction,
+  NotificationKind,
+  splitNotificationContent,
+} from '@gitroom/frontend/components/notifications/notification.look';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
+
+const NotificationKindIcon: FC<{ kind: NotificationKind; unread: boolean }> = ({
+  kind,
+  unread,
+}) => {
+  if (kind === 'success') {
+    return (
+      <span
+        className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqOk text-white"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
+          <path
+            d="M2.4 6.2 4.8 8.6 9.6 3.4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (kind === 'fail') {
+    return (
+      <span
+        className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqDanger text-white"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 12 12" width="9" height="9" fill="none">
+          <path
+            d="M3 3l6 6M9 3 3 9"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (kind === 'warning') {
+    return (
+      <span
+        className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqAmber text-white"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
+          <path
+            d="M6 2.4 10.4 10H1.6L6 2.4Z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M6 5.2v2.2"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+          <circle cx="6" cy="8.7" r="0.55" fill="currentColor" />
+        </svg>
+      </span>
+    );
+  }
+  return (
+    <span
+      className={clsx(
+        'mt-[6px] size-[6px] shrink-0 rounded-full',
+        unread ? 'bg-pqBrand' : 'bg-transparent'
+      )}
+      aria-hidden="true"
+    />
+  );
+};
+
+function actionLabel(
+  action: NotificationAction,
+  t: ReturnType<typeof useT>
+): string | null {
+  if (action === 'view_post') {
+    return t('view_post', 'View post');
+  }
+  if (action === 'reconnect') {
+    return t('reconnect', 'Reconnect');
+  }
+  if (action === 'open_channel') {
+    return t('open_channel', 'Open channel');
+  }
+  if (action === 'open_billing') {
+    return t('go_to_billing', 'Go to billing');
+  }
+  if (action === 'open_calendar') {
+    return t('open_calendar', 'Open calendar');
+  }
+  if (action === 'open_link') {
+    return t('open_link', 'Open link');
+  }
+  return null;
+}
 
 export const ShowNotification: FC<{
   notification: {
     id: string;
     createdAt: string;
     content: string;
+    link?: string | null;
   };
   /** Frozen lastRead from when the popover first loaded list data this open. */
   unreadCutoff: string;
   /** Local clear from "Mark all read". */
   forceRead?: boolean;
+  onNavigate?: () => void;
 }> = (props) => {
-  const { notification, forceRead, unreadCutoff } = props;
+  const { notification, forceRead, unreadCutoff, onNavigate } = props;
   const unread =
     !forceRead &&
     new Date(notification.createdAt) > new Date(unreadCutoff);
@@ -42,52 +148,21 @@ export const ShowNotification: FC<{
   const { mediumDateTimePattern } = useDateFormat();
   const t = useT();
   const fullDate = createdAt.format(mediumDateTimePattern());
-  const { text, url, kind } = splitNotificationContent(notification.content);
+  const { text, url, kind, action, external } = splitNotificationContent(
+    notification.content,
+    notification.link
+  );
+  const label = actionLabel(action, t);
+  const ctaClass =
+    'mt-[6px] inline-flex h-[26px] items-center rounded-[7px] bg-pqBrandSoft px-[10px] text-[12px] font-[600] text-pqFocused hover:bg-pqBoxFocused';
   return (
     <div
       className={clsx(
-        'flex gap-[10px] border-b border-pqLine px-[16px] py-[11px] last:border-b-0',
+        'flex gap-[10px] border-b border-pqLine px-[16px] py-[12px] last:border-b-0',
         unread ? 'bg-pqBrandSoft' : 'bg-transparent'
       )}
     >
-      {kind === 'success' ? (
-        <span
-          className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqOk text-white"
-          aria-hidden="true"
-        >
-          <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
-            <path
-              d="M2.4 6.2 4.8 8.6 9.6 3.4"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      ) : kind === 'fail' ? (
-        <span
-          className="mt-[2px] grid size-[18px] shrink-0 place-items-center rounded-full bg-pqDanger text-white"
-          aria-hidden="true"
-        >
-          <svg viewBox="0 0 12 12" width="9" height="9" fill="none">
-            <path
-              d="M3 3l6 6M9 3 3 9"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
-        </span>
-      ) : (
-        <span
-          className={clsx(
-            'mt-[6px] size-[6px] shrink-0 rounded-full',
-            unread ? 'bg-pqBrand' : 'bg-transparent'
-          )}
-          aria-hidden="true"
-        />
-      )}
+      <NotificationKindIcon kind={kind} unread={unread} />
       <div className="min-w-0 flex-1 overflow-hidden">
         <div
           className={clsx(
@@ -97,21 +172,32 @@ export const ShowNotification: FC<{
         >
           {text}
         </div>
-        {url && (
-          <a
-            href={url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="mt-[4px] inline-flex text-[12.5px] font-[600] text-pqBrand hover:underline"
-          >
-            {kind === 'success'
-              ? t('view_post', 'View post')
-              : t('open_link', 'Open link')}
-          </a>
+        {url && label && (
+          external ? (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={ctaClass}
+            >
+              {label}
+            </a>
+          ) : (
+            <Link
+              href={url}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate?.();
+              }}
+              className={ctaClass}
+            >
+              {label}
+            </Link>
+          )
         )}
         <div
-          className="mt-[3px] text-[11.5px] font-normal text-pqSoft"
+          className="mt-[4px] text-[11.5px] font-normal text-pqSoft"
           title={isWithin24h ? fullDate : undefined}
         >
           {isWithin24h ? createdAt.fromNow() : fullDate}
@@ -131,9 +217,18 @@ export const NotificationOpenComponent = forwardRef<
     unreadCutoff: string | null;
     onUnreadCutoff: (cutoff: string) => void;
     embedded?: boolean;
+    onNavigate?: () => void;
   }
 >(function NotificationOpenComponent(
-  { markedAllRead, onMarkAllRead, listSession, unreadCutoff, onUnreadCutoff, embedded },
+  {
+    markedAllRead,
+    onMarkAllRead,
+    listSession,
+    unreadCutoff,
+    onUnreadCutoff,
+    embedded,
+    onNavigate,
+  },
   ref
 ) {
   const fetch = useFetch();
@@ -189,7 +284,7 @@ export const NotificationOpenComponent = forwardRef<
     >
       <div className="flex items-center border-b border-pqLine px-[16px] py-[12px]">
         {!embedded && (
-          <span className="flex-1 text-[14px] font-[600]">
+          <span className="flex-1 text-[14px] font-[600] text-pqText">
             {t('notifications', 'Notifications')}
           </span>
         )}
@@ -198,11 +293,11 @@ export const NotificationOpenComponent = forwardRef<
           onClick={onMarkAllRead}
           disabled={!hasUnread}
           className={clsx(
-            'border-0 bg-transparent font-inherit text-[12.5px] text-pqBrand',
+            'border-0 bg-transparent font-inherit text-[12.5px] font-[600]',
             embedded && 'ms-auto',
             hasUnread
-              ? 'cursor-pointer hover:underline'
-              : 'cursor-default opacity-40'
+              ? 'cursor-pointer text-pqFocused hover:underline'
+              : 'cursor-default text-pqSoft'
           )}
         >
           {t('mark_all_read', 'Mark all read')}
@@ -221,8 +316,16 @@ export const NotificationOpenComponent = forwardRef<
           </div>
         )}
         {!isLoading && !data?.notifications?.length && (
-          <div className="mt-[20px] flex flex-1 items-center justify-center p-[16px] text-center text-pqSoft">
-            {t('no_notifications', 'No notifications')}
+          <div className="mt-[20px] flex flex-1 flex-col items-center justify-center gap-[6px] p-[24px] text-center text-pqSoft">
+            <span className="text-[13.5px] font-[600] text-pqMuted">
+              {t('no_notifications', 'No notifications')}
+            </span>
+            <span className="text-[12px]">
+              {t(
+                'no_notifications_hint',
+                'Publish, reconnect, and billing updates will show up here.'
+              )}
+            </span>
           </div>
         )}
         {/* `data?.notifications?.length` three lines up is the safe form; this
@@ -236,11 +339,13 @@ export const NotificationOpenComponent = forwardRef<
               id: string;
               createdAt: string;
               content: string;
+              link?: string | null;
             }) => (
               <ShowNotification
                 notification={notification}
                 unreadCutoff={unreadCutoff}
                 forceRead={markedAllRead}
+                onNavigate={onNavigate}
                 key={notification.id}
               />
             )
@@ -300,6 +405,7 @@ const NotificationComponent = () => {
   const onUnreadCutoff = useCallback((cutoff: string) => {
     setUnreadCutoff(cutoff);
   }, []);
+  const close = useCallback(() => setShow(false), []);
   const ref = useClickAway<HTMLDivElement>(() => {
     if (!touch) setShow(false);
   });
@@ -330,7 +436,7 @@ const NotificationComponent = () => {
           aria-hidden="true"
         >
           <path
-            d="M14 21H10M18 8C18 6.4087 17.3679 4.88258 16.2427 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.8826 2.63214 7.75738 3.75736C6.63216 4.88258 6.00002 6.4087 6.00002 8C6.00002 11.0902 5.22049 13.206 4.34968 14.6054C3.61515 15.7859 3.24788 16.3761 3.26134 16.5408C3.27626 16.7231 3.31488 16.7926 3.46179 16.9016C3.59448 17 4.19261 17 5.38887 17H18.6112C19.8074 17 20.4056 17 20.5382 16.9016C20.6852 16.7926 20.7238 16.7231 20.7387 16.5408C20.7522 16.3761 20.3849 15.7859 19.6504 14.6054C18.7795 13.206 18 11.0902 18 8Z"
+            d="M14 21H10M18 8C18 6.4087 17.3679 4.88258 16.2427 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.8826 2.63214 7.75738 3.75736C6.63216 6.4087 6.00002 8C6.00002 11.0902 5.22049 13.206 4.34968 14.6054C3.61515 15.7859 3.24788 16.3761 3.26134 16.5408C3.27626 16.7231 3.31488 16.7926 3.46179 16.9016C3.59448 17 4.19261 17 5.38887 17H18.6112C19.8074 17 20.4056 17 20.5382 16.9016C20.6852 16.7926 20.7238 16.7231 20.7387 16.5408C20.7522 16.3761 20.3849 15.7859 19.6504 14.6054C18.7795 13.206 18 11.0902 18 8Z"
             stroke="currentColor"
             strokeWidth="1.6"
             strokeLinecap="round"
@@ -348,7 +454,7 @@ const NotificationComponent = () => {
         (touch ? (
           <MobileSheet
             open={show}
-            onClose={() => setShow(false)}
+            onClose={close}
             title={t('notifications', 'Notifications')}
           >
             <NotificationOpenComponent
@@ -357,6 +463,7 @@ const NotificationComponent = () => {
               listSession={listSession}
               unreadCutoff={unreadCutoff}
               onUnreadCutoff={onUnreadCutoff}
+              onNavigate={close}
               embedded
             />
           </MobileSheet>
@@ -368,6 +475,7 @@ const NotificationComponent = () => {
             listSession={listSession}
             unreadCutoff={unreadCutoff}
             onUnreadCutoff={onUnreadCutoff}
+            onNavigate={close}
           />
         ))}
     </div>

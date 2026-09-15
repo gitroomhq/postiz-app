@@ -466,7 +466,10 @@ export class AutopostService {
         orgId,
         'Autopost saved drafts instead of publishing',
         `These channels could not publish automatically: ${names}`,
-        false
+        false,
+        false,
+        'fail',
+        '/launches'
       );
     }
   }
@@ -523,7 +526,10 @@ export class AutopostService {
         getPost.organizationId,
         'Autopost has no channel to post to',
         `"${getPost.title}" found a new item but none of its channels are usable. Reconnect or pick different channels.`,
-        false
+        false,
+        false,
+        'fail',
+        '/channels'
       );
       return;
     }
@@ -581,7 +587,10 @@ export class AutopostService {
         `"${getPost.title}" found a new item but could not schedule it: ${
           (err as Error)?.message || 'unknown error'
         }. The next item will be picked up normally.`,
-        false
+        false,
+        false,
+        'fail',
+        '/launches'
       );
       throw err;
     }

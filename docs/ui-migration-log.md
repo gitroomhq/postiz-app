@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Notification panel: contrast, Reconnect, and typed CTAs.** Dark-theme Mark all read used `--brand` (#7c3aed) on `--inner` (~3.3:1). It now uses `--focused`. Refresh-token errors stored `$FRONTEND_URL/launches` and the row said "Open link" as if the channel were a published post. New copy is reconnect-toned, the CTA is Reconnect, and it lands on `/channels?channel=&focus=` so that channel is selected. Existing rows with the old blob are rewritten in the panel. Error/warning rows get a left-side icon distinct from the publish-success check. i18n +3 (`open_channel`, `open_calendar`, `no_notifications_hint`). `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
 **Calendar Posts rail opens on a tab that actually has rows.** The welcome probe read `total` on a minified `/posts/list` body (`t`), so every tab looked empty and the rail stayed on Scheduled. It now expands that payload and picks scheduled → drafts → posted → scheduled, and holds the list fetch until that pick lands so the rail does not flash empty. i18n 0.
 
 **Deleting a post left the row on screen until a full reload.** Toast said it was gone because DELETE succeeded, but the list/calendar SWR hooks only bound-mutated the fetch that is currently keyed — the other view is `null` and `keepPreviousData` kept the row. Delete now drops the group from every `/posts-` cache immediately, then revalidates. i18n 0.

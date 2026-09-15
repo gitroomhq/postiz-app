@@ -29,3 +29,23 @@ export function oauthReturnPath(opts: {
   const qs = params.toString();
   return qs ? `/channels?${qs}` : '/channels';
 }
+
+/**
+ * Deep-link a notification (refresh error, reconnect needed) onto Channels.
+ * `channel` is the provider identifier; `focus` is the integration UUID.
+ * Distinct from `added=`, which is the OAuth-success toast path.
+ */
+export function channelFocusPath(opts: {
+  provider?: string;
+  focus?: string;
+}): string {
+  const params = new URLSearchParams();
+  if (opts.provider) {
+    params.set('channel', opts.provider);
+  }
+  if (opts.focus) {
+    params.set('focus', opts.focus);
+  }
+  const qs = params.toString();
+  return qs ? `/channels?${qs}` : '/channels';
+}
