@@ -27,6 +27,7 @@ export interface StatsResponse {
   scheduledAccounts: { total: number; perSocial: PerSocial[] };
   publishingChannels: { total: number; perSocial: PerSocial[] };
   scheduledChannels: { total: number; perSocial: PerSocial[] };
+  activeOrgsBySource: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -212,6 +213,43 @@ export class AdminStatsRepository {
     };
   }
 
+  // Distinct organizations with at least one top-level scheduled, published
+  // or failed post in the range, per creation source (web, API, MCP, ...).
+  // The total is distinct across all sources combined, not a summation.
+  private async sourceStats(params: StatsParams) {
+    const where: Prisma.PostWhereInput = {
+      parentPostId: null,
+      deletedAt: null,
+      publishDate: { gte: params.from, lte: params.to },
+      state: { in: ['QUEUE', 'PUBLISHED', 'ERROR'] },
+    };
+
+    const groups = await this._post.model.post.groupBy({
+      by: ['organizationId', 'creationMethod'],
+      where,
+    });
+
+    const allOrgs = new Set<string>();
+    const orgsBySource = new Map<string, Set<string>>();
+    for (const g of groups) {
+      if (!orgsBySource.has(g.creationMethod)) {
+        orgsBySource.set(g.creationMethod, new Set());
+      }
+      orgsBySource.get(g.creationMethod)!.add(g.organizationId);
+      allOrgs.add(g.organizationId);
+    }
+
+    return {
+      total: allOrgs.size,
+      perSocial: sortDesc(
+        [...orgsBySource.entries()].map(([provider, orgs]) => ({
+          provider,
+          count: orgs.size,
+        }))
+      ),
+    };
+  }
+
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
       deletedAt: null,
@@ -239,12 +277,14 @@ export class AdminStatsRepository {
   }
 
   async getStats(params: StatsParams): Promise<StatsResponse> {
-    const [errors, posts, accounts, connected] = await Promise.all([
-      this.errorStats(params),
-      this.postStats(params),
-      this.accountStats(params),
-      this.connectedStats(params),
-    ]);
+    const [errors, posts, accounts, connected, activeOrgsBySource] =
+      await Promise.all([
+        this.errorStats(params),
+        this.postStats(params),
+        this.accountStats(params),
+        this.connectedStats(params),
+        this.sourceStats(params),
+      ]);
 
     return {
       from: params.from.toISOString(),
@@ -256,6 +296,7 @@ export class AdminStatsRepository {
       scheduledAccounts: accounts.scheduledAccounts,
       publishingChannels: accounts.publishingChannels,
       scheduledChannels: accounts.scheduledChannels,
+      activeOrgsBySource,
     };
   }
 }
