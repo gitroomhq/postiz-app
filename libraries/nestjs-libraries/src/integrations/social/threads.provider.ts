@@ -13,6 +13,8 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
@@ -889,16 +891,22 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
     for (const postId of platformPostIds) {
       try {
+        const response = await this.fetch(
+          `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
         const { data } = await (
-          await fetch(
-            `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`
-          )
+          response
         ).json();
         if (!data || data.length === 0) {
           continue;
         }
         rows.push(mapThreadsInsights(postId, data));
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error fetching Threads posts analytics:', err);
       }
     }

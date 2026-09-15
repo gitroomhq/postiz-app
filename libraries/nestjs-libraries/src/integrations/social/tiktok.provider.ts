@@ -1234,7 +1234,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }
       try {
         const post = await (
-          await fetch(
+          await this.fetch(
             'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
             {
               method: 'POST',
@@ -1245,7 +1245,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               body: JSON.stringify({
                 publish_id: postId,
               }),
-            }
+            },
+            this.identifier
           )
         ).json();
         if (post?.data?.publicaly_available_post_id?.[0]) {
@@ -1254,6 +1255,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           requestedByResolved.set(publicId, postId);
         }
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error resolving TikTok publish id:', err);
       }
     }
@@ -1261,7 +1265,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     const rows: NormalizedPostMetrics[] = [];
     for (const batch of chunk(resolved, 20)) {
       try {
-        const response = await fetch(
+        const response = await this.fetch(
           'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
           {
             method: 'POST',
@@ -1274,7 +1278,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
                 video_ids: batch,
               },
             }),
-          }
+          },
+          this.identifier
         );
         const data = await response.json();
         for (const video of data?.data?.videos || []) {
@@ -1283,6 +1288,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           rows.push(mapTikTokVideoStats(platformPostId, video));
         }
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error fetching TikTok posts analytics:', err);
       }
     }

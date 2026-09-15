@@ -12,6 +12,8 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -1092,16 +1094,22 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     for (const postId of platformPostIds) {
       try {
+        const response = await this.fetch(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
         const { data } = await (
-          await fetch(
-            `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
-          )
+          response
         ).json();
         if (!data || data.length === 0) {
           continue;
         }
         rows.push(mapFacebookPostInsights(postId, data));
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error fetching Facebook posts analytics:', err);
       }
     }

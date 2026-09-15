@@ -1082,6 +1082,10 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           rows.push(mapYouTubeVideoStatistics(video.id, video.statistics));
         }
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof BadBody) {
+          throw err;
+        }
+        this.throwIfCannotFetch(err);
         console.error('Error fetching YouTube posts analytics:', err);
       }
     }

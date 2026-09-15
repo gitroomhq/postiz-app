@@ -13,6 +13,8 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -1282,16 +1284,22 @@ export class InstagramProvider
 
     for (const postId of platformPostIds) {
       try {
+        const response = await this.fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
         const { data } = await (
-          await fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
-          )
+          response
         ).json();
         if (!data || data.length === 0) {
           continue;
         }
         rows.push(mapInstagramMediaInsights(postId, data));
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error fetching Instagram posts analytics:', err);
       }
     }

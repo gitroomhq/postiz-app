@@ -15,6 +15,7 @@ import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -700,7 +701,7 @@ export class PinterestProvider
 
     for (const postId of platformPostIds) {
       try {
-        const response = await fetch(
+        const response = await this.fetch(
           `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
           {
             method: 'GET',
@@ -708,7 +709,8 @@ export class PinterestProvider
               Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
             },
-          }
+          },
+          this.identifier
         );
         const data = await response.json();
         if (!data?.all?.lifetime_metrics) {
@@ -716,6 +718,9 @@ export class PinterestProvider
         }
         rows.push(mapPinterestLifetimeMetrics(postId, data.all.lifetime_metrics));
       } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
         console.error('Error fetching Pinterest posts analytics:', err);
       }
     }
