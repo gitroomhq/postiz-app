@@ -1,8 +1,12 @@
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Integration } from '@prisma/client';
-import { PendingCheckResponse } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import {
+  AuthTokenDetails,
+  PendingCheckResponse,
+} from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
 import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
@@ -10,6 +14,15 @@ import {
 import sharp from 'sharp';
 import { createReadStream, statSync } from 'fs';
 import { Readable } from 'stream';
+
+export const stripQuery = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (err) {
+    return url.split('?')[0];
+  }
+};
 
 export type ValidityMedia = {
   path: string;
@@ -42,6 +55,27 @@ export class RefreshToken extends ApplicationFailure {
     super(
       truncateForTemporal(message, MAX_FAILURE_MESSAGE),
       'refresh_token',
+      true,
+      [
+        {
+          identifier,
+          json: truncateForTemporal(json, MAX_FAILURE_FIELD),
+          body: truncateForTemporal(body, MAX_FAILURE_FIELD),
+        },
+      ]
+    );
+  }
+}
+
+// A `disconnect` error means the platform will keep rejecting this channel no
+// matter how many times the token is refreshed (e.g. TikTok's daily active
+// user cap): the channel must be disconnected so the user re-connects it,
+// possibly through another provider (see MIGRATE_PROVIDERS).
+export class Disconnect extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(
+      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
+      'disconnect',
       true,
       [
         {
@@ -94,9 +128,25 @@ export abstract class SocialAbstract {
     body: string,
     status: number
   ):
-    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | {
+        type: 'refresh-token' | 'bad-body' | 'retry' | 'disconnect';
+        value: string;
+      }
     | undefined {
     return undefined;
+  }
+
+  /**
+   * When a provider is migrated to another one (MIGRATE_PROVIDERS env), the two
+   * apps return different app-scoped ids, so a reconnect is matched to the
+   * existing channel by profile instead. Override when a provider pair needs a
+   * different matching rule.
+   */
+  public migrationMatch(
+    auth: Pick<AuthTokenDetails, 'id' | 'username'>,
+    integration: Integration
+  ): boolean {
+    return !!auth.username && auth.username === integration.profile;
   }
 
   /**
@@ -179,6 +229,7 @@ export abstract class SocialAbstract {
       path?.indexOf('http') === -1
         ? `${process.env.FRONTEND_URL}/${path}`
         : path;
+    setHeartbeatDetails(`read media ${stripQuery(url)}`);
     const { width = 0, height = 0 } = await sharp(
       await readOrFetch(url)
     ).metadata();
@@ -193,6 +244,7 @@ export abstract class SocialAbstract {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -225,6 +277,9 @@ export abstract class SocialAbstract {
     identifier = ''
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
+      setHeartbeatDetails(
+        `media chunk ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -324,6 +379,10 @@ export abstract class SocialAbstract {
         return this.runStreamedUpload(func, identifier, totalRetries + 1);
       }
 
+      if (handleError?.type === 'disconnect') {
+        throw new Disconnect(identifier, json, '{}', handleError?.value);
+      }
+
       if (
         (status === 401 &&
           (handleError?.type === 'refresh-token' || !handleError)) ||
@@ -376,6 +435,14 @@ export abstract class SocialAbstract {
           value.value || ''
         );
       }
+      if (value.type === 'disconnect') {
+        throw new Disconnect(
+          '',
+          safeStringify(globalErr),
+          {} as any,
+          value.value || ''
+        );
+      }
       throw new BadBody(
         '',
         safeStringify(globalErr),
@@ -395,6 +462,12 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
+    // A platform that accepts the connection and then goes silent leaves the
+    // activity with nothing logged until startToCloseTimeout. Record the call
+    // first so the timeout failure names it. Query string is dropped - some
+    // providers carry access_token there and details are stored by Temporal.
+    setHeartbeatDetails(`fetch ${stripQuery(url)}`);
+
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
@@ -446,6 +519,15 @@ export abstract class SocialAbstract {
         totalRetries + 1,
         ignoreConcurrency,
         handleError?.value || 'Unknown Error'
+      );
+    }
+
+    if (handleError?.type === 'disconnect') {
+      throw new Disconnect(
+        identifier,
+        json,
+        options.body!,
+        handleError?.value
       );
     }
 

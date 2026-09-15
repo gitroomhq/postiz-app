@@ -23,6 +23,8 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
+export const META_GRAPH_API_VERSION = 'v25.0';
+
 @Rules(
   "Facebook posts can be text only, or include photos or a video. If it's a story, it must have at least one attachment (photo or video), and each media is published as a separate story."
 )
@@ -78,6 +80,20 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'refresh-token' as const,
         value: 'Access token has been revoked, please re-authenticate',
+      };
+    }
+
+    // The token is valid but belongs to the user, not to the page - the page
+    // was never granted to the app, so only reconnecting can fix it
+    if (
+      body.indexOf(
+        'Unpublished posts must be posted to a page as the page itself'
+      ) > -1
+    ) {
+      return {
+        type: 'refresh-token' as const,
+        value:
+          'Postiz is not authorized to publish as this page, please reconnect the channel',
       };
     }
 
@@ -247,7 +263,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const state = makeId(6);
     return {
       url:
-        'https://www.facebook.com/v20.0/dialog/oauth' +
+        `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
         `?client_id=${process.env.FACEBOOK_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${process.env.FRONTEND_URL}/integrations/social/facebook`
@@ -284,7 +300,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   }) {
     const getAccessToken = await (
       await fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
             `${process.env.FRONTEND_URL}/integrations/social/facebook${
@@ -298,7 +314,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     const { access_token } = await (
       await fetch(
-        'https://graph.facebook.com/v20.0/oauth/access_token' +
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           '?grant_type=fb_exchange_token' +
           `&client_id=${process.env.FACEBOOK_APP_ID}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
@@ -308,7 +324,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     const { data } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/me/permissions?access_token=${access_token}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/permissions?access_token=${access_token}`
       )
     ).json();
 
@@ -319,7 +335,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     const { id, name, picture } = await (
       await fetch(
-        `https://graph.facebook.com/v20.0/me?fields=id,name,picture&access_token=${access_token}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me?fields=id,name,picture&access_token=${access_token}`
       )
     ).json();
 
@@ -356,7 +372,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     // Fetch pages the user explicitly shared during the OAuth dialog
     await fetchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/accounts?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
     );
 
     // Also fetch pages via Business Manager API to discover pages
@@ -364,7 +380,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     try {
       let bizUrl:
         | string
-        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+        | undefined = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();
@@ -372,7 +388,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           for (const business of bizResponse.data) {
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/owned_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -380,7 +396,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
             try {
               await fetchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/client_pages?fields=id,username,name,access_token,picture.type(large)&limit=100&access_token=${accessToken}`
               );
             } catch {
               // Continue with other businesses
@@ -425,7 +441,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     // 1. Check /me/accounts
     const fromAccounts = await searchPaginated(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=${fields}&limit=100&access_token=${accessToken}`
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/accounts?fields=${fields}&limit=100&access_token=${accessToken}`
     );
     if (fromAccounts) return fromAccounts;
 
@@ -433,7 +449,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     try {
       let bizUrl:
         | string
-        | undefined = `https://graph.facebook.com/v20.0/me/businesses?access_token=${accessToken}`;
+        | undefined = `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/businesses?access_token=${accessToken}`;
 
       while (bizUrl) {
         const bizResponse = await (await fetch(bizUrl)).json();
@@ -441,7 +457,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           for (const business of bizResponse.data) {
             try {
               const fromOwned = await searchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/owned_pages?fields=${fields}&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/owned_pages?fields=${fields}&limit=100&access_token=${accessToken}`
               );
               if (fromOwned) return fromOwned;
             } catch {
@@ -450,7 +466,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
             try {
               const fromClient = await searchPaginated(
-                `https://graph.facebook.com/v20.0/${business.id}/client_pages?fields=${fields}&limit=100&access_token=${accessToken}`
+                `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${business.id}/client_pages?fields=${fields}&limit=100&access_token=${accessToken}`
               );
               if (fromClient) return fromClient;
             } catch {
@@ -472,7 +488,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   private async fbVideoStatus(videoId: string, accessToken: string) {
     const { status } = await (
       await this.fetch(
-        `https://graph.facebook.com/v20.0/${videoId}?fields=status&access_token=${accessToken}`,
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}?fields=status&access_token=${accessToken}`,
         undefined,
         '',
         0,
@@ -512,7 +528,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         if (hasExtension(media.path, 'mp4')) {
           const { video_id, upload_url } = await (
             await this.fetch(
-              `https://graph.facebook.com/v20.0/${id}/video_stories?upload_phase=start&access_token=${accessToken}`,
+              `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/video_stories?upload_phase=start&access_token=${accessToken}`,
               {
                 method: 'POST',
               },
@@ -536,7 +552,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         } else {
           const { id: photoId } = await (
             await this.fetch(
-              `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+              `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/photos?access_token=${accessToken}`,
               {
                 method: 'POST',
                 headers: {
@@ -654,8 +670,8 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     const { post_id: storyPostId } = await (
       await this.fetch(
         item.kind === 'video'
-          ? `https://graph.facebook.com/v20.0/${integration.internalId}/video_stories?upload_phase=finish&video_id=${item.mediaId}&access_token=${accessToken}`
-          : `https://graph.facebook.com/v20.0/${integration.internalId}/photo_stories?photo_id=${item.mediaId}&access_token=${accessToken}`,
+          ? `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${integration.internalId}/video_stories?upload_phase=finish&video_id=${item.mediaId}&access_token=${accessToken}`
+          : `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${integration.internalId}/photo_stories?photo_id=${item.mediaId}&access_token=${accessToken}`,
         {
           method: 'POST',
         },
@@ -772,7 +788,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         ...all
       } = await (
         await this.fetch(
-          `https://graph.facebook.com/v20.0/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/videos?access_token=${accessToken}&fields=id,permalink_url`,
           {
             method: 'POST',
             headers: {
@@ -797,7 +813,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             firstPost.media.map(async (media) => {
               const { id: photoId } = await (
                 await this.fetch(
-                  `https://graph.facebook.com/v20.0/${id}/photos?access_token=${accessToken}`,
+                  `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/photos?access_token=${accessToken}`,
                   {
                     method: 'POST',
                     headers: {
@@ -829,7 +845,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       const publishFeed = async (withPreset: boolean) =>
         (
           await this.fetch(
-            `https://graph.facebook.com/v20.0/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
+            `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/feed?access_token=${accessToken}&fields=id,permalink_url`,
             {
               method: 'POST',
               headers: {
@@ -928,7 +944,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
 
     const data = await (
       await this.fetch(
-        `https://graph.facebook.com/v20.0/${replyToId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${replyToId}/comments?access_token=${accessToken}&fields=id,permalink_url`,
         {
           method: 'POST',
           headers: {
@@ -971,7 +987,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     //   - page_media_view: total media views, broken down between paid and organic
     const { data } = await (
       await fetch(
-        `https://graph.facebook.com/v23.0/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
 
@@ -1014,6 +1030,19 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
+    // The stored id (releaseId) shape depends on the post type set in post():
+    //   - feed post  -> `{pageid}_{postid}` (contains `_`), has an `insights` edge
+    //   - reel/video -> bare numeric video id, NO `insights` edge (only `video_insights`)
+    //   - story      -> bare story id, no usable insights via this path
+    // There is no separate stored type, so id shape is the discriminator. Calling
+    // `/{videoId}/insights` on a video/story node returns
+    // `(#100) Tried accessing nonexisting field (insights)`, which is what surfaced
+    // in prod as "Error fetching Facebook post analytics: ApplicationFailure". Route
+    // bare ids to the video-only edge instead.
+    if (!postId.includes('_')) {
+      return this.videoPostAnalytics(accessToken, postId, today);
+    }
+
     try {
       // Fetch post insights from Facebook Graph API.
       // post_impressions_unique was deprecated by Meta on 2026-06-15; it is replaced
@@ -1021,7 +1050,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // Graph API v23.0+. Engagement metrics below are unaffected.
       const { data } = await (
         await fetch(
-          `https://graph.facebook.com/v23.0/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`
         )
       ).json();
 
@@ -1081,6 +1110,91 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       return result;
     } catch (err) {
       console.error('Error fetching Facebook post analytics:', err);
+      return [];
+    }
+  }
+
+  // Video/reel posts store a bare video id whose node has no `insights` edge; their
+  // analytics live on the `/{videoId}/video_insights` edge instead. Story posts also
+  // store a bare id but have no usable insights here — the video_insights call comes
+  // back with an `error` (or empty data), which we swallow to an empty result so a
+  // single story/video can't break the statistics page.
+  private async videoPostAnalytics(
+    accessToken: string,
+    videoId: string,
+    today: string
+  ): Promise<AnalyticsData[]> {
+    try {
+      // Metric names verified against the Graph API v23.0 video_insights docs:
+      //   - total_video_impressions: times the video was shown
+      //   - total_video_views: 3s+ (or full, if shorter) plays
+      //   - total_video_reactions_by_type_total: reactions object, keyed by type
+      // Use plain fetch (not this.fetch) so a `(#100) nonexisting field` / story
+      // response doesn't throw an ApplicationFailure — we want a quiet `[]` instead.
+      const { data, error } = await (
+        await fetch(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total&access_token=${accessToken}`
+        )
+      ).json();
+
+      // Stories (and videos without this edge) come back with an error / no data —
+      // return an empty result quietly rather than logging a scary error. But a
+      // `nonexisting field (video_insights)` is the only "expected" error here; any
+      // other error (bad metric name, token, permissions) means the fix is silently
+      // returning empty when it shouldn't be, so surface it as a warning (not a throw,
+      // not a scary error) so it's diagnosable without breaking the statistics page.
+      if (error || !data || data.length === 0) {
+        if (error && !/nonexisting field/i.test(error.message || '')) {
+          console.warn('Facebook video_insights returned an error:', {
+            videoId,
+            error,
+          });
+        }
+        return [];
+      }
+
+      const result: AnalyticsData[] = [];
+
+      for (const metric of data) {
+        const value = metric.values?.[0]?.value;
+        if (value === undefined) continue;
+
+        let label = '';
+        let total = '';
+
+        switch (metric.name) {
+          case 'total_video_impressions':
+            label = 'Impressions';
+            total = String(value);
+            break;
+          case 'total_video_views':
+            label = 'Views';
+            total = String(value);
+            break;
+          case 'total_video_reactions_by_type_total':
+            // This returns an object with reaction types
+            if (typeof value === 'object') {
+              const totalReactions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Reactions';
+              total = String(totalReactions);
+            }
+            break;
+        }
+
+        if (label) {
+          result.push({
+            label,
+            percentageChange: 0,
+            data: [{ total, date: today }],
+          });
+        }
+      }
+
+      return result;
+    } catch (err) {
+      console.error('Error fetching Facebook video post analytics:', err);
       return [];
     }
   }

@@ -9,6 +9,7 @@ import {
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -67,12 +68,28 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     ) {
       return 'You need one media';
     }
+
+    // TikTok fails the whole photo post when a single image is oversized, and
+    // the status only says `picture_size_check_failed` without naming it.
+    if (firstItems?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)) {
+      const dimensions = await Promise.all(
+        firstItems?.map((p) => this.getImageDimensions(p?.path)) ?? []
+      );
+      const tooBig = dimensions.findIndex(
+        (p) => Math.min(p?.width ?? 0, p?.height ?? 0) > 1080
+      );
+      if (tooBig > -1) {
+        return `Image ${tooBig + 1} is ${dimensions[tooBig]?.width}x${
+          dimensions[tooBig]?.height
+        }, TikTok allows a maximum of 1080px on the shorter side`;
+      }
+    }
     return true;
   }
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'disconnect';
         value: string;
       }
     | undefined {
@@ -197,10 +214,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // TikTok limits how many users of this app can post per day: refreshing
+    // the token cannot help, the channel must be re-connected (and can be
+    // migrated to another app via MIGRATE_PROVIDERS).
     if (body.indexOf('reached_active_user_cap') > -1) {
       return {
-        type: 'bad-body' as const,
-        value: 'Daily active user quota reached, please try again later',
+        type: 'disconnect' as const,
+        value:
+          'TikTok daily user limit reached, please re-connect your account',
       };
     }
 
@@ -255,7 +276,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if (body.indexOf('picture_size_check_failed') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Video must be at least 720p, Picture must no exceed 1080p',
+        value:
+          'Media size not supported by TikTok: images up to 1080px on the shorter side, videos at least 360px on both sides',
       };
     }
 
@@ -445,7 +467,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         )
       ).json();
     } catch (err) {
-      if (err instanceof RefreshToken) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
 

@@ -16,11 +16,13 @@ import {
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  stripQuery,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
@@ -432,6 +434,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`youtube: media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -460,6 +463,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range: a transformed (compressed) response loses
       // its length, and a length-less object is answered with the full body.
+      setHeartbeatDetails(
+        `youtube: read media ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -494,6 +500,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     uploadUri: string,
     videoSize: number
   ): Promise<{ videoId: string } | { uploadedBytes: number }> {
+    setHeartbeatDetails('youtube: probe resumable session');
     const probe = await fetch(uploadUri, {
       method: 'PUT',
       headers: {
@@ -710,6 +717,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             end
           );
 
+          setHeartbeatDetails('youtube: upload chunk to google');
           const upload = await fetch(pendingData.uploadUri, {
             method: 'PUT',
             headers: {

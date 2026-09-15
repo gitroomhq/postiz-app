@@ -1,7 +1,7 @@
 import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import {
   IntegrationManager,
   socialIntegrationList,
@@ -38,6 +38,8 @@ export class GenerateVideoTool implements AgentToolInterface {
                     in case the user specified a platform that requires attachment and attachment was not provided,
                     ask if they want to generate a picture of a video.
                     In many cases 'videoFunctionTool' will need to be called first, to get things like voice id
+                    Generating takes a few minutes, so this only starts the generation and returns a jobId:
+                    poll 'videoStatusTool' with it until the status is "completed" to get the video url.
                     Here are the type of video that can be generated:
                     ${this._videoManager
                       .getAllVideos()
@@ -55,14 +57,14 @@ export class GenerateVideoTool implements AgentToolInterface {
         ),
       }),
       outputSchema: z.object({
-        url: z.string().optional(),
+        jobId: z.string().optional(),
         error: z.string().optional(),
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
         try {
-          const value = await this._mediaService.generateVideo(org, {
+          const value = await this._mediaService.startGenerateVideo(org, {
             type: inputData.identifier,
             output: inputData.output,
             customParams: inputData.customParams.reduce(
@@ -75,13 +77,19 @@ export class GenerateVideoTool implements AgentToolInterface {
           });
 
           return {
-            url: value.path,
+            jobId: value.jobId,
           };
         } catch (err) {
+          // SubscriptionException (402) carries { section, action } and its
+          // message is just "Subscription Exception", so translate it
+          const message =
+            err instanceof HttpException && err.getStatus() === 402
+              ? 'No AI video credits are available on this account.'
+              : err instanceof Error
+              ? err.message
+              : String(err);
           return {
-            error: `Video generation failed: ${
-              err instanceof Error ? err.message : String(err)
-            }. The user's video credit was not used.`,
+            error: `Video generation failed: ${message}. The user's video credit was not used.`,
           };
         }
       },

@@ -36,12 +36,13 @@ export class OauthProvider extends AuthProviderAbstract {
     };
   }
 
-  generateLink(): string {
+  generateLink(query?: { state?: string }): string {
     const { authUrl, clientId, frontendUrl } = this.getConfig();
     const params = new URLSearchParams({
       client_id: clientId,
       scope: 'openid profile email',
       response_type: 'code',
+      state: query?.state || 'login',
       redirect_uri: `${frontendUrl}/settings`,
     });
 
