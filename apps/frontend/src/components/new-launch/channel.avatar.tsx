@@ -67,9 +67,9 @@ export const ChannelAvatar: FC<{
           <img
             src={iconSrc}
             alt=""
-            width={Math.round(size * 0.56)}
-            height={Math.round(size * 0.56)}
-            className="h-[56%] w-[56%] object-contain"
+            width={Math.round(size * 0.64)}
+            height={Math.round(size * 0.64)}
+            className="h-[64%] w-[64%] object-contain"
           />
         )}
       </span>

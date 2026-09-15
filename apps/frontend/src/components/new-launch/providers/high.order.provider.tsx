@@ -252,7 +252,7 @@ export const withProvider = function <T extends object>(params: {
               // tab still shows only the active id. Filter chips hide via CSS
               // data attribute when parent marks the card filtered out.
               !current && !isGlobal && 'hidden',
-              isGlobal && 'mb-[12px] last:mb-0'
+              isGlobal && 'mb-[16px] last:mb-0 snap-start'
             )}
             data-preview-channel={props.id}
           >

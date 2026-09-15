@@ -8,6 +8,9 @@ import {
   clampPreviewAspect,
 } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 
+/** One complete 4:5 card fits the preview pane; stacked cards snap into view. */
+export const PREVIEW_MEDIA_MAX_HEIGHT = 'min(34vh, 300px)';
+
 export const PreviewMediaFrame: FC<{
   src: string;
   minWH: number;
@@ -42,7 +45,10 @@ export const PreviewMediaFrame: FC<{
   );
 
   const displayWH = aspectWH ?? ratio;
-  const maxHeight = 'min(48vh, 440px)';
+  // Tall enough to read a 4:5, short enough that one complete card (header +
+  // media + actions) fits in the preview pane instead of sitting half-cut
+  // under the composer footer.
+  const maxHeight = PREVIEW_MEDIA_MAX_HEIGHT;
 
   return (
     <div

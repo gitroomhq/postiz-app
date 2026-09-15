@@ -49,6 +49,8 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /COMPOSER_SPLIT_MIN/);
     assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row gap-\[12px\] p-\[12px\]'/);
     assert.match(manage, /flex min-h-0 flex-1/);
+    assert.match(manage, /pb-\[min\(34vh,260px\)\]/);
+    assert.match(manage, /snap-y snap-proximity/);
     assert.match(manage, /<ComposeAiAssistant \/>/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });

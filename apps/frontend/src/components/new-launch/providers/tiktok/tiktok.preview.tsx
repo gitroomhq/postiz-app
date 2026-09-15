@@ -72,7 +72,7 @@ export const TiktokPreview: FC<{
               <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
             </a>
           ))}
-          className="mx-auto w-full max-w-[280px] bg-black aspect-[9/16] max-h-[min(48vh,440px)] rounded-[3px] overflow-hidden"
+          className="mx-auto w-full max-w-[280px] bg-black aspect-[9/16] max-h-[min(34vh,300px)] rounded-[3px] overflow-hidden"
         />
         <div className="absolute pointer-events-none w-full h-full start-0 top-0 px-[12px] py-[25px] justify-end items-start text-white flex flex-col">
           <div className="text-[14px] font-[500]">

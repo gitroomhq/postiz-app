@@ -783,7 +783,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           >
             <div
               className={clsx(
-                'flex shrink-0 flex-col border-b border-pqLine bg-pqBg text-pqText',
+                'flex shrink-0 flex-col border-b border-pqLine bg-pqInner text-pqText',
                 !compactChrome && 'rounded-ss-[16px]'
               )}
             >
@@ -948,7 +948,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           >
             <div
               className={clsx(
-                'flex shrink-0 flex-col border-b border-pqLine bg-pqBg text-pqText',
+                'flex shrink-0 flex-col border-b border-pqLine bg-pqInner text-pqText',
                 !compactChrome && !maximized && 'rounded-se-[16px]'
               )}
             >
@@ -1004,7 +1004,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <div className="relative min-h-0 flex-1">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute top-0 p-[20px] pe-[8px] pb-[40px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
+                className="absolute top-0 p-[20px] pe-[8px] pb-[min(34vh,260px)] left-0 w-full h-full overflow-x-hidden overflow-y-scroll snap-y snap-proximity scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>

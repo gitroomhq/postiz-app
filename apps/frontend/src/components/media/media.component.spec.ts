@@ -16,7 +16,7 @@ describe('composer media hover actions', () => {
     assert.doesNotMatch(source, /change_alt_text/);
     assert.doesNotMatch(source, /overflow-hidden transition-\[box-shadow\]/);
     assert.match(source, /!ghost &&\s+!touch &&\s+'opacity-0/);
-    assert.match(source, /touch \? \{ height: '100%' \}/);
+    assert.match(source, /height: touch \? '100%' : MEDIA_LIBRARY_PICKER_HEIGHT/);
   });
 
   it('drags from the whole thumb, not a four-dot grab handle', () => {

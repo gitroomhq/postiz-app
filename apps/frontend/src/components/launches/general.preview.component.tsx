@@ -10,11 +10,11 @@ import {
 } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
-import SafeImage from '@gitroom/react/helpers/safe.image';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { sanitizePreviewHtml } from '@gitroom/helpers/utils/sanitize.post.content';
+import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 
 export const GeneralPreviewComponent: FC<{
   maximumCharacters?: number;
@@ -70,21 +70,17 @@ export const GeneralPreviewComponent: FC<{
           >
             <div className="min-w-[40px] h-[40px] min-h-[40px] w-[40px] flex flex-col items-center">
               <div className="relative">
-                <img
-                  src={integration?.picture || '/no-picture.jpg'}
-                  alt={integration?.name || 'channel'}
-                  className="rounded-full relative z-[2]"
+                <ChannelAvatar
+                  integration={{
+                    picture: integration?.picture,
+                    identifier: integration?.identifier || 'x',
+                    name: integration?.name,
+                  }}
+                  size={40}
+                  rounded="full"
+                  badge={!!integration?.identifier}
+                  badgeSize={16}
                 />
-
-                {!!integration?.identifier && (
-                  <SafeImage
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="min-w-[20px] min-h-[20px] rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
-                    alt={integration.identifier}
-                    width={20}
-                    height={20}
-                  />
-                )}
               </div>
               {index !== topValue.length - 1 && (
                 <div className="flex-1 w-[2px] h-[calc(100%-10px)] bg-customColor25 absolute top-[10px] z-[1]" />

@@ -11,5 +11,9 @@ export function isUsableChannelPicture(
     return false;
   }
   const trimmed = picture.trim();
-  return trimmed.length > 0 && trimmed !== '/no-picture.jpg';
+  if (!trimmed) return false;
+  // Backend still serializes the placeholder as `/no-picture.jpg` or a CDN URL
+  // that ends with it — both render as the gray silhouette the composer chips
+  // used to show.
+  return !/no-picture\.jpg(?:\?|$)/i.test(trimmed);
 }

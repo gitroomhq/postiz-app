@@ -110,12 +110,22 @@ export const InstagramPreview: FC<{
         />
       ) : (
         <div
-          style={{ background: 'url(/no-video-youtube.png)' }}
-          className={
+          style={
             isStory
-              ? '!bg-cover w-full aspect-[9/16] rounded-[8px] overflow-hidden'
-              : '!bg-cover w-full aspect-[4/5] rounded-[8px] overflow-hidden'
+              ? {
+                  background: 'url(/no-video-youtube.png)',
+                  aspectRatio: '9 / 16',
+                  maxHeight: 'min(34vh, 300px)',
+                  width: 'min(100%, calc(min(34vh, 300px) * 9 / 16))',
+                }
+              : {
+                  background: 'url(/no-video-youtube.png)',
+                  aspectRatio: '4 / 5',
+                  maxHeight: 'min(34vh, 300px)',
+                  width: 'min(100%, calc(min(34vh, 300px) * 4 / 5))',
+                }
           }
+          className="mx-auto !bg-cover overflow-hidden rounded-[8px]"
         />
       )}
       <div

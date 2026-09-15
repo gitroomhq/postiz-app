@@ -34,6 +34,10 @@ describe('channel avatar fallback', () => {
     assert.equal(isUsableChannelPicture('/no-picture.jpg'), false);
     assert.equal(isUsableChannelPicture('  /no-picture.jpg  '), false);
     assert.equal(
+      isUsableChannelPicture('https://cdn.example/uploads/no-picture.jpg'),
+      false
+    );
+    assert.equal(
       isUsableChannelPicture('https://cdn.example/pic.jpg'),
       true
     );

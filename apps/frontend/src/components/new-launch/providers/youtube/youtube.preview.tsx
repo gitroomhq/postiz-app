@@ -8,6 +8,7 @@ import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { PREVIEW_MEDIA_MAX_HEIGHT } from '@gitroom/frontend/components/new-launch/preview-media';
 
 export const YoutubePreview: FC<{
   maximumCharacters?: number;
@@ -52,8 +53,13 @@ export const YoutubePreview: FC<{
   return (
     <div className="flex w-full flex-col gap-[12px] p-[16px] bg-bgYoutube">
       <div
-        style={{ background: 'url(/no-video-youtube.png)' }}
-        className="!bg-cover w-full aspect-[calc(16/9)] rounded-[4px] overflow-hidden"
+        style={{
+          background: 'url(/no-video-youtube.png)',
+          aspectRatio: '16 / 9',
+          maxHeight: PREVIEW_MEDIA_MAX_HEIGHT,
+          width: `min(100%, calc(${PREVIEW_MEDIA_MAX_HEIGHT} * 16 / 9))`,
+        }}
+        className="mx-auto !bg-cover overflow-hidden rounded-[4px]"
       >
         {!!renderContent?.[0]?.images?.[0]?.path && (
           <VideoOrImage
