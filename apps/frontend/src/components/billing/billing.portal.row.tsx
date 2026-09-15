@@ -27,16 +27,19 @@ export const BillingPortalRow: FC<{
     setBusy(true);
     try {
       const response = await fetch('/billing/portal');
-      const { portal } = response?.ok
-        ? await response.json().catch(() => ({} as { portal?: string }))
-        : ({} as { portal?: string });
+      const body = (await response.json().catch(() => ({}))) as {
+        portal?: string;
+        message?: string;
+      };
+      const portal = response.ok ? body.portal : undefined;
 
       if (!portal) {
         toast.show(
-          t(
-            'billing_portal_failed',
-            'We could not open the billing portal, please try again'
-          ),
+          (typeof body.message === 'string' && body.message) ||
+            t(
+              'billing_portal_failed',
+              'We could not open the billing portal, please try again'
+            ),
           'warning'
         );
         return;
