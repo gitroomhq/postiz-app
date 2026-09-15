@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import dayjs from 'dayjs';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { postsListHasRows } from '@gitroom/frontend/components/launches/posts-panel-tab';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { CrownGlyph } from '@gitroom/frontend/components/ui/logo.component';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -241,7 +242,7 @@ export const useHasPublishedPost = (enabled: boolean) => {
       : null,
     async (key: string) => {
       const data = await (await fetch(key.split('#')[0])).json();
-      return (data?.total || 0) > 0;
+      return postsListHasRows(data);
     },
     { revalidateOnFocus: false, revalidateIfStale: false }
   );

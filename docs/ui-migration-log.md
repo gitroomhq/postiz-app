@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Calendar Posts rail opens on a tab that actually has rows.** The welcome probe read `total` on a minified `/posts/list` body (`t`), so every tab looked empty and the rail stayed on Scheduled. It now expands that payload and picks scheduled → drafts → posted → scheduled, and holds the list fetch until that pick lands so the rail does not flash empty. i18n 0.
+
 **Deleting a post left the row on screen until a full reload.** Toast said it was gone because DELETE succeeded, but the list/calendar SWR hooks only bound-mutated the fetch that is currently keyed — the other view is `null` and `keepPreviousData` kept the row. Delete now drops the group from every `/posts-` cache immediately, then revalidates. i18n 0.
 
 **Composer Copilot is the footer AI control on every viewport.** Merging `main` into the phone/tablet native PR replaced the desktop-only floating Copilot chip with `ComposeAiAssistant` in the composer footer. Phone and tablet keep Edit/Preview tabs and the stacked footer. i18n 0.
