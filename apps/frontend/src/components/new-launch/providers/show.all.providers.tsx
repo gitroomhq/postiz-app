@@ -43,8 +43,7 @@ import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/sko
 import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
 import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
-import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import clsx from 'clsx';
@@ -338,30 +337,12 @@ export const ShowAllProviders = forwardRef((props, ref) => {
                     )}
                   >
                     <span className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[9px]">
-                      <ImageWithFallback
-                        fallbackSrc="/no-picture.jpg"
-                        src={integration.picture || '/no-picture.jpg'}
-                        className="min-h-[40px] min-w-[40px] rounded-[8px]"
-                        alt={integration.identifier}
-                        width={40}
-                        height={40}
+                      <ChannelAvatar
+                        integration={integration}
+                        size={40}
+                        rounded="lg"
+                        className="min-h-[40px] min-w-[40px]"
                       />
-                      {integration.identifier === 'youtube' ? (
-                        <img
-                          src="/icons/platforms/youtube.svg"
-                          className="absolute bottom-[2px] end-[2px] z-10 min-w-[14px]"
-                          width={14}
-                          alt=""
-                        />
-                      ) : (
-                        <SafeImage
-                          src={`/icons/platforms/${integration.identifier}.png`}
-                          className="absolute bottom-[2px] end-[2px] z-10 min-h-[14px] min-w-[14px] rounded-[3px]"
-                          alt={integration.identifier}
-                          width={14}
-                          height={14}
-                        />
-                      )}
                     </span>
                   </button>
                 );

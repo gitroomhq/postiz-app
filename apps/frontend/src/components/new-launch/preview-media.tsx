@@ -42,12 +42,20 @@ export const PreviewMediaFrame: FC<{
   );
 
   const displayWH = aspectWH ?? ratio;
+  const maxHeight = 'min(48vh, 440px)';
 
   return (
     <div
       data-pq="preview-media"
-      className={clsx('relative w-full overflow-hidden bg-black/20', className)}
-      style={{ aspectRatio: `${displayWH} / 1` }}
+      className={clsx(
+        'relative mx-auto overflow-hidden bg-black/20',
+        className
+      )}
+      style={{
+        aspectRatio: `${displayWH} / 1`,
+        maxHeight,
+        width: `min(100%, calc(${maxHeight} * ${displayWH}))`,
+      }}
     >
       <a
         href={src}

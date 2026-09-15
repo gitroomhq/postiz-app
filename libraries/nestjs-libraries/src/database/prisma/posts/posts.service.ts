@@ -50,6 +50,11 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import {
+  daysSpanning,
+  quarterHourMinutesOnDay,
+  soonWindow,
+} from '@gitroom/nestjs-libraries/database/prisma/posts/soon-slot';
 import { stripLinks } from '@gitroom/helpers/utils/strip.links';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
@@ -1459,6 +1464,55 @@ export class PostsService {
       times,
       dayjs.utc().startOf('day')
     );
+  }
+
+  /**
+   * Create Post's default "when to post" — 1–4 hours from now on a quarter
+   * hour, not the org postingTimes grid (02:00 / 06:40 UTC). Autopost and
+   * `/posts/find-slot/:id` keep `findFreeDateTime`.
+   */
+  async findSoonDateTime(orgId: string) {
+    const now = dayjs.utc();
+    const { start, end } = soonWindow(now);
+    const preferred = await this.firstFreeInRange(orgId, start, end);
+    if (preferred) {
+      return preferred;
+    }
+    const later = await this.firstFreeInRange(
+      orgId,
+      end.add(15, 'minute'),
+      now.add(48, 'hour')
+    );
+    if (later) {
+      return later;
+    }
+    return start.format('YYYY-MM-DDTHH:mm:00');
+  }
+
+  private async firstFreeInRange(
+    orgId: string,
+    from: dayjs.Dayjs,
+    to: dayjs.Dayjs
+  ): Promise<string | null> {
+    for (const day of daysSpanning(from, to)) {
+      const times = quarterHourMinutesOnDay(day, from, to);
+      if (!times.length) {
+        continue;
+      }
+      const free = await this._postRepository.getPostsCountsByDates(
+        orgId,
+        times,
+        day
+      );
+      if (!free.length) {
+        continue;
+      }
+      return day
+        .clone()
+        .add(Math.min(...free), 'minutes')
+        .format('YYYY-MM-DDTHH:mm:00');
+    }
+    return null;
   }
 
   async createPopularPosts(post: {

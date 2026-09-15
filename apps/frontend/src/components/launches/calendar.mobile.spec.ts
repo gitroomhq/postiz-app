@@ -47,10 +47,18 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /composerPane/);
     assert.match(manage, /setComposerPane/);
     assert.match(manage, /COMPOSER_SPLIT_MIN/);
-    assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row'/);
+    assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row gap-\[12px\] p-\[12px\]'/);
     assert.match(manage, /flex min-h-0 flex-1/);
     assert.match(manage, /<ComposeAiAssistant \/>/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
+  });
+
+  it('keeps when-to-post beside Add to calendar, not on the far left', () => {
+    assert.match(manage, /gap-\[12px\] p-\[12px\]/);
+    const dateIdx = manage.indexOf('<DatePicker');
+    const scheduleIdx = manage.lastIndexOf("schedule('schedule')");
+    assert.ok(dateIdx > 0 && scheduleIdx > dateIdx);
+    assert.match(manage, /shrink-0 pe-\[20px\]/);
   });
 
   it('lets desktop maximize the composer to the viewport', () => {

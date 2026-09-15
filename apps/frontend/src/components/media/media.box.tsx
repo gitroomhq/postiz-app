@@ -974,8 +974,9 @@ export const MediaBox: FC<{
 
       {uppyBar}
 
-          {/* Filters tight above gallery. Desktop caps ~2 rows; phone/tablet
-              fills the remaining sheet so thumbs stay large. */}
+          {/* Filters tight above gallery. Desktop shows two full square rows
+              (140px tile + caption + 12px gap ≈ 348px); taller than that
+              scrolls. Phone/tablet fills the remaining sheet. */}
       <div
         className={clsx(
           'flex flex-col gap-[8px]',
@@ -992,7 +993,7 @@ export const MediaBox: FC<{
             touch
               ? 'min-h-0 flex-1 overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
               : (isLoading || visibleMedia.length > 8) &&
-                'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
+                'max-h-[min(380px,48vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
           )}
         >
           {isLoading && !data && (

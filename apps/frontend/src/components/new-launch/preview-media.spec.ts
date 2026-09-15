@@ -53,6 +53,40 @@ describe('post preview media frame', () => {
     assert.match(frame, /FEED_PREVIEW_FALLBACK_WH/);
   });
 
+  it('caps the media frame so a 4:5 card is not clipped by the composer footer', () => {
+    assert.match(frame, /maxHeight/);
+    assert.match(frame, /min\(48vh, 440px\)/);
+    assert.match(
+      frame,
+      /width: `min\(100%, calc\(\$\{maxHeight\} \* \$\{displayWH\}\)\)`/
+    );
+  });
+
+  it('keeps YouTube and TikTok previews in document flow so stacked cards can scroll fully', () => {
+    const youtube = readFileSync(
+      fileURLToPath(
+        new URL('./providers/youtube/youtube.preview.tsx', import.meta.url)
+      ),
+      'utf8'
+    );
+    const tiktok = readFileSync(
+      fileURLToPath(
+        new URL('./providers/tiktok/tiktok.preview.tsx', import.meta.url)
+      ),
+      'utf8'
+    );
+    const pinterest = readFileSync(
+      fileURLToPath(
+        new URL('./providers/pinterest/pinterest.preview.tsx', import.meta.url)
+      ),
+      'utf8'
+    );
+    assert.doesNotMatch(youtube, /absolute left-0 top-0/);
+    assert.doesNotMatch(tiktok, /absolute left-0 top-0/);
+    assert.doesNotMatch(pinterest, /absolute left-0 top-0/);
+    assert.match(youtube, /flex w-full flex-col/);
+  });
+
   it('shows the channel handle on Instagram, not only the page name', () => {
     assert.match(instagram, /formatChannelHandle\(integration\?\.display\)/);
   });

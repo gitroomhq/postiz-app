@@ -46,7 +46,7 @@ export const PinterestPreview: FC<{
   });
 
   return (
-    <div className="absolute left-0 top-0 gap-[10px] w-full h-full flex flex-col p-[16px] bg-bgYoutube">
+    <div className="flex w-full flex-col gap-[10px] p-[16px] bg-bgYoutube">
       <div className="h-[40px] items-center flex">
         <div className="flex gap-[16px] flex-1 items-center">
           <div className="flex gap-[8px] items-center">

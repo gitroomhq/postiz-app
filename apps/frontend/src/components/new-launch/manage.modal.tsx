@@ -759,27 +759,32 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     >
       <div
         className={clsx(
-          'flex min-h-0 flex-1 flex-col overflow-hidden bg-pqInner shadow-pq',
-          touch || maximized ? 'rounded-none' : 'rounded-[20px]'
+          'flex min-h-0 flex-1 flex-col overflow-hidden shadow-pq',
+          touch
+            ? 'rounded-none bg-pqInner'
+            : maximized
+            ? 'rounded-none bg-pqBg'
+            : 'rounded-[20px] bg-pqBg'
         )}
       >
         <div
           className={clsx(
             'flex min-h-0 flex-1',
-            compactChrome ? 'flex-col' : 'flex-row'
+            compactChrome ? 'flex-col' : 'flex-row gap-[12px] p-[12px]'
           )}
         >
           <div
             className={clsx(
-              'flex min-h-0 flex-1 flex-col',
-              !compactChrome && 'border-e border-pqBorder',
+              'flex min-h-0 flex-1 flex-col overflow-hidden',
+              !compactChrome &&
+                'rounded-[16px] bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]',
               compactChrome && composerPane !== 'edit' && 'hidden'
             )}
           >
             <div
               className={clsx(
                 'flex shrink-0 flex-col border-b border-pqLine bg-pqBg text-pqText',
-                !compactChrome && 'rounded-ss-[20px]'
+                !compactChrome && 'rounded-ss-[16px]'
               )}
             >
               <div
@@ -929,21 +934,22 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
           <div
             className={clsx(
-              'flex min-h-0 flex-col',
+              'flex min-h-0 flex-col overflow-hidden',
               compactChrome
                 ? clsx(
                     'w-full flex-1',
                     composerPane !== 'preview' && 'hidden'
                   )
-                : maximized
-                ? 'w-[min(580px,42vw)]'
-                : 'w-[580px]'
+                : clsx(
+                    'rounded-[16px] bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]',
+                    maximized ? 'w-[min(580px,42vw)]' : 'w-[580px]'
+                  )
             )}
           >
             <div
               className={clsx(
                 'flex shrink-0 flex-col border-b border-pqLine bg-pqBg text-pqText',
-                !compactChrome && !maximized && 'rounded-se-[20px]'
+                !compactChrome && !maximized && 'rounded-se-[16px]'
               )}
             >
               <div
@@ -998,7 +1004,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <div className="relative min-h-0 flex-1">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
+                className="absolute top-0 p-[20px] pe-[8px] pb-[40px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
@@ -1097,7 +1103,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         )}
         <div
           className={clsx(
-            'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
+            'flex min-w-0 select-none border-t border-pqBorder bg-pqInner pb-[max(12px,env(safe-area-inset-bottom))]',
             phoneFlow && composerPane !== 'schedule' && 'hidden',
             compactFooter
               ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
