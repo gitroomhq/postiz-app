@@ -27,6 +27,7 @@ import { promisify } from 'util';
 import { OnlyURL } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { CreatePublicCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
 
 const pump = promisify(pipeline);
 
@@ -74,6 +75,15 @@ export class PublicController {
   @Get(`/posts/:id/comments`)
   async getComments(@Param('id') postId: string) {
     return { comments: await this._postsService.getComments(postId) };
+  }
+
+  @Post(`/posts/:id/comments`)
+  async createComment(
+    @Param('id') postId: string,
+    @Body() body: CreatePublicCommentDto,
+    @RealIP() ip: string
+  ) {
+    return this._postsService.createPublicComment(postId, body, null, ip);
   }
 
   @Post('/t')
@@ -153,7 +163,6 @@ export class PublicController {
       return { success: false };
     }
   }
-
 
   @Get('/stream')
   async streamFile(
