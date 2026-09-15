@@ -1,20 +1,9 @@
 'use client';
 
-import { FC, useEffect, useMemo, useRef } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import DrawChart from 'chart.js/auto';
 import { TotalList } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
-import { chunk } from 'lodash';
 import useCookie from 'react-use-cookie';
-
-function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
-  const res = chunk(data, Math.ceil(data.length / numPoints));
-  return res.map((row) => {
-    return {
-      date: `${row[0].date} - ${row?.at(-1)?.date}`,
-      total: row.reduce((acc, curr) => acc + Number(curr.total), 0),
-    };
-  });
-}
 
 export const ChartSocial: FC<{
   data: TotalList[];
@@ -26,11 +15,7 @@ export const ChartSocial: FC<{
   const [mode] = useCookie('mode', 'light');
   const dark = mode === 'dark';
 
-  const list = useMemo(() => {
-    return variant === 'hero' || data.length < 7
-      ? data
-      : mergeDataPoints(data, 7);
-  }, [data, variant]);
+  const list = data;
 
   const ref = useRef<HTMLCanvasElement>(null);
   const chart = useRef<null | DrawChart>(null);
@@ -143,6 +128,12 @@ export const ChartSocial: FC<{
           },
           tooltip: {
             enabled: true,
+            position: 'nearest',
+            // The hero has enough canvas above the caret; the 48px scorecard
+            // spark does not, so Chart.js places that tooltip beside the point.
+            // In both cases the 6px hover point stays visible and inspectable.
+            yAlign: hero ? 'bottom' : 'center',
+            caretPadding: 10,
             backgroundColor: token('--pop'),
             titleColor: token('--text'),
             bodyColor: token('--muted'),
