@@ -68,6 +68,24 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /data-pq="composer"/);
   });
 
+  it('leaves the Schedule pane when the viewport is no longer a phone', () => {
+    assert.match(manage, /!phoneFlow && composerPane === 'schedule'/);
+    assert.match(manage, /setComposerPane\('edit'\)/);
+  });
+
+  it('returns to Write when schedule validation fails', () => {
+    assert.match(manage, /revealWriteForIssue/);
+    assert.match(manage, /focus\(item\.id, 'fix'\)/);
+    assert.match(manage, /revealWriteForIssue\('settings'\)/);
+    assert.match(manage, /revealWriteForIssue\('content'\)/);
+  });
+
+  it('does not mount two AI assistants on the phone Write step', () => {
+    assert.match(manage, /composerPane === 'schedule' && <ComposeAiAssistant \/>/);
+    const assistantCount = manage.match(/<ComposeAiAssistant \/>/g) || [];
+    assert.equal(assistantCount.length, 3);
+  });
+
   it('keeps X/general preview photos inside a feed aspect frame', () => {
     const preview = readFileSync(
       fileURLToPath(
@@ -85,6 +103,8 @@ describe('phone calendar and composer', () => {
       'utf8',
     );
     assert.match(hop, /postHasPreview\(value\?\.\[0\]\)/);
+    assert.match(hop, /fix: revealChannel/);
+    assert.match(hop, /preview: revealChannel/);
   });
 
   it('keeps the composer footer from overlapping on phone and tablet', () => {
@@ -105,6 +125,7 @@ describe('phone calendar and composer', () => {
       'utf8',
     );
     assert.match(tags, /touch \? t\('tags', 'Tags'\)/);
+    assert.match(tags, /tagsToPostPayload/);
     assert.match(repeat, /touch \? \(\s*repeat \?/);
     assert.match(repeat, /aria-label=\{triggerLabel\}/);
     assert.match(editor, /flex min-w-0 flex-col gap-\[10px\] overflow-hidden border-t border-pqLine/);

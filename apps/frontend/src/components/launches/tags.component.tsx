@@ -20,6 +20,7 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { tagsToPostPayload } from '@gitroom/frontend/components/launches/tags.payload';
 
 export const TagsComponent: FC<{
   name: string;
@@ -106,12 +107,12 @@ export const TagsComponentInner: FC<{
       setTagValue(modify);
       onChange({
         target: {
-          value: modify,
+          value: tagsToPostPayload(modify),
           name,
         },
       });
     }
-  }, []);
+  }, [tagValue, name, onChange, mutate, t, modals]);
 
   const deleteTag = useCallback(
     async (tag: any, e: React.MouseEvent) => {
@@ -147,10 +148,7 @@ export const TagsComponentInner: FC<{
         setTagValue(modify);
         onChange({
           target: {
-            value: modify.map((p: any) => ({
-              label: p.name,
-              value: p.name,
-            })),
+            value: tagsToPostPayload(modify),
             name,
           },
         });
@@ -231,10 +229,7 @@ export const TagsComponentInner: FC<{
                 setTagValue(modify);
                 onChange({
                   target: {
-                    value: modify.map((p: any) => ({
-                      label: p.name,
-                      value: p.name,
-                    })),
+                    value: tagsToPostPayload(modify),
                     name,
                   },
                 });

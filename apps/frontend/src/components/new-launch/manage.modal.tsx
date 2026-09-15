@@ -88,7 +88,7 @@ const hideChatbaseWhileComposerOpen = () => {
     });
   };
   hide();
-  const id = window.setInterval(hide, 100);
+  const id = window.setInterval(hide, 1000);
   return () => {
     window.clearInterval(id);
     document.documentElement.removeAttribute('data-pq-sheet');
@@ -111,7 +111,7 @@ const ComposerStepTabs: FC<{
   const steps = (
     phone
       ? [
-                      ['edit', t('write', 'Write')],
+          ['edit', t('write', 'Write')],
           ['preview', t('preview', 'Preview')],
           ['schedule', t('schedule', 'Schedule')],
         ]
@@ -223,6 +223,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   }, [hide]);
 
   useEffect(() => hideChatbaseWhileComposerOpen(), []);
+
+  // Schedule is a phone-only column. Leaving the mobile bucket while that
+  // pane is selected would hide both Edit and Preview with nothing to show.
+  useEffect(() => {
+    if (!phoneFlow && composerPane === 'schedule') {
+      setComposerPane('edit');
+    }
+  }, [phoneFlow, composerPane]);
 
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
@@ -496,6 +504,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           integrationById(id)?.ref?.current?.[where]?.();
         };
 
+        // Phone submit lives on Schedule; tablet submit can be on Preview.
+        // Bounce back to Write so the toast has a visible surface to fix.
+        const revealWriteForIssue = (kind: 'settings' | 'content') => {
+          setComposerPane('edit');
+          setShowSettings(kind === 'settings');
+        };
+
         const notEnoughChars = checkAllValid.filter((p: any) => p.emptyContent);
 
         for (const item of notEnoughChars) {
@@ -509,6 +524,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           );
           setLoading(false);
           focus(item.id, 'preview');
+          revealWriteForIssue('content');
           return;
         }
 
@@ -524,7 +540,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               );
               focus(item.id, 'fix');
               setLoading(false);
-              setShowSettings(true);
+              revealWriteForIssue('settings');
               return;
             }
 
@@ -535,7 +551,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               );
               focus(item.id, 'preview');
               setLoading(false);
-              setShowSettings(false);
+              revealWriteForIssue('content');
               return;
             }
 
@@ -549,6 +565,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               );
               focus(item.id, 'preview');
               setLoading(false);
+              revealWriteForIssue('content');
               return;
             }
           }
@@ -1034,7 +1051,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <RepeatComponent repeat={repeater} onChange={setRepeater} />
                   </div>
                 )}
-                <ComposeAiAssistant />
+                {composerPane === 'schedule' && <ComposeAiAssistant />}
                 {existingData?.integration && (
                   <button
                     onClick={deletePost}
