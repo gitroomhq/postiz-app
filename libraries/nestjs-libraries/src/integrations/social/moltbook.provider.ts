@@ -6,6 +6,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { MoltbookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/moltbook.dto';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
@@ -15,6 +16,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
   name = 'Moltbook';
+  dto = MoltbookDto;
   isBetweenSteps = false;
   scopes = [] as string[];
   isWeb3 = true;
