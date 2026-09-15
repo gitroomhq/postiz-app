@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 
@@ -27,6 +27,9 @@ describe('IntegrationsController (integration)', () => {
   let app: INestApplication;
   let org: Awaited<ReturnType<typeof createOrgWithUser>>;
   let integrationId: string;
+  // Refresh reaches the provider over the network; the function endpoint
+  // tests script it per case, everything else leaves it inert.
+  const refreshService = { refresh: vi.fn() };
 
   beforeAll(async () => {
     ({ app } = await createTestApp({
@@ -35,9 +38,7 @@ describe('IntegrationsController (integration)', () => {
       policies: false,
       providers: [
         IntegrationManager,
-        // Refresh reaches the provider over the network; nothing under test
-        // triggers it.
-        { provide: RefreshIntegrationService, useValue: { refresh: async () => ({}) } },
+        { provide: RefreshIntegrationService, useValue: refreshService },
       ],
       middleware: [
         (req, _res, next) => {
@@ -56,6 +57,7 @@ describe('IntegrationsController (integration)', () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    refreshService.refresh.mockReset().mockResolvedValue({});
     org = await createOrgWithUser();
     integrationId = (await createIntegration(org.organization.id)).id;
   });
@@ -105,6 +107,43 @@ describe('IntegrationsController (integration)', () => {
       expect(response.body.integrations[0].id).toBe(integrationId);
     });
 
+    // A token refresh used to clear inBetweenSteps on a channel that never
+    // finished the picker; internalId still holding the account id tells.
+    it('reports a channel that never finished page selection as in between steps', async () => {
+      const flipped = await createIntegration(org.organization.id, {
+        providerIdentifier: 'youtube',
+        internalId: 'acc-1',
+        rootInternalId: 'acc-1',
+        inBetweenSteps: false,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get('/integrations/list')
+        .expect(200);
+
+      const byId = Object.fromEntries(
+        response.body.integrations.map((i: { id: string }) => [i.id, i])
+      );
+      expect(byId[flipped.id].inBetweenSteps).toBe(true);
+      expect(byId[integrationId].inBetweenSteps).toBe(false);
+    });
+
+    it('does not flag a provider whose page id may equal the account id', async () => {
+      const blog = await createIntegration(org.organization.id, {
+        providerIdentifier: 'tumblr',
+        internalId: 'acc-1',
+        rootInternalId: 'acc-1',
+        inBetweenSteps: false,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get('/integrations/list')
+        .expect(200);
+
+      const row = response.body.integrations.find((i: { id: string }) => i.id === blog.id);
+      expect(row.inBetweenSteps).toBe(false);
+    });
+
     it('reports an organization with no channels as empty', async () => {
       await testPrisma().integration.deleteMany({
         where: { organizationId: org.organization.id },
@@ -115,6 +154,71 @@ describe('IntegrationsController (integration)', () => {
         .expect(200);
 
       expect(response.body.integrations).toEqual([]);
+    });
+  });
+
+  describe('POST /integrations/function', () => {
+    // maxLength needs no network, so the provider call itself is observable
+    // without stubbing HTTP. The endpoint answers with a bare scalar, which
+    // supertest leaves in `text` rather than `body`.
+    const provider = () =>
+      app.get(IntegrationManager).getSocialIntegration('mastodon');
+    const call = (id: string) =>
+      request(app.getHttpServer())
+        .post('/integrations/function')
+        .send({ id, name: 'maxLength', data: {} });
+
+    it('refreshes an expired token before calling the provider', async () => {
+      const expired = await createIntegration(org.organization.id, {
+        tokenExpiration: new Date(Date.now() - 60_000),
+      });
+      refreshService.refresh.mockResolvedValue({
+        accessToken: 'fresh',
+        refreshToken: 'fresh-r',
+      });
+      const maxLength = vi.spyOn(provider(), 'maxLength');
+
+      const response = await call(expired.id).expect(201);
+
+      expect(response.text).toBe('500');
+      expect(refreshService.refresh).toHaveBeenCalledTimes(1);
+      expect(refreshService.refresh).toHaveBeenCalledWith(
+        expect.objectContaining({ id: expired.id })
+      );
+      expect(maxLength).toHaveBeenCalledWith(
+        'fresh',
+        {},
+        expired.internalId,
+        expect.objectContaining({ id: expired.id, refreshToken: 'fresh-r' })
+      );
+    });
+
+    it('returns false when the expired token cannot be refreshed', async () => {
+      const expired = await createIntegration(org.organization.id, {
+        tokenExpiration: new Date(Date.now() - 60_000),
+      });
+      refreshService.refresh.mockResolvedValue(false);
+      const maxLength = vi.spyOn(provider(), 'maxLength');
+
+      const response = await call(expired.id).expect(201);
+
+      expect(response.text).toBe('false');
+      expect(maxLength).not.toHaveBeenCalled();
+    });
+
+    it('leaves a valid token alone', async () => {
+      const maxLength = vi.spyOn(provider(), 'maxLength');
+
+      const response = await call(integrationId).expect(201);
+
+      expect(response.text).toBe('500');
+      expect(refreshService.refresh).not.toHaveBeenCalled();
+      expect(maxLength).toHaveBeenCalledWith(
+        'e2e-mastodon-token',
+        {},
+        expect.any(String),
+        expect.objectContaining({ id: integrationId })
+      );
     });
   });
 
