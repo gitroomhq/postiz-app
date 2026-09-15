@@ -33,6 +33,10 @@ import { isEmailEnabled } from '@gitroom/helpers/utils/email.enabled';
 import { isWalletLoginEnabled } from '@gitroom/helpers/utils/wallet.login';
 import { isRegistrationDisabled } from '@gitroom/helpers/utils/registration.disabled';
 import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
+import {
+  AUTH_OG_IMAGE,
+  AUTH_OG_IMAGE_PATH,
+} from '@gitroom/frontend/components/auth/auth.open-graph';
 
 function metadataBaseUrl(): URL {
   try {
@@ -70,6 +74,11 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: 'PostQueen',
     type: 'website',
+    images: [AUTH_OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [AUTH_OG_IMAGE_PATH],
   },
 };
 

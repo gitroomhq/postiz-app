@@ -1,13 +1,19 @@
 export const dynamic = 'force-dynamic';
 import { ReactNode, Suspense } from 'react';
 import loadDynamic from 'next/dynamic';
+import { Metadata } from 'next';
 import {
   AuthFooter,
   AuthNav,
 } from '@gitroom/frontend/components/auth/auth-chrome';
 import { ProductShowcase } from '@gitroom/frontend/components/auth/product-showcase';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
+import { authShareMetadata } from '@gitroom/frontend/components/auth/auth.open-graph';
 const ReturnUrlComponent = loadDynamic(() => import('./return.url.component'));
+
+export const metadata: Metadata = {
+  ...authShareMetadata('/auth'),
+};
 
 /**
  * Split screen: the form on a plain surface at the start edge, the product
