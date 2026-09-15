@@ -10,7 +10,7 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 export class ForgotReturnPasswordDto {
   @IsString()
   @IsDefined()
-  @MinLength(3)
+  @MinLength(8)
   password: string;
 
   @IsString()

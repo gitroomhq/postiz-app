@@ -1,11 +1,14 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapTikTokVideoStats } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import { chunk } from 'lodash';
 import dayjs from 'dayjs';
 import {
   BadBody,
@@ -32,6 +35,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'TikTok';
   isBetweenSteps = false;
@@ -1213,5 +1217,85 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching TikTok post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const resolved: string[] = [];
+    const requestedByResolved = new Map<string, string>();
+
+    for (const postId of platformPostIds) {
+      if (postId.indexOf('v_pub_url') === -1) {
+        resolved.push(postId);
+        requestedByResolved.set(postId, postId);
+        continue;
+      }
+      try {
+        const post = await (
+          await this.fetch(
+            'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                publish_id: postId,
+              }),
+            },
+            this.identifier
+          )
+        ).json();
+        if (post?.data?.publicaly_available_post_id?.[0]) {
+          const publicId = String(post.data.publicaly_available_post_id[0]);
+          resolved.push(publicId);
+          requestedByResolved.set(publicId, postId);
+        }
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error resolving TikTok publish id:', err);
+      }
+    }
+
+    const rows: NormalizedPostMetrics[] = [];
+    for (const batch of chunk(resolved, 20)) {
+      try {
+        const response = await this.fetch(
+          'https://open.tiktokapis.com/v2/video/query/?fields=id,like_count,comment_count,share_count,view_count',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              filters: {
+                video_ids: batch,
+              },
+            }),
+          },
+          this.identifier
+        );
+        const data = await response.json();
+        for (const video of data?.data?.videos || []) {
+          const platformPostId =
+            requestedByResolved.get(String(video.id)) || String(video.id);
+          rows.push(mapTikTokVideoStats(platformPostId, video));
+        }
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching TikTok posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

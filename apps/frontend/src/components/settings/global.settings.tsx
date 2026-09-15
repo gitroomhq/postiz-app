@@ -3,7 +3,13 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import ShortlinkPreferenceComponent from '@gitroom/frontend/components/settings/shortlink-preference.component';
-import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
+
+const WorkspaceNameComponent = dynamic(
+  () => import('@gitroom/frontend/components/settings/workspace-name.component'),
+  {
+    ssr: false,
+  }
+);
 
 const MetricComponent = dynamic(
   () => import('@gitroom/frontend/components/settings/metric.component'),
@@ -23,10 +29,10 @@ const DateFormatComponent = dynamic(
 export const GlobalSettings = () => {
   return (
     <div className="mt-[18px] flex flex-col gap-[10px]">
+      <WorkspaceNameComponent />
       <MetricComponent />
       <DateFormatComponent />
       <ShortlinkPreferenceComponent />
-      <DeleteAccountComponent />
     </div>
   );
 };

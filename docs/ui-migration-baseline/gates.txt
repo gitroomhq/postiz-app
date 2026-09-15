@@ -1,6 +1,6 @@
 allowTrial 45
 billingEnabled 55
-isTrailing 18
+isTrailing 19
 tier.ai 7
 tier.autoPost 2
 tier.current 16
@@ -10,4 +10,4 @@ tier.team_members 2
 tier.webhooks 3
 tier.year_price 3
 trialLocked 6
-user.isLifetime 24
+user.isLifetime 25

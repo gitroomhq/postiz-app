@@ -215,9 +215,9 @@ describe('Connect marketplace catalog', () => {
     assert.match(chatgpt.info || '', /schedulePostTool may stay blocked/);
   });
 
-  it('says 14 tools and points keys at API Keys', () => {
+  it('says 17 tools and points keys at API Keys', () => {
     const other = byId('other-mcp');
-    assert.match(other.intro, /14 tools/);
+    assert.match(other.intro, /17 tools/);
     assert.match(other.intro, /Settings → API Keys/);
     const claude = byId('claude-apps');
     assert.match(
@@ -340,7 +340,7 @@ describe('Connect marketplace catalog', () => {
 
     const other = byId('other-mcp');
     assert.match(other.note || '', /Cline, Continue, Goose/);
-    assert.match(other.intro, /14 tools/);
+    assert.match(other.intro, /17 tools/);
     assert.equal(resolveConnectorId('vs-code'), 'vscode');
     assert.equal(resolveConnectorId('cascade'), 'windsurf');
     assert.equal(resolveConnectorId('zed'), 'zed');

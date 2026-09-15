@@ -478,7 +478,7 @@ export POSTQUEEN_API_KEY="your_api_key"
 
 ### 2. Connect over MCP
 
-The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants call tools, and PostQueen speaks it at one URL she hosts. Direct `/mcp` offers **14 tools**: the 13 registry tools plus `ask_postqueen`. Schedule with `integrationSchedulePostTool` (not `schedulePostTool`). Directory OAuth exposes fewer.
+The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants call tools, and PostQueen speaks it at one URL she hosts. Direct `/mcp` offers **17 tools**: the 16 registry tools plus `ask_postqueen`. Schedule with `integrationSchedulePostTool` (not `schedulePostTool`). Directory OAuth exposes fewer.
 
 ```bash
 # Claude Code, one line:

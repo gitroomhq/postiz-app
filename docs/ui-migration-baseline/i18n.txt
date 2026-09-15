@@ -9,9 +9,14 @@ accept_lifetime_retention_body
 access_group
 access_revoked
 account
+account_link_failed
+account_linked
+account_load_failed
 account_menu
 account_not_activated
 account_settings_description
+account_unlink_failed
+account_unlinked
 accounts_that_will_engage
 actions
 activate
@@ -96,8 +101,11 @@ alt_text_subtitle
 amount
 analytics
 analytics_empty_connect_hint
+analytics_lifetime_totals_hint
 analytics_load_failed
 analytics_load_failed_hint
+analytics_posts_load_failed
+analytics_posts_load_failed_hint
 analytics_summary_range
 and
 announcement_color
@@ -113,6 +121,7 @@ api_key_rotated
 api_keys
 api_keys_description
 app_name
+apple
 applies_to_every_post_on_this_channel
 apply
 apply_50_discount_3_months
@@ -145,6 +154,7 @@ are_you_sure_delete_channel
 are_you_sure_delete_this_post
 are_you_sure_disable_channel
 are_you_sure_go_back_to_global_mode
+are_you_sure_leave_workspace
 are_you_sure_remove_social_from_scheduling
 are_you_sure_remove_team_member
 are_you_sure_revoke_access
@@ -326,6 +336,8 @@ browse
 browser_extension
 bug_mail_body
 bug_mail_subject
+by_channel
+by_channel_hint
 by_posting_you_agree_to_tiktoks
 by_registering_you_agree_to_our
 cal_swipe_for_days
@@ -362,6 +374,7 @@ change_bot
 change_bot_picture_title
 change_language
 change_password
+change_password_description
 change_plan_or_payment_method
 channel
 channel_added
@@ -388,6 +401,7 @@ check_circles_above
 checkout_not_finished_logout
 choose_a_new_password
 choose_a_video_type
+choose_channel
 choose_image
 choose_upload_without_posting_description
 chrome_extension_notice
@@ -953,6 +967,8 @@ connect_this_channel
 connect_your_accounts
 connect_your_repository
 connected
+connected_accounts
+connected_accounts_description
 connections
 contact_support
 continue_to
@@ -976,6 +992,7 @@ could_not_add_provider
 could_not_connect_platform
 could_not_connect_to_platform
 could_not_delete_account
+could_not_save
 could_not_use_rss_feed
 create
 create_account
@@ -989,6 +1006,7 @@ create_post_failed
 create_post_options
 create_post_title
 credentials
+current_password
 current_plan
 current_plan_lifetime
 current_time
@@ -999,6 +1017,7 @@ customer_socials_selected
 customer_updated
 customers
 customize_for_channel
+daily
 date
 date_format
 date_format_dmy
@@ -1023,6 +1042,7 @@ delete
 delete_account
 delete_account_confirm
 delete_account_description
+delete_account_password_hint
 delete_announcement
 delete_announcement_confirm
 delete_app
@@ -1032,7 +1052,6 @@ delete_post
 delete_post_tooltip
 delete_posts_before_channel
 delete_tag
-delete_your_account
 deleting_your_account
 deleting_your_account_description
 describe_the_image_you_want_to_generate
@@ -1041,7 +1060,6 @@ description
 description_article_cover
 description_optional
 design_media
-detect_timezone
 developer
 developers
 developers_oauth_description
@@ -1056,6 +1074,13 @@ discount_forever
 discount_until
 documentation
 dont_have_an_account
+dow_fri
+dow_mon
+dow_sat
+dow_sun
+dow_thu
+dow_tue
+dow_wed
 downgrade_on
 downgrade_to_plan
 download
@@ -1080,11 +1105,18 @@ editing_a_specific_network
 editor
 email
 email_address
+email_confirm_sent
 email_me_a_code
+email_update_failed
+email_updated
 enable
 enable_channel
 end_free_trial
 end_trial_to_unlock
+eng_rate
+engagement_mix
+engagement_mix_hint
+enlarge_image
 enter_details
 enter_email
 error
@@ -1113,6 +1145,7 @@ faq_postqueen_gitroom_is_proudly_open_source
 faq_to_confirm_credit_card_information_postqueen_will_hold
 faq_what_are_channels
 faq_what_are_team_members
+farcaster
 feature_setup_admin
 feature_setup_docs
 feature_setup_member
@@ -1168,11 +1201,14 @@ getting_started_publish
 getting_started_publish_hint
 getting_started_schedule
 getting_started_schedule_hint
+github
 global_editing_tooltip
 global_settings
 go_back_to_login
 go_to_billing
 go_to_integrations
+go_to_post
+google
 got_it
 grid
 guide_bluesky
@@ -1273,6 +1309,7 @@ import_as_draft
 import_debug_post
 import_from
 import_selected
+impressions
 insert_emoji
 insert_media
 instagram_add_audio
@@ -1334,6 +1371,7 @@ label_your_brand
 language
 language_settings_description
 launches
+leave
 let_ai_write_this_post
 let_ai_write_this_post_sub
 lifetime_badge
@@ -1345,6 +1383,7 @@ lifetime_window_closed
 lifetime_window_left
 link
 link_copied_to_clipboard
+linked
 links_will_be_removed_from
 list
 list_empty_all_hint
@@ -1397,6 +1436,7 @@ media_library
 media_upload_complete
 media_upload_complete_one
 media_upload_failed
+member
 member_added
 menu
 merge_comments_into_one_post
@@ -1423,11 +1463,14 @@ n_publishing_options
 n_selected
 n_shown
 name
+name_too_short
 needs_reconnect
 network_error_toast
 never_renews
 new
 new_chat
+new_email
+new_password
 new_post
 newest
 next
@@ -1464,12 +1507,14 @@ no_notifications_hint
 no_original_urls
 no_pickable_channels
 no_plugs_for_these_channels
+no_post_performance
 no_posts
 no_posts_yet
 no_published_posts
 no_short_link_results
 no_statistics_available
 no_time_slots
+no_top_posts
 no_upcoming_posts
 none
 none_yet
@@ -1485,6 +1530,7 @@ oauth_app_empty_hint
 oauth_application
 oauth_start_failed
 off
+oidc
 ok
 oldest
 one_publishing_option
@@ -1505,9 +1551,15 @@ or_wait_until_trial_ends
 organizations
 original_date
 original_link
+other_sessions_signed_out
 output_format
 paid
+password
+password_confirm_sent
 password_reset_link_expired
+password_too_short
+password_update_failed
+passwords_do_not_match
 past_only
 past_week
 paste_debug_json
@@ -1520,6 +1572,7 @@ payment_failed_title
 payment_required
 per_month
 per_year
+performance_per_post
 personal_voice_i_am_happy_to_announce
 pick_a_date
 pick_a_day
@@ -1561,9 +1614,11 @@ please_fill_all_required_fields
 please_fix_your_settings
 please_type_your_prompt
 please_wait
+plus_n_channels
 portal_row_sub
 portal_row_title
 post
+post_actions
 post_already_published_drag
 post_already_published_republish_warning
 post_analytics
@@ -1589,6 +1644,8 @@ post_statistics
 post_today_to_start_your_streak
 post_validation_failed
 posted
+posting_days
+posting_days_hint
 posts
 preview
 preview_post
@@ -1596,6 +1653,8 @@ previous
 previous_day
 privacy
 privacy_policy
+profile
+profile_description
 profile_picture
 prompt
 provider
@@ -1612,6 +1671,7 @@ range_30d
 range_7d
 range_90d
 re_authorise_with_the_platform
+reactions
 reactivate_subscription
 read_the_docs
 ready_to_connect
@@ -1620,6 +1680,7 @@ reconnect_before_new_post
 reconnect_channel
 redirect_url
 refresh_channel
+refreshing_analytics
 refund_selected
 refund_selected_confirm
 refunded
@@ -1633,13 +1694,13 @@ remove_delay
 remove_from_customer
 remove_social_account
 removes_the_channel_and_its_scheduled_posts
+repeat_password
 repeat_post_every
 repeat_post_every_label
 report_a_bug
 republish_at
 republish_recurring_note
 republish_the_post
-request_account_deletion
 reschedule_post
 researching_your_content
 resend_activation_email
@@ -1694,6 +1755,7 @@ select_user_to_switch_to
 self_only
 send_again
 send_code
+send_confirmation
 send_invitation_link
 send_invitation_via_email
 send_message
@@ -1706,6 +1768,8 @@ set_delay
 set_delete_failed
 set_deleted_successfully
 set_needs_channel
+set_password
+set_password_description
 set_up_plug
 settings
 settings_update_failed
@@ -1791,6 +1855,7 @@ switch_user_title
 tag_name
 tags
 take_a_tour
+team_action_failed
 team_invite_failed
 team_members
 team_members_will_be_removed
@@ -1836,6 +1901,7 @@ to_your_telegram_group_channel_and_click_here
 today
 tomorrow
 tone
+top_5_posts
 top_title_add_api_key_for
 top_title_add_member
 tour_add_channel_text
@@ -1870,6 +1936,9 @@ tour_featured_text
 tour_featured_title
 tour_views_text
 tour_views_title
+transfer
+transfer_ownership
+transfer_ownership_confirm
 trial_banner_active
 trial_banner_founding
 trial_reel
@@ -1879,11 +1948,15 @@ turn_on
 turn_on_to_disclose_video_promotes
 two_days
 two_weeks
+type_your_email
 ui_demo_post_readonly
 understanding_the_category
+unlink
+unlink_account_confirm
 unlock_team_members
 unpin_chats
 unpin_sidebar
+untitled_post
 update
 update_credentials
 update_key
@@ -1926,6 +1999,7 @@ view_post
 view_receipt
 view_stats
 waiting_for_claim
+wallet
 we_are_experiencing_some_difficulty_try_to_refresh_the_page
 we_are_sorry_to_see_you_go
 we_have_send_you_an_email_with_a_link_to_reset_your_password
@@ -1952,6 +2026,9 @@ week
 what_do_you_want_to_do
 whats_new
 workspace
+workspace_name
+workspace_name_description
+workspace_name_length
 would_you_mind_shortly_tell_us_what_we_could_have_done_better
 write
 write_anything
@@ -1988,6 +2065,7 @@ you_are_promoting_another_brand
 you_are_promoting_yourself
 you_can_add_signatures_to_your_account_to_be_used_in_your_posts
 you_can_write_anything_you_want_and_also_add_links_we_will_do_the_research_for_you
+your_account
 your_assistant
 your_post_should_have_at_least_one_character_or_one_image
 your_video_will_be_labeled_promotional

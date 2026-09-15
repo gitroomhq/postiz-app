@@ -1,5 +1,5 @@
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.team.member.dto';
@@ -8,13 +8,22 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { Organization, ShortLinkPreference, User } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
+import { Organization, Role, ShortLinkPreference, User } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 import { isEmailActivationRequired } from '@gitroom/helpers/utils/activation.required';
 import { isBillingEnabled } from '@gitroom/helpers/utils/billing.enabled';
+import {
+  canChangeRole,
+  canLeaveWorkspace,
+  canMutateMember,
+  canTransferOwnership,
+  isLastSuperAdmin,
+} from '@gitroom/nestjs-libraries/database/prisma/organizations/team-roles';
 
 @Injectable()
 export class OrganizationService {
+  private readonly _logger = new Logger(OrganizationService.name);
+
   constructor(
     private _organizationRepository: OrganizationRepository,
     private _notificationsService: NotificationService
@@ -53,7 +62,17 @@ export class OrganizationService {
     orgId: string,
     role: 'USER' | 'ADMIN'
   ) {
-    return this._organizationRepository.addUserToOrg(userId, id, orgId, role);
+    return this._organizationRepository.addUserToOrg(userId, id, orgId, role).catch(
+      (err) => {
+        if (err instanceof Error && err.message === 'EMAIL_ALREADY_IN_ORG') {
+          throw new HttpException(
+            'A member with this email is already in the workspace',
+            409
+          );
+        }
+        throw err;
+      }
+    );
   }
 
   getOrgById(id: string) {
@@ -93,6 +112,19 @@ export class OrganizationService {
   }
 
   async inviteTeamMember(org: Organization, user: User, body: AddTeamMemberDto) {
+    if (body.email) {
+      const existing = await this._organizationRepository.findOrgMemberByEmail(
+        org.id,
+        body.email
+      );
+      if (existing) {
+        throw new HttpException(
+          'A member with this email is already in the workspace',
+          409
+        );
+      }
+    }
+
     const timeLimit = dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm:ss');
     const id = makeId(5);
     // The three fields the invite actually needs, named rather than spread.
@@ -159,6 +191,17 @@ export class OrganizationService {
 
     const [user] = users;
 
+    const duplicateEmail = await this._organizationRepository.findOrgMemberByEmail(
+      org.id,
+      user.email
+    );
+    if (duplicateEmail) {
+      throw new HttpException(
+        'A member with this email is already in the workspace',
+        409
+      );
+    }
+
     const userOrgs = await this._organizationRepository.getOrgsByUserId(
       user.id
     );
@@ -186,24 +229,142 @@ export class OrganizationService {
     return { added: true };
   }
 
-  async deleteTeamMember(org: Organization, userId: string) {
+  async deleteTeamMember(org: Organization, userId: string, callerUserId: string) {
     const userOrgs = await this._organizationRepository.getOrgsByUserId(userId);
     const findOrgToDelete = userOrgs.find((orgUser) => orgUser.id === org.id);
     if (!findOrgToDelete) {
-      throw new Error('User is not part of this organization');
+      throw new HttpException('User is not part of this organization', 400);
     }
 
     // @ts-ignore
     const myRole = org.users[0].role;
     const userRole = findOrgToDelete.users[0].role;
-    const myLevel = myRole === 'USER' ? 0 : myRole === 'ADMIN' ? 1 : 2;
-    const userLevel = userRole === 'USER' ? 0 : userRole === 'ADMIN' ? 1 : 2;
 
-    if (myLevel < userLevel) {
-      throw new Error('You do not have permission to delete this user');
+    if (userId === callerUserId) {
+      throw new HttpException('Use leave workspace to remove yourself', 400);
+    }
+
+    if (!canMutateMember(myRole, userRole)) {
+      throw new HttpException(
+        'You do not have permission to delete this user',
+        403
+      );
+    }
+
+    const superAdminCount =
+      await this._organizationRepository.countSuperAdmins(org.id);
+    if (isLastSuperAdmin(superAdminCount, userRole)) {
+      throw new HttpException(
+        'The last Super Admin cannot be removed',
+        400
+      );
     }
 
     return this._organizationRepository.deleteTeamMember(org.id, userId);
+  }
+
+  async changeTeamRole(
+    org: Organization,
+    userId: string,
+    role: 'USER' | 'ADMIN'
+  ) {
+    const membership = await this._organizationRepository.getMembership(
+      org.id,
+      userId
+    );
+    if (!membership || membership.disabled || membership.user.deletedAt) {
+      throw new HttpException('User is not part of this organization', 400);
+    }
+
+    // @ts-ignore
+    const myRole = org.users[0].role;
+    if (
+      !canChangeRole({
+        myRole,
+        targetRole: membership.role,
+        nextRole: role,
+      })
+    ) {
+      throw new HttpException(
+        'You do not have permission to change this role',
+        403
+      );
+    }
+
+    return this._organizationRepository.updateMemberRole(
+      org.id,
+      userId,
+      role as Role
+    );
+  }
+
+  async transferOwnership(
+    org: Organization,
+    callerUserId: string,
+    targetUserId: string,
+    confirm: boolean
+  ) {
+    const target = await this._organizationRepository.getMembership(
+      org.id,
+      targetUserId
+    );
+    if (!target || target.disabled || target.user.deletedAt) {
+      throw new HttpException('User is not part of this organization', 400);
+    }
+
+    // @ts-ignore
+    const myRole = org.users[0].role;
+    if (
+      !canTransferOwnership({
+        myRole,
+        targetRole: target.role,
+        confirm,
+      })
+    ) {
+      throw new HttpException('Ownership can only be transferred to an Admin', 400);
+    }
+
+    await this._organizationRepository.transferOwnership(
+      org.id,
+      callerUserId,
+      targetUserId
+    );
+    return { transferred: true };
+  }
+
+  async leaveWorkspace(org: Organization, userId: string) {
+    const membership = await this._organizationRepository.getMembership(
+      org.id,
+      userId
+    );
+    if (!membership) {
+      throw new HttpException('User is not part of this organization', 400);
+    }
+
+    const superAdminCount =
+      await this._organizationRepository.countSuperAdmins(org.id);
+    if (
+      !canLeaveWorkspace({
+        myRole: membership.role,
+        superAdminCount,
+      })
+    ) {
+      throw new HttpException(
+        'The last Super Admin cannot leave the workspace',
+        400
+      );
+    }
+
+    return this._organizationRepository.deleteTeamMember(org.id, userId);
+  }
+
+  async updateOrganizationName(org: Organization, name: string) {
+    // @ts-ignore
+    if (org.users[0].role !== 'SUPERADMIN') {
+      throw new HttpException('Only a Super Admin can rename the workspace', 403);
+    }
+
+    return this._organizationRepository.updateOrganizationName(org.id, name);
   }
 
   disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {

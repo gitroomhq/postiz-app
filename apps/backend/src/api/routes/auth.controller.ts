@@ -376,15 +376,17 @@ export class AuthController {
     }
 
     try {
-      const { jwt, token, isNew } = await this._authService.checkExists(
-        provider,
-        code,
-        redirect_uri,
-        state,
-        req?.cookies?.oauth_state,
-        ip,
-        userAgent,
-      );
+      const { jwt, token, isNew, linked, stepUp } =
+        await this._authService.checkExists(
+          provider,
+          code,
+          redirect_uri,
+          state,
+          req?.cookies?.oauth_state,
+          ip,
+          userAgent,
+          req?.cookies?.oauth_link_user,
+        );
 
       if (token) {
         return response.json({ token });
@@ -395,6 +397,28 @@ export class AuthController {
       }
 
       this.setAuthCookie(response, jwt);
+      if (stepUp) {
+        this.setStepUpCookie(response, stepUp);
+      }
+
+      if (linked) {
+        response.cookie('oauth_link_user', '', {
+          domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+          ...(areCookiesSecured()
+            ? {
+                secure: true,
+                httpOnly: true,
+                sameSite: 'none',
+              }
+            : {}),
+          maxAge: -1,
+          expires: new Date(0),
+        });
+        return response.status(200).json({
+          login: true,
+          linked: true,
+        });
+      }
 
       if (isNew) {
         Sentry.metrics.count('new_user', 1);
@@ -407,7 +431,26 @@ export class AuthController {
         isNew: !!isNew,
       });
     } catch (e: any) {
-      return response.status(400).type('text/plain').send(e.message);
+      const status = typeof e?.status === 'number' ? e.status : 400;
+      return response.status(status).type('text/plain').send(e.message);
+    }
+  }
+
+  private setStepUpCookie(response: Response, token: string) {
+    response.cookie('stepup', token, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(areCookiesSecured()
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 20),
+    });
+
+    if (!areCookiesSecured()) {
+      response.header('stepup', token);
     }
   }
 

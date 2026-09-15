@@ -1,11 +1,13 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapPinterestLifetimeMetrics } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
@@ -13,6 +15,7 @@ import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -52,6 +55,7 @@ export class PinterestProvider
   implements SocialProvider
 {
   identifier = 'pinterest';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'business' as const;
   name = 'Pinterest';
   isBetweenSteps = false;
@@ -685,5 +689,43 @@ export class PinterestProvider
       console.error('Error fetching Pinterest post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const today = dayjs().format('YYYY-MM-DD');
+    const since = dayjs().subtract(89, 'day').format('YYYY-MM-DD');
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const response = await this.fetch(
+          `https://api.pinterest.com/v5/pins/${postId}/analytics?start_date=${since}&end_date=${today}&metric_types=IMPRESSION,PIN_CLICK,OUTBOUND_CLICK,SAVE`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+          this.identifier
+        );
+        const data = await response.json();
+        if (!data?.all?.lifetime_metrics) {
+          continue;
+        }
+        rows.push(mapPinterestLifetimeMetrics(postId, data.all.lifetime_metrics));
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching Pinterest posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

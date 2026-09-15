@@ -1,11 +1,14 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapYouTubeVideoStatistics } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import { chunk } from 'lodash';
 import { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
@@ -61,6 +64,7 @@ const clientAndYoutube = () => {
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 200; // YouTube has strict upload quotas
   identifier = 'youtube';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'video' as const;
   name = 'YouTube';
   isBetweenSteps = true;
@@ -922,6 +926,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
 
       const acc = [] as any[];
       acc.push({
+        label: 'Views',
+        data: mappedData?.map((p: any) => ({
+          total: p.views,
+          date: p.day,
+        })),
+      });
+
+      acc.push({
         label: 'Estimated Minutes Watched',
         data: mappedData?.map((p: any) => ({
           total: p.estimatedMinutesWatched,
@@ -1046,5 +1058,39 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching YouTube post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
+    const youtubeClient = youtube(client);
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const batch of chunk(platformPostIds, 50)) {
+      try {
+        const response = await youtubeClient.videos.list({
+          part: ['statistics'],
+          id: batch,
+        });
+        for (const video of response.data.items || []) {
+          if (!video.id) {
+            continue;
+          }
+          rows.push(mapYouTubeVideoStatistics(video.id, video.statistics));
+        }
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof BadBody) {
+          throw err;
+        }
+        this.throwIfCannotFetch(err);
+        console.error('Error fetching YouTube posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

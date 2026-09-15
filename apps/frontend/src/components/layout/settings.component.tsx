@@ -94,8 +94,8 @@ const SETTINGS_NAV_ICONS: Record<string, string[]> = {
   connect: [
     'M10 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 1 0-5.7-5.7l-1.2 1.2M14 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 1 0 5.7 5.7l1.2-1.2',
   ],
-  // Bell for Notifications (under Workspace). Account glyph kept for
-  // residual `?tab=account` deep links — row is hidden from the nav.
+  // Bell for Notifications (under Workspace). Account glyph is the first
+  // Account-group row (profile / password / connected accounts).
   notifications: [
     'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0',
   ],
@@ -130,14 +130,23 @@ const SettingsNavIcon: FC<{ icon: string }> = ({ icon }) => (
 
 const SettingsTabPane: FC<{
   tabHeader: { title: string; desc?: string };
+  /** Same `useViewport().mobile` as the back-arrow chrome — not Tailwind
+   *  `mobile:` (1025px). At 761–1025 the two-column sheet is up, and hiding
+   *  this heading left Account / Teams untitled. */
+  hideTitle?: boolean;
   children: React.ReactNode;
-}> = ({ tabHeader, children }) => {
+}> = ({ tabHeader, hideTitle, children }) => {
   const { inEditor, chromePatch } = useSettingsTabChrome();
   return (
     <div className="flex w-full max-w-[920px] flex-col">
       {!inEditor && (
         <>
-          <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText mobile:hidden">
+          <h3
+            className={clsx(
+              'm-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText',
+              hideTitle && 'hidden'
+            )}
+          >
             {chromePatch?.title ?? tabHeader.title}
           </h3>
           {!!(chromePatch?.desc ?? tabHeader.desc) && (
@@ -237,10 +246,10 @@ export const SettingsPopup: FC<{
   const isOrgAdmin = ['ADMIN', 'SUPERADMIN'].includes(user?.role!);
   // `group` only sorts the sub-nav into sections; which tabs exist, what they
   // are called and what they open are all unchanged.
-  // Nav: Workspace / More / Connect. Billing lives on /billing and in the
+  // Nav: Workspace / More / Account. Billing lives on /billing and in the
   // user menu — not here. Plugs → Channels Automations; Affiliate → user
-  // menu. Account + "Your user" section hidden for now (owner 2026-08-06);
-  // Notifications sits under Workspace. `?tab=account` still opens the pane.
+  // menu. Account (profile) is the first Account-group row. Notifications
+  // sits under Workspace.
   const list = useMemo(() => {
     const arr: {
       tab: string;
@@ -335,6 +344,12 @@ export const SettingsPopup: FC<{
     // is about the onboarding URL, not about who is asking.
     if (showLogout) {
       arr.push({
+        tab: 'account',
+        label: t('your_account', 'Account'),
+        group: account,
+        icon: 'account',
+      });
+      arr.push({
         tab: 'api',
         label: t('api_keys', 'API Keys'),
         group: account,
@@ -413,7 +428,7 @@ export const SettingsPopup: FC<{
         title: t('account', 'Account'),
         desc: t(
           'account_settings_description',
-          'Personal preferences for your user — separate from workspace settings.'
+          'Your name, email, password and connected accounts.'
         ),
       },
       webhooks: {
@@ -691,7 +706,7 @@ export const SettingsPopup: FC<{
         )}
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px] text-pqText mobile:p-[16px_16px_28px]">
           <SettingsTabChromeProvider key={tab}>
-            <SettingsTabPane tabHeader={tabHeader}>
+            <SettingsTabPane tabHeader={tabHeader} hideTitle={mobile}>
               {tab === 'global_settings' && (
                 <div>
                   <GlobalSettings />

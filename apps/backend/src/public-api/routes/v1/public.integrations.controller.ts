@@ -22,6 +22,8 @@ import { Organization } from '@gitroom/nestjs-libraries/database/prisma/generate
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
+import { PostMetricsService } from '@gitroom/nestjs-libraries/database/prisma/analytics/post-metrics.service';
+import { GetAnalyticsPostsDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.analytics.posts.dto';
 import {
   discardTempFile,
   spooledFileInterceptor,
@@ -74,6 +76,7 @@ export class PublicIntegrationsController {
   constructor(
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
+    private _postMetricsService: PostMetricsService,
     private _mediaService: MediaService,
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
@@ -549,14 +552,22 @@ export class PublicIntegrationsController {
     return this._postsService.updateReleaseId(org.id, id, releaseId);
   }
 
-  @Get('/analytics/:integration')
-  async getAnalytics(
+  @Get('/analytics/posts')
+  getAnalyticsPosts(
     @GetOrgFromRequest() org: Organization,
-    @Param('integration') integration: string,
-    @Query('date') date: string
+    @Query() query: GetAnalyticsPostsDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._integrationService.checkAnalytics(org, integration, date);
+    return this._postMetricsService.listPosts(org.id, query);
+  }
+
+  @Get('/analytics/summary')
+  getAnalyticsSummary(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetAnalyticsPostsDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._postMetricsService.summary(org.id, query);
   }
 
   @Get('/analytics/post/:postId')
@@ -567,6 +578,16 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._postsService.checkPostAnalytics(org.id, postId, +date);
+  }
+
+  @Get('/analytics/:integration')
+  async getAnalytics(
+    @GetOrgFromRequest() org: Organization,
+    @Param('integration') integration: string,
+    @Query('date') date: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._integrationService.checkAnalytics(org, integration, date);
   }
 
   @Post('/integration-trigger/:id')

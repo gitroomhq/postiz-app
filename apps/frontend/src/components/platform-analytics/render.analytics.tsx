@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useMemo } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
@@ -8,6 +8,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import {
   analyticsHasActivity,
+  analyticsResponseIsFailure,
   analyticsResponseNeedsRefresh,
 } from './analytics-activity';
 
@@ -15,63 +16,26 @@ interface AnalyticsDataItem {
   label: string;
   data: Array<{ total: number; date: string }>;
   average?: boolean;
-  percentageChange?: number;
+  hint?: string;
 }
-
-const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
-  value,
-  average,
-}) => {
-  if (value === 0) return null;
-
-  const isPositive = value > 0;
-  const displayValue = Math.abs(value).toFixed(1);
-
-  return (
-    <span
-      className={clsx(
-        'flex h-[23px] shrink-0 items-center gap-[4px] rounded-full pe-[9px] ps-[7px] text-[12.5px] font-[600]',
-        isPositive ? 'bg-pqOkSoft text-pqOk' : 'bg-pqWarnSoft text-pqWarn'
-      )}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 12 12"
-        fill="none"
-        className={isPositive ? '' : 'rotate-180'}
-      >
-        <path d="M6 2.5L10 7.5H2L6 2.5Z" fill="currentColor" />
-      </svg>
-      <span>
-        {displayValue}
-        {average ? 'pp' : '%'}
-      </span>
-    </span>
-  );
-};
 
 const AnalyticsCard: FC<{
   item: AnalyticsDataItem;
   total: string | number;
   index: number;
-}> = ({ item, total, index }) => {
+  compact?: boolean;
+  active?: boolean;
+  onSelect?: () => void;
+}> = ({ item, total, index, compact, active, onSelect }) => {
   const colorVariants = ['purple', 'green', 'amber'] as const;
   const color = colorVariants[index % colorVariants.length];
   const hasDataPoints = item.data.length >= 1;
-
-  return (
-    <div className="flex flex-col overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]">
+  const inner = (
+    <>
       <div className="flex items-center gap-[9px] px-[17px] pt-[15px]">
         <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
           {item.label}
         </span>
-        {item.percentageChange !== undefined && (
-          <TrendIndicator
-            value={item.percentageChange}
-            average={item.average}
-          />
-        )}
       </div>
       {hasDataPoints ? (
         <>
@@ -81,11 +45,15 @@ const AnalyticsCard: FC<{
             </div>
           </div>
           <div className="px-[12px] pb-[12px] pt-[8px]">
-            <div className="relative h-[100px]">
+            <div
+              className={clsx('relative', compact ? 'h-[48px]' : 'h-[100px]')}
+            >
               <ChartSocial
                 data={item.data}
                 color={color === 'amber' ? 'blue' : color}
-                key={`chart-${index}`}
+                variant="spark"
+                label={item.label}
+                key={`chart-${index}-${compact ? 's' : 'm'}`}
               />
             </div>
           </div>
@@ -97,6 +65,98 @@ const AnalyticsCard: FC<{
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={clsx(
+          'flex flex-col overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow]',
+          active
+            ? 'shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]'
+            : 'hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
+        )}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]">
+      {inner}
+    </div>
+  );
+};
+
+const AnalyticsChartBoard: FC<{
+  rows: AnalyticsDataItem[];
+  totals: Array<string | number>;
+  hint?: string;
+}> = ({ rows, totals, hint }) => {
+  const t = useT();
+  const [active, setActive] = useState(0);
+  const safe = rows.length ? Math.min(active, rows.length - 1) : 0;
+  const item = rows[safe];
+  const colorVariants = ['purple', 'green', 'amber'] as const;
+  const color = colorVariants[safe % colorVariants.length];
+
+  if (!item) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-[13px]">
+      <div
+        className={clsx(
+          'grid grid-cols-2 gap-[10px]',
+          rows.length >= 4
+            ? 'lg:grid-cols-4'
+            : rows.length > 2
+              ? 'lg:grid-cols-3'
+              : 'lg:grid-cols-2',
+        )}
+      >
+        {rows.map((row, index) => (
+          <AnalyticsCard
+            key={row.label}
+            item={row}
+            total={totals[index]}
+            index={index}
+            compact
+            active={index === safe}
+            onSelect={() => setActive(index)}
+          />
+        ))}
+      </div>
+      <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-center gap-[9px] px-[17px] pt-[15px] pb-[2px]">
+          <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+            {item.data.length > 2
+              ? `${t('daily', 'Daily')} ${item.label.toLowerCase()}`
+              : item.label}
+          </span>
+        </div>
+        {item.hint || hint ? (
+          <div className="px-[17px] pb-[2px] text-[12px] text-pqMuted">
+            {item.hint || hint}
+          </div>
+        ) : null}
+        <div className="px-[12px] pb-[16px] pt-[8px]">
+          <div className="relative h-[260px]">
+            <ChartSocial
+              data={item.data}
+              color={color === 'amber' ? 'blue' : color}
+              variant="hero"
+              label={item.label}
+              key={`hero-${item.label}`}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -110,7 +170,7 @@ const AnalyticsPaneMessage: FC<{
     <div
       className={clsx(
         'mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-full',
-        iconClassName
+        iconClassName,
       )}
     >
       {icon}
@@ -143,7 +203,7 @@ const RefreshChannelState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       <p className="mb-[12px] text-center text-[15px] text-pqText">
         {t(
           'this_channel_needs_to_be_refreshed',
-          'This channel needs to be refreshed to display analytics'
+          'This channel needs to be refreshed to display analytics',
         )}
       </p>
       <button
@@ -184,6 +244,42 @@ const NoPeriodDataState: FC = () => {
   );
 };
 
+const AnalyticsLoadFailedState: FC<{ onRetry: () => void }> = ({
+  onRetry,
+}) => {
+  const t = useT();
+  return (
+    <AnalyticsPaneMessage
+      iconClassName="bg-pqWarnSoft"
+      icon={
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-pqWarn"
+        >
+          <path d="M12 8v5M12 17h.01" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      }
+    >
+      <p className="mb-[12px] text-center text-[15px] text-pqText">
+        {t('analytics_load_failed', 'Could not load analytics')}
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-[8px] bg-pqSettings px-[16px] py-[8px] text-[14px] font-medium text-pqText transition-colors hover:bg-pqHover"
+      >
+        {t('try_again', 'Try again')}
+      </button>
+    </AnalyticsPaneMessage>
+  );
+};
+
 type AnalyticsIntegration = {
   id: string;
   identifier: string;
@@ -200,13 +296,20 @@ export const RenderAnalytics: FC<{
   const fetch = useFetch();
 
   const load = useCallback(async () => {
-    return (await fetch(`/analytics/${integration.id}?date=${date}`)).json();
-  }, [integration, date]);
+    const response = await fetch(
+      `/analytics/${integration.id}?date=${date}`,
+    );
+    const body = await response.json();
+    if (analyticsResponseIsFailure(response.ok, body)) {
+      throw new Error('Could not load analytics');
+    }
+    return body;
+  }, [fetch, integration.id, date]);
 
   // `isLoading` and not a flag set inside the fetcher: that flag flipped false
   // before the unawaited `.json()` had parsed, and it flipped true again on
   // every revalidation, so the whole grid was replaced by a ghost each refetch.
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     `/analytics-${integration?.id}-${date}`,
     load,
     {
@@ -224,7 +327,7 @@ export const RenderAnalytics: FC<{
       // name and @handle (the header two components up reads
       // `currentIntegration`, which switches immediately). Wrong numbers under
       // the right name is worse than a ghost.
-    }
+    },
   );
 
   const toast = useToaster();
@@ -236,21 +339,24 @@ export const RenderAnalytics: FC<{
           `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
           {
             method: 'GET',
-          }
+          },
         )
       ).json();
 
       if (!url) {
         toast.show(
-          'Could not connect to the platform, please try again later',
-          'warning'
+          t(
+            'could_not_connect_platform',
+            'Could not connect to the platform, please try again later',
+          ),
+          'warning',
         );
         return;
       }
 
       window.location.href = url;
     },
-    [fetch, toast]
+    [fetch, t, toast],
   );
 
   // One narrowing for the whole component. `customFetch` resolves a 4xx too, so
@@ -260,16 +366,16 @@ export const RenderAnalytics: FC<{
   // It must not steal the analytics pane: a channel can fail to publish and
   // still have a quiet, valid insights week — that is "No data in this period".
   const rows: AnalyticsDataItem[] = Array.isArray(data) ? data : [];
-  const needsRefresh =
-    !isLoading && analyticsResponseNeedsRefresh(data);
-  const noPeriodData = !needsRefresh && !analyticsHasActivity(rows);
+  const needsRefresh = !isLoading && analyticsResponseNeedsRefresh(data);
+  const noPeriodData =
+    !error && !needsRefresh && !analyticsHasActivity(rows);
 
   const totals = useMemo(() => {
     return rows.map((p: AnalyticsDataItem) => {
       const value =
         (p?.data.reduce(
           (acc: number, curr: { total: number }) => acc + Number(curr.total),
-          0
+          0,
         ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
@@ -295,20 +401,13 @@ export const RenderAnalytics: FC<{
     return <RefreshChannelState onRefresh={refreshChannel(integration)} />;
   }
 
+  if (error) {
+    return <AnalyticsLoadFailedState onRetry={() => void mutate()} />;
+  }
+
   if (noPeriodData) {
     return <NoPeriodDataState />;
   }
 
-  return (
-    <div className="grid grid-cols-1 gap-[13px] sm:grid-cols-2 lg:grid-cols-3">
-      {rows.map((item: AnalyticsDataItem, index: number) => (
-        <AnalyticsCard
-          key={`analytics-${index}`}
-          item={item}
-          total={totals[index]}
-          index={index}
-        />
-      ))}
-    </div>
-  );
+  return <AnalyticsChartBoard rows={rows} totals={totals} />;
 };

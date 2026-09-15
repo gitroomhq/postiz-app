@@ -1,15 +1,19 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapFacebookPostInsights } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -30,6 +34,7 @@ export const META_GRAPH_API_VERSION = 'v25.0';
 )
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'social' as const;
   name = 'Facebook Page';
   isBetweenSteps = true;
@@ -1079,5 +1084,37 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching Facebook post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const response = await this.fetch(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${postId}/insights?metric=post_total_media_view_unique,post_reactions_by_type_total,post_clicks,post_clicks_by_type&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
+        const { data } = await (
+          response
+        ).json();
+        if (!data || data.length === 0) {
+          continue;
+        }
+        rows.push(mapFacebookPostInsights(postId, data));
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching Facebook posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

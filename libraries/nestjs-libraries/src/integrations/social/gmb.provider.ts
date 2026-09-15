@@ -43,6 +43,7 @@ const clientAndGmb = () => {
 export class GmbProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3;
   identifier = 'gmb';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'business' as const;
   name = 'Google My Business';
   isBetweenSteps = true;

@@ -189,6 +189,9 @@ export class PostsRepository {
         group: true,
         creationMethod: true,
         settings: true,
+        // Calendar/list cards read the first image/video path. Existing column;
+        // minify already passes unmapped keys through as `image`.
+        image: true,
         tags: {
           select: {
             tag: true,
@@ -333,6 +336,7 @@ export class PostsRepository {
           intervalInDays: true,
           group: true,
           creationMethod: true,
+          image: true,
           tags: {
             select: {
               tag: true,

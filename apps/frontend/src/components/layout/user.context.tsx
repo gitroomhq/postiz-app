@@ -22,6 +22,8 @@ export const UserContext = createContext<
       isTrailing: boolean;
       /** Deferred founding fee still owed after the trial window closed. */
       lifetimePaymentPending?: boolean;
+      /** Workspace display name for the current organization. */
+      orgName?: string;
       streakSince: string | null;
       /** Stripe cancel / subscription end day when known (lapsed paywall). */
       subscriptionEndedAt?: string | Date | null;

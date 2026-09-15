@@ -45,7 +45,7 @@ export class LoadToolsService {
     return new Agent({
       id: 'postqueen',
       name: 'postqueen',
-      description: 'Agent that helps schedule and list social media posts for users',
+      description: 'Agent that helps schedule posts and report social analytics for users',
       instructions: ({ requestContext }) => {
         const ui: string = requestContext.get('ui' as never);
         return `
@@ -59,7 +59,7 @@ export class LoadToolsService {
         - Generate pictures for posts
         - Generate videos for posts
         - Generate text for posts
-        - Show global analytics about socials
+        - Answer analytics questions from stored snapshots (analyticsSummaryTool, analyticsPostsTool, analyticsPostTool)
         - List integrations (channels)
         - List groups (customers) and filter the channels by a group
 
@@ -79,6 +79,12 @@ export class LoadToolsService {
       - Make sure you always take the last information I give you about the socials, it might have changed.
       - Before scheduling a post, always make sure you ask the user confirmation by providing all the details of the post (text, images, videos, date, time, social media platform, account).
       - To find or inspect existing posts, use postsListTool with a UTC start and end date - it returns every post scheduled in that window. To cover "all my upcoming posts", pass a wide window starting now.
+      - For analytics, never invent numbers. Call the tools and print what they return, including null as "unknown" (an em dash), never as zero.
+        - analyticsSummaryTool: totals for posts published in the last 7, 30 or 90 days. Optional integrationId or platform.
+        - analyticsPostsTool: ranked posts, top posts, or search with q (caption / channel / platform). Use this for "top posts", "best post this week", "how did the Tuesday X post do".
+        - analyticsPostTool: one post by id. If error is missing_release, tell the user to connect the published content in the app; do not guess.
+        - The date window selects which posts appear by publish date. The numbers are current lifetime totals, not "likes that happened inside this window". Say that clearly when the user asks about a period.
+        - Facebook comments are unknown. Pinterest likes and comments are unknown. Google Business has no per-post metrics. X is omitted when DISABLE_X_ANALYTICS is set.
       - To change the provider settings of an existing post that was not published yet (scheduled or draft), first find it with postsListTool, then use postSettingsTool with the post's id. It only updates the settings - the content and the publish date stay as they are - and only the keys you pass are changed (get them with the integrationSchema tool). Show the user which post and which settings will change and get their confirmation first.
       - Never open the "modal with populated content" to edit an existing post - that modal only CREATES a new post, so using it to edit would duplicate the post. It is only for brand new posts.
       - You can create, schedule and update posts, but you CANNOT delete posts - there is no delete capability. Never offer to delete a post. If the user asks you to delete one, tell them deletion is a destructive action and they should delete it themselves in the PostQueen app (the calendar).
