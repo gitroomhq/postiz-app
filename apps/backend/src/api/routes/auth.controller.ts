@@ -291,7 +291,7 @@ export class AuthController {
 
   // public and creates a signer at Neynar per call, so cap it per client
   @UseGuards(ThrottlerRealIpGuard)
-  @Throttle({ default: { limit: 10, ttl: 3600000 } })
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
   @Post('/farcaster/signer')
   async farcasterSigner() {
     try {

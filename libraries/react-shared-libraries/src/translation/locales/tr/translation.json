@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "Onayınızı bekliyoruz...",
   "farcaster_signer_revoked": "Farcaster onayı iptal edildi, lütfen tekrar deneyin",
   "farcaster_signer_failed": "Farcaster bağlantısı başlatılamadı",
+  "farcaster_scan_instructions": "QR kodunu telefonunla tara ya da bağlantıyı kopyalayıp telefonunda aç, ardından Farcaster uygulamasında Postiz'i onayla.",
+  "farcaster_copy_link": "Farcaster bağlantısını kopyala",
   "farcaster_approval_timeout": "Farcaster onayı zaman aşımına uğradı, lütfen tekrar deneyin",
   "edit_autopost": "Otomatik Gönderiyi Düzenle",
   "add_autopost_title": "Otomatik Gönderi Ekle",

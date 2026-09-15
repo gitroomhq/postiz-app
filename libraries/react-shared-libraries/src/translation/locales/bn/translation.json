@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "আপনার অনুমোদনের জন্য অপেক্ষা করা হচ্ছে...",
   "farcaster_signer_revoked": "Farcaster অনুমোদন বাতিল করা হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন",
   "farcaster_signer_failed": "Farcaster সংযোগ শুরু করতে ব্যর্থ হয়েছে",
+  "farcaster_scan_instructions": "আপনার ফোন দিয়ে QR কোডটি স্ক্যান করুন, অথবা লিঙ্কটি কপি করে আপনার ফোনে খুলুন, এরপর Farcaster অ্যাপে Postiz অনুমোদন দিন।",
+  "farcaster_copy_link": "Farcaster লিঙ্ক কপি করুন",
   "farcaster_approval_timeout": "Farcaster অনুমোদন সময় শেষ হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন",
   "edit_autopost": "অটোপোস্ট সম্পাদনা করুন",
   "add_autopost_title": "অটোপোস্ট যোগ করুন",

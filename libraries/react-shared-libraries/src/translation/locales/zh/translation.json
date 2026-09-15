@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "正在等待您的批准...",
   "farcaster_signer_revoked": "Farcaster 的批准已被撤销，请重试",
   "farcaster_signer_failed": "无法启动 Farcaster 连接",
+  "farcaster_scan_instructions": "请使用手机扫描二维码，或复制链接并在手机上打开，然后在 Farcaster 应用中批准 Postiz。",
+  "farcaster_copy_link": "复制 Farcaster 链接",
   "farcaster_approval_timeout": "Farcaster 批准超时，请重试",
   "edit_autopost": "编辑自动发布",
   "add_autopost_title": "添加自动发布",

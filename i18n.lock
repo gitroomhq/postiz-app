@@ -586,6 +586,8 @@ checksums:
     farcaster_waiting_for_approval: 2ee1cd6c0ff8d0db1a4924c08b80e498
     farcaster_signer_revoked: 0eff3e12951a952f8db78f54be25cf2d
     farcaster_signer_failed: d3274186449d73fb6ffb37b2f47bb9d4
+    farcaster_scan_instructions: 28fdf8386de75fc770b3c2585a3cf8bc
+    farcaster_copy_link: 3bf926fddc31ea08755160e6abce8674
     farcaster_approval_timeout: 2a434e0962661820d56dba28a88ec18d
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9

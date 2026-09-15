@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "מחכים לאישור ממך...",
   "farcaster_signer_revoked": "האישור של Farcaster בוטל, נא לנסות שוב",
   "farcaster_signer_failed": "החיבור ל-Farcaster נכשל",
+  "farcaster_scan_instructions": "סרוק את קוד ה-QR עם הטלפון שלך, או העתק את הקישור ופתח אותו בטלפון, ואז אשר את Postiz באפליקציית Farcaster.",
+  "farcaster_copy_link": "העתק קישור Farcaster",
   "farcaster_approval_timeout": "פג תוקף האישור מ-Farcaster, נא לנסות שוב",
   "edit_autopost": "ערוך פרסום אוטומטי",
   "add_autopost_title": "הוסף פרסום אוטומטי",
