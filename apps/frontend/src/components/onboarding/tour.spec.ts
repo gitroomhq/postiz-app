@@ -68,6 +68,9 @@ describe('product tour Connect steps', () => {
   });
 
   it('hides Chatbase over the tour and phone sheets, and uses a 44px Next on phones', () => {
+    assert.match(overlay, /seenKey/);
+    assert.match(overlay, /STORAGE_KEY}:\$\{orgId\}/);
+    assert.match(overlay, /if \(!orgId\) return/);
     assert.match(overlay, /isMobileTour\(vw\)/);
     assert.match(overlay, /min-h-\[44px\]/);
     assert.match(overlay, /maxHeight/);

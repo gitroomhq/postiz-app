@@ -55,8 +55,9 @@ export { STEPS, TOUR_COPY, type StepMeta } from './tour.steps';
 
 const RING_PAD = 8;
 
-/** Dismissal is per-browser. It is a UI preference, not account data. */
+/** Dismissal is per organization in this browser, not a global UI preference. */
 const STORAGE_KEY = 'pq-tour-seen';
+const seenKey = (orgId: string) => `${STORAGE_KEY}:${orgId}`;
 /**
  * "This account has a first run owing." Set the moment the server says so,
  * cleared when the tour actually opens.
@@ -165,10 +166,11 @@ export const useTour = () =>
  */
 export const useTourRunning = () => useTourStore((state) => state.running);
 
-/** True when this browser has already been through the tour. */
-export const tourSeen = () => {
+/** True when this browser has already been through the tour for this org. */
+export const tourSeen = (orgId?: string) => {
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
+    if (!orgId) return false;
+    return localStorage.getItem(seenKey(orgId)) === '1';
   } catch (err) {
     // Safari in private mode throws on localStorage. Treat it as unseen; a
     // repeated tour is a smaller failure than a tour nobody can start.
@@ -176,9 +178,9 @@ export const tourSeen = () => {
   }
 };
 
-const markSeen = () => {
+const markSeen = (orgId?: string) => {
   try {
-    localStorage.setItem(STORAGE_KEY, '1');
+    if (orgId) localStorage.setItem(seenKey(orgId), '1');
     // Whatever was owing has now been shown, or deliberately dismissed.
     localStorage.removeItem(PENDING_KEY);
   } catch (err) {
@@ -763,6 +765,8 @@ const TourDragGhost: FC<{ ghost: Ghost }> = ({ ghost }) => {
 
 export const Tour: FC = () => {
   const t = useT();
+  const user = useUser();
+  const orgId = user?.orgId || '';
   const router = useRouter();
   const pathname = usePathname();
   const steps = useSteps();
@@ -819,7 +823,7 @@ export const Tour: FC = () => {
 
   const finish = useCallback(
     (opts?: { leaveOnAddChannel?: boolean }) => {
-      markSeen();
+      markSeen(orgId);
       // Finish on the last step leaves Add Channel open (design). Esc still
       // dismisses without forcing that route.
       if (opts?.leaveOnAddChannel) {
@@ -832,13 +836,15 @@ export const Tour: FC = () => {
       setRect(null);
       setBand(null);
     },
-    [router, stop, stripTourQuery]
+    [orgId, router, stop, stripTourQuery]
   );
 
   // First-run and Help both land here. `?onboarding=` is kept as an alias so
   // auth redirects and OAuth return URLs keep working after the old modal died.
-  // Soft entry only: if this browser already finished the tour, leave the URL
-  // alone as a no-op (Help → Setup tour still calls `start()` directly).
+  // Soft entry only: if this organization already finished the tour in this
+  // browser, leave the URL alone as a no-op (Help → Setup tour still calls
+  // `start()` directly). A second workspace in the same browser still gets
+  // its own first run — seen is per org, not global.
   const { start } = useTourStore(
     useShallow((state) => ({ start: state.start }))
   );
@@ -852,9 +858,12 @@ export const Tour: FC = () => {
     const asked =
       !!query.get('tour') || !!query.get('onboarding') || tourPending();
     if (!asked) return;
+    // User context is still loading. Do not latch urlStarted or we will
+    // swallow the first run, and do not consult a missing org id as "seen".
+    if (!orgId) return;
 
     urlStarted.current = true;
-    if (tourSeen()) {
+    if (tourSeen(orgId)) {
       clearTourPending();
       stripTourQuery();
       return;
@@ -870,7 +879,7 @@ export const Tour: FC = () => {
       router.replace(`/launches?${params.toString()}`);
     }
     start();
-  }, [query, start, stripTourQuery, pathname, router]);
+  }, [orgId, query, start, stripTourQuery, pathname, router]);
 
   // A step's path may carry a query — the settings tabs are deep-linked — so
   // "are we there yet" has to compare the params too, not just the pathname.
