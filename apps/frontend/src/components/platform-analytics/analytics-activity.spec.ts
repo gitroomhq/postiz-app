@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { analyticsHasActivity } from './analytics-activity.ts';
+import {
+  analyticsHasActivity,
+  analyticsResponseNeedsRefresh,
+} from './analytics-activity.ts';
 
 describe('analyticsHasActivity', () => {
   it('is false for an empty successful list', () => {
@@ -30,6 +33,37 @@ describe('analyticsHasActivity', () => {
         },
       ]),
       true
+    );
+  });
+});
+
+describe('analyticsResponseNeedsRefresh', () => {
+  it('is false for a successful list, including an empty period', () => {
+    assert.equal(analyticsResponseNeedsRefresh([]), false);
+    assert.equal(
+      analyticsResponseNeedsRefresh([{ label: 'Reach', data: [] }]),
+      false
+    );
+  });
+
+  it('is true only for the analytics reconnect HTTP body', () => {
+    assert.equal(
+      analyticsResponseNeedsRefresh({
+        message: 'This channel needs to be refreshed',
+        statusCode: 400,
+      }),
+      true
+    );
+  });
+
+  it('is false for other error bodies and posting refreshNeeded leftovers', () => {
+    assert.equal(analyticsResponseNeedsRefresh(undefined), false);
+    assert.equal(
+      analyticsResponseNeedsRefresh({
+        message: 'Internal server error',
+        statusCode: 500,
+      }),
+      false
     );
   });
 });

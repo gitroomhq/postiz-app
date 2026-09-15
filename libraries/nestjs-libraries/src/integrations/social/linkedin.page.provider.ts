@@ -324,55 +324,52 @@ export class LinkedinPageProvider
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
-    const pageStats = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
-    this.throwIfCannotFetch(pageStats);
+    const pageStatsResponse = await fetch(
+      `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Linkedin-Version': '202601',
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+      }
+    );
+    const pageStats = await pageStatsResponse.json();
+    this.throwIfCannotFetch(pageStats, pageStatsResponse.status);
     const elements: Root[] = pageStats?.elements || [];
 
-    const followerStats = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
-    this.throwIfCannotFetch(followerStats);
+    const followerStatsResponse = await fetch(
+      `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Linkedin-Version': '202601',
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+      }
+    );
+    const followerStats = await followerStatsResponse.json();
+    this.throwIfCannotFetch(followerStats, followerStatsResponse.status);
     const elements2: Root[] = followerStats?.elements || [];
 
-    const shareStats = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
-    this.throwIfCannotFetch(shareStats);
+    const shareStatsResponse = await fetch(
+      `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+        `urn:li:organization:${id}`
+      )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Linkedin-Version': '202601',
+          'X-Restli-Protocol-Version': '2.0.0',
+        },
+      }
+    );
+    const shareStats = await shareStatsResponse.json();
+    this.throwIfCannotFetch(shareStats, shareStatsResponse.status);
     const elements3: Root[] = shareStats?.elements || [];
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(

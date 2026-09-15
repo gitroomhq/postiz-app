@@ -1069,6 +1069,7 @@ export class TiktokBusinessProvider
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
+      this.throwIfCannotFetch(err);
       console.error('Error fetching TikTok Business analytics:', err);
       return [];
     }

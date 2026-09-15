@@ -724,24 +724,25 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const until = dayjs().endOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const json = await (
-      await fetch(
-        `https://graph.threads.net/v1.0/${id}/threads_insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-      )
-    ).json();
-    this.throwIfCannotFetch(json);
+    const response = await fetch(
+      `https://graph.threads.net/v1.0/${id}/threads_insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+    );
+    const json = await response.json();
+    this.throwIfCannotFetch(json, response.status);
     const { data } = json;
 
     return (
-      data?.map((d: any) => ({
+      (Array.isArray(data) ? data : []).map((d: any) => ({
         label: capitalize(d.name),
         percentageChange: 5,
         data: d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
-          : d.values.map((v: any) => ({
-              total: v.value,
-              date: dayjs(v.end_time).format('YYYY-MM-DD'),
-            })),
+          : Array.isArray(d.values)
+            ? d.values.map((v: any) => ({
+                total: v.value,
+                date: dayjs(v.end_time).format('YYYY-MM-DD'),
+              }))
+            : [],
       })) || []
     );
   }

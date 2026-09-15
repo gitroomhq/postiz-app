@@ -6,7 +6,10 @@ import { AnalyticsCardsGhost } from '@gitroom/frontend/components/layout/loading
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
-import { analyticsHasActivity } from './analytics-activity';
+import {
+  analyticsHasActivity,
+  analyticsResponseNeedsRefresh,
+} from './analytics-activity';
 
 interface AnalyticsDataItem {
   label: string;
@@ -253,9 +256,12 @@ export const RenderAnalytics: FC<{
   // One narrowing for the whole component. `customFetch` resolves a 4xx too, so
   // `data` can be `{ message, statusCode }` — `.map` on that is a render crash,
   // and guarding only the memo left the JSX below to do it anyway.
+  // `integration.refreshNeeded` is a posting flag (Error on a calendar row).
+  // It must not steal the analytics pane: a channel can fail to publish and
+  // still have a quiet, valid insights week — that is "No data in this period".
   const rows: AnalyticsDataItem[] = Array.isArray(data) ? data : [];
-  const failed = !isLoading && !Array.isArray(data);
-  const needsRefresh = failed || !!integration.refreshNeeded;
+  const needsRefresh =
+    !isLoading && analyticsResponseNeedsRefresh(data);
   const noPeriodData = !needsRefresh && !analyticsHasActivity(rows);
 
   const totals = useMemo(() => {
@@ -283,8 +289,8 @@ export const RenderAnalytics: FC<{
     );
   }
 
-  // A 4xx body, a thrown JSON parse, or a channel already flagged
-  // refreshNeeded. Empty series is not this — that is "no activity".
+  // Only the analytics endpoint saying the token is dead. Empty series is
+  // "no activity", not a reconnect.
   if (needsRefresh) {
     return <RefreshChannelState onRefresh={refreshChannel(integration)} />;
   }

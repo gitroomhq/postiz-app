@@ -24,6 +24,10 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
 import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
+// Providers that actually implement channel `analytics()`. LinkedIn personal,
+// Telegram, Bluesky, Reddit, Discord, Slack, Mastodon, Twitch, Kick,
+// WordPress, VK, Tumblr, and the rest have no insights API here — listing
+// them would only ever paint an empty pane (or, worse, a reconnect prompt).
 const allowedIntegrations = [
   'facebook',
   'instagram',

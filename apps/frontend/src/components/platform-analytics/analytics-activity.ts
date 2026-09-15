@@ -10,3 +10,22 @@ export function analyticsHasActivity(
     (item.data || []).some((point) => Number(point.total) !== 0)
   );
 }
+
+/**
+ * `customFetch` resolves 4xx, so SWR `data` can be `{ message, statusCode }`
+ * instead of an array. Only the reconnect copy from `checkAnalytics` should
+ * flip the pane to Refresh Channel. A posting-era `refreshNeeded` flag, a
+ * 500, or a random error body is not a new login — that is an empty period.
+ */
+export function analyticsResponseNeedsRefresh(data: unknown): boolean {
+  if (data == null || Array.isArray(data)) {
+    return false;
+  }
+  if (typeof data !== 'object') {
+    return false;
+  }
+  const message = String(
+    (data as { message?: unknown }).message || ''
+  );
+  return /needs to be refreshed/i.test(message);
+}
