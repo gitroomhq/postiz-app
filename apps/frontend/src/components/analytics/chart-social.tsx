@@ -27,38 +27,14 @@ export const ChartSocial: FC<{
   const dark = mode === 'dark';
 
   const list = useMemo(() => {
-    const source =
-      variant === 'hero' || data.length < 7
-        ? data
-        : mergeDataPoints(data, 7);
-    if (source.length === 1) {
-      return [source[0], source[0]];
-    }
-    return source;
+    return variant === 'hero' || data.length < 7
+      ? data
+      : mergeDataPoints(data, 7);
   }, [data, variant]);
 
   const ref = useRef<HTMLCanvasElement>(null);
   const chart = useRef<null | DrawChart>(null);
 
-  const colorSchemes = {
-    purple: {
-      start: 'rgba(97, 43, 211, 0.8)',
-      end: 'rgba(97, 43, 211, 0.08)',
-      border: 'rgb(97, 43, 211)',
-    },
-    green: {
-      start: 'rgba(50, 213, 131, 0.8)',
-      end: 'rgba(50, 213, 131, 0.08)',
-      border: 'rgb(50, 213, 131)',
-    },
-    blue: {
-      start: 'rgba(29, 155, 240, 0.8)',
-      end: 'rgba(29, 155, 240, 0.08)',
-      border: 'rgb(29, 155, 240)',
-    },
-  };
-
-  const colors = colorSchemes[color];
   const hero = variant === 'hero';
 
   useEffect(() => {
@@ -69,11 +45,36 @@ export const ChartSocial: FC<{
     if (!ctx) {
       return;
     }
-    const gradient = ctx.createLinearGradient(0, 0, 0, ref.current.height || 240);
+    const styles = getComputedStyle(ref.current);
+    const token = (name: string) => styles.getPropertyValue(name).trim();
+    const colorSchemes = {
+      purple: {
+        start: token('--chartBrandFill'),
+        end: token('--chartBrandFade'),
+        border: token('--brand'),
+      },
+      green: {
+        start: token('--chartOkFill'),
+        end: token('--chartOkFade'),
+        border: token('--ok'),
+      },
+      blue: {
+        start: token('--chartBlueFill'),
+        end: token('--chartBlueFade'),
+        border: token('--chartBlue'),
+      },
+    };
+    const colors = colorSchemes[color];
+    const gradient = ctx.createLinearGradient(
+      0,
+      0,
+      0,
+      ref.current.height || 240,
+    );
     gradient.addColorStop(0, colors.start);
     gradient.addColorStop(1, colors.end);
-    const tick = dark ? '#6e6e78' : '#777';
-    const grid = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const tick = token('--soft');
+    const grid = token('--line');
 
     chart.current = new DrawChart(ref.current, {
       type: 'line',
@@ -139,10 +140,10 @@ export const ChartSocial: FC<{
           },
           tooltip: {
             enabled: true,
-            backgroundColor: dark ? '#1f1f24' : '#fff',
-            titleColor: dark ? '#ededf0' : '#000',
-            bodyColor: dark ? '#9b9ba4' : '#777',
-            borderColor: dark ? '#26262c' : '#e7e9eb',
+            backgroundColor: token('--pop'),
+            titleColor: token('--text'),
+            bodyColor: token('--muted'),
+            borderColor: token('--border'),
             borderWidth: 1,
             padding: 10,
             cornerRadius: 8,
@@ -169,10 +170,10 @@ export const ChartSocial: FC<{
             fill: true,
             data: list.map((row) => row.total),
             tension: 0.35,
-            pointRadius: 0,
+            pointRadius: list.length === 1 ? (hero ? 4 : 3) : 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: colors.border,
-            pointHoverBorderColor: dark ? '#1e1d1d' : '#fff',
+            pointHoverBorderColor: token('--inner'),
             pointHoverBorderWidth: 2,
           },
         ],
@@ -181,7 +182,7 @@ export const ChartSocial: FC<{
     return () => {
       chart.current?.destroy();
     };
-  }, [colors.border, colors.end, colors.start, dark, hero, label, list]);
+  }, [color, dark, hero, label, list]);
 
   return <canvas className="h-full w-full" ref={ref} />;
 };

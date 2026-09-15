@@ -36,62 +36,45 @@ const formatRate = (value: number | null) => {
   return `${value.toFixed(2)}%`;
 };
 
-const MissingMetric: FC<{ label: string }> = ({ label }) => (
-  <span
-    className="inline-flex h-[1.1em] items-center justify-end"
-    aria-label={label}
-  >
-    <span
-      className="size-[8px] rounded-full bg-pqMuted/40"
-      aria-hidden
-    />
-  </span>
-);
+type ChannelSummary = {
+  integrationId: string;
+  platform: string;
+  channelName: string;
+  posts: number;
+  impressions: number | null;
+};
 
-const ChannelMix: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
+const ChannelMix: FC<{ rows: ChannelSummary[] }> = ({ rows }) => {
   const t = useT();
-  const mix = useMemo(() => {
-    const map = new Map<
-      string,
-      { platform: string; name: string; impressions: number; posts: number }
-    >();
-    for (const post of rows) {
-      const cur = map.get(post.platform) || {
-        platform: post.platform,
-        name: post.channelName,
-        impressions: 0,
-        posts: 0,
-      };
-      cur.posts += 1;
-      cur.impressions += post.impressions || 0;
-      map.set(post.platform, cur);
-    }
-    return [...map.values()].sort(
-      (a, b) => b.impressions - a.impressions || b.posts - a.posts
-    );
-  }, [rows]);
-  const barMax = Math.max(
-    ...mix.map((row) => row.impressions || row.posts),
-    1
+  const mix = useMemo(
+    () =>
+      rows
+        .filter((row) => row.impressions != null)
+        .sort(
+          (a, b) =>
+            (b.impressions ?? 0) - (a.impressions ?? 0) || b.posts - a.posts,
+        ),
+    [rows],
   );
+  const barMax = Math.max(...mix.map((row) => row.impressions ?? 0), 1);
   if (mix.length < 2) {
     return null;
   }
-  const ringTotal = mix.reduce(
-    (sum, row) => sum + (row.impressions || row.posts),
-    0
-  );
+  const ringTotal = mix.reduce((sum, row) => sum + (row.impressions ?? 0), 0);
+  if (ringTotal <= 0) {
+    return null;
+  }
   const ringColors = [
-    '#7c3aed',
-    '#32d583',
-    '#1d9bf0',
-    '#f59e0b',
-    '#f43f5e',
-    '#14b8a6',
+    'var(--brand)',
+    'var(--ok)',
+    'var(--ltSolid)',
+    'var(--pink)',
+    'var(--warn)',
+    'var(--soft)',
   ];
   let ringCursor = 0;
   const ringStops = mix.map((row, index) => {
-    const share = ((row.impressions || row.posts) / (ringTotal || 1)) * 100;
+    const share = ((row.impressions ?? 0) / ringTotal) * 100;
     const start = ringCursor;
     ringCursor += share;
     return `${ringColors[index % ringColors.length]} ${start}% ${ringCursor}%`;
@@ -116,10 +99,10 @@ const ChannelMix: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-[12px]">
           {mix.map((row, index) => {
-            const amount = row.impressions || row.posts;
+            const amount = row.impressions ?? 0;
             const pct = Math.max(8, Math.round((amount / barMax) * 100));
             return (
-              <div key={row.platform} className="flex flex-col gap-[6px]">
+              <div key={row.integrationId} className="flex flex-col gap-[6px]">
                 <div className="flex items-center gap-[8px] text-[13px]">
                   <span
                     className="size-[8px] shrink-0 rounded-full"
@@ -128,16 +111,14 @@ const ChannelMix: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
                     }}
                   />
                   <span className="min-w-0 flex-1 truncate text-pqText">
-                    {row.name}
+                    {row.channelName}
                   </span>
                   <span className="shrink-0 tabular-nums text-pqMuted">
                     {row.posts}
                   </span>
-                  {row.impressions ? (
-                    <span className="w-[48px] shrink-0 text-end tabular-nums text-pqText">
-                      {formatCount(row.impressions)}
-                    </span>
-                  ) : null}
+                  <span className="w-[48px] shrink-0 text-end tabular-nums text-pqText">
+                    {formatCount(row.impressions)}
+                  </span>
                 </div>
                 <div className="h-[8px] overflow-hidden rounded-full bg-pqSettings">
                   <div
@@ -157,7 +138,7 @@ const ChannelMix: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
   );
 };
 
-const WeekdayPulse: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
+const WeekdayPulse: FC<{ counts: number[] }> = ({ counts }) => {
   const t = useT();
   const labels = [
     t('dow_mon', 'Mon'),
@@ -168,16 +149,8 @@ const WeekdayPulse: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
     t('dow_sat', 'Sat'),
     t('dow_sun', 'Sun'),
   ];
-  const counts = useMemo(() => {
-    const next = [0, 0, 0, 0, 0, 0, 0];
-    for (const post of rows) {
-      const day = new Date(post.publishDate).getDay();
-      next[day === 0 ? 6 : day - 1] += 1;
-    }
-    return next;
-  }, [rows]);
   const max = Math.max(...counts, 1);
-  if (!rows.length) {
+  if (!counts.some((count) => count > 0)) {
     return null;
   }
   return (
@@ -213,15 +186,14 @@ const WeekdayPulse: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
   );
 };
 
-const EngagementSplit: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
+const EngagementSplit: FC<{
+  mix: { reactions: number; comments: number } | null | undefined;
+}> = ({ mix }) => {
   const t = useT();
-  const reactions = rows.reduce(
-    (sum, row) => sum + (row.reactions || 0),
-    0
-  );
-  const comments = rows.reduce((sum, row) => sum + (row.comments || 0), 0);
+  const reactions = mix?.reactions ?? 0;
+  const comments = mix?.comments ?? 0;
   const total = reactions + comments;
-  if (!total) {
+  if (!mix || !total) {
     return null;
   }
   const reactionPct = Math.round((reactions / total) * 100);
@@ -238,7 +210,7 @@ const EngagementSplit: FC<{ rows: AnalyticsPostRow[] }> = ({ rows }) => {
           className="h-full bg-pqBrand"
           style={{ width: `${reactionPct}%` }}
         />
-        <div className="h-full flex-1 bg-[#32d583]" />
+        <div className="h-full flex-1 bg-pqOk" />
       </div>
       <div className="mt-[14px] grid grid-cols-2 gap-[12px]">
         <div>
@@ -365,7 +337,7 @@ export const WorkspaceAnalytics: FC<{
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(0);
   const [topMetric, setTopMetric] = useState<'reactions' | 'comments'>(
-    'reactions'
+    'reactions',
   );
 
   useEffect(() => {
@@ -420,21 +392,27 @@ export const WorkspaceAnalytics: FC<{
   if (summary.error || posts.error) {
     return (
       <EmptyState
-        title={t('analytics_posts_load_failed', 'Could not load post analytics')}
+        title={t(
+          'analytics_posts_load_failed',
+          'Could not load post analytics',
+        )}
         description={t(
           'analytics_posts_load_failed_hint',
-          'Something went wrong fetching post totals. Check your connection and try again.'
+          'Something went wrong fetching post totals. Check your connection and try again.',
         )}
       />
     );
   }
 
   const list = posts.data;
-  const totalPages = Math.max(1, Math.ceil((list?.total || 0) / (list?.limit || 20)));
+  const totalPages = Math.max(
+    1,
+    Math.ceil((list?.total || 0) / (list?.limit || 20)),
+  );
   const showComments = list?.columns.comments !== false;
   const showReactions = list?.columns.reactions !== false;
   const showImpressions = list?.columns.impressions !== false;
-  const showEngagement = list?.posts?.some((row) => row.engagementRate != null);
+  const showEngagement = list?.columns.engagement !== false;
   const rankingByComments = topMetric === 'comments' && showComments;
   const topPosts = rankingByComments
     ? list?.topComments || list?.top || []
@@ -445,10 +423,12 @@ export const WorkspaceAnalytics: FC<{
   } ${showComments ? 'minmax(108px,0.45fr)' : ''} ${
     showEngagement ? 'minmax(96px,0.4fr)' : ''
   } ${showImpressions ? 'minmax(120px,0.5fr)' : ''} 40px`;
-  const missingLabel = t('metric_not_available', 'Not available');
-  const channelMixCount = new Set(
-    (list?.posts || []).map((row) => row.platform)
-  ).size;
+  const channelMixRows = (summary.data?.channels || []).filter(
+    (row) => row.impressions != null,
+  );
+  const showChannelMix =
+    channelMixRows.length > 1 &&
+    channelMixRows.some((row) => (row.impressions ?? 0) > 0);
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -461,110 +441,110 @@ export const WorkspaceAnalytics: FC<{
       <div
         className={clsx(
           'grid grid-cols-1 gap-[13px]',
-          channelMixCount > 1 &&
-            'xl:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.4fr)]'
+          showChannelMix &&
+            'xl:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.4fr)]',
         )}
       >
-        <ChannelMix rows={list?.posts || []} />
-      <section className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
-        <div className="mb-[12px] flex flex-wrap items-center gap-[12px]">
-          <div className="min-w-0 flex-1 font-display text-[16px] font-[600] text-pqText">
-            {t('top_5_posts', 'Top 5 posts')}
-          </div>
-          {showComments && (
-            <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
-              {(
-                [
-                  ['reactions', t('reactions', 'Reactions')],
-                  ['comments', t('comments', 'Comments')],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setTopMetric(key)}
-                  className={clsx(
-                    'h-[32px] min-h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
-                    mobile && 'min-h-[44px] px-[14px]',
-                    (rankingByComments ? 'comments' : 'reactions') === key
-                      ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
-                      : 'font-[500] text-pqMuted hover:text-pqText'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
+        {showChannelMix && <ChannelMix rows={channelMixRows} />}
+        <section className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
+          <div className="mb-[12px] flex flex-wrap items-center gap-[12px]">
+            <div className="min-w-0 flex-1 font-display text-[16px] font-[600] text-pqText">
+              {t('top_5_posts', 'Top 5 posts')}
             </div>
-          )}
-        </div>
-        {topPosts.length ? (
-          <div className="grid grid-cols-1 gap-[10px] min-[520px]:grid-cols-2 md:grid-cols-4 min-[1100px]:grid-cols-5">
-            {topPosts.map((post, index) => {
-              const metric = rankingByComments ? post.comments : post.reactions;
-              const wide = index === 4;
-              return (
-                <button
-                  key={post.id}
-                  type="button"
-                  onClick={() => openStatistics(post.id)}
-                  className={clsx(
-                    'flex min-w-0 items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
-                    wide &&
-                      'min-[520px]:col-span-2 md:col-span-4 md:px-[16px] min-[1100px]:col-span-1 min-[1100px]:px-[12px]',
-                    index === 0 &&
-                      'shadow-[inset_0_0_0_1px_rgba(124,58,237,0.4)]'
-                  )}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={clsx(
-                        'text-[11px] font-[700] tabular-nums',
-                        index === 0 ? 'text-pqBrand' : 'text-pqMuted'
-                      )}
-                    >
-                      #{index + 1}
-                    </div>
-                    <div className="mt-[2px] line-clamp-2 text-[13.5px] text-pqText">
-                      {previewText(post.content) ||
-                        t('untitled_post', 'Untitled post')}
-                    </div>
-                    <div className="mt-[3px] truncate text-[12px] text-pqMuted">
-                      {post.channelName} · {formatDate(post.publishDate)}
-                    </div>
-                    {metric != null && (
-                      <div className="mt-[8px] text-[18px] font-[600] tabular-nums text-pqText">
-                        {formatCount(metric)}
-                        <span className="ms-[6px] text-[12px] font-[500] text-pqMuted">
-                          {rankingByComments
-                            ? t('comments', 'Comments')
-                            : t('reactions', 'Reactions')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <PostThumb
-                    post={post}
+            {showComments && (
+              <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+                {(
+                  [
+                    ['reactions', t('reactions', 'Reactions')],
+                    ['comments', t('comments', 'Comments')],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTopMetric(key)}
                     className={clsx(
-                      'size-[56px]',
-                      wide && 'md:size-[72px] min-[1100px]:size-[56px]'
+                      'h-[32px] min-h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
+                      mobile && 'min-h-[44px] px-[14px]',
+                      (rankingByComments ? 'comments' : 'reactions') === key
+                        ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
+                        : 'font-[500] text-pqMuted hover:text-pqText',
                     )}
-                  />
-                </button>
-              );
-            })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <EmptyState
-            title={t('no_top_posts', 'No posts in this period')}
-          />
-        )}
-      </section>
+          {topPosts.length ? (
+            <div className="grid grid-cols-1 gap-[10px] min-[520px]:grid-cols-2 md:grid-cols-4 min-[1100px]:grid-cols-5">
+              {topPosts.map((post, index) => {
+                const metric = rankingByComments
+                  ? post.comments
+                  : post.reactions;
+                const wide = index === 4;
+                return (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => openStatistics(post.id)}
+                    className={clsx(
+                      'flex min-w-0 items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
+                      wide &&
+                        'min-[520px]:col-span-2 md:col-span-4 md:px-[16px] min-[1100px]:col-span-1 min-[1100px]:px-[12px]',
+                      index === 0 &&
+                        'shadow-[inset_0_0_0_1px_rgba(124,58,237,0.4)]',
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={clsx(
+                          'text-[11px] font-[700] tabular-nums',
+                          index === 0 ? 'text-pqBrand' : 'text-pqMuted',
+                        )}
+                      >
+                        #{index + 1}
+                      </div>
+                      <div className="mt-[2px] line-clamp-2 text-[13.5px] text-pqText">
+                        {previewText(post.content) ||
+                          t('untitled_post', 'Untitled post')}
+                      </div>
+                      <div className="mt-[3px] truncate text-[12px] text-pqMuted">
+                        {post.channelName} · {formatDate(post.publishDate)}
+                      </div>
+                      {metric != null && (
+                        <div className="mt-[8px] text-[18px] font-[600] tabular-nums text-pqText">
+                          {formatCount(metric)}
+                          <span className="ms-[6px] text-[12px] font-[500] text-pqMuted">
+                            {rankingByComments
+                              ? t('comments', 'Comments')
+                              : t('reactions', 'Reactions')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <PostThumb
+                      post={post}
+                      className={clsx(
+                        'size-[56px]',
+                        wide && 'md:size-[72px] min-[1100px]:size-[56px]',
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState title={t('no_top_posts', 'No posts in this period')} />
+          )}
+        </section>
       </div>
 
-      {(list?.posts?.length || 0) > 0 && (
+      {(summary.data?.posts || 0) > 0 && (
         <div className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
-          <WeekdayPulse rows={list?.posts || []} />
-          <EngagementSplit rows={list?.posts || []} />
+          <WeekdayPulse counts={summary.data?.weekdays || []} />
+          <EngagementSplit mix={summary.data?.engagementMix} />
         </div>
       )}
 
@@ -577,7 +557,7 @@ export const WorkspaceAnalytics: FC<{
             <div className="mt-[3px] text-[13px] text-pqMuted">
               {t(
                 'analytics_lifetime_totals_hint',
-                'Posts published in this period · current totals · Eng. % = (reactions + comments) / impressions'
+                'Posts published in this period · current totals · Eng. % = (reactions + comments) / impressions',
               )}
             </div>
           </div>
@@ -709,30 +689,22 @@ export const WorkspaceAnalytics: FC<{
                     </div>
                     {showReactions && (
                       <span className="text-end text-[13.5px] tabular-nums text-pqText">
-                        {formatCount(post.reactions) || (
-                          <MissingMetric label={missingLabel} />
-                        )}
+                        {formatCount(post.reactions)}
                       </span>
                     )}
                     {showComments && (
                       <span className="text-end text-[13.5px] tabular-nums text-pqText">
-                        {formatCount(post.comments) || (
-                          <MissingMetric label={missingLabel} />
-                        )}
+                        {formatCount(post.comments)}
                       </span>
                     )}
                     {showEngagement && (
                       <span className="text-end text-[13.5px] tabular-nums text-pqText">
-                        {formatRate(post.engagementRate) || (
-                          <MissingMetric label={missingLabel} />
-                        )}
+                        {formatRate(post.engagementRate)}
                       </span>
                     )}
                     {showImpressions && (
                       <span className="text-end text-[13.5px] tabular-nums text-pqText">
-                        {formatCount(post.impressions) || (
-                          <MissingMetric label={missingLabel} />
-                        )}
+                        {formatCount(post.impressions)}
                       </span>
                     )}
                     <button
@@ -741,7 +713,12 @@ export const WorkspaceAnalytics: FC<{
                       aria-label={t('statistics', 'Statistics')}
                       onClick={() => openStatistics(post.id)}
                     >
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                      >
                         <path
                           d="M5 19V10M10 19V5M15 19v-7M20 19V8"
                           stroke="currentColor"
@@ -760,22 +737,42 @@ export const WorkspaceAnalytics: FC<{
             </div>
           </div>
         )}
-        {(list?.total || 0) > (list?.limit || 20) && (
-          <Pagination
-            current={page}
-            totalPages={totalPages}
-            setPage={setPage}
-          />
-        )}
+        {(list?.total || 0) > (list?.limit || 20) &&
+          (mobile ? (
+            <div className="mt-[10px] flex items-center gap-[8px]">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage((current) => current - 1)}
+                className="min-h-[44px] flex-1 rounded-pqSm bg-pqSettings px-[12px] text-[13px] font-[600] text-pqText disabled:opacity-40"
+              >
+                {t('previous', 'Previous')}
+              </button>
+              <span className="shrink-0 px-[4px] text-[12px] tabular-nums text-pqMuted">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((current) => current + 1)}
+                className="min-h-[44px] flex-1 rounded-pqSm bg-pqSettings px-[12px] text-[13px] font-[600] text-pqText disabled:opacity-40"
+              >
+                {t('next', 'Next')}
+              </button>
+            </div>
+          ) : (
+            <Pagination
+              current={page}
+              totalPages={totalPages}
+              setPage={setPage}
+            />
+          ))}
       </section>
     </div>
   );
 };
 
-const MetricChip: FC<{ label: string; value: string }> = ({
-  label,
-  value,
-}) => (
+const MetricChip: FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="rounded-[8px] bg-pqSettings px-[10px] py-[8px]">
     <div className="text-[11px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
       {label}
@@ -797,10 +794,12 @@ const SortHeader: FC<{
     onClick={onClick}
     className={clsx(
       'flex items-center justify-end gap-[4px] text-end uppercase tracking-[0.06em]',
-      active ? 'text-pqText' : 'text-pqMuted hover:text-pqText'
+      active ? 'text-pqText' : 'text-pqMuted hover:text-pqText',
     )}
   >
     {label}
-    <span className="text-[9px]">{active ? (dir === 'desc' ? '▼' : '▲') : ''}</span>
+    <span className="text-[9px]">
+      {active ? (dir === 'desc' ? '▼' : '▲') : ''}
+    </span>
   </button>
 );

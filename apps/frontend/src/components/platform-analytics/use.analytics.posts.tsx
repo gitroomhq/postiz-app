@@ -31,6 +31,7 @@ export type AnalyticsPostsResponse = {
     comments: boolean;
     reactions: boolean;
     impressions: boolean;
+    engagement: boolean;
   };
   posts: AnalyticsPostRow[];
   top: AnalyticsPostRow[];

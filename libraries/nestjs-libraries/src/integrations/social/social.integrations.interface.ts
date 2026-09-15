@@ -12,21 +12,21 @@ export interface IAuthenticator {
       codeVerifier: string;
       refresh?: string;
     },
-    clientInformation?: ClientInformation
+    clientInformation?: ClientInformation,
   ): Promise<AuthTokenDetails | string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
   reConnect?(
     id: string,
     requiredId: string,
-    accessToken: string
+    accessToken: string,
   ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>>;
   generateAuthUrl(
-    clientInformation?: ClientInformation
+    clientInformation?: ClientInformation,
   ): Promise<GenerateAuthUrlResponse>;
   analytics?(
     id: string,
     accessToken: string,
-    date: number
+    date: number,
   ): Promise<AnalyticsData[]>;
   postAnalytics?(
     integrationId: string,
@@ -43,21 +43,27 @@ export interface IAuthenticator {
   postsAnalytics?(
     integrationId: string,
     accessToken: string,
-    platformPostIds: string[]
+    platformPostIds: string[],
   ): Promise<NormalizedPostMetrics[]>;
+  /**
+   * Runtime kill switches belong to the provider so analytics callers stay
+   * generic. When true, neither sync targets nor post-metric UI rows are
+   * exposed for this provider.
+   */
+  analyticsDisabled?: () => boolean;
   changeNickname?(
     id: string,
     accessToken: string,
-    name: string
+    name: string,
   ): Promise<{ name: string }>;
   changeProfilePicture?(
     id: string,
     accessToken: string,
-    url: string
+    url: string,
   ): Promise<{ url: string }>;
   missing?(
     id: string,
-    accessToken: string
+    accessToken: string,
   ): Promise<{ id: string; url: string }[]>;
 }
 
@@ -75,7 +81,6 @@ export type NormalizedPostMetrics = {
   shares: number | null;
   raw?: Record<string, number>;
 };
-
 
 export type GenerateAuthUrlResponse = {
   url: string;
@@ -106,14 +111,14 @@ export interface ISocialMediaIntegration {
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
-    integration: Integration
+    integration: Integration,
   ): Promise<PostResponse[]>; // Schedules a new post
 
   postPending?(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
-    integration: Integration
+    integration: Integration,
   ): Promise<PostResponse[]>; // Like `post`, but may return a `pending` response the workflow resolves via checkPostStatus / finalizePost
 
   comment?(
@@ -122,7 +127,7 @@ export interface ISocialMediaIntegration {
     lastCommentId: string | undefined,
     accessToken: string,
     postDetails: PostDetails[],
-    integration: Integration
+    integration: Integration,
   ): Promise<PostResponse[]>; // Schedules a new post
 }
 
@@ -180,8 +185,7 @@ export type FetchPageInformationResult = {
 };
 
 export interface SocialProvider
-  extends IAuthenticator,
-    ISocialMediaIntegration {
+  extends IAuthenticator, ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
   convertToJPEG?: boolean;
@@ -192,21 +196,21 @@ export interface SocialProvider
   checkValidity(
     posts: Array<{ path: string; thumbnail?: string }[]>,
     settings: any,
-    additionalSettings: any[]
+    additionalSettings: any[],
   ): Promise<string | true>;
   checkPostStatus(
     accessToken: string,
     pendingData: any,
-    integration: Integration
+    integration: Integration,
   ): Promise<PendingCheckResponse>;
   migrationMatch(
     auth: Pick<AuthTokenDetails, 'id' | 'username'>,
-    integration: Integration
+    integration: Integration,
   ): boolean;
   finalizePost(
     accessToken: string,
     pendingData: any,
-    integration: Integration
+    integration: Integration,
   ): Promise<PendingCheckResponse>;
   isWeb3?: boolean;
   isChromeExtension?: boolean;
@@ -233,12 +237,7 @@ export interface SocialProvider
    * connect it. Unset is fine — anything without a category falls into the
    * default group, so forgetting costs a placement, never a channel.
    */
-  category?:
-    | 'social'
-    | 'chat'
-    | 'video'
-    | 'business'
-    | 'publishing';
+  category?: 'social' | 'chat' | 'video' | 'business' | 'publishing';
   /**
    * Whether connecting this provider is held back until the trial ends.
    *
@@ -264,13 +263,13 @@ export interface SocialProvider
   isBetweenSteps: boolean;
   scopes: string[];
   externalUrl?: (
-    url: string
+    url: string,
   ) => Promise<{ client_id: string; client_secret: string }>;
   mention?: (
     token: string,
     data: { query: string },
     id: string,
-    integration: Integration
+    integration: Integration,
   ) => Promise<
     | { id: string; label: string; image: string; doNotCache?: boolean }[]
     | { none: true }
@@ -278,6 +277,6 @@ export interface SocialProvider
   mentionFormat?(idOrHandle: string, name: string): string;
   fetchPageInformation?(
     accessToken: string,
-    data: any
+    data: any,
   ): Promise<FetchPageInformationResult>;
 }

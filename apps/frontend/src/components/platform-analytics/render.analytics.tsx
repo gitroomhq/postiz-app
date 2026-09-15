@@ -16,42 +16,8 @@ interface AnalyticsDataItem {
   label: string;
   data: Array<{ total: number; date: string }>;
   average?: boolean;
-  percentageChange?: number;
   hint?: string;
 }
-
-const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
-  value,
-  average,
-}) => {
-  if (value === 0) return null;
-
-  const isPositive = value > 0;
-  const displayValue = Math.abs(value).toFixed(1);
-
-  return (
-    <span
-      className={clsx(
-        'flex h-[23px] shrink-0 items-center gap-[4px] rounded-full pe-[9px] ps-[7px] text-[12.5px] font-[600]',
-        isPositive ? 'bg-pqOkSoft text-pqOk' : 'bg-pqWarnSoft text-pqWarn'
-      )}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 12 12"
-        fill="none"
-        className={isPositive ? '' : 'rotate-180'}
-      >
-        <path d="M6 2.5L10 7.5H2L6 2.5Z" fill="currentColor" />
-      </svg>
-      <span>
-        {displayValue}
-        {average ? 'pp' : '%'}
-      </span>
-    </span>
-  );
-};
 
 const AnalyticsCard: FC<{
   item: AnalyticsDataItem;
@@ -70,12 +36,6 @@ const AnalyticsCard: FC<{
         <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
           {item.label}
         </span>
-        {item.percentageChange !== undefined && (
-          <TrendIndicator
-            value={item.percentageChange}
-            average={item.average}
-          />
-        )}
       </div>
       {hasDataPoints ? (
         <>
@@ -85,7 +45,9 @@ const AnalyticsCard: FC<{
             </div>
           </div>
           <div className="px-[12px] pb-[12px] pt-[8px]">
-            <div className={clsx('relative', compact ? 'h-[48px]' : 'h-[100px]')}>
+            <div
+              className={clsx('relative', compact ? 'h-[48px]' : 'h-[100px]')}
+            >
               <ChartSocial
                 data={item.data}
                 color={color === 'amber' ? 'blue' : color}
@@ -115,7 +77,7 @@ const AnalyticsCard: FC<{
           'flex flex-col overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow]',
           active
             ? 'shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]'
-            : 'hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]'
+            : 'hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
         )}
       >
         {inner}
@@ -155,7 +117,7 @@ const AnalyticsChartBoard: FC<{
             ? 'lg:grid-cols-4'
             : rows.length > 2
               ? 'lg:grid-cols-3'
-              : 'lg:grid-cols-2'
+              : 'lg:grid-cols-2',
         )}
       >
         {rows.map((row, index) => (
@@ -177,14 +139,8 @@ const AnalyticsChartBoard: FC<{
               ? `${t('daily', 'Daily')} ${item.label.toLowerCase()}`
               : item.label}
           </span>
-          {item.percentageChange !== undefined && (
-            <TrendIndicator
-              value={item.percentageChange}
-              average={item.average}
-            />
-          )}
         </div>
-        {(item.hint || hint) ? (
+        {item.hint || hint ? (
           <div className="px-[17px] pb-[2px] text-[12px] text-pqMuted">
             {item.hint || hint}
           </div>
@@ -214,7 +170,7 @@ const AnalyticsPaneMessage: FC<{
     <div
       className={clsx(
         'mb-[16px] flex h-[48px] w-[48px] items-center justify-center rounded-full',
-        iconClassName
+        iconClassName,
       )}
     >
       {icon}
@@ -247,7 +203,7 @@ const RefreshChannelState: FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       <p className="mb-[12px] text-center text-[15px] text-pqText">
         {t(
           'this_channel_needs_to_be_refreshed',
-          'This channel needs to be refreshed to display analytics'
+          'This channel needs to be refreshed to display analytics',
         )}
       </p>
       <button
@@ -328,7 +284,7 @@ export const RenderAnalytics: FC<{
       // name and @handle (the header two components up reads
       // `currentIntegration`, which switches immediately). Wrong numbers under
       // the right name is worse than a ghost.
-    }
+    },
   );
 
   const toast = useToaster();
@@ -340,21 +296,21 @@ export const RenderAnalytics: FC<{
           `/integrations/social/${integrationData.identifier}?refresh=${integrationData.internalId}`,
           {
             method: 'GET',
-          }
+          },
         )
       ).json();
 
       if (!url) {
         toast.show(
           'Could not connect to the platform, please try again later',
-          'warning'
+          'warning',
         );
         return;
       }
 
       window.location.href = url;
     },
-    [fetch, toast]
+    [fetch, toast],
   );
 
   // One narrowing for the whole component. `customFetch` resolves a 4xx too, so
@@ -364,8 +320,7 @@ export const RenderAnalytics: FC<{
   // It must not steal the analytics pane: a channel can fail to publish and
   // still have a quiet, valid insights week — that is "No data in this period".
   const rows: AnalyticsDataItem[] = Array.isArray(data) ? data : [];
-  const needsRefresh =
-    !isLoading && analyticsResponseNeedsRefresh(data);
+  const needsRefresh = !isLoading && analyticsResponseNeedsRefresh(data);
   const noPeriodData = !needsRefresh && !analyticsHasActivity(rows);
 
   const totals = useMemo(() => {
@@ -373,7 +328,7 @@ export const RenderAnalytics: FC<{
       const value =
         (p?.data.reduce(
           (acc: number, curr: { total: number }) => acc + Number(curr.total),
-          0
+          0,
         ) || 0) / (p.average ? p.data.length : 1);
       if (p.average) {
         return value.toFixed(2) + '%';
@@ -403,14 +358,12 @@ export const RenderAnalytics: FC<{
     return <NoPeriodDataState />;
   }
 
-  return (
-    <AnalyticsChartBoard rows={rows} totals={totals} />
-  );
+  return <AnalyticsChartBoard rows={rows} totals={totals} />;
 };
 
 const workspaceChartLabel = (
   key: 'impressions' | 'engagement' | 'audience',
-  t: (key: string, fallback: string) => string
+  t: (key: string, fallback: string) => string,
 ) => {
   if (key === 'impressions') {
     return t('impressions', 'Impressions');
@@ -423,23 +376,23 @@ const workspaceChartLabel = (
 
 const workspaceChartHint = (
   key: 'impressions' | 'engagement' | 'audience',
-  t: (key: string, fallback: string) => string
+  t: (key: string, fallback: string) => string,
 ) => {
   if (key === 'impressions') {
     return t(
       'workspace_impressions_hint',
-      'Views, reach, and impressions from each channel'
+      'Views, reach, and impressions from each channel',
     );
   }
   if (key === 'engagement') {
     return t(
       'workspace_engagement_hint',
-      'Likes, comments, clicks, saves, and similar from each channel'
+      'Likes, comments, clicks, saves, and similar from each channel',
     );
   }
   return t(
     'workspace_followers_hint',
-    'Followers and subscribers from each channel'
+    'Followers and subscribers from each channel',
   );
 };
 
@@ -458,7 +411,7 @@ export const WorkspaceChannelCharts: FC<{
           await fetch(`/analytics/${integration.id}?date=${date}`)
         ).json();
         return Array.isArray(json) ? json : [];
-      })
+      }),
     );
     return mergeWorkspaceCharts(bodies.flat());
   }, [date, fetch, ids]);
@@ -472,7 +425,7 @@ export const WorkspaceChannelCharts: FC<{
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
-    }
+    },
   );
 
   const rows: AnalyticsDataItem[] = useMemo(
@@ -480,19 +433,18 @@ export const WorkspaceChannelCharts: FC<{
       (data || []).map((item) => ({
         label: workspaceChartLabel(item.key, t),
         data: item.data,
-        percentageChange: item.percentageChange,
         hint: workspaceChartHint(item.key, t),
       })),
-    [data, t]
+    [data, t],
   );
 
   const totals = useMemo(() => {
     return rows.map((item) =>
       new Intl.NumberFormat().format(
         Math.round(
-          item.data.reduce((acc, point) => acc + Number(point.total), 0)
-        )
-      )
+          item.data.reduce((acc, point) => acc + Number(point.total), 0),
+        ),
+      ),
     );
   }, [rows]);
 

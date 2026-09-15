@@ -4,10 +4,10 @@
  * counts as activity for the selected range.
  */
 export function analyticsHasActivity(
-  rows: Array<{ data?: Array<{ total: number | string }> }>
+  rows: Array<{ data?: Array<{ total: number | string }> }>,
 ): boolean {
   return rows.some((item) =>
-    (item.data || []).some((point) => Number(point.total) !== 0)
+    (item.data || []).some((point) => Number(point.total) !== 0),
   );
 }
 
@@ -24,16 +24,17 @@ export function analyticsResponseNeedsRefresh(data: unknown): boolean {
   if (typeof data !== 'object') {
     return false;
   }
-  const message = String(
-    (data as { message?: unknown }).message || ''
-  );
+  const message = String((data as { message?: unknown }).message || '');
   return /needs to be refreshed/i.test(message);
 }
 
 export type WorkspaceChartKey = 'impressions' | 'engagement' | 'audience';
 
 export function workspaceChartBucket(label: string): WorkspaceChartKey | null {
-  if (/\b(rate|average|%)\b/i.test(label) && !/\b(impression|view|reach)\b/i.test(label)) {
+  if (
+    /\b(rate|average|%)\b/i.test(label) &&
+    !/\b(impression|view|reach)\b/i.test(label)
+  ) {
     return null;
   }
   if (/follow|subscriber/i.test(label)) {
@@ -55,11 +56,10 @@ export function mergeWorkspaceCharts(
     label: string;
     average?: boolean;
     data?: Array<{ total: number | string; date: string }>;
-  }>
+  }>,
 ): Array<{
   key: WorkspaceChartKey;
   data: Array<{ total: number; date: string }>;
-  percentageChange: number;
 }> {
   const buckets: Record<WorkspaceChartKey, Map<string, number>> = {
     impressions: new Map(),
@@ -82,7 +82,7 @@ export function mergeWorkspaceCharts(
       }
       buckets[key].set(
         date,
-        (buckets[key].get(date) || 0) + (Number(point.total) || 0)
+        (buckets[key].get(date) || 0) + (Number(point.total) || 0),
       );
     }
   }
@@ -95,16 +95,13 @@ export function mergeWorkspaceCharts(
     const data = [...map.entries()]
       .sort(
         ([left], [right]) =>
-          Date.parse(left) - Date.parse(right) || left.localeCompare(right)
+          Date.parse(left) - Date.parse(right) || left.localeCompare(right),
       )
       .map(([date, total]) => ({ date, total }));
-    const first = data[0]?.total || 0;
-    const last = data[data.length - 1]?.total || 0;
     return [
       {
         key,
         data,
-        percentageChange: first ? ((last - first) / first) * 100 : 0,
       },
     ];
   });

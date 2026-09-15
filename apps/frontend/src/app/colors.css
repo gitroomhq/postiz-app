@@ -48,6 +48,13 @@
     --upgradeHover: rgba(139, 92, 246, 0.16);
     --brand: #7c3aed;
     --brandHover: #8b5cf6;
+    --chartBrandFill: rgba(97, 43, 211, 0.8);
+    --chartBrandFade: rgba(97, 43, 211, 0.08);
+    --chartOkFill: rgba(50, 213, 131, 0.8);
+    --chartOkFade: rgba(50, 213, 131, 0.08);
+    --chartBlue: #1d9bf0;
+    --chartBlueFill: rgba(29, 155, 240, 0.8);
+    --chartBlueFade: rgba(29, 155, 240, 0.08);
     /* Text and icons sitting ON a brand-filled surface. `--upgradeFg` is not
        this: it is the rail's Upgrade label, drawn on the rail, and in the light
        theme it is #6d28d9 — which on #7c3aed is 1.36:1 and unreadable. */
@@ -83,22 +90,23 @@
        longer, softer drop than `--e3`: it has to read as lifted off the grid
        over the whole flight, not as another surface resting on it. Same in
        both themes — a card in the air casts the same shadow. */
-    --tourGhost: 0 0 0 1px rgba(124, 58, 237, 0.85),
-      0 26px 44px -18px rgba(0, 0, 0, 0.9);
+    --tourGhost:
+      0 0 0 1px rgba(124, 58, 237, 0.85), 0 26px 44px -18px rgba(0, 0, 0, 0.9);
     /** The pointer riding the ghost, over whatever it is passing. */
     --tourCursor: 0 2px 5px rgba(0, 0, 0, 0.7);
     /* The tour's own card: brand hairline, ambient drop, brand bloom. Not the
        neutral border plus `--e3` it used to carry — a dark card outlined in a
        dark neutral, standing on a dark scrim, had nothing to separate it from
        the app behind (owner: "biraz kayboluyor"). Values are the design's. */
-    --tourCard: 0 0 0 1px rgba(124, 58, 237, 0.55),
-      0 28px 60px -20px rgba(0, 0, 0, 0.9),
+    --tourCard:
+      0 0 0 1px rgba(124, 58, 237, 0.55), 0 28px 60px -20px rgba(0, 0, 0, 0.9),
       0 0 40px -12px rgba(124, 58, 237, 0.5);
     /** Wash across the top of that card, layered as an image over `--pop`. */
     --tourCardWash: rgba(124, 58, 237, 0.16);
     /* Media lightbox — design `rgba(9,9,11,.86)` (covers rail; not the tour scrim). */
     --mediaScrim: rgba(9, 9, 11, 0.86);
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+    --shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
     --e1: 0 1px 2px rgba(0, 0, 0, 0.35);
     --e2: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
     --e3: 0 18px 44px -12px rgba(0, 0, 0, 0.75);
@@ -209,6 +217,13 @@
     --upgradeHover: rgba(124, 58, 237, 0.1);
     --brand: #7c3aed;
     --brandHover: #6d28d9;
+    --chartBrandFill: rgba(97, 43, 211, 0.8);
+    --chartBrandFade: rgba(97, 43, 211, 0.08);
+    --chartOkFill: rgba(50, 213, 131, 0.8);
+    --chartOkFade: rgba(50, 213, 131, 0.08);
+    --chartBlue: #1d9bf0;
+    --chartBlueFill: rgba(29, 155, 240, 0.8);
+    --chartBlueFade: rgba(29, 155, 240, 0.08);
     /* Brand is the same #7c3aed in both themes, so this is too — see the note
        in the dark block. */
     --onBrand: #ffffff;
@@ -233,18 +248,19 @@
        almost opaque and the spotlight stops looking like a spotlight. */
     --tourScrim: rgba(2, 2, 6, 0.5);
     /* See the dark block: a lifted card casts the same shadow in either theme. */
-    --tourGhost: 0 0 0 1px rgba(124, 58, 237, 0.85),
-      0 26px 44px -18px rgba(0, 0, 0, 0.9);
+    --tourGhost:
+      0 0 0 1px rgba(124, 58, 237, 0.85), 0 26px 44px -18px rgba(0, 0, 0, 0.9);
     --tourCursor: 0 2px 5px rgba(0, 0, 0, 0.7);
     /* Hairline and bloom as in dark; the ambient drop follows the light scale
        (`--e3`) rather than the design's near-black, which reads as dirt here.
        The wash is lighter too — 16% brand over white tints the whole card. */
-    --tourCard: 0 0 0 1px rgba(124, 58, 237, 0.55),
-      0 20px 46px -16px rgba(9, 9, 11, 0.3),
+    --tourCard:
+      0 0 0 1px rgba(124, 58, 237, 0.55), 0 20px 46px -16px rgba(9, 9, 11, 0.3),
       0 0 40px -12px rgba(124, 58, 237, 0.35);
     --tourCardWash: rgba(124, 58, 237, 0.1);
     --mediaScrim: rgba(9, 9, 11, 0.86);
-    --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 28px -8px rgba(9, 9, 11, 0.16);
+    --shadow:
+      0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 28px -8px rgba(9, 9, 11, 0.16);
     --e1: 0 1px 2px rgba(9, 9, 11, 0.05);
     --e2: 0 4px 12px -2px rgba(9, 9, 11, 0.1);
     --e3: 0 12px 32px -8px rgba(9, 9, 11, 0.22);
@@ -409,7 +425,8 @@
     --popup-color: var(--popup);
     /* Preview frames — step 5. */
     --border-preview: #f1f0f3;
-    --preview-box-shadow: 0 386px 108px 0 rgba(38, 32, 64, 0),
+    --preview-box-shadow:
+      0 386px 108px 0 rgba(38, 32, 64, 0),
       0 247px 99px 0 rgba(38, 32, 64, 0.01),
       0 139px 83px 0 rgba(38, 32, 64, 0.03),
       0 62px 62px 0 rgba(38, 32, 64, 0.04), 0 15px 34px 0 rgba(38, 32, 64, 0.05);

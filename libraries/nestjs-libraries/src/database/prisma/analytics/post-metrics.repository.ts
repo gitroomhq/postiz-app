@@ -23,7 +23,7 @@ export class PostMetricsRepository {
   constructor(
     private _snapshot: PrismaRepository<'postMetricSnapshot'>,
     private _post: PrismaRepository<'post'>,
-    private _integration: PrismaRepository<'integration'>
+    private _integration: PrismaRepository<'integration'>,
   ) {}
 
   listPublishedPostsForSync(integrationId: string, lookbackDays: number) {
@@ -98,10 +98,7 @@ export class PostMetricsRepository {
     });
   }
 
-  listIntegrationsNeedingSync(
-    lookbackDays: number,
-    organizationId?: string
-  ) {
+  listIntegrationsNeedingSync(lookbackDays: number, organizationId?: string) {
     return this._post.model.post.findMany({
       where: {
         ...(organizationId ? { organizationId } : {}),
@@ -123,15 +120,24 @@ export class PostMetricsRepository {
       select: {
         organizationId: true,
         integrationId: true,
+        integration: {
+          select: {
+            providerIdentifier: true,
+          },
+        },
       },
     });
   }
 
-  latestSnapshotTime(organizationId: string) {
-    return this._snapshot.model.postMetricSnapshot.findFirst({
+  listLatestSnapshotTimes(organizationId: string) {
+    return this._snapshot.model.postMetricSnapshot.findMany({
       where: { organizationId },
       orderBy: { capturedAt: 'desc' },
-      select: { capturedAt: true },
+      distinct: ['integrationId'],
+      select: {
+        integrationId: true,
+        capturedAt: true,
+      },
     });
   }
 

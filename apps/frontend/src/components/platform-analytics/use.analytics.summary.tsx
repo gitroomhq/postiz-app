@@ -11,6 +11,18 @@ export type AnalyticsSummaryResponse = {
   reactions: number | null;
   comments: number | null;
   impressions: number | null;
+  channels: Array<{
+    integrationId: string;
+    platform: string;
+    channelName: string;
+    posts: number;
+    impressions: number | null;
+  }>;
+  weekdays: number[];
+  engagementMix: {
+    reactions: number;
+    comments: number;
+  } | null;
 };
 
 export const useAnalyticsSummary = (params: {

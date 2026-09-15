@@ -1,10 +1,17 @@
 export type AnalyticsSort =
-  | 'reactions'
-  | 'comments'
-  | 'impressions'
-  | 'engagement'
-  | 'published';
+  'reactions' | 'comments' | 'impressions' | 'engagement' | 'published';
 export type AnalyticsDir = 'asc' | 'desc';
+
+export function analyticsPublishDateRange(days: number, now = new Date()) {
+  const from = new Date(now);
+  from.setUTCHours(0, 0, 0, 0);
+  from.setUTCDate(from.getUTCDate() - Math.max(0, days - 1));
+
+  const to = new Date(now);
+  to.setUTCHours(23, 59, 59, 999);
+
+  return { from, to };
+}
 
 export type AnalyticsPostRow = {
   id: string;
@@ -62,7 +69,7 @@ export function firstMediaPath(image: string | null): string | null {
 
 export function sortValue(
   row: AnalyticsPostRow,
-  sort: AnalyticsSort | undefined
+  sort: AnalyticsSort | undefined,
 ): number {
   switch (sort) {
     case 'comments':
@@ -82,7 +89,7 @@ export function sortValue(
 export function sortAnalyticsPosts(
   rows: AnalyticsPostRow[],
   sort: AnalyticsSort = 'reactions',
-  dir: AnalyticsDir = 'desc'
+  dir: AnalyticsDir = 'desc',
 ) {
   const direction = dir === 'asc' ? 1 : -1;
   return [...rows].sort((a, b) => {
@@ -94,10 +101,22 @@ export function sortAnalyticsPosts(
   });
 }
 
+export function topAnalyticsPosts(
+  rows: AnalyticsPostRow[],
+  metric: 'reactions' | 'comments',
+  limit = 5,
+) {
+  return sortAnalyticsPosts(
+    rows.filter((row) => row[metric] != null),
+    metric,
+    'desc',
+  ).slice(0, limit);
+}
+
 export function matchesAnalyticsQuery(
   row: AnalyticsPostRow,
   query?: string,
-  platform?: string
+  platform?: string,
 ) {
   if (platform && row.platform !== platform) {
     return false;
@@ -120,7 +139,7 @@ export function matchesAnalyticsQuery(
 
 export function sumKnown(
   rows: AnalyticsPostRow[],
-  pick: (row: AnalyticsPostRow) => number | null
+  pick: (row: AnalyticsPostRow) => number | null,
 ): number | null {
   let total = 0;
   let any = false;
@@ -133,6 +152,74 @@ export function sumKnown(
     total += value;
   }
   return any ? total : null;
+}
+
+export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
+  const channelRows = new Map<
+    string,
+    {
+      integrationId: string;
+      platform: string;
+      channelName: string;
+      rows: AnalyticsPostRow[];
+    }
+  >();
+  const weekdays = [0, 0, 0, 0, 0, 0, 0];
+
+  for (const row of rows) {
+    const channel = channelRows.get(row.integrationId) || {
+      integrationId: row.integrationId,
+      platform: row.platform,
+      channelName: row.channelName,
+      rows: [],
+    };
+    channel.rows.push(row);
+    channelRows.set(row.integrationId, channel);
+
+    const day = new Date(row.publishDate).getUTCDay();
+    weekdays[day === 0 ? 6 : day - 1] += 1;
+  }
+
+  const reactions = sumKnown(rows, (row) => row.reactions);
+  const comments = sumKnown(rows, (row) => row.comments);
+
+  return {
+    posts: rows.length,
+    reactions,
+    comments,
+    impressions: sumKnown(rows, (row) => row.impressions),
+    channels: [...channelRows.values()].map((channel) => ({
+      integrationId: channel.integrationId,
+      platform: channel.platform,
+      channelName: channel.channelName,
+      posts: channel.rows.length,
+      impressions: sumKnown(channel.rows, (row) => row.impressions),
+    })),
+    weekdays,
+    engagementMix:
+      rows.length > 0 &&
+      rows.every((row) => row.reactions != null && row.comments != null)
+        ? { reactions: reactions!, comments: comments! }
+        : null,
+  };
+}
+
+export function hasStaleAnalyticsTargets(
+  targets: Array<{ integrationId: string }>,
+  latestSnapshots: Array<{ integrationId: string; capturedAt: Date }>,
+  nowMs: number,
+  staleAfterMs: number,
+) {
+  const latestByIntegration = new Map(
+    latestSnapshots.map((snapshot) => [
+      snapshot.integrationId,
+      snapshot.capturedAt.getTime(),
+    ]),
+  );
+  return targets.some((target) => {
+    const latest = latestByIntegration.get(target.integrationId);
+    return latest == null || nowMs - latest >= staleAfterMs;
+  });
 }
 
 export function toAgentPost(row: AnalyticsPostRow) {
@@ -155,7 +242,7 @@ export function toAgentPost(row: AnalyticsPostRow) {
 function snapshotEngagementRate(
   impressions: number | null,
   reactions: number | null,
-  comments: number | null
+  comments: number | null,
 ): number | null {
   if (impressions == null || impressions <= 0) {
     return null;
@@ -204,7 +291,7 @@ export function mapSnapshotRow(post: {
     engagementRate: snapshotEngagementRate(
       latest?.impressions ?? null,
       latest?.reactions ?? null,
-      latest?.comments ?? null
+      latest?.comments ?? null,
     ),
     previous: previous
       ? {

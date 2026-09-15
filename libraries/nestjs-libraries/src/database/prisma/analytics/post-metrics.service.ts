@@ -7,10 +7,13 @@ import { PostMetricsRepository } from '@gitroom/nestjs-libraries/database/prisma
 import {
   ANALYTICS_AGENT_NOTES,
   AnalyticsPostRow,
+  analyticsPublishDateRange,
+  hasStaleAnalyticsTargets,
   mapSnapshotRow,
   matchesAnalyticsQuery,
   sortAnalyticsPosts,
-  sumKnown,
+  summarizeAnalyticsPosts,
+  topAnalyticsPosts,
   toAgentPost,
 } from '@gitroom/nestjs-libraries/database/prisma/analytics/post-metrics.query';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
@@ -35,26 +38,30 @@ export class PostMetricsService {
     private _repository: PostMetricsRepository,
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
   ) {}
 
-  listIntegrationsNeedingSync(organizationId?: string) {
-    return this._repository.listIntegrationsNeedingSync(
+  async listIntegrationsNeedingSync(organizationId?: string) {
+    const targets = await this._repository.listIntegrationsNeedingSync(
       LOOKBACK_DAYS,
-      organizationId
+      organizationId,
     );
+    return targets
+      .filter((target) =>
+        this.reportsPostMetrics(target.integration.providerIdentifier),
+      )
+      .map(({ integration: _, ...target }) => target);
   }
 
   async enqueueOrgSync(organizationId: string) {
     try {
-      await this._temporalService.client.getRawClient()?.workflow.start(
-        'analyticsSyncOrgWorkflowV1',
-        {
+      await this._temporalService.client
+        .getRawClient()
+        ?.workflow.start('analyticsSyncOrgWorkflowV1', {
           workflowId: `analytics-sync-org-v1-${organizationId}`,
           taskQueue: 'main',
           args: [{ organizationId }],
-        }
-      );
+        });
       return true;
     } catch (err) {
       // Already running is the expected case when the page is opened twice.
@@ -63,21 +70,32 @@ export class PostMetricsService {
   }
 
   async maybeEnqueueStaleSync(organizationId: string) {
-    const latest = await this._repository.latestSnapshotTime(organizationId);
+    const targets = await this.listIntegrationsNeedingSync(organizationId);
+    if (targets.length === 0) {
+      return { syncing: false };
+    }
+
+    const latestSnapshots =
+      await this._repository.listLatestSnapshotTimes(organizationId);
     if (
-      latest?.capturedAt &&
-      Date.now() - latest.capturedAt.getTime() < STALE_AFTER_MS
+      !hasStaleAnalyticsTargets(
+        targets,
+        latestSnapshots,
+        Date.now(),
+        STALE_AFTER_MS,
+      )
     ) {
       return { syncing: false };
     }
+
     const started = await this.enqueueOrgSync(organizationId);
-    return { syncing: true, started };
+    return { syncing: started, started };
   }
 
   async syncIntegration(organizationId: string, integrationId: string) {
     const integration = await this._repository.getIntegration(
       organizationId,
-      integrationId
+      integrationId,
     );
     if (
       !integration ||
@@ -89,23 +107,19 @@ export class PostMetricsService {
     }
 
     const provider = this._integrationManager.getSocialIntegration(
-      integration.providerIdentifier
+      integration.providerIdentifier,
     );
     if (!provider?.postsAnalytics) {
       return { synced: 0 };
     }
-    if (
-      integration.providerIdentifier === 'x' &&
-      process.env.DISABLE_X_ANALYTICS
-    ) {
+    if (provider.analyticsDisabled?.()) {
       return { synced: 0 };
     }
 
     let token = integration.token;
     if (dayjs(integration.tokenExpiration).isBefore(dayjs())) {
-      const refreshed = await this._refreshIntegrationService.refresh(
-        integration
-      );
+      const refreshed =
+        await this._refreshIntegrationService.refresh(integration);
       if (!refreshed || !refreshed.accessToken) {
         return { synced: 0 };
       }
@@ -117,40 +131,37 @@ export class PostMetricsService {
 
     const posts = await this._repository.listPublishedPostsForSync(
       integrationId,
-      LOOKBACK_DAYS
+      LOOKBACK_DAYS,
     );
     if (posts.length === 0) {
       return { synced: 0 };
     }
 
     const byReleaseId = new Map(
-      posts.filter((p) => p.releaseId).map((p) => [p.releaseId as string, p])
+      posts.filter((p) => p.releaseId).map((p) => [p.releaseId as string, p]),
     );
 
     let rows;
     try {
-      rows = await provider.postsAnalytics(
-        integration.internalId,
-        token,
-        [...byReleaseId.keys()]
-      );
+      rows = await provider.postsAnalytics(integration.internalId, token, [
+        ...byReleaseId.keys(),
+      ]);
     } catch (err) {
       if (err instanceof RefreshToken) {
-        const refreshed = await this._refreshIntegrationService.refresh(
-          integration
-        );
+        const refreshed =
+          await this._refreshIntegrationService.refresh(integration);
         if (!refreshed || !refreshed.accessToken) {
           return { synced: 0 };
         }
         rows = await provider.postsAnalytics(
           integration.internalId,
           refreshed.accessToken,
-          [...byReleaseId.keys()]
+          [...byReleaseId.keys()],
         );
       } else {
         this.logger.warn(
           `postsAnalytics failed for ${integration.providerIdentifier} ${integrationId}`,
-          err as Error
+          err as Error,
         );
         return { synced: 0 };
       }
@@ -181,21 +192,17 @@ export class PostMetricsService {
   }
 
   private reportsPostMetrics(providerIdentifier: string) {
-    if (providerIdentifier === 'x' && process.env.DISABLE_X_ANALYTICS) {
-      return false;
-    }
     const provider =
       this._integrationManager.getSocialIntegration(providerIdentifier);
-    return !!provider?.postsAnalytics;
+    return !!provider?.postsAnalytics && !provider.analyticsDisabled?.();
   }
 
   private async loadMappedPosts(
     organizationId: string,
-    query: GetAnalyticsPostsDto
+    query: GetAnalyticsPostsDto,
   ) {
     const days = query.date || 30;
-    const from = dayjs.utc().subtract(days, 'day').startOf('day').toDate();
-    const to = dayjs.utc().endOf('day').toDate();
+    const { from, to } = analyticsPublishDateRange(days);
     const integrationIds = query.integrationIds
       ? query.integrationIds.split(',').filter(Boolean)
       : undefined;
@@ -211,12 +218,10 @@ export class PostMetricsService {
 
     const mapped = posts
       .filter((post) =>
-        this.reportsPostMetrics(post.integration.providerIdentifier)
+        this.reportsPostMetrics(post.integration.providerIdentifier),
       )
       .map(mapSnapshotRow)
-      .filter((row) =>
-        matchesAnalyticsQuery(row, query.q, query.platform)
-      );
+      .filter((row) => matchesAnalyticsQuery(row, query.q, query.platform));
 
     return { syncing, date: days, mapped };
   }
@@ -224,18 +229,12 @@ export class PostMetricsService {
   async listPosts(organizationId: string, query: GetAnalyticsPostsDto) {
     const { syncing, date, mapped } = await this.loadMappedPosts(
       organizationId,
-      query
+      query,
     );
 
     const sorted = sortAnalyticsPosts(mapped, query.sort, query.dir);
-    const topReactions = sortAnalyticsPosts(mapped, 'reactions', 'desc').slice(
-      0,
-      5
-    );
-    const topComments = sortAnalyticsPosts(mapped, 'comments', 'desc').slice(
-      0,
-      5
-    );
+    const topReactions = topAnalyticsPosts(mapped, 'reactions');
+    const topComments = topAnalyticsPosts(mapped, 'comments');
 
     const page = query.page ?? 0;
     const limit = query.limit ?? 20;
@@ -252,6 +251,7 @@ export class PostMetricsService {
         comments: mapped.some((row) => row.comments != null),
         reactions: mapped.some((row) => row.reactions != null),
         impressions: mapped.some((row) => row.impressions != null),
+        engagement: mapped.some((row) => row.engagementRate != null),
       },
       posts: sorted.slice(start, start + limit),
       top: topReactions,
@@ -263,24 +263,21 @@ export class PostMetricsService {
   async summary(organizationId: string, query: GetAnalyticsPostsDto) {
     const { syncing, date, mapped } = await this.loadMappedPosts(
       organizationId,
-      query
+      query,
     );
 
     return {
       syncing,
       date,
       notes: ANALYTICS_AGENT_NOTES,
-      posts: mapped.length,
-      reactions: sumKnown(mapped, (row) => row.reactions),
-      comments: sumKnown(mapped, (row) => row.comments),
-      impressions: sumKnown(mapped, (row) => row.impressions),
+      ...summarizeAnalyticsPosts(mapped),
     };
   }
 
   async getPost(organizationId: string, postId: string) {
     const post = await this._repository.getPostForAnalytics(
       organizationId,
-      postId
+      postId,
     );
     if (!post) {
       return { error: 'not_found' as const };
