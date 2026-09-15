@@ -9,11 +9,16 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import {
+  pickUserWithPassword,
+  sessionsNotBeforeFrom,
+} from '@gitroom/helpers/auth/account-security';
 
 @Injectable()
 export class UsersRepository {
   constructor(
     private _user: PrismaRepository<'user'>,
+    private _userIdentity: PrismaRepository<'userIdentity'>,
     private _transaction: PrismaTransaction
   ) {}
 
@@ -182,6 +187,27 @@ export class UsersRepository {
     );
   }
 
+  async getUserByEmailWithPassword(email: string) {
+    const rows = await this._user.model.user.findMany({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        deletedAt: null,
+      },
+      include: {
+        picture: {
+          select: {
+            id: true,
+            path: true,
+          },
+        },
+      },
+    });
+    return pickUserWithPassword(rows);
+  }
+
   getUserWithActiveSubscriptionByEmail(email: string, excludeUserId: string) {
     return this._user.model.user.findFirst({
       where: {
@@ -212,7 +238,105 @@ export class UsersRepository {
     });
   }
 
+  getIdentities(userId: string) {
+    return this._userIdentity.model.userIdentity.findMany({
+      where: { userId },
+      select: {
+        provider: true,
+        providerAccountId: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  findIdentity(provider: Provider, providerAccountId: string) {
+    return this._userIdentity.model.userIdentity.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+    });
+  }
+
+  findUserIdentity(userId: string, provider: Provider) {
+    return this._userIdentity.model.userIdentity.findUnique({
+      where: {
+        userId_provider: {
+          userId,
+          provider,
+        },
+      },
+    });
+  }
+
+  createIdentity(
+    userId: string,
+    provider: Provider,
+    providerAccountId: string
+  ) {
+    return this._userIdentity.model.userIdentity.create({
+      data: {
+        userId,
+        provider,
+        providerAccountId,
+      },
+    });
+  }
+
+  deleteIdentity(userId: string, provider: Provider) {
+    return this._userIdentity.model.userIdentity.deleteMany({
+      where: {
+        userId,
+        provider,
+      },
+    });
+  }
+
+  deleteIdentitiesForUser(userId: string) {
+    return this._userIdentity.model.userIdentity.deleteMany({
+      where: { userId },
+    });
+  }
+
+  findEmailConflict(email: string, excludeUserId: string) {
+    return this._user.model.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        id: { not: excludeUserId },
+        deletedAt: null,
+      },
+      select: { id: true, email: true },
+    });
+  }
+
+  updateEmail(id: string, email: string) {
+    return this._user.model.user.update({
+      where: { id },
+      data: { email },
+    });
+  }
+
   async getUserByProvider(providerId: string, provider: Provider) {
+    const identity = await this._userIdentity.model.userIdentity.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId: providerId,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+    if (identity?.user && !identity.user.deletedAt) {
+      return identity.user;
+    }
+
     // Google ids can live on a LOCAL row after we attach them so password
     // login keeps working. Prefer that row over a leftover GOOGLE duplicate.
     if (provider === Provider.GOOGLE) {
@@ -250,8 +374,8 @@ export class UsersRepository {
     });
   }
 
-  attachProviderId(userId: string, providerId: string) {
-    return this._user.model.user.updateMany({
+  async attachProviderId(userId: string, providerId: string) {
+    await this._user.model.user.updateMany({
       where: {
         id: userId,
         providerName: Provider.LOCAL,
@@ -261,10 +385,11 @@ export class UsersRepository {
         providerId,
       },
     });
+    await this.ensureIdentity(userId, Provider.GOOGLE, providerId);
   }
 
-  attachAppleProviderId(userId: string, appleProviderId: string) {
-    return this._user.model.user.updateMany({
+  async attachAppleProviderId(userId: string, appleProviderId: string) {
+    await this._user.model.user.updateMany({
       where: {
         id: userId,
         providerName: Provider.LOCAL,
@@ -274,6 +399,55 @@ export class UsersRepository {
         appleProviderId,
       },
     });
+    await this.ensureIdentity(userId, Provider.APPLE, appleProviderId);
+  }
+
+  async clearLinkedProvider(userId: string, provider: Provider) {
+    if (provider === Provider.GOOGLE) {
+      await this._user.model.user.updateMany({
+        where: { id: userId, deletedAt: null },
+        data: { providerId: null },
+      });
+    }
+    if (provider === Provider.APPLE) {
+      await this._user.model.user.updateMany({
+        where: { id: userId, deletedAt: null },
+        data: { appleProviderId: null },
+      });
+    }
+  }
+
+  updateProviderName(userId: string, providerName: Provider) {
+    return this._user.model.user.update({
+      where: { id: userId },
+      data: { providerName },
+    });
+  }
+
+  async ensureIdentity(
+    userId: string,
+    provider: Provider,
+    providerAccountId: string
+  ) {
+    if (provider === Provider.LOCAL || !providerAccountId) {
+      return;
+    }
+
+    const existing = await this.findIdentity(provider, providerAccountId);
+    if (existing) {
+      return existing.userId === userId ? existing : null;
+    }
+
+    const sameProvider = await this.findUserIdentity(userId, provider);
+    if (sameProvider) {
+      return sameProvider;
+    }
+
+    try {
+      return await this.createIdentity(userId, provider, providerAccountId);
+    } catch {
+      return this.findIdentity(provider, providerAccountId);
+    }
   }
 
   async deleteAccount(userId: string) {
@@ -289,6 +463,8 @@ export class UsersRepository {
 
     const hash = (value: string) =>
       createHash('md5').update(value).digest('hex');
+
+    await this.deleteIdentitiesForUser(userId);
 
     // Hash the identifying fields instead of removing the row, the random
     // suffix keeps [email, providerName] unique if the same email is deleted
@@ -320,14 +496,13 @@ export class UsersRepository {
     return this._user.model.user.update({
       where: {
         id,
-        providerName: Provider.LOCAL,
       },
       data: {
         password: AuthService.hashPassword(password),
         // Every session signed before this second stops working (see the auth
         // middleware), so a reset also locks out whoever else held one.
         // Rounded down because a token's `iat` has one-second resolution.
-        sessionsNotBefore: new Date(Math.floor(Date.now() / 1000) * 1000),
+        sessionsNotBefore: sessionsNotBeforeFrom(),
       },
     });
   }
@@ -372,15 +547,15 @@ export class UsersRepository {
       data: {
         name: body.fullname,
         bio: body.bio,
-        picture: body.picture
+        ...(body.picture
           ? {
-              connect: {
-                id: body.picture.id,
+              picture: {
+                connect: {
+                  id: body.picture.id,
+                },
               },
             }
-          : {
-              disconnect: true,
-            },
+          : {}),
       },
     });
   }

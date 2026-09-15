@@ -713,6 +713,18 @@ export class StripeService extends PaymentProviderAbstract {
     );
   }
 
+  async syncCustomerName(organization: { paymentId?: string | null; name: string }) {
+    if (
+      !process.env.STRIPE_PUBLISHABLE_KEY ||
+      !organization.paymentId?.startsWith('cus_')
+    ) {
+      return;
+    }
+    await stripe.customers.update(organization.paymentId, {
+      name: organization.name,
+    });
+  }
+
   /**
    * The organization's Stripe customer, created on first use.
    *

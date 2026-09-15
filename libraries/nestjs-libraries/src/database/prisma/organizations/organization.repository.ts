@@ -1,5 +1,8 @@
-import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
+import {
+  PrismaRepository,
+  PrismaTransaction,
+} from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { Provider, Role, ShortLinkPreference } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -12,7 +15,8 @@ export class OrganizationRepository {
   constructor(
     private _organization: PrismaRepository<'organization'>,
     private _userOrg: PrismaRepository<'userOrganization'>,
-    private _user: PrismaRepository<'user'>
+    private _user: PrismaRepository<'user'>,
+    private _transaction: PrismaTransaction
   ) {}
 
   /**
@@ -331,6 +335,11 @@ export class OrganizationRepository {
       return false;
     }
 
+    const duplicate = await this.findOrgMemberByEmailOfUser(orgId, userId);
+    if (duplicate) {
+      throw new Error('EMAIL_ALREADY_IN_ORG');
+    }
+
     const checkForSubscription =
       await this._organization.model.organization.findFirst({
         where: {
@@ -400,6 +409,16 @@ export class OrganizationRepository {
                 timezone: 0,
                 ip,
                 agent: userAgent,
+                ...(body.provider !== Provider.LOCAL && body.providerId
+                  ? {
+                      identities: {
+                        create: {
+                          provider: body.provider,
+                          providerAccountId: body.providerId,
+                        },
+                      },
+                    }
+                  : {}),
               },
             },
           },
@@ -450,12 +469,17 @@ export class OrganizationRepository {
       },
       select: {
         users: {
+          where: {
+            disabled: false,
+          },
           select: {
             role: true,
             user: {
               select: {
                 email: true,
                 id: true,
+                name: true,
+                providerName: true,
                 sendSuccessEmails: true,
                 sendFailureEmails: true,
                 sendStreakEmails: true,
@@ -464,6 +488,118 @@ export class OrganizationRepository {
           },
         },
       },
+    });
+  }
+
+  countSuperAdmins(orgId: string) {
+    return this._userOrg.model.userOrganization.count({
+      where: {
+        organizationId: orgId,
+        role: Role.SUPERADMIN,
+        disabled: false,
+        user: { deletedAt: null },
+      },
+    });
+  }
+
+  getMembership(orgId: string, userId: string) {
+    return this._userOrg.model.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            deletedAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findOrgMemberByEmail(orgId: string, email: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        user: {
+          deletedAt: null,
+          email: {
+            equals: email,
+            mode: 'insensitive',
+          },
+        },
+      },
+    });
+  }
+
+  async findOrgMemberByEmailOfUser(orgId: string, userId: string) {
+    const user = await this._user.model.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { email: true },
+    });
+    if (!user?.email) {
+      return null;
+    }
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        userId: { not: userId },
+        user: {
+          deletedAt: null,
+          email: {
+            equals: user.email,
+            mode: 'insensitive',
+          },
+        },
+      },
+    });
+  }
+
+  updateMemberRole(orgId: string, userId: string, role: Role) {
+    return this._userOrg.model.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+      data: { role },
+    });
+  }
+
+  transferOwnership(orgId: string, fromUserId: string, toUserId: string) {
+    return this._transaction.model.$transaction([
+      this._userOrg.model.userOrganization.update({
+        where: {
+          userId_organizationId: {
+            userId: toUserId,
+            organizationId: orgId,
+          },
+        },
+        data: { role: Role.SUPERADMIN },
+      }),
+      this._userOrg.model.userOrganization.update({
+        where: {
+          userId_organizationId: {
+            userId: fromUserId,
+            organizationId: orgId,
+          },
+        },
+        data: { role: Role.ADMIN },
+      }),
+    ]);
+  }
+
+  updateOrganizationName(orgId: string, name: string) {
+    return this._organization.model.organization.update({
+      where: { id: orgId },
+      data: { name },
     });
   }
 

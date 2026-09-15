@@ -13,7 +13,7 @@ import { Provider } from '@gitroom/nestjs-libraries/database/prisma/generated/en
 
 export class CreateOrgUserDto {
   @IsString()
-  @MinLength(3)
+  @MinLength(8)
   @MaxLength(64)
   @IsDefined()
   @ValidateIf((o) => !o.providerToken)

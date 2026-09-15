@@ -27,6 +27,10 @@ import {
   shouldBlockLocalRegister,
   shouldCompleteOauthWithoutOrgForm,
 } from '@gitroom/backend/services/auth/oauth-local-link';
+import {
+  hasPasswordHash,
+  oauthLinkTicketMatchesState,
+} from '@gitroom/helpers/auth/account-security';
 
 // A session lasts as long as the cookie that carries it (one year, set in
 // auth.controller). Before this no token had an expiry at all, so a copied
@@ -214,6 +218,10 @@ export class AuthService {
         body.email = body.email.toLowerCase();
       }
       const user = await this._userService.getUserByEmail(body.email);
+      const loginUser =
+        user && hasPasswordHash(user.password)
+          ? user
+          : await this._userService.getUserByEmailWithPassword(body.email);
       if (body instanceof CreateOrgUserDto) {
         const any = existingAccountForEmail(
           user,
@@ -266,17 +274,17 @@ export class AuthService {
       // it for an unknown address answered in ~1 ms instead of ~100 ms.
       const passwordMatches = AuthChecker.comparePassword(
         body.password,
-        passwordHashToCompare(user?.password),
+        passwordHashToCompare(loginUser?.password),
       );
-      if (!user?.password || !passwordMatches) {
+      if (!hasPasswordHash(loginUser?.password) || !passwordMatches) {
         throw new Error('Invalid user name or password');
       }
 
-      if (!user.activated) {
+      if (!loginUser.activated) {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      return { addedOrg: false, jwt: await this.jwt(loginUser) };
     }
 
     const user = await this.loginOrRegisterProvider(
@@ -359,6 +367,11 @@ export class AuthService {
       this.oauthUserStore(),
     );
     if (user) {
+      await this._userService.ensureIdentity(
+        user.id,
+        provider,
+        providerUser.id,
+      );
       return user;
     }
 
@@ -422,8 +435,8 @@ export class AuthService {
   }
 
   async forgot(email: string) {
-    const user = await this._userService.getUserByEmail(email);
-    if (!user || user.providerName !== Provider.LOCAL) {
+    const user = await this._userService.getUserByEmailWithPassword(email);
+    if (!user) {
       return false;
     }
 
@@ -553,6 +566,85 @@ export class AuthService {
     return providerInstance.generateLink(query);
   }
 
+  isLinkOauthState(state?: string) {
+    return !!state && state.startsWith('link-');
+  }
+
+  /** Signed cookie: userId + nonce from `link-${nonce}`. Not a raw user id. */
+  oauthLinkTicket(userId: string, nonce: string) {
+    return AuthChecker.signJWT(
+      {
+        id: userId,
+        nonce,
+        purpose: 'oauth_link',
+        expires: dayjs().add(10, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
+      },
+      { expiresIn: '10m' },
+    );
+  }
+
+  readOauthLinkUser(ticket: string | undefined, state?: string) {
+    if (!ticket) {
+      return undefined;
+    }
+    try {
+      const payload = AuthChecker.verifyJWT(ticket) as {
+        id?: string;
+        nonce?: string;
+        purpose?: string;
+        expires?: string;
+      };
+      if (
+        payload?.purpose !== 'oauth_link' ||
+        !payload.id ||
+        !payload.nonce ||
+        !payload.expires ||
+        dayjs(payload.expires).isBefore(dayjs()) ||
+        !oauthLinkTicketMatchesState(payload.nonce, state)
+      ) {
+        return undefined;
+      }
+      return payload.id;
+    } catch {
+      return undefined;
+    }
+  }
+
+  stepUpJwt(userId: string) {
+    return AuthChecker.signJWT(
+      {
+        id: userId,
+        purpose: 'stepup',
+        expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
+      },
+      { expiresIn: '20m' },
+    );
+  }
+
+  isFreshOauth(token: string | undefined, userId: string) {
+    if (!token) {
+      return false;
+    }
+    try {
+      const payload = AuthChecker.verifyJWT(token) as {
+        id?: string;
+        purpose?: string;
+        expires?: string;
+      };
+      if (
+        payload?.purpose !== 'stepup' ||
+        payload.id !== userId ||
+        !payload.expires ||
+        dayjs(payload.expires).isBefore(dayjs())
+      ) {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async checkExists(
     provider: string,
     code: string,
@@ -561,6 +653,7 @@ export class AuthService {
     stateCookie?: string,
     ip?: string,
     userAgent?: string,
+    linkTicket?: string,
   ) {
     // the mobile app passes redirect_uri and keeps no cookies, the web flow
     // never passes it, so the state nonce is only enforced for the web flow
@@ -582,13 +675,49 @@ export class AuthService {
     if (!identity) {
       throw new Error('Invalid user');
     }
+
+    if (this.isLinkOauthState(state)) {
+      const linkUserId = this.readOauthLinkUser(linkTicket, state);
+      if (!linkUserId) {
+        throw new Error('Invalid link session');
+      }
+      await this._userService.linkIdentity(
+        linkUserId,
+        provider.toUpperCase(),
+        identity.id,
+      );
+      const linkedUser = await this._userService.getUserById(linkUserId);
+      if (!linkedUser) {
+        throw new Error('Invalid user');
+      }
+      if (!linkedUser.activated) {
+        await this._userService.activateUser(linkedUser.id);
+        linkedUser.activated = true;
+      }
+      return {
+        jwt: await this.jwt(linkedUser),
+        isNew: false,
+        linked: true,
+        stepUp: this.stepUpJwt(linkedUser.id),
+      };
+    }
+
     const existing = await findExistingOauthUser(
       provider as Provider,
       identity,
       this.oauthUserStore(),
     );
     if (existing) {
-      return { jwt: await this.jwt(existing), isNew: false };
+      await this._userService.ensureIdentity(
+        existing.id,
+        provider.toUpperCase() as Provider,
+        identity.id,
+      );
+      return {
+        jwt: await this.jwt(existing),
+        isNew: false,
+        stepUp: this.stepUpJwt(existing.id),
+      };
     }
 
     // Sign in and Create account both land here after Google (and Apple).
@@ -618,7 +747,11 @@ export class AuthService {
       this._track('register', identity.email, '').catch(() => {});
       await NewsletterService.register(identity.email);
 
-      return { jwt: await this.jwt(create.users[0].user), isNew: true };
+      return {
+        jwt: await this.jwt(create.users[0].user),
+        isNew: true,
+        stepUp: this.stepUpJwt(create.users[0].user.id),
+      };
     }
 
     return { token };

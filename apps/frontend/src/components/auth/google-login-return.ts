@@ -8,7 +8,10 @@
  */
 
 export const isLoginOauthState = (state: string | null) =>
-  !!state && state.startsWith('login');
+  !!state && (state.startsWith('login') || state.startsWith('link-'));
+
+export const isLinkOauthState = (state: string | null) =>
+  !!state && state.startsWith('link-');
 
 export const isLoginOauthCallback = (
   pathname: string,
@@ -25,6 +28,10 @@ export const loginOauthAuthPath = (search: URLSearchParams) => {
   const params = new URLSearchParams(search);
   if (!params.get('provider')) {
     params.set('provider', 'GOOGLE');
+  }
+  if (isLinkOauthState(params.get('state'))) {
+    params.set('tab', 'account');
+    return `/settings?${params.toString()}`;
   }
   return `/auth?${params.toString()}`;
 };

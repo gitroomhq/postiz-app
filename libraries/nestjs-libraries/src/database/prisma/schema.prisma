@@ -142,6 +142,7 @@ model User {
   agencies              SocialMediaAgency?
   picture               Media?               @relation(fields: [pictureId], references: [id])
   organizations         UserOrganization[]
+  identities            UserIdentity[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -150,6 +151,22 @@ model User {
   @@index([lastOnline])
   @@index([pictureId])
   @@index([deletedAt])
+}
+
+/// Login identities attached to a User. Session JWT still keys off User.id.
+/// LOCAL password login is not a row here — it lives on User.password.
+model UserIdentity {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          Provider
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 model UsedCodes {

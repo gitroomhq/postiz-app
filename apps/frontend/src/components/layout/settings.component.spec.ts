@@ -18,4 +18,20 @@ describe('Settings mobile stack', () => {
     assert.match(source, /showIndex/);
     assert.match(source, /closeMobilePane/);
   });
+
+  it('hides the pane title with the JS phone chrome, not Tailwind mobile: (1025px)', () => {
+    assert.match(source, /hideTitle=\{mobile\}/);
+    assert.doesNotMatch(source, /text-pqText mobile:hidden/);
+  });
+});
+
+describe('Account nav', () => {
+  it('lists Account as the first Account-group row', () => {
+    const accountBlock = source.slice(source.indexOf("if (showLogout)"));
+    const accountTab = accountBlock.indexOf("tab: 'account'");
+    const apiTab = accountBlock.indexOf("tab: 'api'");
+    assert.ok(accountTab >= 0);
+    assert.ok(apiTab > accountTab);
+    assert.match(source, /label: t\('your_account', 'Account'\)/);
+  });
 });
