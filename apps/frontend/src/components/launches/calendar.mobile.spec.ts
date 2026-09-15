@@ -78,6 +78,7 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /focus\(item\.id, 'fix'\)/);
     assert.match(manage, /revealWriteForIssue\('settings'\)/);
     assert.match(manage, /revealWriteForIssue\('content'\)/);
+    assert.doesNotMatch(manage, /focus\(item\.id, 'preview'\)/);
   });
 
   it('does not mount two AI assistants on the phone Write step', () => {

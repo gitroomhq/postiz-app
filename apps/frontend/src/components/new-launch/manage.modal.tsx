@@ -506,6 +506,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
         // Phone submit lives on Schedule; tablet submit can be on Preview.
         // Bounce back to Write so the toast has a visible surface to fix.
+        // Content errors must not call preview()/setCurrent — that switches
+        // off global editing and locks the editor behind "Edit content".
         const revealWriteForIssue = (kind: 'settings' | 'content') => {
           setComposerPane('edit');
           setShowSettings(kind === 'settings');
@@ -523,7 +525,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             'warning'
           );
           setLoading(false);
-          focus(item.id, 'preview');
           revealWriteForIssue('content');
           return;
         }
@@ -549,7 +550,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 `${channelToastLabel(item)}: ${item.errors}`,
                 'warning'
               );
-              focus(item.id, 'preview');
               setLoading(false);
               revealWriteForIssue('content');
               return;
@@ -563,7 +563,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 )}`,
                 'warning'
               );
-              focus(item.id, 'preview');
               setLoading(false);
               revealWriteForIssue('content');
               return;
