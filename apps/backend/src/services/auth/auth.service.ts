@@ -91,7 +91,17 @@ export class AuthService {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      const addedOrg =
+        addToOrg && typeof addToOrg !== 'boolean'
+          ? await this._organizationService.addUserToOrg(
+              user.id,
+              addToOrg.id,
+              addToOrg.orgId,
+              addToOrg.role
+            )
+          : false;
+
+      return { addedOrg, jwt: await this.jwt(user) };
     }
 
     const user = await this.loginOrRegisterProvider(
