@@ -239,7 +239,7 @@ const CheckoutRadio: FC<{
  *
  * Design: selectable in-place (`paywallTier: 'LIFETIME'`). Pay still goes
  * through `POST /billing/lifetime-checkout` (hosted Stripe), not Embedded.
- * When `allowTrial`, checkout is `mode: 'setup'` ($0 today; $49 after trial);
+ * When `allowTrial`, checkout is `mode: 'setup'` ($0 today; founding fee after trial);
  * otherwise immediate `mode: 'payment'`. Marketing: Everything in Pro.
  */
 const LifetimeOfferCard: FC<{

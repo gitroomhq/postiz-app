@@ -20,7 +20,7 @@ export const UserContext = createContext<
       impersonate: boolean;
       allowTrial: boolean;
       isTrailing: boolean;
-      /** Deferred founding $49 still owed after the trial window closed. */
+      /** Deferred founding fee still owed after the trial window closed. */
       lifetimePaymentPending?: boolean;
       streakSince: string | null;
       /** Stripe cancel / subscription end day when known (lapsed paywall). */

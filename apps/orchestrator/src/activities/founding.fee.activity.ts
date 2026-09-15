@@ -19,7 +19,7 @@ export class FoundingFeeActivity {
    * Charge every deferred founding fee whose trial has ended.
    *
    * A founding purchase made during the trial saves the card and grants
-   * lifetime at once; the $49 is taken when the trial ends. That charge only
+   * lifetime at once; the founding fee is taken when the trial ends. That charge only
    * ever ran when the customer came back — `/user/self`, `is-trial-finished`,
    * the FinishTrial overlay — so somebody who never returned never paid, and
    * the public API and MCP never trigger it at all. This runs the same settle

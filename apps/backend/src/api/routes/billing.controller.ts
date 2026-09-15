@@ -130,7 +130,7 @@ export class BillingController {
     // is ever coming, so the flag is cleared here. Without this the caller
     // polled forever and the "End free trial" dialog never closed.
     //
-    // Deferred founding purchases charge $49 here (force) before the flag
+    // Deferred founding purchases charge the founding fee here (force) before the flag
     // clears, so "End free trial" matches money the same way a Stripe
     // subscription trial does. If that charge fails (dead card), leave the
     // trial flag alone — clearing it would unlock a founding member who never

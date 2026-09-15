@@ -190,7 +190,7 @@ type CancelFlowResult =
 
 /**
  * Prototype `billingDlg` cancel chain: confirm → (optional retention) → feedback.
- * Lifetime trial offers $24.50 founding retention; others offer 50%×3 months.
+ * Lifetime trial offers half-price founding retention; others offer 50%×3 months.
  */
 const BillingCancelDialog: FC<{
   showTeamNote: boolean;
@@ -613,7 +613,7 @@ export const MainBillingComponent: FC<{
   // The lifetime split. `isTrailing` is the organization's trial flag, so a
   // founding member still inside the trial sees the plan grid (with the
   // LIFETIME card variant) while a paid one sees the lifetime surface.
-  // `lifetimePaymentPending` = deferred $49 still owed after the window —
+  // `lifetimePaymentPending` = deferred founding fee still owed after the window —
   // treat as not fully paid (lock-until-paid).
   const lifetimePaid =
     !!user?.isLifetime && !user?.isTrailing && !user?.lifetimePaymentPending;
@@ -784,7 +784,7 @@ export const MainBillingComponent: FC<{
 
           const isLifetimeTrial = !!user?.isLifetime && !!user?.isTrailing;
           // Prefetch eligibility so confirm → discount never flashes an empty step.
-          // Lifetime trial always gets the $24.50 founding retention (never 50%×3).
+          // Lifetime trial always gets the half-price founding retention (never 50%×3).
           const offerLifetimeRetention = isLifetimeTrial;
           const checkDiscount = isLifetimeTrial
             ? { offerCoupon: false as const }
@@ -1058,7 +1058,7 @@ export const MainBillingComponent: FC<{
           so this says what is true — nothing is cancelled — rather than
           threatening. The design puts `payFailShow` in this position, above the
           trial banner and below the lifetime upsell. Same strip for deferred
-          founding $49 that failed after the trial window (lock-until-paid). */}
+          founding fee that failed after the trial window (lock-until-paid). */}
       {(!!paymentFailed || lifetimeUnpaid) && !subscription?.cancelAt && (
         <div
           data-payment-failed={lifetimeUnpaid ? 'lifetime' : '1'}

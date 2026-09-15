@@ -494,7 +494,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   const [drawerTop, setDrawerTop] = useState(0);
   const [channelExpandNonce, setChannelExpandNonce] = useState(0);
   // Design: Copilot waits until the trial ends (or the person ends it early).
-  // Lock-until-paid also blocks when deferred founding $49 is still owed.
+  // Lock-until-paid also blocks when the deferred founding fee is still owed.
   const trialLocked =
     !!user?.isTrailing || !!user?.lifetimePaymentPending;
 

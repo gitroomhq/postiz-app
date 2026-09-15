@@ -99,7 +99,7 @@ export class UsersController {
       throw new HttpForbiddenException();
     }
 
-    // Deferred founding purchase: charge $49 once the 7-day window closes even
+    // Deferred founding purchase: charge the founding fee once the 7-day window closes even
     // if the user never opens FinishTrial (that overlay was the only caller).
     // Early-returns inside settle when nothing is owed; idempotent when due.
     // @ts-ignore

@@ -293,13 +293,48 @@ export const LIFETIME_WINDOW_HOURS = 24;
  * Here rather than in the checkout code because the screen that shows the price
  * and the session that charges it must not be able to disagree.
  */
-export const LIFETIME_PRICE = 49;
+export const LIFETIME_PRICE = 99;
 
 /**
  * Cancel-flow retention price for a founding-member trial: 50% off the one-time
- * founding fee ($24.50). Shown instead of the monthly 50%×3 coupon.
+ * founding fee (`LIFETIME_PRICE / 2`). Shown instead of the monthly 50%×3 coupon.
  */
 export const LIFETIME_RETENTION_PRICE = LIFETIME_PRICE / 2;
+
+/**
+ * Founding price in force before `LIFETIME_PRICE` moved to 99. Deferred
+ * checkouts that predate a quote snapshot showed this amount and must settle
+ * at it — not at the new price — when the trial ends.
+ */
+export const PREVIOUS_LIFETIME_PRICE = 49;
+
+const quotedCents = (raw?: string | number | null): number | null => {
+  const n = typeof raw === 'string' ? Number.parseInt(raw, 10) : raw;
+  if (typeof n === 'number' && Number.isFinite(n) && n > 0) {
+    return Math.round(n);
+  }
+  return null;
+};
+
+/**
+ * Cents to charge for a deferred founding fee.
+ *
+ * Prefer the amount snapshotted at checkout (`lifetime_quoted_cents` on the
+ * Stripe customer). A missing snapshot means the checkout predated quoting, so
+ * settle at `PREVIOUS_LIFETIME_PRICE` rather than whatever `LIFETIME_PRICE` is
+ * now.
+ */
+export const foundingChargeCents = (quoted?: string | number | null): number =>
+  quotedCents(quoted) ?? PREVIOUS_LIFETIME_PRICE * 100;
+
+/**
+ * Cents to freeze on a new founding checkout. Keep an existing snapshot so a
+ * later `LIFETIME_PRICE` change cannot raise an in-flight quote. New purchases
+ * freeze `LIFETIME_PRICE * 100`.
+ */
+export const lifetimeCheckoutQuotedCents = (
+  existing?: string | number | null
+): number => quotedCents(existing) ?? LIFETIME_PRICE * 100;
 
 /**
  * The founding-member window for an account, from its registration date.

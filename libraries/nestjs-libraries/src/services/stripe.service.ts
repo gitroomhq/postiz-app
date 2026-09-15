@@ -11,6 +11,8 @@ import {
   LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
   LIFETIME_RETENTION_PRICE,
+  foundingChargeCents,
+  lifetimeCheckoutQuotedCents,
   PaidTier,
   pricing,
   trialWindow,
@@ -163,7 +165,7 @@ export class StripeService extends PaymentProviderAbstract {
       switch (event.type) {
         // Lifetime checkout: immediate `mode: 'payment'`, or deferred
         // `mode: 'setup'` (+ lifetime_deferred) that grants now and charges
-        // $49 when the trial ends. Neither is a subscription event.
+        // `LIFETIME_PRICE` when the trial ends. Neither is a subscription event.
         // Async methods complete the session before the money lands, so the
         // grant has to wait for this second event. Both share a block because
         // the `payment_status` check below is the whole difference between them.
@@ -2308,6 +2310,42 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   /**
+   * Freeze the founding fee this customer was quoted. Keep an existing
+   * `lifetime_quoted_cents` so a later `LIFETIME_PRICE` change cannot raise an
+   * in-flight deferred charge. New checkouts freeze `LIFETIME_PRICE * 100`.
+   * Deferred setups that already owe the fee but have no snapshot freeze at
+   * `PREVIOUS_LIFETIME_PRICE` — the amount they were shown.
+   */
+  private async snapshotLifetimeQuotedCents(
+    customerId: string,
+    opts: { alreadyQuoted?: boolean } = {}
+  ): Promise<number> {
+    const customer = await stripe.customers.retrieve(customerId);
+    if ((customer as { deleted?: boolean }).deleted) {
+      return opts.alreadyQuoted
+        ? foundingChargeCents()
+        : lifetimeCheckoutQuotedCents();
+    }
+    const live = customer as Stripe.Customer;
+    let quotedCents: number;
+    if (live.metadata?.lifetime_quoted_cents) {
+      quotedCents = lifetimeCheckoutQuotedCents(
+        live.metadata.lifetime_quoted_cents
+      );
+    } else if (opts.alreadyQuoted) {
+      quotedCents = foundingChargeCents();
+    } else {
+      quotedCents = lifetimeCheckoutQuotedCents();
+    }
+    if (live.metadata?.lifetime_quoted_cents !== String(quotedCents)) {
+      await stripe.customers.update(customerId, {
+        metadata: { lifetime_quoted_cents: String(quotedCents) },
+      });
+    }
+    return quotedCents;
+  }
+
+  /**
    * A founding-member checkout session.
    *
    * When the org is trial-eligible (`allowTrial`), use `mode: 'setup'` so we
@@ -2319,12 +2357,13 @@ export class StripeService extends PaymentProviderAbstract {
    * immediately (lapsed / returning purchasers).
    *
    * Session metadata carries `service` (webhook filter) and `organizationId`.
-   * Deferred sessions also set `lifetime_deferred: '1'`.
+   * Deferred sessions also set `lifetime_deferred: '1'` and snapshot
+   * `lifetime_quoted_cents` on the customer so settle uses the quoted amount.
    */
   async createLifetimeCheckout(organization: Organization) {
     const customer = await this.createOrGetCustomer(organization);
     // Mid-trial converts are usually past `allowTrial` (trial already started).
-    // Defer the $49 charge until trial end whenever the org is still trailing.
+    // Defer the founding charge until trial end whenever the org is still trailing.
     const deferCharge =
       !!organization.isTrailing || !!organization.allowTrial;
     const urls = {
@@ -2334,6 +2373,9 @@ export class StripeService extends PaymentProviderAbstract {
     };
 
     if (deferCharge) {
+      const quotedCents = await this.snapshotLifetimeQuotedCents(customer, {
+        alreadyQuoted: await this.isDeferredFoundingFeeOwed(organization.id),
+      });
       const { url } = await stripe.checkout.sessions.create({
         customer,
         mode: 'setup',
@@ -2350,6 +2392,7 @@ export class StripeService extends PaymentProviderAbstract {
           service: SUBSCRIPTION_SERVICE_TAG,
           organizationId: organization.id,
           lifetime_deferred: '1',
+          lifetime_quoted_cents: String(quotedCents),
         },
       });
       return { url };
@@ -2377,8 +2420,9 @@ export class StripeService extends PaymentProviderAbstract {
           price_data: {
             currency: 'usd',
             unit_amount: LIFETIME_PRICE * 100,
-            // Same treatment as every subscription price. Without these the $49
-            // was taxed as generic services under the account's default preset,
+            // Same treatment as every subscription price. Without these the
+            // founding fee was taxed as generic services under the account's
+            // default preset,
             // not as SaaS, and the listed price silently became tax-inclusive or
             // not depending on that preset rather than on this line.
             tax_behavior: 'exclusive',
@@ -2618,15 +2662,24 @@ export class StripeService extends PaymentProviderAbstract {
           payment_method: defaultPm,
         });
       } else {
+        const amountCents = foundingChargeCents(
+          live.metadata?.lifetime_quoted_cents
+        );
+        if (live.metadata?.lifetime_quoted_cents !== String(amountCents)) {
+          await stripe.customers.update(org.paymentId, {
+            metadata: { lifetime_quoted_cents: String(amountCents) },
+          });
+        }
         invoice = await this.chargeOnceWithTax({
           customer: org.paymentId,
-          amountCents: LIFETIME_PRICE * 100,
+          amountCents,
           description: 'PostQueen — founding member',
           metadata: {
             service: SUBSCRIPTION_SERVICE_TAG,
             organizationId,
             lifetime_charge: '1',
             last_attempt_pm: defaultPm,
+            lifetime_quoted_cents: String(amountCents),
           },
           // Keyed by payment method, not by org alone. Stripe replays a cached
           // response — including a cached decline — for 24 hours, so an
@@ -2687,8 +2740,9 @@ export class StripeService extends PaymentProviderAbstract {
 
   /**
    * Cancel-flow retention for founding-member trial: charge half of
-   * `LIFETIME_PRICE` ($24.50), mark the founding fee settled (so a later
-   * `captureFoundingLifetimeIfDue` cannot bill $49), and end the trial.
+   * `LIFETIME_PRICE`, mark the founding fee settled (so a later
+   * `captureFoundingLifetimeIfDue` cannot bill the full founding fee), and
+   * end the trial.
    */
   async applyLifetimeRetentionOffer(organizationId: string): Promise<{
     ok: boolean;
