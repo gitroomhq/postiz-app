@@ -142,6 +142,33 @@ export class PostMetricsRepository {
     });
   }
 
+  listSnapshotsForPost(
+    organizationId: string,
+    postId: string,
+    from: Date,
+    to: Date,
+  ) {
+    return this._snapshot.model.postMetricSnapshot.findMany({
+      where: {
+        organizationId,
+        postId,
+        capturedDay: {
+          gte: from,
+          lte: to,
+        },
+      },
+      orderBy: { capturedDay: 'asc' },
+      select: {
+        capturedDay: true,
+        impressions: true,
+        reactions: true,
+        comments: true,
+        shares: true,
+        raw: true,
+      },
+    });
+  }
+
   getPostForAnalytics(organizationId: string, postId: string) {
     return this._post.model.post.findFirst({
       where: {

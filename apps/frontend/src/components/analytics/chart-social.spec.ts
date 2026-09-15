@@ -34,6 +34,11 @@ describe('chartTooltipBox', () => {
     const box = chartTooltipBox(200, 20, 80, 48, 800, 600, 12);
     assert.equal(box.top, 32);
   });
+
+  it('stays below the app header when minTop is raised', () => {
+    const box = chartTooltipBox(200, 80, 80, 48, 800, 600, 12, 64);
+    assert.equal(box.top, 92);
+  });
 });
 
 describe('ChartSocial spark labels', () => {
@@ -47,5 +52,8 @@ describe('ChartSocial spark labels', () => {
     assert.match(source, /enabled: false/);
     assert.match(source, /data-pq="chart-tooltip"/);
     assert.match(source, /chartTooltipBox/);
+    assert.match(source, /z-\[220\]/);
+    assert.match(source, /querySelector\('header'\)/);
+    assert.match(source, /clip: false/);
   });
 });

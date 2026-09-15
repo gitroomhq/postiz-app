@@ -22,16 +22,17 @@ export function chartTooltipBox(
   viewportWidth: number,
   viewportHeight: number,
   gap = 12,
+  minTop = 8,
 ) {
   const left = caretX - width / 2;
   let top = caretY - height - gap;
-  if (top < 8) {
+  if (top < minTop) {
     top = caretY + gap;
   }
   const maxLeft = Math.max(8, viewportWidth - width - 8);
-  const maxTop = Math.max(8, viewportHeight - height - 8);
+  const maxTop = Math.max(minTop, viewportHeight - height - 8);
   return {
     left: Math.min(Math.max(8, left), maxLeft),
-    top: Math.min(Math.max(8, top), maxTop),
+    top: Math.min(Math.max(minTop, top), maxTop),
   };
 }

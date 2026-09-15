@@ -4,6 +4,7 @@ import {
   asCount,
   engagementRate,
   hasKnownPostMetric,
+  insightTimeSeries,
   mapFacebookPostInsights,
   mapInstagramMediaInsights,
   mapLinkedInShareStats,
@@ -25,6 +26,30 @@ describe('asCount', () => {
 
   it('sums reaction-type objects', () => {
     assert.equal(asCount({ like: 3, love: 2, wow: 1 }), 6);
+  });
+});
+
+describe('insightTimeSeries', () => {
+  it('keeps every dated value instead of only the first', () => {
+    assert.deepEqual(
+      insightTimeSeries(
+        [
+          { value: 0, end_time: '2026-09-13T07:00:00+0000' },
+          { value: 3, end_time: '2026-09-14T07:00:00+0000' },
+        ],
+        '2026-09-15',
+      ),
+      [
+        { total: '0', date: '2026-09-13' },
+        { total: '3', date: '2026-09-14' },
+      ],
+    );
+  });
+
+  it('uses today when a lifetime point has no end_time', () => {
+    assert.deepEqual(insightTimeSeries([{ value: 3 }], '2026-09-15'), [
+      { total: '3', date: '2026-09-15' },
+    ]);
   });
 });
 

@@ -1,17 +1,34 @@
 import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
-import { Select } from '@gitroom/react/form/select';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
+import clsx from 'clsx';
 
 interface AnalyticsData {
   label: string;
-  data: Array<{ total: number; date: string }>;
+  data: Array<{ total: number | string; date: string }>;
   percentageChange: number;
   average?: boolean;
+}
+
+const RANGE_KEYS = [7, 30, 90] as const;
+
+function latestTotal(series: AnalyticsData) {
+  const points = series.data || [];
+  if (!points.length) {
+    return 0;
+  }
+  if (series.average) {
+    const sum = points.reduce(
+      (acc, point) => acc + Number(point.total),
+      0,
+    );
+    return `${(sum / points.length).toFixed(2)}%`;
+  }
+  return Math.round(Number(points[points.length - 1].total));
 }
 
 export const StatisticsModal: FC<{
@@ -32,53 +49,36 @@ export const StatisticsModal: FC<{
 
   const { data: statisticsData, isLoading: isLoadingStatistics } = useSWR(
     `/posts/${postId}/statistics`,
-    loadStatistics
+    loadStatistics,
   );
 
-  const { data: analyticsData, isLoading: isLoadingAnalytics, mutate: mutateAnalytics } = useSWR(
-    `/analytics/post/${postId}?date=${dateRange}`,
-    loadPostAnalytics,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-      revalidateOnMount: true,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-      // `dateRange` is in the key, so the 7/30/90 picker makes a new key.
-      keepPreviousData: true,
-    }
-  );
+  const {
+    data: analyticsData,
+    isLoading: isLoadingAnalytics,
+    mutate: mutateAnalytics,
+  } = useSWR(`/analytics/post/${postId}?date=${dateRange}`, loadPostAnalytics, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+    keepPreviousData: true,
+  });
 
-  const isMissing = analyticsData && !Array.isArray(analyticsData) && analyticsData.missing;
-
-  const dateOptions = useMemo(() => {
-    return [
-      { key: 7, value: t('7_days', '7 Days') },
-      { key: 30, value: t('30_days', '30 Days') },
-      { key: 90, value: t('90_days', '90 Days') },
-    ];
-  }, [t]);
+  const isMissing =
+    analyticsData && !Array.isArray(analyticsData) && analyticsData.missing;
 
   const totals = useMemo(() => {
     if (!analyticsData || !Array.isArray(analyticsData)) return [];
-    return analyticsData.map((p: AnalyticsData) => {
-      const value =
-        (p?.data?.reduce((acc: number, curr: any) => acc + Number(curr.total), 0) || 0) /
-        (p.average ? p.data.length : 1);
-      if (p.average) {
-        return value.toFixed(2) + '%';
-      }
-      return Math.round(value);
-    });
+    return analyticsData.map((series: AnalyticsData) => latestTotal(series));
   }, [analyticsData]);
 
-  // Only the first paint blocks. Changing the range re-keys the analytics
-  // query, and a combined flag would blank the statistics half too — whose own
-  // key never changed.
   const isLoading =
     (isLoadingStatistics && !statisticsData) ||
     (isLoadingAnalytics && !analyticsData);
+
+  const clicks = statisticsData?.clicks || [];
 
   return (
     <div className="relative min-h-[200px]">
@@ -87,102 +87,138 @@ export const StatisticsModal: FC<{
           <LoadingComponent />
         </div>
       ) : isMissing ? (
-        <MissingReleaseModal postId={postId} onSuccess={() => mutateAnalytics()} />
+        <MissingReleaseModal
+          postId={postId}
+          onSuccess={() => mutateAnalytics()}
+        />
       ) : (
-        <div className="flex flex-col gap-[24px]">
-          {/* Post Analytics Section */}
-          {analyticsData && Array.isArray(analyticsData) && analyticsData.length > 0 && (
-            <div className="flex flex-col gap-[14px]">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[18px] font-[500]">
-                  {t('post_analytics', 'Post Analytics')}
-                </h3>
-                <div className="max-w-[150px]">
-                  <Select
-                    label=""
-                    name="date"
-                    disableForm={true}
-                    hideErrors={true}
-                    value={dateRange}
-                    onChange={(e) => setDateRange(+e.target.value)}
-                  >
-                    {dateOptions.map((option) => (
-                      <option key={option.key} value={option.key}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </Select>
+        <div className="flex flex-col gap-[22px]">
+          {analyticsData &&
+            Array.isArray(analyticsData) &&
+            analyticsData.length > 0 && (
+              <div className="flex flex-col gap-[14px]">
+                <div className="flex flex-wrap items-center justify-between gap-[12px]">
+                  <h3 className="font-display text-[16px] font-[600] text-pqText">
+                    {t('post_analytics', 'Post Analytics')}
+                  </h3>
+                  <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+                    {RANGE_KEYS.map((key) => {
+                      const active = dateRange === key;
+                      const short =
+                        key === 7
+                          ? t('range_7d', '7d')
+                          : key === 30
+                            ? t('range_30d', '30d')
+                            : t('range_90d', '90d');
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setDateRange(key)}
+                          className={clsx(
+                            'h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
+                            active
+                              ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
+                              : 'font-[500] text-pqMuted hover:text-pqText',
+                          )}
+                        >
+                          {short}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
-                {analyticsData.map((p: AnalyticsData, index: number) => {
-                  const colorVariants = ['purple', 'green', 'blue'] as const;
-                  const color = colorVariants[index % colorVariants.length];
-                  return (
-                    <div key={`analytics-${index}`} className="group">
-                      <div className="flex flex-col h-full bg-newTableHeader border border-newTableBorder rounded-[12px] overflow-hidden transition-all duration-200 hover:border-[color-mix(in_srgb,var(--brand)_50%,transparent)]">
-                        <div className="flex items-center justify-between px-[16px] pt-[14px] pb-[8px]">
-                          <div className="flex items-center gap-[10px]">
-                            <div
-                              className={`w-[8px] h-[8px] rounded-full ${
-                                color === 'purple' ? 'bg-pqBrand' : ''
-                              } ${color === 'green' ? 'bg-pqOk' : ''} ${
-                                color === 'blue' ? 'bg-[#1d9bf0]' : ''
-                              }`}
-                            />
-                            <span className="text-[15px] font-medium text-newTableText">
-                              {p.label}
-                            </span>
-                          </div>
+                <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-3">
+                  {analyticsData.map((series: AnalyticsData, index: number) => {
+                    const colorVariants = ['purple', 'green', 'blue'] as const;
+                    const color = colorVariants[index % colorVariants.length];
+                    const hasLine = (series.data || []).length >= 1;
+                    return (
+                      <div
+                        key={`analytics-${series.label}-${index}`}
+                        className="flex flex-col overflow-visible rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]"
+                      >
+                        <div className="flex items-center gap-[10px] px-[16px] pt-[14px]">
+                          <span
+                            className={clsx(
+                              'size-[8px] shrink-0 rounded-full',
+                              color === 'purple' && 'bg-pqBrand',
+                              color === 'green' && 'bg-pqOk',
+                              color === 'blue' && 'bg-[var(--chartBlue)]',
+                            )}
+                          />
+                          <span className="min-w-0 truncate text-[13px] font-[600] text-pqSoft">
+                            {series.label}
+                          </span>
                         </div>
-                        <div className="flex-1 px-[12px] py-[8px]">
-                          <div className="h-[120px] relative">
-                            <ChartSocial data={p.data} color={color} key={`chart-${index}`} />
-                          </div>
-                        </div>
-                        <div className="px-[16px] pb-[14px]">
-                          <div className="text-[36px] leading-[42px] font-semibold tracking-tight">
+                        <div className="px-[16px] pt-[8px]">
+                          <div className="text-[28px] font-[600] leading-[1.1] tracking-tight text-pqText">
                             {totals[index]}
                           </div>
                         </div>
+                        {hasLine ? (
+                          <div className="px-[12px] pb-[12px] pt-[8px]">
+                            <div className="relative h-[88px] overflow-visible">
+                              <ChartSocial
+                                data={series.data.map((point) => ({
+                                  date: point.date,
+                                  total: Number(point.total),
+                                }))}
+                                color={color}
+                                variant="spark"
+                                label={series.label}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="px-[16px] pb-[16px] pt-[8px] text-[13px] text-pqMuted">
+                            {t('no_data_in_this_period', 'No data in this period')}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Short Links Statistics Section */}
           <div className="flex flex-col gap-[14px]">
-            <h3 className="text-[18px] font-[500]">
+            <h3 className="font-display text-[16px] font-[600] text-pqText">
               {t('short_links_statistics', 'Short Links Statistics')}
             </h3>
-            {statisticsData?.clicks?.length === 0 ? (
-              <div className="text-pqSoft">
-                {t('no_short_link_results', 'No short link results')}
+            {clicks.length === 0 ? (
+              <div className="rounded-pqMd bg-pqSettings px-[20px] py-[28px] text-center shadow-[inset_0_0_0_1px_var(--border)]">
+                <div className="text-[14px] font-[600] text-pqText">
+                  {t('no_short_link_results', 'No short link results')}
+                </div>
+                <div className="mt-[6px] text-[13px] text-pqMuted">
+                  {t(
+                    'no_short_link_results_hint',
+                    'This post has no tracked short links.',
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3">
-                <div className="bg-pqBrand p-[4px] rounded-tl-lg text-pqOnBrand">
-                  {t('short_link', 'Short Link')}
+              <div className="overflow-hidden rounded-pqMd shadow-[inset_0_0_0_1px_var(--border)]">
+                <div className="grid grid-cols-3 bg-pqSettings text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+                  <div className="px-[12px] py-[10px]">
+                    {t('short_link', 'Short Link')}
+                  </div>
+                  <div className="px-[12px] py-[10px]">
+                    {t('original_link', 'Original Link')}
+                  </div>
+                  <div className="px-[12px] py-[10px]">
+                    {t('clicks', 'Clicks')}
+                  </div>
                 </div>
-                <div className="bg-pqBrand p-[4px] text-pqOnBrand">
-                  {t('original_link', 'Original Link')}
-                </div>
-                <div className="bg-pqBrand p-[4px] rounded-tr-lg text-pqOnBrand">
-                  {t('clicks', 'Clicks')}
-                </div>
-                {statisticsData?.clicks?.map((p: any) => (
-                  <Fragment key={p.short}>
-                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
-                      {p.short}
-                    </div>
-                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
-                      {p.original}
-                    </div>
-                    <div className="p-[4px] py-[10px] bg-pqSettings text-pqText">
-                      {p.clicks}
+                {clicks.map((row: { short: string; original: string; clicks: number }) => (
+                  <Fragment key={row.short}>
+                    <div className="grid grid-cols-3 border-t border-pqLine text-[13px] text-pqText">
+                      <div className="truncate px-[12px] py-[10px]">{row.short}</div>
+                      <div className="truncate px-[12px] py-[10px]">
+                        {row.original}
+                      </div>
+                      <div className="px-[12px] py-[10px]">{row.clicks}</div>
                     </div>
                   </Fragment>
                 ))}
@@ -190,11 +226,15 @@ export const StatisticsModal: FC<{
             )}
           </div>
 
-          {/* No analytics available message */}
-          {(!analyticsData || !Array.isArray(analyticsData) || analyticsData.length === 0) &&
-            (!statisticsData?.clicks || statisticsData.clicks.length === 0) && (
-              <div className="text-center text-pqSoft py-[20px]">
-                {t('no_statistics_available', 'No statistics available for this post')}
+          {(!analyticsData ||
+            !Array.isArray(analyticsData) ||
+            analyticsData.length === 0) &&
+            clicks.length === 0 && (
+              <div className="rounded-pqMd bg-pqSettings px-[20px] py-[28px] text-center text-[14px] text-pqMuted shadow-[inset_0_0_0_1px_var(--border)]">
+                {t(
+                  'no_statistics_available',
+                  'No statistics available for this post',
+                )}
               </div>
             )}
         </div>

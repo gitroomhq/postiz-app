@@ -12,7 +12,6 @@ import { MediaLightbox } from '@gitroom/frontend/components/media/media.lightbox
 import {
   DeletePost,
   Duplicate,
-  Preview,
   usePostActions,
 } from '@gitroom/frontend/components/launches/calendar';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
@@ -71,10 +70,6 @@ export const AnalyticsPostMenu: FC<{
   const group = post.group || post.id;
   const loadPost = { id: post.id, group, publishDate: post.publishDate };
 
-  const preview = () => {
-    close();
-    window.open(`/p/${post.id}?share=true`, '_blank');
-  };
   const enlarge = () => {
     close();
     if (post.thumbnail) {
@@ -98,10 +93,6 @@ export const AnalyticsPostMenu: FC<{
 
   const rows = (
     <>
-      <button type="button" role="menuitem" className={ROW} onClick={preview}>
-        <Preview />
-        {t('preview_post', 'Preview Post')}
-      </button>
       {!!post.thumbnail && (
         <button type="button" role="menuitem" className={ROW} onClick={enlarge}>
           <EnlargeIcon />

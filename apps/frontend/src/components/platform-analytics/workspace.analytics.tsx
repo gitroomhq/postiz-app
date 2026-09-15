@@ -474,6 +474,7 @@ export const WorkspaceAnalytics: FC<{
   );
   const trioCount =
     Number(showChannelMix) + Number(showPostingDays) + Number(showEngagementMix);
+  const matchShownCount = !integrationIds;
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -489,7 +490,14 @@ export const WorkspaceAnalytics: FC<{
       >
         <div className="mb-[12px] flex flex-wrap items-center gap-[12px]">
           <div className="min-w-0 flex-1 font-display text-[16px] font-[600] text-pqText">
-            {t('top_5_posts', 'Top 5 posts')}
+            {matchShownCount && topPosts.length === 1
+              ? t('top_post', 'Top post')
+              : matchShownCount && topPosts.length > 1
+                ? t('top_n_posts', 'Top {count} posts').replace(
+                    '{count}',
+                    String(topPosts.length),
+                  )
+                : t('top_5_posts', 'Top 5 posts')}
           </div>
           {showComments && (
             <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">

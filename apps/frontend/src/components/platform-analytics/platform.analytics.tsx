@@ -66,6 +66,7 @@ export const PlatformAnalytics = () => {
   const channelsCollapsed = !mobile && collapseMenu === '1';
   const autoCollapsed = useRef(false);
   const rowRef = useRef<HTMLDivElement>(null);
+  const paneRef = useRef<HTMLDivElement>(null);
   // Phone: the dashboard is the page. The channel picker is a sheet.
   const [detailOpen, setDetailOpen] = useState(false);
   const [channelSheetOpen, setChannelSheetOpen] = useState(false);
@@ -77,6 +78,12 @@ export const PlatformAnalytics = () => {
     setChannelSheetOpen(false);
   }, []);
   const closeDetail = useCallback(() => setDetailOpen(false), []);
+
+  useEffect(() => {
+    if (paneRef.current) {
+      paneRef.current.scrollTop = 0;
+    }
+  }, [selected]);
 
   const load = useCallback(async () => {
     // customFetch resolves on 4xx/5xx, so `.integrations` was undefined on an
@@ -411,7 +418,10 @@ export const PlatformAnalytics = () => {
           </button>
           {datePills}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[14px] py-[16px] pb-[48px]">
+        <div
+          ref={paneRef}
+          className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[14px] py-[16px] pb-[48px]"
+        >
           {analyticsBody}
         </div>
         <MobileSheet
@@ -756,6 +766,7 @@ export const PlatformAnalytics = () => {
             : currentIntegration?.name || t('analytics', 'Analytics')
         }
         anchorRef={rowRef}
+        scrollResetKey={selected}
         className="gap-[18px] bg-pqInner px-[26px] pb-[48px] pt-[22px]"
       >
         {selected === ALL_CHANNELS && !!options.length && (

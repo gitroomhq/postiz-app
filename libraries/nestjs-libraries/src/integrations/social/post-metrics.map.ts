@@ -147,9 +147,27 @@ export function mapLinkedInShareStats(
 
 type GraphInsight = {
   name?: string;
-  values?: Array<{ value?: unknown }>;
+  values?: Array<{ value?: unknown; end_time?: string }>;
   total_value?: { value?: unknown };
 };
+
+export function insightTimeSeries(
+  values: Array<{ value?: unknown; end_time?: string }> | undefined,
+  today: string,
+): Array<{ total: string; date: string }> {
+  const points: Array<{ total: string; date: string }> = [];
+  for (const row of values || []) {
+    const total = asCount(row.value);
+    if (total == null) {
+      continue;
+    }
+    points.push({
+      total: String(total),
+      date: row.end_time?.slice(0, 10) || today,
+    });
+  }
+  return points;
+}
 
 function insightValue(metric: GraphInsight): unknown {
   return metric.values?.[0]?.value ?? metric.total_value?.value;

@@ -65,9 +65,22 @@ describe('All channels layout', () => {
     assert.match(workspace, /min-\[1100px\]:grid/);
     assert.match(workspace, /repeat\(\$\{topPosts\.length\}/);
   });
+
+  it('names the Top N heading after the number of cards shown on All channels only', () => {
+    assert.match(workspace, /const matchShownCount = !integrationIds/);
+    assert.match(workspace, /top_post/);
+    assert.match(workspace, /top_n_posts/);
+    assert.match(workspace, /matchShownCount && topPosts\.length === 1/);
+    assert.match(workspace, /String\(topPosts\.length\)/);
+  });
 });
 
 describe('All channels rail', () => {
+  it('resets the analytics pane scroll when the channel changes', () => {
+    assert.match(rail, /scrollResetKey=\{selected\}/);
+    assert.match(rail, /paneRef\.current\.scrollTop = 0/);
+  });
+
   it('uses a platform mosaic and an N channels subtitle', () => {
     assert.match(rail, /all-channels-mosaic/);
     assert.match(rail, /n_channels/);

@@ -6,6 +6,7 @@ import {
   mapSnapshotRow,
   matchesAnalyticsQuery,
   previewText,
+  overlaySnapshotSeries,
   sortAnalyticsPosts,
   sumComplete,
   sumKnown,
@@ -278,5 +279,69 @@ describe('summarizeAnalyticsPosts', () => {
     assert.equal(summary.reactions, 14);
     assert.equal(summary.comments, null);
     assert.deepEqual(summary.engagementMix, { reactions: 14, comments: 2 });
+  });
+});
+
+describe('overlaySnapshotSeries', () => {
+  it('keeps a single live point when there are not enough snapshots', () => {
+    const live = [
+      {
+        label: 'Comments',
+        percentageChange: 0,
+        data: [{ total: '3', date: '2026-09-15' }],
+      },
+    ];
+    const out = overlaySnapshotSeries(live, [
+      {
+        capturedDay: '2026-09-15',
+        impressions: 0,
+        reactions: 0,
+        comments: 3,
+        shares: 0,
+        raw: null,
+      },
+    ]);
+    assert.equal(out[0].data.length, 1);
+  });
+
+  it('plots captured snapshot days instead of inventing waves', () => {
+    const live = [
+      {
+        label: 'Comments',
+        percentageChange: 0,
+        data: [{ total: '3', date: '2026-09-15' }],
+      },
+    ];
+    const out = overlaySnapshotSeries(live, [
+      {
+        capturedDay: '2026-09-13',
+        impressions: 0,
+        reactions: 0,
+        comments: 0,
+        shares: 0,
+        raw: null,
+      },
+      {
+        capturedDay: '2026-09-14',
+        impressions: 0,
+        reactions: 0,
+        comments: 3,
+        shares: 0,
+        raw: null,
+      },
+      {
+        capturedDay: '2026-09-15',
+        impressions: 0,
+        reactions: 0,
+        comments: 3,
+        shares: 0,
+        raw: null,
+      },
+    ]);
+    assert.deepEqual(out[0].data, [
+      { total: '0', date: '2026-09-13' },
+      { total: '3', date: '2026-09-14' },
+      { total: '3', date: '2026-09-15' },
+    ]);
   });
 });

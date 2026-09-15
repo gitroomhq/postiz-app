@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, SyntheticEvent } from 'react';
 import { clsx } from 'clsx';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';

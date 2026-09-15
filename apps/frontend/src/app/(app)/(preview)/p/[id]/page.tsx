@@ -24,6 +24,21 @@ function absoluteMediaUrl(path: string | undefined | null): string | undefined {
   }
 }
 
+function parsePostMedia(image: unknown): Array<{ name?: string; path?: string }> {
+  if (Array.isArray(image)) {
+    return image as Array<{ name?: string; path?: string }>;
+  }
+  if (typeof image !== 'string' || !image) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(image);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
@@ -48,13 +63,9 @@ export async function generateMetadata(props: {
     const description =
       text || 'Shared with PostQueen — schedule posts across 30+ channels.';
     const images = (() => {
-      try {
-        return (JSON.parse(post[0].image || '[]') as { path?: string }[])
-          .map((m) => absoluteMediaUrl(m.path))
-          .filter(Boolean) as string[];
-      } catch {
-        return [];
-      }
+      return parsePostMedia(post[0].image)
+        .map((m) => absoluteMediaUrl(m.path))
+        .filter(Boolean) as string[];
     })();
     return {
       title,
@@ -96,7 +107,7 @@ export default async function Auth(
 
   const post = await (await internalFetch(`/public/posts/${id}`)).json();
   const t = await getT();
-  if (!post.length) {
+  if (!Array.isArray(post) || !post.length) {
     return (
       <div className="fixed start-0 top-0 flex h-full w-full items-center justify-center text-[20px] text-pqText">
         {t('post_not_found', 'Post not found')}
@@ -104,7 +115,12 @@ export default async function Auth(
     );
   }
 
-  const integration = post[0].integration;
+  const integration = post[0].integration || {
+    name: '',
+    picture: '',
+    providerIdentifier: '',
+    profile: '',
+  };
   const profileHandle = formatChannelHandle(integration.profile);
 
   return (
@@ -131,7 +147,9 @@ export default async function Auth(
 
       <div className="flex flex-col gap-[16px] lg:flex-row lg:items-start lg:gap-[20px]">
         <div className="flex min-w-0 flex-1 flex-col gap-[16px]">
-          {post.map((p: any, index: number) => (
+          {post.map((p: any, index: number) => {
+            const media = parsePostMedia(p?.image);
+            return (
             <article
               key={String(p.id)}
               className="rounded-[14px] border border-pqBorder bg-pqInner p-[18px] md:p-[20px]"
@@ -174,16 +192,16 @@ export default async function Auth(
                       __html: sanitizePostContent(p.content),
                     }}
                   />
-                  {!!JSON.parse(p?.image || '[]').length && (
+                  {!!media.length && (
                     <div className="flex w-full snap-x snap-mandatory gap-[10px] overflow-x-auto">
-                      {JSON.parse(p?.image || '[]').map((media: any) => (
+                      {media.map((item: { name?: string; path?: string }, mediaIndex: number) => (
                         <div
-                          key={media.name}
+                          key={item.name || item.path || String(mediaIndex)}
                           className="max-h-[500px] min-w-[80%] flex-none snap-center overflow-hidden rounded-[10px] sm:min-w-0 sm:flex-1"
                         >
                           <VideoOrImage
                             isContain={true}
-                            src={media.path}
+                            src={item.path || ''}
                             autoplay={true}
                           />
                         </div>
@@ -193,7 +211,8 @@ export default async function Auth(
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
 
         <aside className="w-full shrink-0 lg:w-[320px]">

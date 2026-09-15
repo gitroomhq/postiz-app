@@ -249,6 +249,100 @@ export function toAgentPost(row: AnalyticsPostRow) {
   };
 }
 
+const SERIES_FIELD: Record<
+  string,
+  'impressions' | 'reactions' | 'comments' | 'shares'
+> = {
+  Views: 'impressions',
+  Reach: 'impressions',
+  Impressions: 'impressions',
+  'Media views': 'impressions',
+  Likes: 'reactions',
+  Reactions: 'reactions',
+  Comments: 'comments',
+  Shares: 'shares',
+  Retweets: 'shares',
+  Reposts: 'shares',
+};
+
+const SERIES_RAW: Record<string, string> = {
+  Saves: 'saves',
+  Saved: 'saves',
+  Reach: 'reach',
+  Clicks: 'clicks',
+  Quotes: 'quotes',
+};
+
+function dayKey(value: Date | string) {
+  if (typeof value === 'string') {
+    return value.slice(0, 10);
+  }
+  return value.toISOString().slice(0, 10);
+}
+
+function snapshotMetric(
+  snapshot: {
+    impressions: number | null;
+    reactions: number | null;
+    comments: number | null;
+    shares: number | null;
+    raw: unknown;
+  },
+  label: string,
+): number | null {
+  const raw =
+    snapshot.raw && typeof snapshot.raw === 'object' && !Array.isArray(snapshot.raw)
+      ? (snapshot.raw as Record<string, unknown>)
+      : null;
+  const rawKey = SERIES_RAW[label];
+  if (raw && rawKey && typeof raw[rawKey] === 'number') {
+    return raw[rawKey] as number;
+  }
+  const field = SERIES_FIELD[label];
+  if (field && snapshot[field] != null) {
+    return snapshot[field];
+  }
+  return null;
+}
+
+export type SnapshotSeriesPoint = {
+  capturedDay: Date | string;
+  impressions: number | null;
+  reactions: number | null;
+  comments: number | null;
+  shares: number | null;
+  raw: unknown;
+};
+
+/** Plot captured snapshot days when live postAnalytics only returned a single lifetime point. */
+export function overlaySnapshotSeries<
+  T extends { label: string; data: Array<{ total: string; date: string }> },
+>(live: T[], snapshots: SnapshotSeriesPoint[]): T[] {
+  if (!live.length || snapshots.length < 2) {
+    return live;
+  }
+  return live.map((series) => {
+    const points = snapshots
+      .map((snapshot) => {
+        const total = snapshotMetric(snapshot, series.label);
+        if (total == null) {
+          return null;
+        }
+        return { total: String(total), date: dayKey(snapshot.capturedDay) };
+      })
+      .filter((point): point is { total: string; date: string } => point != null);
+    if (points.length < 2) {
+      return series;
+    }
+    const lastLive = series.data[series.data.length - 1];
+    const lastSnap = points[points.length - 1];
+    if (lastLive && lastLive.date > lastSnap.date) {
+      points.push(lastLive);
+    }
+    return { ...series, data: points };
+  });
+}
+
 function snapshotEngagementRate(
   impressions: number | null,
   reactions: number | null,

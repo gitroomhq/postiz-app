@@ -115,6 +115,11 @@ export const ChartSocial: FC<{
       const caretX = rect.left + tooltip.caretX;
       const caretY = rect.top + tooltip.caretY;
       const box = tip.getBoundingClientRect();
+      const header = document.querySelector('header');
+      const minTop = Math.max(
+        8,
+        header ? header.getBoundingClientRect().bottom + 8 : 8,
+      );
       const next = chartTooltipBox(
         caretX,
         caretY,
@@ -122,6 +127,8 @@ export const ChartSocial: FC<{
         box.height,
         window.innerWidth,
         window.innerHeight,
+        12,
+        minTop,
       );
       tip.style.left = `${next.left}px`;
       tip.style.top = `${next.top}px`;
@@ -140,12 +147,13 @@ export const ChartSocial: FC<{
           mode: 'index',
           intersect: false,
         },
+        clip: false,
         layout: {
           padding: {
             left: 0,
             right: 4,
-            top: 8,
-            bottom: hero ? 4 : 0,
+            top: hero ? 8 : 16,
+            bottom: hero ? 8 : 16,
           },
         },
         scales: {
@@ -206,7 +214,7 @@ export const ChartSocial: FC<{
             fill: true,
             data: list.map((row) => row.total),
             tension: 0.35,
-            pointRadius: list.length === 1 ? (hero ? 4 : 3) : 0,
+            pointRadius: list.length <= 2 ? (hero ? 4 : 3) : 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: colors.border,
             pointHoverBorderColor: token('--inner'),
@@ -233,7 +241,7 @@ export const ChartSocial: FC<{
           <div
             ref={tipRef}
             data-pq="chart-tooltip"
-            className="pointer-events-none fixed z-[80] min-w-[72px] rounded-[8px] bg-pqPop px-[10px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
+            className="pointer-events-none fixed z-[220] min-w-[72px] rounded-[8px] bg-pqPop px-[10px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
             style={{ display: 'none', left: 0, top: 0 }}
           >
             <div

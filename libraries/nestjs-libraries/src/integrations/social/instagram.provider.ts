@@ -7,7 +7,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { mapInstagramMediaInsights } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import { mapInstagramMediaInsights, insightTimeSeries } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
@@ -1229,8 +1229,8 @@ export class InstagramProvider
       const result: AnalyticsData[] = [];
 
       for (const metric of data) {
-        const value = metric.values?.[0]?.value;
-        if (value === undefined) continue;
+        const dataPoints = insightTimeSeries(metric.values, today);
+        if (!dataPoints.length) continue;
 
         let label = '';
 
@@ -1262,7 +1262,7 @@ export class InstagramProvider
           result.push({
             label,
             percentageChange: 0,
-            data: [{ total: String(value), date: today }],
+            data: dataPoints,
           });
         }
       }

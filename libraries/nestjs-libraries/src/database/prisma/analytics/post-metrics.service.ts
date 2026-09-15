@@ -10,6 +10,7 @@ import {
   analyticsPublishDateRange,
   mapSnapshotRow,
   matchesAnalyticsQuery,
+  overlaySnapshotSeries,
   sortAnalyticsPosts,
   summarizeAnalyticsPosts,
   topAnalyticsPosts,
@@ -348,5 +349,33 @@ export class PostMetricsService {
       notes: ANALYTICS_AGENT_NOTES,
       post: mapSnapshotRow(post),
     };
+  }
+
+  snapshotsForPost(organizationId: string, postId: string, days: number) {
+    const { from, to } = analyticsPublishDateRange(days);
+    return this._repository.listSnapshotsForPost(
+      organizationId,
+      postId,
+      from,
+      to,
+    );
+  }
+
+  async postStatisticsSeries(
+    organizationId: string,
+    postId: string,
+    days: number,
+    live: Array<{
+      label: string;
+      data: Array<{ total: string; date: string }>;
+      percentageChange: number;
+    }>,
+  ) {
+    const snapshots = await this.snapshotsForPost(
+      organizationId,
+      postId,
+      days,
+    );
+    return overlaySnapshotSeries(live, snapshots);
   }
 }

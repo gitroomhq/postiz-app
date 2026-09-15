@@ -13,17 +13,17 @@ const table = readFileSync(
 );
 
 describe('analytics post actions', () => {
-  it('reuses calendar preview, duplicate and delete', () => {
+  it('reuses calendar duplicate and delete, without Preview on published posts', () => {
     assert.match(menu, /usePostActions/);
-    assert.match(menu, /preview_post/);
+    assert.doesNotMatch(menu, /preview_post/);
+    assert.doesNotMatch(menu, /\/p\/\$\{post\.id\}\?share=true/);
     assert.match(menu, /duplicate_post/);
     assert.match(menu, /delete_post/);
     assert.match(menu, /editPost\(loadPost, true\)/);
     assert.match(menu, /deletePost\(loadPost\)/);
   });
 
-  it('opens the in-app preview, the live post, and the media lightbox', () => {
-    assert.match(menu, /\/p\/\$\{post\.id\}\?share=true/);
+  it('opens the live post and the media lightbox', () => {
     assert.match(menu, /go_to_post/);
     assert.match(menu, /releaseURL/);
     assert.match(menu, /enlarge_image/);
