@@ -1370,3 +1370,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Channels: X options nests Long posts
 
 **i18n +7.** Channels → X treated “X options” and “Verified” as two sibling tiles, so the row did not read as a child of the accordion. They now share one `pqPop` card: collapsed is a single control, expanded shows the child inset (`pqThird`, title-aligned indent, `pqLine` divider). The stored flag is still `title: "Verified"` (composer 280 vs 4000). Visible copy is **Long posts** / **X Premium character limit** — not the blue check, and not “Applies to every post on this channel.” Edit still POSTs the same JSON. Facebook / Instagram / Threads / YouTube keep returning `null` from `PublishingOptions` when `additionalSettings` is empty. Channel list selected name is semibold; empty-list hint matches settings row size. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Analytics: workspace charts and post-performance copy
+
+**i18n +17 net.** Added the channel-mix, daily-chart, weekday, engagement-mix, follower, metric-availability, and workspace chart-hint keys used by the new analytics dashboard. Removed the superseded generic `summary`, `no_top_posts_hint`, and `no_post_performance_hint` keys. This is an intentional copy-set change for the analytics workspace and responsive post-performance views. `scripts/ui-migration-check.sh --update` changed `i18n.txt` only.

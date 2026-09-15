@@ -330,6 +330,8 @@ browse
 browser_extension
 bug_mail_body
 bug_mail_subject
+by_channel
+by_channel_hint
 by_posting_you_agree_to_tiktoks
 by_registering_you_agree_to_our
 cal_swipe_for_days
@@ -1004,6 +1006,7 @@ customer_socials_selected
 customer_updated
 customers
 customize_for_channel
+daily
 date
 date_format
 date_format_dmy
@@ -1061,6 +1064,13 @@ discount_forever
 discount_until
 documentation
 dont_have_an_account
+dow_fri
+dow_mon
+dow_sat
+dow_sun
+dow_thu
+dow_tue
+dow_wed
 downgrade_on
 downgrade_to_plan
 download
@@ -1091,6 +1101,9 @@ enable_channel
 end_free_trial
 end_trial_to_unlock
 eng_rate
+engagement
+engagement_mix
+engagement_mix_hint
 enter_details
 enter_email
 error
@@ -1134,6 +1147,7 @@ finishing_trial_charging
 finishing_your_trial
 five_days
 follower_of_creator
+followers
 forgot_password
 forgot_password_1
 forgot_password_subtitle
@@ -1406,6 +1420,7 @@ media_upload_failed
 member_added
 menu
 merge_comments_into_one_post
+metric_not_available
 minutes
 moltbook_claim_instructions
 moltbook_register_description
@@ -1471,7 +1486,6 @@ no_original_urls
 no_pickable_channels
 no_plugs_for_these_channels
 no_post_performance
-no_post_performance_hint
 no_posts
 no_posts_yet
 no_published_posts
@@ -1479,7 +1493,6 @@ no_short_link_results
 no_statistics_available
 no_time_slots
 no_top_posts
-no_top_posts_hint
 no_upcoming_posts
 none
 none_yet
@@ -1601,6 +1614,8 @@ post_statistics
 post_today_to_start_your_streak
 post_validation_failed
 posted
+posting_days
+posting_days_hint
 posts
 preview
 preview_post
@@ -1789,7 +1804,6 @@ subtitle_posts
 subtitle_settings
 success_emails
 success_emails_description
-summary
 super_admin
 support_mail_body
 support_mail_subject
@@ -1968,6 +1982,9 @@ week
 what_do_you_want_to_do
 whats_new
 workspace
+workspace_engagement_hint
+workspace_followers_hint
+workspace_impressions_hint
 would_you_mind_shortly_tell_us_what_we_could_have_done_better
 write_anything
 write_something
