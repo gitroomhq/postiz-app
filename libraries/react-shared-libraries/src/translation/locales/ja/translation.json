@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "承認をお待ちしています...",
   "farcaster_signer_revoked": "Farcasterの承認が取り消されました。もう一度お試しください。",
   "farcaster_signer_failed": "Farcaster接続の開始に失敗しました",
+  "farcaster_scan_instructions": "QRコードをスマートフォンでスキャンするか、リンクをコピーしてスマートフォンで開き、FarcasterアプリでPostizを承認してください。",
+  "farcaster_copy_link": "Farcasterのリンクをコピー",
   "farcaster_approval_timeout": "Farcasterの承認がタイムアウトしました。もう一度お試しください。",
   "edit_autopost": "自動投稿を編集",
   "add_autopost_title": "自動投稿を追加",

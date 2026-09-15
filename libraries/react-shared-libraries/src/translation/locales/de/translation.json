@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "Warte auf deine Bestätigung...",
   "farcaster_signer_revoked": "Die Farcaster-Bestätigung wurde widerrufen, bitte versuche es erneut.",
   "farcaster_signer_failed": "Die Verbindung zu Farcaster konnte nicht gestartet werden.",
+  "farcaster_scan_instructions": "Scannen Sie den QR-Code mit Ihrem Handy oder kopieren Sie den Link und öffnen Sie ihn auf Ihrem Handy. Genehmigen Sie dann Postiz in der Farcaster-App.",
+  "farcaster_copy_link": "Farcaster-Link kopieren",
   "farcaster_approval_timeout": "Zeitüberschreitung bei der Farcaster-Bestätigung, bitte versuche es erneut.",
   "edit_autopost": "Autopost bearbeiten",
   "add_autopost_title": "Autopost hinzufügen",

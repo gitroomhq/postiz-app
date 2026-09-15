@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "Aguardando sua aprovação...",
   "farcaster_signer_revoked": "A aprovação do Farcaster foi revogada, por favor, tente novamente",
   "farcaster_signer_failed": "Falha ao iniciar a conexão com o Farcaster",
+  "farcaster_scan_instructions": "Escaneie o código QR com seu celular ou copie o link e abra-o no seu celular, depois aprove o Postiz no aplicativo Farcaster.",
+  "farcaster_copy_link": "Copiar link do Farcaster",
   "farcaster_approval_timeout": "A aprovação do Farcaster expirou, por favor, tente novamente",
   "edit_autopost": "Editar autopost",
   "add_autopost_title": "Adicionar autopost",
