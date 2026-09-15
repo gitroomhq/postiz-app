@@ -15,6 +15,7 @@ const ALLOWED_TAGS = [
 ];
 
 const ALLOWED_ATTR = [
+  'dir',
   'href',
   'target',
   'rel',
