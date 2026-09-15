@@ -62,6 +62,13 @@ describe('phone calendar and composer', () => {
     assert.match(preview, /PreviewMediaFrame/);
     assert.match(preview, /FEED_PREVIEW_MIN_WH/);
     assert.match(preview, /FEED_PREVIEW_MAX_WH/);
+    const hop = readFileSync(
+      fileURLToPath(
+        new URL('../new-launch/providers/high.order.provider.tsx', import.meta.url)
+      ),
+      'utf8',
+    );
+    assert.match(hop, /postHasPreview\(value\?\.\[0\]\)/);
   });
 
   it('keeps the composer footer from overlapping on phone and tablet', () => {

@@ -45,6 +45,19 @@ export function isPreviewVideo(path: string | undefined | null): boolean {
   return typeof path === 'string' && path.toLowerCase().includes('.mp4');
 }
 
+/** Preview is the feed card: text, photos, or both. Photo-only posts still preview. */
+export function postHasPreview(item?: {
+  content?: string | null;
+  media?: unknown[] | null;
+  image?: unknown[] | null;
+} | null): boolean {
+  return (
+    !!item?.content?.length ||
+    !!(item?.media && item.media.length > 0) ||
+    !!(item?.image && item.image.length > 0)
+  );
+}
+
 export function instagramFeedPreviewRange(opts: {
   isStory: boolean;
   paths: Array<string | undefined>;

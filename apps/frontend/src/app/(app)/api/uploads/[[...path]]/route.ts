@@ -29,7 +29,10 @@ export const GET = async (
   }
 ) => {
   const { path } = await context.params;
-  const base = resolve(process.env.UPLOAD_DIRECTORY!);
+  if (!process.env.UPLOAD_DIRECTORY) {
+    return new NextResponse('Not found', { status: 404 });
+  }
+  const base = resolve(process.env.UPLOAD_DIRECTORY);
   const filePath = resolve(base, (path ?? []).join('/'));
   // Confine reads to UPLOAD_DIRECTORY. resolve() collapses any `..` segments
   // (including URL-decoded ones), so this blocks every path-traversal variant.
