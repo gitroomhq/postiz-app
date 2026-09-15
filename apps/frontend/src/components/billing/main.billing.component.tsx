@@ -82,6 +82,8 @@ export const Features: FC<{
   pack: 'FREE' | 'STANDARD' | 'PRO';
 }> = (props) => {
   const { pack } = props;
+  const t = useT();
+  const user = useUser();
   const features = useMemo(() => {
     const currentPricing = pricing[pack];
     const channelsOr = currentPricing.channel;
@@ -134,6 +136,15 @@ export const Features: FC<{
           <div>{feature}</div>
         </div>
       ))}
+      {!!pricing[pack]?.generate_videos &&
+        (user?.allowTrial || user?.isTrailing) && (
+          <div className="text-[12px] opacity-70">
+            {t(
+              'ai_videos_paid_only_note',
+              'Some AI video generators are available after the trial ends'
+            )}
+          </div>
+        )}
     </div>
   );
 };
