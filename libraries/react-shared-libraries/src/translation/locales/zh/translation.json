@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "帖子内容至少需要6个字符",
   "are_you_sure_you_want_to_delete_post": "您确定要删除这条帖子吗？",
   "post_deleted_successfully": "帖子删除成功",
+  "post_no_longer_exists": "该帖子已不存在",
   "delete_post": "删除帖子",
   "save_as_draft": "保存为草稿",
   "post_now": "立即发布",

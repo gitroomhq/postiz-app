@@ -194,6 +194,7 @@ checksums:
     the_post_should_be_at_least_6_characters_long: 123cb493f3169815511460be0e0047e8
     are_you_sure_you_want_to_delete_post: 25e67cb71ee64bf67af09ee20257655f
     post_deleted_successfully: c763dda64c48349e99190b263a43e7b2
+    post_no_longer_exists: c3bf242f64fde94e4d62bf78e3d4f61e
     delete_post: bcf081392c76d2f2a8522944ddd36b78
     save_as_draft: b1b38812110113627d141db981fb1b12
     post_now: 47b412c230a3bdfbd41f1f4092c2e743
