@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createReadStream, statSync } from 'fs';
 import { resolve, sep } from 'path';
-// @ts-ignore
-import mime from 'mime';
+
+const CONTENT_TYPE: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  bmp: 'image/bmp',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+  mp4: 'video/mp4',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+};
+
 async function* nodeStreamToIterator(stream: any) {
   for await (const chunk of stream) {
     yield chunk;
@@ -46,7 +62,8 @@ export const GET = async (
     return new NextResponse('Not found', { status: 404 });
   }
   const response = createReadStream(filePath);
-  const contentType = mime.getType(filePath) || 'application/octet-stream';
+  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  const contentType = CONTENT_TYPE[ext] || 'application/octet-stream';
   const iterator = nodeStreamToIterator(response);
   const webStream = iteratorToStream(iterator);
   return new Response(webStream, {

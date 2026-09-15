@@ -49,23 +49,15 @@ const nextConfig = {
     return config;
   },
   async redirects() {
-    return [
-      {
-        source: '/api/uploads/:path*',
-        destination:
-          process.env.STORAGE_PROVIDER === 'local' ? '/uploads/:path*' : '/404',
-        permanent: true,
-      },
-    ];
+    return [];
   },
   async rewrites() {
+    const localUploads =
+      (process.env.STORAGE_PROVIDER || 'local') === 'local';
     return [
       {
         source: '/uploads/:path*',
-        destination:
-          process.env.STORAGE_PROVIDER === 'local'
-            ? '/api/uploads/:path*'
-            : '/404',
+        destination: localUploads ? '/api/uploads/:path*' : '/404',
       },
       // Local dev only: in production nginx serves the frontend and backend on
       // one origin, so the client's relative /api calls just work. The Next dev
