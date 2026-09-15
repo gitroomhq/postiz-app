@@ -1378,3 +1378,7 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 ## Analytics: unknown metrics are visually absent
 
 **i18n -1 (`metric_not_available`).** A dot labeled “Not available” still rendered a visible value for an unknown metric. Missing post fields now leave the table cell empty and mobile omits the metric chip, matching the analytics contract: null is unknown, never a dash or a synthetic zero. `scripts/ui-migration-check.sh --update` changed `i18n.txt` only.
+
+## Analytics: channel charts keep provider meaning
+
+**i18n -5 (`engagement`, `followers`, `workspace_engagement_hint`, `workspace_followers_hint`, `workspace_impressions_hint`).** Removed the all-channel chart merger because it added unlike provider metrics by English-label regex: YouTube subscriber losses increased “Followers”, and views plus reach could double-count “Impressions”. Channel drill-down still shows each provider’s real day-by-day series and metric label; the all-channel view stays on comparable post snapshots. `scripts/ui-migration-check.sh --update` changed `i18n.txt` only.
