@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Getting started lives in the sidebar footer, not a Settings overlay.** A compact progress row above the org switcher opens a popover on desktop and a `MobileSheet` on touch: connect a channel, create a post, publish a post. Instant publish (calendar, MCP, n8n) also ticks the schedule step so nobody is asked to fake a queued post. The widget waits until the probes land so an account that already finished does not flash 0/3, then an all-set card can be dismissed per org. Help → Take a tour hides once the checklist is complete, not merely after a published post. i18n +10 (`getting_started`, `youre_all_set`, `getting_started_channel`, `getting_started_schedule`, `getting_started_publish`, `getting_started_channel_hint`, `getting_started_schedule_hint`, `getting_started_publish_hint`, `getting_started_done`, `got_it`). Reused `add_channel`, `create_new_post`, `take_a_tour`.
+
 **Calendar Posts rail opens on a tab that actually has rows.** The welcome probe read `total` on a minified `/posts/list` body (`t`), so every tab looked empty and the rail stayed on Scheduled. It now expands that payload and picks scheduled → drafts → posted → scheduled, and holds the list fetch until that pick lands so the rail does not flash empty. i18n 0.
 
 **Deleting a post left the row on screen until a full reload.** Toast said it was gone because DELETE succeeded, but the list/calendar SWR hooks only bound-mutated the fetch that is currently keyed — the other view is `null` and `keepPreviousData` kept the row. Delete now drops the group from every `/posts-` cache immediately, then revalidates. i18n 0.

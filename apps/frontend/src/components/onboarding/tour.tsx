@@ -217,17 +217,13 @@ const clearTourPending = () => {
 /**
  * Whether this organization has ever published a post.
  *
- * The Help menu drops its tour row once this is true — somebody who has
- * already shipped a post has no use for the first-run walkthrough, and the row
- * would otherwise sit there for the life of the account.
+ * Used to skip the tour's demo calendar once this organization has shipped a
+ * real post. Help → Take a tour now keys off the Getting started checklist
+ * instead, so a scheduled-only account still gets the walkthrough.
  *
  * Same probe the posts panel uses to pick its opening tab: `limit=1` asks the
- * server for "any?" rather than "how many?". Pass `enabled: false` on surfaces
- * with no tour row (checkout) so they never make the request.
- *
- * Undefined while in flight and when the request fails, and callers treat that
- * as not-published: a menu carrying one row too many is a smaller failure than
- * a tour nobody can reach because a fetch timed out.
+ * server for "any?" rather than "how many?". Pass `enabled: false` to skip the
+ * request. Undefined while in flight and when the request fails.
  *
  * The key carries the org because the answer does. The request is scoped by the
  * caller's cookie, so a bare path let a cached "yes" from a busy workspace

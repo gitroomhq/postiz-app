@@ -14,10 +14,8 @@ import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useSentryFeedback } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
-import {
-  useHasPublishedPost,
-  useTour,
-} from '@gitroom/frontend/components/onboarding/tour';
+import { useTour } from '@gitroom/frontend/components/onboarding/tour';
+import { useGettingStarted } from '@gitroom/frontend/components/onboarding/use.getting.started';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
@@ -61,9 +59,9 @@ const ICON_COMMUNITY =
 /**
  * The header's Help menu.
  *
- * App chrome: Take a tour · Documentation · Contact support · Report a bug ·
- * (What's new / Community / Browser extension when configured). Opens on
- * hover, not on click.
+ * App chrome: Take a tour (until Getting started is complete) · Documentation ·
+ * Contact support · Report a bug · (What's new / Community / Browser extension
+ * when configured). Opens on hover, not on click.
  *
  * Checkout (`surface="checkout"`): no tour — there is nothing to tour from the
  * paywall. Same support and bug rows as the app menu.
@@ -100,12 +98,12 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   >(open, 'end');
   const isCheckout = surface === 'checkout';
 
-  // The tour row retires itself once the account has published something. Read
-  // at mount rather than on open so the row is never drawn and then pulled out
-  // from under the cursor; `!== true` keeps it visible while the answer is in
-  // flight and if the request fails.
-  const hasPublished = useHasPublishedPost(!isCheckout);
-  const showTour = !isCheckout && hasPublished !== true;
+  // The tour row retires itself once Getting started is complete (channel +
+  // a post that went out). Read at mount rather than on open so the row is
+  // never drawn and then pulled out from under the cursor; while the probes
+  // are in flight the row stays, same as a failed request.
+  const gs = useGettingStarted(!isCheckout, { poll: false });
+  const showTour = !isCheckout && !(gs.ready && gs.complete);
 
   const version = process.env.NEXT_PUBLIC_APP_VERSION || '';
 

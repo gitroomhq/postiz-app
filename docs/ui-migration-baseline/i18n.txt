@@ -1162,11 +1162,20 @@ generating_hook
 generating_pictures
 generation_failed
 get_lifetime_for_amount
+getting_started
+getting_started_channel
+getting_started_channel_hint
+getting_started_done
+getting_started_publish
+getting_started_publish_hint
+getting_started_schedule
+getting_started_schedule_hint
 global_editing_tooltip
 global_settings
 go_back_to_login
 go_to_billing
 go_to_integrations
+got_it
 grid
 guide_bluesky
 guide_bluesky_f_identifier
@@ -1982,3 +1991,4 @@ you_can_write_anything_you_want_and_also_add_links_we_will_do_the_research_for_y
 your_assistant
 your_post_should_have_at_least_one_character_or_one_image
 your_video_will_be_labeled_promotional
+youre_all_set

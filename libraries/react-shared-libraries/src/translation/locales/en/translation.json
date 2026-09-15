@@ -1149,5 +1149,15 @@
   "yes_cancel_coupon": "Yes, cancel coupon",
   "cancel_coupon_title": "Cancel Coupon?",
   "cancel_coupon_failed": "Could not cancel the coupon",
-  "cancel_coupon_success": "Coupon cancelled"
+  "cancel_coupon_success": "Coupon cancelled",
+  "getting_started": "Getting started",
+  "youre_all_set": "You're all set",
+  "getting_started_channel": "Connect a channel",
+  "getting_started_schedule": "Create a post",
+  "getting_started_publish": "Publish a post",
+  "getting_started_channel_hint": "X, LinkedIn, Instagram, YouTube, or any other network",
+  "getting_started_schedule_hint": "Schedule it or publish it now. Either counts.",
+  "getting_started_publish_hint": "From the calendar, Connect, n8n, or MCP. Instant publish counts.",
+  "getting_started_done": "Post from the calendar, Connect, or your own tools.",
+  "got_it": "Got it"
 }

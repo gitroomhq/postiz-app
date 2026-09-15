@@ -22,6 +22,7 @@ import {
   useMenuItem,
 } from '@gitroom/frontend/components/layout/top.menu';
 import { OrganizationSelector } from '@gitroom/frontend/components/layout/organization.selector';
+import { GettingStarted } from '@gitroom/frontend/components/onboarding/getting.started';
 
 interface RailProps {
   /** Desktop only. On mobile the drawer always shows labels. */
@@ -368,6 +369,7 @@ export const Rail: FC<RailProps> = ({
           // or it covers this block.
           className="mt-auto flex shrink-0 flex-col gap-[1px] border-t border-pqLine bg-pqRail pt-[6px]"
         >
+          <GettingStarted collapsed={rc} />
           <OrganizationSelector variant="rail" collapsed={rc} />
           {showSettings && (
             <MenuItem
