@@ -6,6 +6,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Button } from '@gitroom/react/form/button';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
+import { useSWRConfig } from 'swr';
 import { isPostsSwrKey } from '@gitroom/frontend/components/launches/posts-swr';
 import clsx from 'clsx';
 import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
