@@ -38,6 +38,8 @@ import {
   CloseIcon,
   TrashIcon,
   DropdownArrowSmallIcon,
+  PencilIcon,
+  ResetIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
@@ -72,12 +74,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     current,
     activateExitButton,
     setHide,
+    customDates,
+    setCustomDate,
   } = useLaunchStore(
     useShallow((state) => ({
       hide: state.hide,
       setHide: state.setHide,
       date: state.date,
       setDate: state.setDate,
+      customDates: state.customDates,
+      setCustomDate: state.setCustomDate,
       current: state.current,
       repeater: state.repeater,
       setRepeater: state.setRepeater,
@@ -306,6 +312,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         },
         group,
         settings: { ...(post.settings || {}) },
+        ...(customDates[post.id]
+          ? { date: customDates[post.id].utc().format('YYYY-MM-DDTHH:mm:ss') }
+          : {}),
         value: post.values.map((value: any) => ({
           ...(value.id ? { id: value.id } : {}),
           content: value.content,
@@ -503,7 +512,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
+    [
+      ref,
+      repeater,
+      tags,
+      date,
+      customDates,
+      addEditSets,
+      dummy,
+      shortlinkPreferenceData,
+    ]
   );
 
   return (
@@ -646,7 +664,57 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <div>{t('delete_post', 'Delete Post')}</div>
               </button>
             )}
-            <DatePicker onChange={setDate} date={date} />
+            {current === 'global' || existingData?.integration ? (
+              <DatePicker onChange={setDate} date={date} />
+            ) : (
+              <>
+                <button
+                  data-tooltip-id="tooltip"
+                  data-tooltip-content={
+                    customDates[current]
+                      ? t(
+                          'restore_global_schedule_time',
+                          'Restore the global schedule time'
+                        )
+                      : t(
+                          'set_custom_channel_schedule_time',
+                          'Set a custom schedule time for this channel'
+                        )
+                  }
+                  onClick={() =>
+                    setCustomDate(
+                      current,
+                      customDates[current] ? undefined : date
+                    )
+                  }
+                  className="cursor-pointer px-[12px] h-[44px] border border-newTextColor/10 rounded-[8px] flex justify-center items-center"
+                >
+                  {customDates[current] ? (
+                    <ResetIcon size={20} />
+                  ) : (
+                    <PencilIcon size={20} />
+                  )}
+                </button>
+                <div
+                  className="flex flex-1"
+                  {...(!customDates[current]
+                    ? {
+                        'data-tooltip-id': 'tooltip',
+                        'data-tooltip-content': t(
+                          'using_global_schedule_time',
+                          'Currently using the global schedule time'
+                        ),
+                      }
+                    : {})}
+                >
+                  <DatePicker
+                    onChange={(newDate) => setCustomDate(current, newDate)}
+                    date={customDates[current] || date}
+                    disabled={!customDates[current]}
+                  />
+                </div>
+              </>
+            )}
             {!addEditSets && (
               <button
                 disabled={
