@@ -327,8 +327,35 @@ export class PostsService {
     ];
   }
 
-  async getPosts(orgId: string, query: GetPostsDto) {
-    return this._postRepository.getPosts(orgId, query);
+  async getPosts(
+    orgId: string,
+    query: GetPostsDto,
+    includeAttachments = false
+  ) {
+    const posts = await this._postRepository.getPosts(
+      orgId,
+      query,
+      includeAttachments
+    );
+
+    if (!includeAttachments) {
+      return posts;
+    }
+
+    return posts.map(({ image, ...post }) => {
+      let attachments = [];
+      try {
+        attachments = JSON.parse(image || '[]');
+      } catch (err) {}
+      return {
+        ...post,
+        attachments: attachments.map((a: any) => ({
+          id: a.id,
+          path: a.path,
+          thumbnail: a.thumbnail || null,
+        })),
+      };
+    });
   }
 
   async getPostsMinified(orgId: string, query: GetPostsDto) {

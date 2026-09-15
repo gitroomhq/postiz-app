@@ -181,7 +181,11 @@ export class PublicIntegrationsController {
     @Query() query: GetPostsDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    const posts = await this._postsService.getPosts(org.id, query);
+    const posts = await this._postsService.getPosts(
+      org.id,
+      query,
+      query.includeAttachments
+    );
     return {
       posts,
       // comments,
