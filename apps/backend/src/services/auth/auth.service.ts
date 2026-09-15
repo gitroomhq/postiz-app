@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { Response } from 'express';
 import { Provider, User } from '@prisma/client';
+import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -132,6 +134,49 @@ export class AuthService {
     } catch (err) {
       return false;
     }
+  }
+
+  // Handles the `org` invite token cookie at an auth event (register/login/
+  // oauth). The token is single-use: if it was expired/invalid, flag it so the
+  // frontend can show an "invitation expired" toast to the (late) invitee; then
+  // always clear the cookie so it can't leak to the next user who signs in on
+  // the same browser (e.g. the inviting org owner).
+  public consumeOrgInviteCookie(
+    orgCookie: string | undefined,
+    getOrgFromCookie: ReturnType<AuthService['getOrgFromCookie']>,
+    response: Response
+  ) {
+    if (!orgCookie) {
+      return;
+    }
+
+    if (!getOrgFromCookie) {
+      // Non-httpOnly on purpose: the frontend reads & clears it. A cookie is
+      // used (not a header/param) because the LOCAL signup flow detours through
+      // email activation before the invitee reaches the app.
+      response.cookie('invitation', 'expired', {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              sameSite: 'none',
+            }
+          : {}),
+        // Long enough to outlive the register -> email activation -> land
+        // round-trip; the frontend clears it as soon as the toast is shown.
+        expires: dayjs().add(1, 'day').toDate(),
+      });
+    }
+
+    // Mirror the path/domain the proxy set it with so the deletion matches.
+    response.clearCookie('org', {
+      ...(!process.env.NOT_SECURED
+        ? {
+            path: '/',
+            domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+          }
+        : {}),
+    });
   }
 
   private async loginOrRegisterProvider(
