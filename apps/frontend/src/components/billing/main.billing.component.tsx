@@ -40,7 +40,7 @@ import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics'
 import {
   BuyLifetime,
   FeatureRow,
-  FoundingMember,
+  FoundingPaidSurface,
 } from '@gitroom/frontend/components/billing/lifetime.deal';
 import { BillingPortalRow } from '@gitroom/frontend/components/billing/billing.portal.row';
 import { BillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
@@ -980,13 +980,15 @@ export const MainBillingComponent: FC<{
   }
   return (
     <div className="flex flex-col gap-[24px]">
-      <div className="flex flex-wrap items-center gap-[16px]">
-        <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
-          <h2 className="font-display text-[26px] font-[600] -tracking-[0.02em] text-pqText">
-            {t('plans', 'Plans')}
-          </h2>
+      {!lifetimePaid && (
+        <div className="flex flex-wrap items-center gap-[16px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
+            <h2 className="font-display text-[26px] font-[600] -tracking-[0.02em] text-pqText">
+              {t('plans', 'Plans')}
+            </h2>
+          </div>
         </div>
-      </div>
+      )}
 
       {finishTrial && (
         <FinishTrial
@@ -1442,42 +1444,35 @@ export const MainBillingComponent: FC<{
         </div>
       )}
 
-      {/* The lifetime surface, in place of the plan grid, once the founding
-          membership is paid for. The hero is the same component
-          /billing/lifetime renders; MEMBER SINCE can only be named here, where
-          the subscription row's createdAt is in state. */}
-      {lifetimePaid && (
-        <div className="flex flex-col gap-[20px]">
-          <FoundingMember
-            tier={user?.tier?.current || 'PRO'}
-            trialing={false}
-            memberSince={subscription?.createdAt}
-          />
-        </div>
+      {lifetimePaid ? (
+        <FoundingPaidSurface memberSince={subscription?.createdAt} />
+      ) : (
+        <>
+          {/* Payment method / invoices: Stripe Customer Portal. Founding
+              members share FoundingPaidSurface above so this row is only the
+              monthly / trial path. */}
+          {(!!subscription?.id || !!user?.isLifetime) && (
+            <BillingPortalRow
+              lifetime={!!user?.isLifetime}
+              extra={
+                isGeneral && !subscription?.cancelAt ? (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={moveToCheckout('FREE')}
+                    className="h-[38px] rounded-[10px] bg-transparent px-[15px] text-[13px] font-[500] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn disabled:pointer-events-none disabled:opacity-60"
+                  >
+                    {user?.isLifetime
+                      ? t('cancel_trial', 'Cancel trial')
+                      : t('cancel_subscription_1', 'Cancel subscription')}
+                  </button>
+                ) : null
+              }
+            />
+          )}
+          <FAQComponent />
+        </>
       )}
-      {/* Payment method / invoices: Stripe Customer Portal. Founding members
-          have no recurring subscription to cancel, but they still have a card
-          and a founding receipt — do not hide this row with the plan grid. */}
-      {(!!subscription?.id || !!user?.isLifetime) && (
-        <BillingPortalRow
-          lifetime={!!user?.isLifetime}
-          extra={
-            isGeneral && !subscription?.cancelAt && !lifetimePaid ? (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={moveToCheckout('FREE')}
-                className="h-[38px] rounded-[10px] bg-transparent px-[15px] text-[13px] font-[500] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn disabled:pointer-events-none disabled:opacity-60"
-              >
-                {user?.isLifetime
-                  ? t('cancel_trial', 'Cancel trial')
-                  : t('cancel_subscription_1', 'Cancel subscription')}
-              </button>
-            ) : null
-          }
-        />
-      )}
-      <FAQComponent />
     </div>
   );
 };

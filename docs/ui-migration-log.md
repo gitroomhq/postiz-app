@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Paid founding Billing is one surface.** `/billing` and `/billing/lifetime` were leftover pages (Plans + FAQ vs a deal hero with no FAQ). Paid founding members now share `FoundingPaidSurface` (heading, member-since, Stripe portal, FAQ). `/billing/lifetime` stays as the unpaid purchase page. Gates `isTrailing` 18 → 19, `user.isLifetime` 24 → 25 (one extra read on the shared paid stack). `scripts/ui-migration-check.sh --update` rewrote `gates.txt`.
+
 **Account / Teams visual pass.** Settings pane titles used Tailwind `mobile:hidden` (1025px) while the back-arrow chrome keys off `useViewport().mobile` (760px), so 761–1025px Settings (Account, Teams, Global Settings) had no heading. Title now hides only with the JS phone chrome. Delete Account password placeholder no longer truncates at 420px (short field + helper). Teams Role/Actions columns are narrower so the header stays on-screen at 420. i18n swapped `current_password_or_oauth` for `delete_account_password_hint`. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
 
 **Account load-failed copy.** Account settings now has an explicit retry state when `/user/identities` fails (`account_load_failed`). Intentional i18n +1. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
