@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   asCount,
   engagementRate,
+  hasKnownPostMetric,
   mapFacebookPostInsights,
   mapInstagramMediaInsights,
   mapLinkedInShareStats,
@@ -12,6 +13,7 @@ import {
   mapTikTokVideoStats,
   mapXPublicMetrics,
   mapYouTubeVideoStatistics,
+  sumXPublicMetrics,
 } from './post-metrics.map.ts';
 
 describe('asCount', () => {
@@ -43,6 +45,35 @@ describe('engagementRate', () => {
 
   it('divides reactions plus comments by impressions', () => {
     assert.equal(engagementRate(1000, 70, 10), 8);
+  });
+});
+
+describe('analytics metric completeness', () => {
+  it('does not persist an all-null provider response over a good snapshot', () => {
+    assert.equal(
+      hasKnownPostMetric({
+        platformPostId: 'missing',
+        impressions: null,
+        reactions: null,
+        comments: null,
+        shares: null,
+      }),
+      false
+    );
+  });
+
+  it('sums only X fields that were actually returned', () => {
+    assert.deepEqual(
+      sumXPublicMetrics([
+        { like_count: 3, reply_count: 1 },
+        { like_count: 2, impression_count: 10 },
+      ]),
+      {
+        impression_count: 10,
+        like_count: 5,
+        reply_count: 1,
+      }
+    );
   });
 });
 

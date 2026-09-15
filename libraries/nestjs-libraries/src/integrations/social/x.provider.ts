@@ -10,7 +10,10 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { mapXPublicMetrics } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import {
+  mapXPublicMetrics,
+  sumXPublicMetrics,
+} from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/nestjs-libraries/integrations/read.or.fetch';
@@ -1469,32 +1472,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         },
       );
 
-      const metrics = data.data.reduce(
-        (all, current) => {
-          all.impression_count =
-            (all.impression_count || 0) +
-            +current.public_metrics.impression_count;
-          all.bookmark_count =
-            (all.bookmark_count || 0) + +current.public_metrics.bookmark_count;
-          all.like_count =
-            (all.like_count || 0) + +current.public_metrics.like_count;
-          all.quote_count =
-            (all.quote_count || 0) + +current.public_metrics.quote_count;
-          all.reply_count =
-            (all.reply_count || 0) + +current.public_metrics.reply_count;
-          all.retweet_count =
-            (all.retweet_count || 0) + +current.public_metrics.retweet_count;
-
-          return all;
-        },
-        {
-          impression_count: 0,
-          bookmark_count: 0,
-          like_count: 0,
-          quote_count: 0,
-          reply_count: 0,
-          retweet_count: 0,
-        },
+      const metrics = sumXPublicMetrics(
+        data.data.map((tweet) => tweet.public_metrics)
       );
 
       const xChannelLabels: Record<string, string> = {
@@ -1655,29 +1634,28 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const ids = uniqBy(platformPostIds, (id) => id);
     const rows: NormalizedPostMetrics[] = [];
 
-    try {
-      for (const batch of chunk(ids, 100)) {
+    for (const batch of chunk(ids, 100)) {
+      try {
         const data = await client.v2.tweets(batch, {
           'tweet.fields': ['public_metrics'],
         });
         for (const tweet of data.data || []) {
           rows.push(mapXPublicMetrics(tweet.id, tweet.public_metrics));
         }
+      } catch (err: any) {
+        if (
+          err instanceof RefreshToken ||
+          err instanceof Disconnect ||
+          err instanceof BadBody
+        ) {
+          throw err;
+        }
+        this.throwIfCannotFetch(err, err?.code);
+        console.log('Error fetching an X posts analytics batch:', err);
       }
-      return rows;
-    } catch (err: any) {
-      if (
-        err instanceof RefreshToken ||
-        err instanceof Disconnect ||
-        err instanceof BadBody
-      ) {
-        throw err;
-      }
-      this.throwIfCannotFetch(err, err?.code);
-      console.log('Error fetching X posts analytics:', err);
     }
 
-    return [];
+    return rows;
   }
 
   override async mention(token: string, d: { query: string }) {

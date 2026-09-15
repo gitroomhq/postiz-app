@@ -6,7 +6,10 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { mapLinkedInShareStats } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import {
+  hasKnownPostMetric,
+  mapLinkedInShareStats,
+} from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import {
@@ -625,7 +628,10 @@ export class LinkedinPageProvider
         }
 
         const stats = shareElements?.[0]?.totalShareStatistics;
-        rows.push(mapLinkedInShareStats(postId, stats, socialActions));
+        const metrics = mapLinkedInShareStats(postId, stats, socialActions);
+        if (hasKnownPostMetric(metrics)) {
+          rows.push(metrics);
+        }
       } catch (err) {
         if (err instanceof RefreshToken || err instanceof Disconnect) {
           throw err;

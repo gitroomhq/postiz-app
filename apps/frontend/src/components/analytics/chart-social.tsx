@@ -65,6 +65,9 @@ export const ChartSocial: FC<{
       },
     };
     const colors = colorSchemes[color];
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
     const gradient = ctx.createLinearGradient(
       0,
       0,
@@ -82,7 +85,7 @@ export const ChartSocial: FC<{
         maintainAspectRatio: false,
         responsive: true,
         animation: {
-          duration: hero ? 450 : 750,
+          duration: reduceMotion ? 0 : hero ? 450 : 750,
           easing: 'easeOutQuart',
         },
         interaction: {

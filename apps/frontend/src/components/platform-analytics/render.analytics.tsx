@@ -8,6 +8,7 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import {
   analyticsHasActivity,
+  analyticsResponseIsFailure,
   analyticsResponseNeedsRefresh,
 } from './analytics-activity';
 
@@ -243,6 +244,42 @@ const NoPeriodDataState: FC = () => {
   );
 };
 
+const AnalyticsLoadFailedState: FC<{ onRetry: () => void }> = ({
+  onRetry,
+}) => {
+  const t = useT();
+  return (
+    <AnalyticsPaneMessage
+      iconClassName="bg-pqWarnSoft"
+      icon={
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className="text-pqWarn"
+        >
+          <path d="M12 8v5M12 17h.01" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      }
+    >
+      <p className="mb-[12px] text-center text-[15px] text-pqText">
+        {t('analytics_load_failed', 'Could not load analytics')}
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-[8px] bg-pqSettings px-[16px] py-[8px] text-[14px] font-medium text-pqText transition-colors hover:bg-pqHover"
+      >
+        {t('try_again', 'Try again')}
+      </button>
+    </AnalyticsPaneMessage>
+  );
+};
+
 type AnalyticsIntegration = {
   id: string;
   identifier: string;
@@ -259,13 +296,20 @@ export const RenderAnalytics: FC<{
   const fetch = useFetch();
 
   const load = useCallback(async () => {
-    return (await fetch(`/analytics/${integration.id}?date=${date}`)).json();
-  }, [integration, date]);
+    const response = await fetch(
+      `/analytics/${integration.id}?date=${date}`,
+    );
+    const body = await response.json();
+    if (analyticsResponseIsFailure(response.ok, body)) {
+      throw new Error('Could not load analytics');
+    }
+    return body;
+  }, [fetch, integration.id, date]);
 
   // `isLoading` and not a flag set inside the fetcher: that flag flipped false
   // before the unawaited `.json()` had parsed, and it flipped true again on
   // every revalidation, so the whole grid was replaced by a ghost each refetch.
-  const { data, isLoading } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     `/analytics-${integration?.id}-${date}`,
     load,
     {
@@ -301,7 +345,10 @@ export const RenderAnalytics: FC<{
 
       if (!url) {
         toast.show(
-          'Could not connect to the platform, please try again later',
+          t(
+            'could_not_connect_platform',
+            'Could not connect to the platform, please try again later',
+          ),
           'warning',
         );
         return;
@@ -309,7 +356,7 @@ export const RenderAnalytics: FC<{
 
       window.location.href = url;
     },
-    [fetch, toast],
+    [fetch, t, toast],
   );
 
   // One narrowing for the whole component. `customFetch` resolves a 4xx too, so
@@ -320,7 +367,8 @@ export const RenderAnalytics: FC<{
   // still have a quiet, valid insights week — that is "No data in this period".
   const rows: AnalyticsDataItem[] = Array.isArray(data) ? data : [];
   const needsRefresh = !isLoading && analyticsResponseNeedsRefresh(data);
-  const noPeriodData = !needsRefresh && !analyticsHasActivity(rows);
+  const noPeriodData =
+    !error && !needsRefresh && !analyticsHasActivity(rows);
 
   const totals = useMemo(() => {
     return rows.map((p: AnalyticsDataItem) => {
@@ -351,6 +399,10 @@ export const RenderAnalytics: FC<{
   // "no activity", not a reconnect.
   if (needsRefresh) {
     return <RefreshChannelState onRefresh={refreshChannel(integration)} />;
+  }
+
+  if (error) {
+    return <AnalyticsLoadFailedState onRetry={() => void mutate()} />;
   }
 
   if (noPeriodData) {

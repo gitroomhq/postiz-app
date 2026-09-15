@@ -230,24 +230,6 @@ export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
   };
 }
 
-export function hasStaleAnalyticsTargets(
-  targets: Array<{ integrationId: string }>,
-  latestSnapshots: Array<{ integrationId: string; capturedAt: Date }>,
-  nowMs: number,
-  staleAfterMs: number,
-) {
-  const latestByIntegration = new Map(
-    latestSnapshots.map((snapshot) => [
-      snapshot.integrationId,
-      snapshot.capturedAt.getTime(),
-    ]),
-  );
-  return targets.some((target) => {
-    const latest = latestByIntegration.get(target.integrationId);
-    return latest == null || nowMs - latest >= staleAfterMs;
-  });
-}
-
 export function toAgentPost(row: AnalyticsPostRow) {
   return {
     id: row.id,

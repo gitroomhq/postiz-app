@@ -27,3 +27,10 @@ export function analyticsResponseNeedsRefresh(data: unknown): boolean {
   const message = String((data as { message?: unknown }).message || '');
   return /needs to be refreshed/i.test(message);
 }
+
+export function analyticsResponseIsFailure(
+  responseOk: boolean,
+  data: unknown,
+): boolean {
+  return !responseOk && !analyticsResponseNeedsRefresh(data);
+}

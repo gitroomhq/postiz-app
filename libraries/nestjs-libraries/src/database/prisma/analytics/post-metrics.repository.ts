@@ -98,7 +98,11 @@ export class PostMetricsRepository {
     });
   }
 
-  listIntegrationsNeedingSync(lookbackDays: number, organizationId?: string) {
+  listIntegrationsNeedingSync(
+    lookbackDays: number,
+    organizationId?: string,
+    freshAfter?: Date
+  ) {
     return this._post.model.post.findMany({
       where: {
         ...(organizationId ? { organizationId } : {}),
@@ -110,10 +114,18 @@ export class PostMetricsRepository {
         publishDate: {
           gte: dayjs.utc().subtract(lookbackDays, 'day').toDate(),
         },
+        ...(freshAfter
+          ? {
+              postMetricSnapshots: {
+                none: { capturedAt: { gte: freshAfter } },
+              },
+            }
+          : {}),
         integration: {
           deletedAt: null,
           disabled: false,
           refreshNeeded: false,
+          inBetweenSteps: false,
         },
       },
       distinct: ['organizationId', 'integrationId'],
@@ -125,18 +137,6 @@ export class PostMetricsRepository {
             providerIdentifier: true,
           },
         },
-      },
-    });
-  }
-
-  listLatestSnapshotTimes(organizationId: string) {
-    return this._snapshot.model.postMetricSnapshot.findMany({
-      where: { organizationId },
-      orderBy: { capturedAt: 'desc' },
-      distinct: ['integrationId'],
-      select: {
-        integrationId: true,
-        capturedAt: true,
       },
     });
   }

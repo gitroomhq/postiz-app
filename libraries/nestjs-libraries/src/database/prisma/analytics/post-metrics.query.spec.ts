@@ -3,7 +3,6 @@ import { describe, it } from 'node:test';
 import {
   analyticsPublishDateRange,
   firstMediaPath,
-  hasStaleAnalyticsTargets,
   mapSnapshotRow,
   matchesAnalyticsQuery,
   previewText,
@@ -44,7 +43,6 @@ describe('previewText', () => {
     assert.equal(previewText('a'.repeat(10), 8), 'aaaaaaaa…');
   });
 });
-
 describe('matchesAnalyticsQuery', () => {
   const post = row({
     id: 'p1',
@@ -65,7 +63,6 @@ describe('matchesAnalyticsQuery', () => {
     assert.equal(matchesAnalyticsQuery(post, 'linkedin'), false);
   });
 });
-
 describe('sortAnalyticsPosts', () => {
   it('ranks unknown metrics last when sorting desc', () => {
     const sorted = sortAnalyticsPosts(
@@ -226,9 +223,9 @@ describe('sumComplete', () => {
           row({ id: 'known', comments: 5 }),
           row({ id: 'facebook', comments: null }),
         ],
-        (post) => post.comments
+        (post) => post.comments,
       ),
-      null
+      null,
     );
   });
 });
@@ -269,39 +266,5 @@ describe('summarizeAnalyticsPosts', () => {
     assert.equal(summary.reactions, 10);
     assert.equal(summary.comments, null);
     assert.equal(summary.engagementMix, null);
-  });
-});
-
-describe('hasStaleAnalyticsTargets', () => {
-  it('checks freshness per integration, including channels with no snapshot', () => {
-    const now = new Date('2026-09-15T16:00:00.000Z').getTime();
-    assert.equal(
-      hasStaleAnalyticsTargets(
-        [{ integrationId: 'fresh' }, { integrationId: 'missing' }],
-        [
-          {
-            integrationId: 'fresh',
-            capturedAt: new Date('2026-09-15T15:30:00.000Z'),
-          },
-        ],
-        now,
-        60 * 60 * 1000,
-      ),
-      true,
-    );
-    assert.equal(
-      hasStaleAnalyticsTargets(
-        [{ integrationId: 'fresh' }],
-        [
-          {
-            integrationId: 'fresh',
-            capturedAt: new Date('2026-09-15T15:30:00.000Z'),
-          },
-        ],
-        now,
-        60 * 60 * 1000,
-      ),
-      false,
-    );
   });
 });

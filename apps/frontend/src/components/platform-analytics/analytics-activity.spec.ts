@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   analyticsHasActivity,
+  analyticsResponseIsFailure,
   analyticsResponseNeedsRefresh,
 } from './analytics-activity.ts';
 
@@ -65,5 +66,23 @@ describe('analyticsResponseNeedsRefresh', () => {
       }),
       false
     );
+  });
+});
+
+describe('analyticsResponseIsFailure', () => {
+  it('keeps reconnect responses actionable and rejects unrelated HTTP errors', () => {
+    assert.equal(
+      analyticsResponseIsFailure(false, {
+        message: 'This channel needs to be refreshed',
+      }),
+      false,
+    );
+    assert.equal(
+      analyticsResponseIsFailure(false, {
+        message: 'Internal server error',
+      }),
+      true,
+    );
+    assert.equal(analyticsResponseIsFailure(true, []), false);
   });
 });

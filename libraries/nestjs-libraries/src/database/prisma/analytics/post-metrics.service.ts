@@ -8,7 +8,6 @@ import {
   ANALYTICS_AGENT_NOTES,
   AnalyticsPostRow,
   analyticsPublishDateRange,
-  hasStaleAnalyticsTargets,
   mapSnapshotRow,
   matchesAnalyticsQuery,
   sortAnalyticsPosts,
@@ -24,6 +23,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { GetAnalyticsPostsDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.analytics.posts.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { hasKnownPostMetric } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 
 dayjs.extend(utc);
 
@@ -44,10 +44,14 @@ export class PostMetricsService {
     private _temporalService: TemporalService,
   ) {}
 
-  async listIntegrationsNeedingSync(organizationId?: string) {
+  async listIntegrationsNeedingSync(
+    organizationId?: string,
+    freshAfter?: Date
+  ) {
     const targets = await this._repository.listIntegrationsNeedingSync(
       LOOKBACK_DAYS,
       organizationId,
+      freshAfter
     );
     return targets
       .filter((target) =>
@@ -92,21 +96,11 @@ export class PostMetricsService {
   }
 
   async maybeEnqueueStaleSync(organizationId: string) {
-    const targets = await this.listIntegrationsNeedingSync(organizationId);
+    const targets = await this.listIntegrationsNeedingSync(
+      organizationId,
+      new Date(Date.now() - STALE_AFTER_MS)
+    );
     if (targets.length === 0) {
-      return { syncing: false };
-    }
-
-    const latestSnapshots =
-      await this._repository.listLatestSnapshotTimes(organizationId);
-    if (
-      !hasStaleAnalyticsTargets(
-        targets,
-        latestSnapshots,
-        Date.now(),
-        STALE_AFTER_MS,
-      )
-    ) {
       return { syncing: false };
     }
 
@@ -192,6 +186,9 @@ export class PostMetricsService {
     const capturedDay = dayjs.utc().startOf('day').toDate();
     let synced = 0;
     for (const metrics of rows || []) {
+      if (!hasKnownPostMetric(metrics)) {
+        continue;
+      }
       const post = byReleaseId.get(metrics.platformPostId);
       if (!post) {
         continue;

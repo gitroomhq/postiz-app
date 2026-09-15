@@ -41,6 +41,45 @@ export function engagementRate(
   return ((reactions + comments) / impressions) * 100;
 }
 
+export function hasKnownPostMetric(metrics: NormalizedPostMetrics): boolean {
+  return (
+    metrics.impressions != null ||
+    metrics.reactions != null ||
+    metrics.comments != null ||
+    metrics.shares != null
+  );
+}
+
+export function sumXPublicMetrics(
+  items: Array<{
+    impression_count?: number;
+    like_count?: number;
+    reply_count?: number;
+    retweet_count?: number;
+    quote_count?: number;
+    bookmark_count?: number;
+  } | null | undefined>
+): Record<string, number> {
+  const totals: Record<string, number> = {};
+  const keys = [
+    'impression_count',
+    'like_count',
+    'reply_count',
+    'retweet_count',
+    'quote_count',
+    'bookmark_count',
+  ] as const;
+  for (const metrics of items) {
+    for (const key of keys) {
+      const count = asCount(metrics?.[key]);
+      if (count != null) {
+        totals[key] = (totals[key] || 0) + count;
+      }
+    }
+  }
+  return totals;
+}
+
 function row(
   platformPostId: string,
   fields: Omit<NormalizedPostMetrics, 'platformPostId'>
