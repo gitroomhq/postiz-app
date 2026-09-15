@@ -13,8 +13,9 @@ export class PublicAuthMiddleware implements NestMiddleware {
     private _oauthService: OAuthService
   ) {}
   async use(req: Request, res: Response, next: NextFunction) {
-    const auth = (req.headers.authorization ||
-      req.headers.Authorization) as string;
+    const auth = (
+      ((req.headers.authorization || req.headers.Authorization) as string) || ''
+    ).replace(/^Bearer\s+/i, '');
     if (!auth) {
       res.status(HttpStatus.UNAUTHORIZED).json({ msg: 'No API Key found' });
       return;
