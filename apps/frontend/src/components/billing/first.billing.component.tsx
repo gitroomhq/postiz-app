@@ -748,7 +748,7 @@ export const FirstBillingComponent = () => {
       title: 'Grow Fast With PostQueen (Play the video)',
       children: (
         <iframe
-          className="h-full aspect-video min-w-[800px]"
+          className="h-full w-full max-w-full aspect-video"
           src={onboardingVideoUrl}
           title="Tutorial"
           allow="autoplay"

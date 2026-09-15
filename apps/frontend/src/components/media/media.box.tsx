@@ -33,6 +33,7 @@ import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
 import { Spinner } from '@gitroom/react/ui/spinner';
 import { createPortal } from 'react-dom';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 
@@ -125,6 +126,7 @@ const MediaThumb: FC<{ media: MediaRow; className?: string }> = ({
         className="h-full w-full object-cover"
         src={mediaDirectory.set(media.path)}
         alt={media.originalName || media.name || 'media'}
+        decoding="async"
       />
     </div>
   );
@@ -154,6 +156,7 @@ export const MediaBox: FC<{
   const modals = useModals();
   const toaster = useToaster();
   const t = useT();
+  const { mobile, touch } = useViewport();
   const uploaderRef = useRef<HTMLInputElement>(null);
   const mediaDirectory = useMediaDirectory();
   const [loading, setLoading] = useState(false);
@@ -420,7 +423,9 @@ export const MediaBox: FC<{
         'relative flex shrink-0 cursor-pointer items-center gap-[7px] bg-pqBrand font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
         size === 'picker'
           ? 'h-[44px] rounded-[8px] px-[18px] text-[14px]'
-          : 'h-[36px] rounded-pqSm px-[14px] ps-[12px] text-[13px]'
+          : touch
+            ? 'h-[44px] rounded-pqSm px-[16px] ps-[14px] text-[13.5px]'
+            : 'h-[36px] rounded-pqSm px-[14px] ps-[12px] text-[13px]'
       )}
     >
       {loading ? (
@@ -528,7 +533,8 @@ export const MediaBox: FC<{
           data-media-tab={value}
           onClick={() => setTab(value)}
           className={clsx(
-            'h-[26px] rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            touch ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'
@@ -563,9 +569,8 @@ export const MediaBox: FC<{
 
           {uppyBar}
 
-          {/* Drop zone + filters stay up even when the gallery is empty so
-              All/Images/Video is never a trap on a blank library. */}
           <div className="flex flex-col gap-[10px]">
+            {!mobile && (
             <button
               type="button"
               disabled={loading}
@@ -617,6 +622,7 @@ export const MediaBox: FC<{
                 </span>
               </span>
             </button>
+            )}
 
             {/* Filters + view — under drop zone, above gallery (owner) */}
             <div className="flex flex-wrap items-center gap-[10px]">
@@ -633,17 +639,25 @@ export const MediaBox: FC<{
                       {t('nothing_here_yet', 'Nothing here yet')}
                     </div>
                     <div className="text-[13.5px] leading-[1.55] text-pqMuted text-balance">
-                      {t(
-                        'upload_images_or_video_or_drag',
-                        'Upload images or video, or drag files straight onto this page. Up\u00a0to 1 GB per upload.'
-                      )}
+                      {mobile
+                        ? t(
+                            'maximum_size_allowed_1gb_images_video',
+                            'Maximum size allowed is 1 GB · images and video'
+                          )
+                        : t(
+                            'upload_images_or_video_or_drag',
+                            'Upload images or video, or drag files straight onto this page. Up\u00a0to 1 GB per upload.'
+                          )}
                     </div>
                   </div>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={() => uploaderRef.current?.click()}
-                    className="mt-[2px] h-[36px] rounded-pqSm bg-pqBrand px-[16px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70"
+                    className={clsx(
+                      'mt-[2px] rounded-pqSm bg-pqBrand px-[16px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:opacity-70',
+                      touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[36px]'
+                    )}
                   >
                     {t('upload_media', 'Upload media')}
                   </button>
@@ -651,7 +665,12 @@ export const MediaBox: FC<{
               ) : (
                 <>
                 {isLoading && !data && (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-x-[14px] gap-y-[14px]">
+                  <div className={clsx(
+                    'grid gap-x-[14px] gap-y-[14px]',
+                    mobile
+                      ? 'grid-cols-[repeat(auto-fill,minmax(140px,1fr))]'
+                      : 'grid-cols-[repeat(auto-fill,minmax(168px,1fr))]'
+                  )}>
                     {[...new Array(8)].map((_, i) => (
                       <Skeleton
                         key={i}
@@ -666,7 +685,12 @@ export const MediaBox: FC<{
 
                 {view === 'grid' && (
                   <div
-                    className="grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] items-start gap-x-[14px] gap-y-[14px]"
+                    className={clsx(
+                      'grid items-start gap-x-[14px] gap-y-[14px]',
+                      mobile
+                        ? 'grid-cols-[repeat(auto-fill,minmax(140px,1fr))]'
+                        : 'grid-cols-[repeat(auto-fill,minmax(168px,1fr))]'
+                    )}
                     data-pq="media-grid"
                   >
                     {visibleMedia.map((media) => {
@@ -745,6 +769,8 @@ export const MediaBox: FC<{
                       <span className="min-w-0 flex-1">
                         {t('alt_text', 'Alt text')}
                       </span>
+                      {!mobile && (
+                        <>
                       <span className="w-[64px] shrink-0">
                         {t('format', 'Format')}
                       </span>
@@ -754,6 +780,8 @@ export const MediaBox: FC<{
                       <span className="w-[80px] shrink-0 text-end">
                         {t('size', 'Size')}
                       </span>
+                        </>
+                      )}
                       <span className="w-[36px] shrink-0" />
                     </div>
                     {visibleMedia.map((media) => (
@@ -762,7 +790,7 @@ export const MediaBox: FC<{
                         data-media-row={media.id}
                         data-ci="1"
                         onClick={openLightbox(media)}
-                        className="group flex cursor-pointer items-center gap-[12px] rounded-pqSm border-b border-pqLine p-[8px] hover:bg-pqHover"
+                        className="group flex min-h-[44px] cursor-pointer items-center gap-[12px] rounded-pqSm border-b border-pqLine p-[8px] hover:bg-pqHover"
                       >
                         <span className="grid h-[36px] w-[36px] shrink-0 place-items-center overflow-hidden rounded-[8px] bg-pqSettings outline outline-1 outline-pqBorder -outline-offset-1">
                           <MediaThumb media={media} />
@@ -772,6 +800,8 @@ export const MediaBox: FC<{
                             ? media.alt
                             : t('no_alt_text', '—')}
                         </span>
+                        {!mobile && (
+                          <>
                         <span className="w-[64px] shrink-0 text-[12.5px] uppercase tabular-nums text-pqMuted">
                           {mediaFormatLabel(media)}
                         </span>
@@ -784,6 +814,8 @@ export const MediaBox: FC<{
                         <span className="w-[80px] shrink-0 text-end text-[12.5px] tabular-nums text-pqMuted">
                           {mediaSizeLabel(media)}
                         </span>
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={openMenu(media)}
@@ -896,7 +928,8 @@ export const MediaBox: FC<{
           data-media-tab={value}
           onClick={() => setTab(value)}
           className={clsx(
-            'h-[26px] rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            'rounded-[6px] px-[11px] text-[12.5px] transition-colors',
+            touch ? 'h-[44px] min-h-[44px] px-[14px]' : 'h-[26px]',
             tab === value
               ? 'bg-pqInner font-[600] text-pqText'
               : 'font-[500] text-pqMuted hover:text-pqText'
@@ -917,7 +950,12 @@ export const MediaBox: FC<{
   // (that is /media only). DropFiles is scoped to the toolbar so a drag cover
   // never sits over the thumbs.
   return (
-    <div className="flex w-full flex-col gap-[12px]">
+    <div
+      className={clsx(
+        'flex w-full flex-col gap-[12px]',
+        touch && 'h-full min-h-0'
+      )}
+    >
       {fileInput}
       <DropFiles
         disabled={loading}
@@ -936,11 +974,14 @@ export const MediaBox: FC<{
 
       {uppyBar}
 
-          {/* Filters tight above gallery — owner.
-              Cap only when content exceeds ~2 rows (8 cells @ 4 cols). Shorter
-              pages size naturally with no inner scrollbar. Pagination stays
-              outside. Compact thumb→meta gap; overscroll contained. */}
-      <div className="flex flex-col gap-[8px]">
+          {/* Filters tight above gallery. Desktop caps ~2 rows; phone/tablet
+              fills the remaining sheet so thumbs stay large. */}
+      <div
+        className={clsx(
+          'flex flex-col gap-[8px]',
+          touch && 'min-h-0 flex-1'
+        )}
+      >
         <div className="flex shrink-0 flex-wrap items-center gap-[10px]">
           {filterTabs}
         </div>
@@ -948,8 +989,10 @@ export const MediaBox: FC<{
         <div
           className={clsx(
             'relative p-[3px] pe-[4px] overscroll-contain',
-            (isLoading || visibleMedia.length > 8) &&
-              'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
+            touch
+              ? 'min-h-0 flex-1 overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
+              : (isLoading || visibleMedia.length > 8) &&
+                'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
           )}
         >
           {isLoading && !data && (

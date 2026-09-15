@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import clsx from 'clsx';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -85,6 +86,7 @@ export const NewPost = () => {
   const user = useUser();
   const router = useRouter();
   const { billingEnabled, aiEnabled } = useVariables();
+  const { mobile, touch } = useViewport();
   const aiAvailable = useAiAvailable();
   const addProvider = useAddProvider(mutateIntegrations);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -338,13 +340,20 @@ export const NewPost = () => {
     <div className="relative shrink-0" ref={menuRef}>
       <div
         ref={referenceRef}
-        className="flex h-[36px] overflow-hidden rounded-[10px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand"
+        className={clsx(
+          'flex overflow-hidden rounded-[10px] bg-pqBrand text-[14px] font-[500] text-pqOnBrand',
+          mobile ? 'size-[44px]' : touch ? 'h-[44px]' : 'h-[36px]'
+        )}
       >
         <button
           type="button"
           data-pq="create-post"
+          aria-label={t('create_new_post', 'Create Post')}
           onClick={createAPost}
-          className="flex h-full items-center gap-[6px] ps-[14px] pe-[10px] outline-none transition-colors hover:bg-black/10"
+          className={clsx(
+            'flex h-full items-center justify-center outline-none transition-colors hover:bg-black/10',
+            mobile ? 'w-full' : 'gap-[6px] ps-[14px] pe-[10px]'
+          )}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -366,6 +375,7 @@ export const NewPost = () => {
           {/* Phones drop the word and keep the icon — same rule as Help/streak. */}
           <span data-hdr-label="1">{t('create_new_post', 'Create Post')}</span>
         </button>
+        {!mobile && (
         <button
           type="button"
           data-pq="create-post-menu"
@@ -398,8 +408,9 @@ export const NewPost = () => {
             />
           </svg>
         </button>
+        )}
       </div>
-      {menuOpen && (
+      {menuOpen && !mobile && (
         <div
           ref={floatingRef}
           data-pq="create-post-dropdown"

@@ -15,6 +15,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import clsx from 'clsx';
 import { EventEmitter } from 'events';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 interface OpenModalInterface {
   title?: any;
@@ -112,7 +113,9 @@ export const Component: FC<{
   modal: { id: string } & OpenModalInterface;
 }> = memo(({ isLast, modal, closeModal, zIndex }) => {
   const t = useT();
+  const { touch } = useViewport();
   const decision = useDecisionModal();
+  const edgeToEdge = touch || !!modal.fullScreen;
   const closeModalFunction = useCallback(async () => {
     if (modal.askClose) {
       const open = await decision.open({
@@ -215,15 +218,18 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && 'gap-[16px] p-[32px]',
+                !modal.removeLayout && (touch ? 'gap-[16px] p-[20px]' : 'gap-[16px] p-[32px]'),
                 // Prototype form card: --inner, r24, p32, gap16,
                 // min-width:min(600px,100%) even when formWidth is 420/460.
-                'relative mx-auto flex w-fit max-w-[min(920px,calc(100vw-48px))] flex-col rounded-[24px] bg-pqInner text-pqText shadow-pq',
-                !modal.fullScreen && 'min-w-[min(600px,100%)] max-h-[86vh]',
-                modal.fullScreen && 'h-full',
+                // Phone: edge-to-edge so min(600px) cannot overflow the viewport.
+                'relative mx-auto flex flex-col bg-pqInner text-pqText shadow-pq',
+                edgeToEdge
+                  ? 'h-dvh max-h-dvh w-full max-w-none rounded-none pb-[max(20px,env(safe-area-inset-bottom))]'
+                  : 'w-fit max-w-[min(920px,calc(100vw-48px))] rounded-[24px] min-w-[min(600px,100%)] max-h-[86vh]',
                 modal.classNames?.modal
               )}
-              {...((!!modal.size || !!modal.height || !!modal.maxSize) && {
+              {...((!!modal.size || !!modal.height || !!modal.maxSize) &&
+                !edgeToEdge && {
                 style: {
                   // Width can be narrower on paper (420/460) but min-w above
                   // keeps desktop cards ≥600 like the prototype.
@@ -256,7 +262,7 @@ export const Component: FC<{
                 modal.withCloseButton ? (
                   <div className="cursor-pointer">
                     <button
-                      className="absolute end-[20px] top-[20px] grid size-[30px] place-items-center rounded-[9px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText cursor-pointer"
+                      className="absolute end-[20px] top-[20px] grid size-[44px] place-items-center rounded-[9px] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText cursor-pointer"
                       type="button"
                       onClick={closeModalFunction}
                       aria-label="Close"
@@ -281,8 +287,10 @@ export const Component: FC<{
               </div>
               <div
                 className={clsx(
-                  'min-h-0 overflow-y-auto whitespace-pre-line pe-[16px]',
-                  !!modal.height && !!modal.size && 'flex flex-1 flex-col'
+                  'min-h-0 whitespace-pre-line pe-[16px]',
+                  !!modal.height && !!modal.size
+                    ? 'flex flex-1 flex-col overflow-hidden'
+                    : 'overflow-y-auto'
                 )}
               >
                 {RenderComponent}
@@ -435,12 +443,12 @@ export const DecisionModal: FC<{
       <div className="max-w-[600px] whitespace-pre-line text-[14px] leading-[1.6] text-pqMuted">
         {description}
       </div>
-      <div className="mt-[20px] flex gap-[10px]">
+      <div className="mt-[20px] flex flex-col gap-[10px] sm:flex-row">
         <button
           type="button"
           onClick={() => resolution(true)}
           className={clsx(
-            'min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 text-[14.5px] font-[600] text-pqOnBrand cursor-pointer transition-[filter] hover:brightness-110',
+            'min-h-[44px] min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 text-[14.5px] font-[600] text-pqOnBrand cursor-pointer transition-[filter] hover:brightness-110',
             danger ? 'bg-pqDanger' : 'bg-pqBrand'
           )}
         >
@@ -450,7 +458,7 @@ export const DecisionModal: FC<{
           <button
             type="button"
             onClick={() => resolution(false)}
-            className="min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 bg-pqBtnSimple text-[14.5px] font-[600] text-pqText cursor-pointer transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
+            className="min-h-[44px] min-w-[112px] h-[46px] px-[24px] rounded-[12px] border-0 bg-pqBtnSimple text-[14.5px] font-[600] text-pqText cursor-pointer transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
           >
             {cancelLabel}
           </button>

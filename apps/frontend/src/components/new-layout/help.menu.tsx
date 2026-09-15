@@ -19,6 +19,8 @@ import {
   useTour,
 } from '@gitroom/frontend/components/onboarding/tour';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
 
 const HelpIcon: FC<{ d: string }> = ({ d }) => (
   <svg
@@ -78,6 +80,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   surface = 'app',
 }) => {
   const t = useT();
+  const { touch } = useViewport();
   const {
     isChatBase,
     extensionStoreUrl,
@@ -107,7 +110,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   const version = process.env.NEXT_PUBLIC_APP_VERSION || '';
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || touch) return;
     const onDown = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -120,7 +123,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, touch]);
 
   // Hovering opens it. Everything in here is one click deep, so making people
   // click the trigger first only added a step — and the tooltip that used to
@@ -157,6 +160,11 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
   // this deployment has not published an extension. Checkout header has no
   // place for the extension row — keep it on the app chrome only.
   const showExtension = !isCheckout && billingEnabled && !!extensionStoreUrl;
+  const row = clsx(
+    ROW,
+    ROW_INK,
+    touch && 'h-[44px] min-h-[44px] px-[12px] text-[15px]'
+  );
 
   // Whoever reads the mail asks for these two first. The signature is appended
   // to both drafts so they arrive with the report instead of a round trip.
@@ -185,7 +193,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
         setOpen(false);
         onClick();
       }}
-      className={clsx(ROW, ROW_INK)}
+      className={row}
     >
       <HelpIcon d={icon} />
       {label}
@@ -205,7 +213,7 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
       rel="noreferrer"
       role="menuitem"
       onClick={() => setOpen(false)}
-      className={clsx(ROW, ROW_INK)}
+      className={row}
     >
       <HelpIcon d={icon} />
       {label}
@@ -225,11 +233,102 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
       href={href}
       role="menuitem"
       onClick={() => setOpen(false)}
-      className={clsx(ROW, ROW_INK)}
+      className={row}
     >
       <HelpIcon d={icon} />
       {label}
     </a>
+  );
+
+  const helpBody = (
+    <>
+      {showTour &&
+        live(
+          () => startTour(),
+          ICON_TOUR,
+          t('take_a_tour', 'Take a tour'),
+          'tour'
+        )}
+
+      {link(
+        'https://docs.postqueen.ai',
+        ICON_DOCS,
+        t('documentation', 'Documentation'),
+        'docs'
+      )}
+
+      {isChatBase
+        ? live(
+            () => (window as any).chatbase?.('open'),
+            ICON_SUPPORT,
+            t('contact_support', 'Contact support'),
+            'support'
+          )
+        : !!supportEmail &&
+          mail(
+            mailto(
+              t('support_mail_subject', 'PostQueen support'),
+              t(
+                'support_mail_body',
+                'What do you need help with? Attach a screenshot if you can.'
+              )
+            ),
+            ICON_SUPPORT,
+            t('contact_support', 'Contact support'),
+            'support'
+          )}
+
+      {sentry.enabled ? (
+        <button
+          ref={sentry.ref}
+          type="button"
+          role="menuitem"
+          onClick={() => setOpen(false)}
+          className={row}
+        >
+          <HelpIcon d={ICON_BUG} />
+          {t('report_a_bug', 'Report a bug')}
+        </button>
+      ) : (
+        !!supportEmail &&
+        mail(
+          mailto(
+            t('bug_mail_subject', 'PostQueen bug report'),
+            t(
+              'bug_mail_body',
+              'What happened? What did you expect? Attach a screenshot if you can.'
+            )
+          ),
+          ICON_BUG,
+          t('report_a_bug', 'Report a bug'),
+          'bug'
+        )
+      )}
+
+      {!!changelogUrl &&
+        link(
+          changelogUrl,
+          ICON_CHANGELOG,
+          t('whats_new', "What's new"),
+          'changelog'
+        )}
+
+      {!!communityUrl &&
+        link(
+          communityUrl,
+          ICON_COMMUNITY,
+          t('community', 'Community'),
+          'community'
+        )}
+
+      {showExtension &&
+        link(
+          extensionStoreUrl,
+          ICON_EXTENSION,
+          t('browser_extension', 'Browser extension'),
+          'extension'
+        )}
+    </>
   );
 
   return (
@@ -245,8 +344,12 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={t('help', 'Help')}
         className={clsx(
-          'flex h-[30px] items-center gap-[6px] rounded-[8px] px-[9px] text-[12.5px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText',
+          'rounded-[8px] text-[12.5px] font-[500] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText',
+          touch
+            ? 'grid size-[44px] place-items-center'
+            : 'flex h-[30px] items-center gap-[6px] px-[9px]',
           open && 'bg-pqHover text-pqText'
         )}
       >
@@ -269,99 +372,26 @@ export const HelpMenu: FC<{ surface?: 'app' | 'checkout' }> = ({
         <span data-hdr-label="1">{t('help', 'Help')}</span>
       </button>
 
-      {open && (
+      {touch ? (
+        <MobileSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title={t('help', 'Help')}
+        >
+          <div role="menu" className="flex flex-col gap-[2px] px-[8px] pb-[4px]">
+            {helpBody}
+          </div>
+        </MobileSheet>
+      ) : (
+        open && (
         <div
           ref={floatingRef}
           role="menu"
           className="z-[60] w-[246px] animate-pqPop rounded-pqMd border border-pqBorder bg-pqInner p-[6px] shadow-pq"
         >
-          {showTour &&
-            live(
-              () => startTour(),
-              ICON_TOUR,
-              t('take_a_tour', 'Take a tour'),
-              'tour'
-            )}
-
-          {link(
-            'https://docs.postqueen.ai',
-            ICON_DOCS,
-            t('documentation', 'Documentation'),
-            'docs'
-          )}
-
-          {isChatBase
-            ? live(
-                () => (window as any).chatbase?.('open'),
-                ICON_SUPPORT,
-                t('contact_support', 'Contact support'),
-                'support'
-              )
-            : !!supportEmail &&
-              mail(
-                mailto(
-                  t('support_mail_subject', 'PostQueen support'),
-                  t(
-                    'support_mail_body',
-                    'What do you need help with? Attach a screenshot if you can.'
-                  )
-                ),
-                ICON_SUPPORT,
-                t('contact_support', 'Contact support'),
-                'support'
-              )}
-
-          {sentry.enabled ? (
-            <button
-              ref={sentry.ref}
-              type="button"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className={clsx(ROW, ROW_INK)}
-            >
-              <HelpIcon d={ICON_BUG} />
-              {t('report_a_bug', 'Report a bug')}
-            </button>
-          ) : (
-            !!supportEmail &&
-            mail(
-              mailto(
-                t('bug_mail_subject', 'PostQueen bug report'),
-                t(
-                  'bug_mail_body',
-                  'What happened? What did you expect? Attach a screenshot if you can.'
-                )
-              ),
-              ICON_BUG,
-              t('report_a_bug', 'Report a bug'),
-              'bug'
-            )
-          )}
-
-          {!!changelogUrl &&
-            link(
-              changelogUrl,
-              ICON_CHANGELOG,
-              t('whats_new', "What's new"),
-              'changelog'
-            )}
-
-          {!!communityUrl &&
-            link(
-              communityUrl,
-              ICON_COMMUNITY,
-              t('community', 'Community'),
-              'community'
-            )}
-
-          {showExtension &&
-            link(
-              extensionStoreUrl,
-              ICON_EXTENSION,
-              t('browser_extension', 'Browser extension'),
-              'extension'
-            )}
+          {helpBody}
         </div>
+        )
       )}
     </div>
   );

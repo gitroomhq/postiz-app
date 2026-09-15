@@ -541,7 +541,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
       data-pq={`agent-${which}`}
       onClick={() => setPanel((p) => (p === which ? null : which))}
       aria-expanded={panel === which}
-      className="h-[32px] rounded-pqSm border border-pqBorder bg-pqInner px-[12px] text-[12.5px] font-[500] text-pqText"
+          className="h-[44px] min-h-[44px] flex-1 rounded-pqSm border border-pqBorder bg-pqInner px-[12px] text-[13px] font-[500] text-pqText"
     >
       {label}
     </button>
@@ -617,7 +617,7 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
               {toggle('threads', t('conversations', 'Conversations'))}
             </div>
           )}
-          <div className="flex flex-1 min-w-0">{children}</div>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
         </div>
 
         <AgentDrawer
@@ -647,7 +647,7 @@ const AgentDrawer: FC<{
   top: number;
   label: string;
   children: ReactNode;
-}> = ({ active, open, side, top, label, children }) => {
+}> = ({ active, open, side: _side, top, label, children }) => {
   if (!active) return <>{children}</>;
   return (
     <div
@@ -658,12 +658,10 @@ const AgentDrawer: FC<{
         {...(open ? { role: 'dialog', 'aria-modal': true } : {})}
         aria-label={label}
         aria-hidden={!open}
-        className={clsx(
-          'pointer-events-auto absolute inset-y-0 flex w-[264px] shadow-pqE3 transition-transform duration-200 ease-out',
-          side === 'start'
-            ? clsx('start-0', !open && '-translate-x-[104%] rtl:translate-x-[104%]')
-            : clsx('end-0', !open && 'translate-x-[104%] rtl:-translate-x-[104%]')
-        )}
+          className={clsx(
+            'pointer-events-auto absolute inset-x-0 bottom-0 flex max-h-[min(80dvh,640px)] w-full flex-col overflow-hidden rounded-t-[16px] bg-pqInner pb-[env(safe-area-inset-bottom)] shadow-pqE3 transition-transform duration-200 ease-out',
+            !open && 'translate-y-[104%]'
+          )}
       >
         {children}
       </div>

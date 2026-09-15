@@ -2,11 +2,13 @@
 
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
 export const RenderComponents: FC<{
   postId: string;
 }> = (props) => {
@@ -136,4 +138,32 @@ export const CommentsComponents: FC<{
     );
   }
   return <RenderComponents postId={postId} />;
+};
+
+/** Public `/p/[id]` comments: inline on desktop, a sheet on phone. */
+export const PreviewCommentsPane: FC<{ postId: string }> = ({ postId }) => {
+  const { touch } = useViewport();
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  if (!touch) {
+    return <CommentsComponents postId={postId} />;
+  }
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-[44px] w-full items-center justify-center rounded-[12px] bg-pqInner text-[14px] font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]"
+      >
+        {t('comments', 'Comments')}
+      </button>
+      <MobileSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t('comments', 'Comments')}
+      >
+        <CommentsComponents postId={postId} />
+      </MobileSheet>
+    </>
+  );
 };

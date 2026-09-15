@@ -27,6 +27,7 @@ import {
   useTourStepKey,
 } from '@gitroom/frontend/components/onboarding/tour';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { NoChannelsArt } from '@gitroom/frontend/components/ui/no-channels-art';
@@ -57,7 +58,7 @@ export const PostsPanel: FC = () => {
   const toaster = useToaster();
   const router = useRouter();
   const { start: startTour } = useTour();
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const {
     listPosts,
     listLoading,
@@ -89,15 +90,15 @@ export const PostsPanel: FC = () => {
 
   useEffect(() => {
     if (forcePanel) return;
-    if (mobile && postsPanelOpen && !autoCollapsed.current) {
+    if (touch && postsPanelOpen && !autoCollapsed.current) {
       autoCollapsed.current = true;
       setPostsPanelOpen(false);
       return;
     }
-    if (!mobile) {
+    if (!touch) {
       autoCollapsed.current = false;
     }
-  }, [mobile, postsPanelOpen, setPostsPanelOpen, forcePanel]);
+  }, [touch, postsPanelOpen, setPostsPanelOpen, forcePanel]);
 
   const tabs = useMemo(
     () =>
@@ -180,6 +181,7 @@ export const PostsPanel: FC = () => {
   );
 
   if (!showPanel) {
+    if (touch) return null;
     return (
       <div className="flex w-[44px] shrink-0 flex-col items-center bg-pqInner py-[16px]">
         <button
@@ -383,6 +385,7 @@ const QueueCard: FC<{
   deletePost: () => void;
 }> = ({ post, editPost, duplicatePost, deletePost }) => {
   const t = useT();
+  const { touch } = useViewport();
   const { formatShortWeekdayTime } = useDateFormat();
   const demo = isClientDemoPost(post.id);
   const { explain: explainDemo, demoTooltip } = useDemoPostAction();
@@ -420,12 +423,12 @@ const QueueCard: FC<{
         state: post.state,
         source: 'list' as const,
       },
-      canDrag: !demo && post.state !== 'PUBLISHED',
+      canDrag: !demo && post.state !== 'PUBLISHED' && !touch,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.publishDate, post.state]
+    [demo, post.id, post.intervalInDays, post.publishDate, post.state, touch]
   );
 
   const state = displayPostState(post.state, post.publishDate);
@@ -504,6 +507,15 @@ const QueueCard: FC<{
         onClick={(e) => e.stopPropagation()}
         className="absolute bottom-[8px] end-[8px] z-[5] flex gap-[2px] opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
       >
+        {post.state !== 'PUBLISHED' && !demo && (
+          <CalendarMoveButton
+            post={post}
+            className={clsx(
+              actionButton,
+              'min-w-[44px] px-[8px] text-[11px] font-[600]'
+            )}
+          />
+        )}
         {post.state !== 'PUBLISHED' && (
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />

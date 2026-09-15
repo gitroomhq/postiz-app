@@ -19,6 +19,14 @@ describe('global pointer cursor', () => {
   });
 });
 
+describe('mobile safe-area utilities', () => {
+  it('declares pt-safe, pb-safe and 44px tap floor', () => {
+    assert.match(source, /\.pt-safe \{[\s\S]*safe-area-inset-top/);
+    assert.match(source, /\.pb-safe \{[\s\S]*safe-area-inset-bottom/);
+    assert.match(source, /\.pq-tap \{[\s\S]*min-height:\s*44px/);
+  });
+});
+
 describe('pqfadeDown entry', () => {
   it('does not restate a -50% X translate that would slide an end-anchored toast', () => {
     const pqfadeDown = source.match(/@keyframes pqfadeDown \{[\s\S]*?\n\}/)?.[0];

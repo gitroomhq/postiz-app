@@ -6,6 +6,7 @@ import { useClickOutside } from '@mantine/hooks';
 import clsx from 'clsx';
 import { RepeatIcon, DropdownArrowIcon } from '@gitroom/frontend/components/ui/icons';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 const getList = (t: (key: string, fallback: string) => string) => [
   {
@@ -55,6 +56,7 @@ export const RepeatComponent: FC<{
 }> = (props) => {
   const { repeat } = props;
   const t = useT();
+  const { touch } = useViewport();
   const list = getList(t);
   const [isOpen, setIsOpen] = useState(false);
   // Same overflow escape as DatePicker / Delay — footer clips absolute menus.
@@ -77,27 +79,39 @@ export const RepeatComponent: FC<{
     return list.find((p) => p.value === repeat)?.label;
   }, [repeat, list]);
 
+  const emptyLabel = t('repeat_post_every', 'Repeat Post Every...');
+  const triggerLabel = repeat
+    ? `${t('repeat_post_every_label', 'Repeat Post Every')} ${everyLabel}`
+    : emptyLabel;
+
   return (
     <div
       ref={ref}
       className={clsx(
-        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        'relative flex h-[44px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border text-[15px] font-[600] select-none',
         isOpen ? 'border-pqBrand' : 'border-newTextColor/10'
       )}
     >
       <div
         ref={referenceRef}
+        role="button"
+        aria-label={triggerLabel}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
+        className={clsx(
+          'flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px]',
+          touch ? 'px-[8px]' : 'px-[16px]'
+        )}
       >
         <div className="cursor-pointer">
           <RepeatIcon />
         </div>
-        <div className="cursor-pointer">
-          {repeat
-            ? `${t('repeat_post_every_label', 'Repeat Post Every')} ${everyLabel}`
-            : t('repeat_post_every', 'Repeat Post Every...')}
-        </div>
+        {touch ? (
+          repeat ? (
+            <div className="min-w-0 cursor-pointer truncate">{everyLabel}</div>
+          ) : null
+        ) : (
+          <div className="min-w-0 cursor-pointer truncate">{triggerLabel}</div>
+        )}
         <div className="cursor-pointer">
           <DropdownArrowIcon rotated={isOpen} />
         </div>

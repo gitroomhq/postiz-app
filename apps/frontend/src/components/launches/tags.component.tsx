@@ -19,6 +19,7 @@ import {
   CheckmarkIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 export const TagsComponent: FC<{
   name: string;
@@ -60,6 +61,7 @@ export const TagsComponentInner: FC<{
   }) => void;
 }> = ({ initial, onChange, name, mutate, allTags: data }) => {
   const t = useT();
+  const { touch } = useViewport();
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
   const [allowClose, setAllowClose] = useState(true);
@@ -167,21 +169,32 @@ export const TagsComponentInner: FC<{
     <div
       ref={ref}
       className={clsx(
-        'border rounded-[8px] justify-center flex items-center relative h-[44px] text-[15px] font-[600] select-none',
+        'relative flex h-[44px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border text-[15px] font-[600] select-none',
         isOpen ? 'border-pqBrand' : 'border-newTextColor/10'
       )}
     >
       <div
         ref={referenceRef}
+        role="button"
+        aria-label={
+          tagValue.length === 0
+            ? touch
+              ? t('tags', 'Tags')
+              : t('add_new_tag', 'Add New Tag')
+            : tagValue[0].name
+        }
         onClick={() => setIsOpen(!isOpen)}
-        className="px-[16px] justify-center flex gap-[8px] items-center h-full select-none flex-1"
+        className={clsx(
+          'flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px]',
+          touch ? 'px-[10px]' : 'px-[16px]'
+        )}
       >
         <div className="cursor-pointer">
           <TagIcon />
         </div>
-        <div className="cursor-pointer flex gap-[4px]">
+        <div className="min-w-0 truncate whitespace-nowrap">
           {tagValue.length === 0 ? (
-            t('add_new_tag', 'Add New Tag')
+            touch ? t('tags', 'Tags') : t('add_new_tag', 'Add New Tag')
           ) : (
             <>
               <div

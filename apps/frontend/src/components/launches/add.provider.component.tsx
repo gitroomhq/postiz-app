@@ -28,6 +28,7 @@ import { TrialLockCard } from '@gitroom/frontend/components/billing/trial-lock-c
 // Lives in helpers/ so the chrome can open this dialog without pulling this
 // module into every route's bundle. Only the dynamic edge points back here.
 import { useAddProvider } from '@gitroom/frontend/components/launches/helpers/use.add.provider';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 const resolver = classValidatorResolver(ApiKeyDto);
 
 export const AddProviderButton: FC<{
@@ -796,6 +797,10 @@ export const AddProviderComponent: FC<{
   onStepChange?: (open: boolean) => void;
 }> = (props) => {
   const { update, social, article, onboarding, isMobile, onStepChange } = props;
+  const { mobile, touch } = useViewport();
+  // Callers used to forget `isMobile`, so the phone picker stayed a 4-column
+  // desktop grid. Viewport is the source of truth; the prop still forces it.
+  const phone = Boolean(isMobile) || mobile;
   // Which provider's setup step is open. The grid used to connect on click,
   // which meant a precondition you did not know about — an Instagram account
   // that is not a Business account, an X session on the wrong login — only
@@ -848,13 +853,13 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
-            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
               <div
-                {...(isMobile
+                {...(touch
                   ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
@@ -1038,7 +1043,7 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: 'URL',
             withCloseButton: true,
-            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
@@ -1050,13 +1055,13 @@ export const AddProviderComponent: FC<{
           modal.openModal({
             title: t('add_provider_title', 'Add Provider'),
             withCloseButton: true,
-            ...(isMobile ? { removeLayout: true, fullScreen: true } : {}),
+            ...(touch ? { removeLayout: true, fullScreen: true } : {}),
             classNames: {
               modal: 'bg-transparent text-textColor',
             },
             children: (
               <div
-                {...(isMobile
+                {...(touch
                   ? { className: 'h-full bg-pqBg p-[20px]' }
                   : {})}
               >
@@ -1073,7 +1078,7 @@ export const AddProviderComponent: FC<{
         }
         await gotoIntegration();
       },
-    [onboarding]
+    [onboarding, touch]
   );
 
   const t = useT();
@@ -1205,10 +1210,10 @@ export const AddProviderComponent: FC<{
             )}
             <div
               className={clsx(
-                isMobile && 'gap-[20px] flex flex-col',
-                !isMobile &&
+                phone && 'flex flex-col gap-[8px]',
+                !phone &&
                   'grid gap-[12px] justify-items-center justify-center',
-                isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-4'
+                !phone && (onboarding ? 'grid-cols-9' : 'grid-cols-4')
               )}
             >
               {group.items.map((item) => (
@@ -1230,8 +1235,8 @@ export const AddProviderComponent: FC<{
                       }
                     : {})}
                   className={clsx(
-                    isMobile
-                      ? 'flex-row h-[72px] p-[16px]'
+                    phone
+                      ? 'h-[56px] min-h-[56px] flex-row px-[14px] py-[10px]'
                       : 'h-[104px] flex-col justify-center px-[10px] py-[12px]',
                     'relative flex w-full cursor-pointer items-center gap-[10px] rounded-[12px] bg-pqInner text-[12.5px] font-[500] text-pqText shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqHover hover:shadow-[inset_0_0_0_1px_var(--brand)]'
                   )}
@@ -1259,12 +1264,11 @@ export const AddProviderComponent: FC<{
                   </div>
                   <div
                     className={clsx(
-                      isMobile ? '' : 'whitespace-pre-wrap',
-                      'text-center'
+                      phone ? 'min-w-0 flex-1 text-start' : 'whitespace-pre-wrap text-center',
                     )}
                   >
                     {item.name}
-                    {!!item.toolTip && !isMobile && (
+                    {!!item.toolTip && !phone && (
                       <svg
                         width="15"
                         height="15"

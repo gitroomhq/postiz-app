@@ -2,6 +2,12 @@ import { useIntegration } from '@gitroom/frontend/components/launches/helpers/us
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import clsx from 'clsx';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
+import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
+import {
+  FEED_PREVIEW_FALLBACK_WH,
+  FEED_PREVIEW_MAX_WH,
+  FEED_PREVIEW_MIN_WH,
+} from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 import { FC } from 'react';
 import { textSlicer } from '@gitroom/helpers/utils/count.length';
 import SafeImage from '@gitroom/react/helpers/safe.image';
@@ -116,30 +122,38 @@ export const GeneralPreviewComponent: FC<{
                   __html: sanitizePreviewHtml(value.text),
                 }}
               />
-              {!!value?.images?.length && (
-                <div
-                  className={clsx(
-                    'w-full rounded-[16px] overflow-hidden mt-[12px]',
-                    value?.images?.length > 3
-                      ? 'grid grid-cols-2 gap-[4px]'
-                      : 'flex gap-[4px]'
-                  )}
-                >
-                  {value.images.map((image, index) => (
-                    <a
-                      key={`image_${index}`}
-                      className="flex-1"
-                      href={mediaDir.set(image.path)}
-                      target="_blank"
-                    >
-                      <VideoOrImage
-                        autoplay={true}
-                        src={mediaDir.set(image.path)}
-                      />
-                    </a>
-                  ))}
-                </div>
-              )}
+              {!!value?.images?.length &&
+                (value.images.length === 1 ? (
+                  <PreviewMediaFrame
+                    className="mt-[12px] rounded-[16px]"
+                    src={mediaDir.set(value.images[0].path)}
+                    minWH={FEED_PREVIEW_MIN_WH}
+                    maxWH={FEED_PREVIEW_MAX_WH}
+                    fallbackWH={FEED_PREVIEW_FALLBACK_WH}
+                  />
+                ) : (
+                  <div
+                    className={clsx(
+                      'mt-[12px] flex w-full overflow-hidden rounded-[16px] aspect-square',
+                      value.images.length > 3 && 'grid grid-cols-2 gap-[4px]'
+                    )}
+                  >
+                    {value.images.map((image, index) => (
+                      <a
+                        key={`image_${index}`}
+                        className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+                        href={mediaDir.set(image.path)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <VideoOrImage
+                          autoplay={true}
+                          src={mediaDir.set(image.path)}
+                        />
+                      </a>
+                    ))}
+                  </div>
+                ))}
             </div>
           </div>
         ))}

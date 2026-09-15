@@ -85,7 +85,7 @@ export const Input = ({
 
   return (
     <div className="copilotKitInputContainer">
-      <div className="mx-auto flex w-full max-w-[840px] flex-col gap-[8px]">
+      <div className="mx-auto flex w-full max-w-[840px] flex-col gap-[8px] pb-[env(safe-area-inset-bottom)]">
         <div className="flex flex-wrap items-center gap-[6px] p-[0_2px_2px]">
           {properties.length === 0 ? (
             // Design soft label is "No channel selected"; owner polish: muted

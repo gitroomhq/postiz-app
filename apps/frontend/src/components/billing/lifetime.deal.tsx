@@ -120,7 +120,7 @@ const LifetimeCountdown: FC<{ createdAt?: string | Date }> = ({
             <path d="M3 8.5 7.2 12 12 4.5 16.8 12 21 8.5l-1.7 9.7a1 1 0 0 1-1 .8H5.7a1 1 0 0 1-1-.8L3 8.5Z" />
           </svg>
         </span>
-        <div className="min-w-[220px] flex-1">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-col items-start gap-[8px]">
             <span className="grid h-[19px] place-items-center rounded-full bg-pqLtSolid px-[8px] text-[9px] font-[800] uppercase tracking-[0.05em] text-pqLtSolidFg">
               {t('lt_upsell_badge', 'Become a founding member')}

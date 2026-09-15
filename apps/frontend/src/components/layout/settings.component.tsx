@@ -137,7 +137,7 @@ const SettingsTabPane: FC<{
     <div className="flex w-full max-w-[920px] flex-col">
       {!inEditor && (
         <>
-          <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText">
+          <h3 className="m-0 font-display text-[20px] font-[500] tracking-[-0.01em] text-pqText mobile:hidden">
             {chromePatch?.title ?? tabHeader.title}
           </h3>
           {!!(chromePatch?.desc ?? tabHeader.desc) && (
@@ -166,7 +166,7 @@ export const SettingsPopup: FC<{
   }, [modal]);
   const url = useSearchParams();
   const showLogout = !url.get('onboarding') || user?.tier?.current === 'FREE';
-  const { mobile } = useViewport();
+  const { mobile, touch } = useViewport();
   const [query, setQuery] = useState('');
 
   // Tabs can be deep-linked, e.g. /settings?tab=api (Connect) or ?tab=teams
@@ -220,6 +220,15 @@ export const SettingsPopup: FC<{
     },
     [url, redirectRouter]
   );
+
+  const closeMobilePane = useCallback(() => {
+    const params = new URLSearchParams(url.toString());
+    params.delete('tab');
+    const q = params.toString();
+    redirectRouter.replace(q ? `/settings?${q}` : '/settings', {
+      scroll: false,
+    });
+  }, [url, redirectRouter]);
 
   const t = useT();
   // Teams and Developers call ADMIN-gated endpoints as soon as they mount.
@@ -469,19 +478,26 @@ export const SettingsPopup: FC<{
 
   // Nav row hover matches the prototype's purple inset wash (also on the
   // selected row). Kept as a shared class so Link and button stay identical.
-  const navItemBase =
-    'flex h-[34px] items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]';
+  const navItemBase = clsx(
+    'flex items-center gap-[9px] rounded-pqSm px-[9px] text-start text-[13px] transition-[box-shadow,color,background-color] hover:text-pqText hover:shadow-[inset_0_0_0_999px_rgba(124,58,237,.10)]',
+    mobile ? 'h-[44px]' : 'h-[34px]'
+  );
+  const showIndex = mobile && !url.get('tab');
 
   // Prototype: width/height min(1040×680, 100%) of the scrim — fixed for every
   // tab. Content scrolls inside; the card never shrinks to the active section.
+  // Phone: iOS Settings stack — index list, then a pushed pane.
   return (
     <div
       data-settings-card="1"
+      data-settings-index={showIndex ? '1' : '0'}
       onClick={(e) => e.stopPropagation()}
       className={clsx(
         'relative flex shrink-0 overflow-hidden bg-pqPop shadow-[var(--e3),0_0_0_1px_var(--border)] animate-pqPop',
         mobile
-          ? 'h-full w-full flex-col'
+          ? 'h-full w-full flex-col pb-[env(safe-area-inset-bottom)]'
+          : touch
+          ? 'h-full w-full rounded-none'
           : 'h-[min(680px,100%)] w-[min(1040px,100%)] rounded-[16px]'
       )}
     >
@@ -491,10 +507,34 @@ export const SettingsPopup: FC<{
           // column disappears into the scrim on the left edge.
           'flex min-h-0 flex-col bg-pqSettings',
           mobile
-            ? 'max-h-[132px] w-full shrink-0 border-b border-pqLine'
+            ? showIndex
+              ? 'min-h-0 w-full flex-1'
+              : 'hidden'
             : 'w-[236px] shrink-0 border-e border-pqLine'
         )}
       >
+        {showIndex && (
+          <div className="flex h-[52px] shrink-0 items-center gap-[8px] px-[8px] pt-[6px]">
+            <div className="min-w-0 flex-1 px-[8px] text-[16px] font-[600] text-pqText">
+              {t('settings', 'Settings')}
+            </div>
+            <button
+              type="button"
+              onClick={onClose || close}
+              aria-label={t('close', 'Close')}
+              className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
         <div className="shrink-0 p-[14px_12px_10px]">
           <div className="relative">
             <svg
@@ -589,23 +629,67 @@ export const SettingsPopup: FC<{
           ))}
         </nav>
       </div>
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-        <button
-          type="button"
-          onClick={onClose || close}
-          aria-label={t('close', 'Close')}
-          className="absolute end-[16px] top-[14px] z-[4] grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
-        >
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
-            <path
-              d="M6 6l12 12M18 6 6 18"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px] text-pqText">
+      <div
+        className={clsx(
+          'relative flex min-h-0 min-w-0 flex-col',
+          showIndex ? 'hidden' : 'flex-1'
+        )}
+      >
+        {mobile ? (
+          <div className="flex h-[52px] shrink-0 items-center gap-[4px] border-b border-pqLine px-[6px]">
+            <button
+              type="button"
+              onClick={closeMobilePane}
+              aria-label={t('back', 'Back')}
+              className="grid size-[44px] place-items-center rounded-[8px] text-pqText transition-colors hover:bg-pqHover"
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                <path
+                  d="M15 6l-6 6 6 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div className="min-w-0 flex-1 truncate text-[15px] font-[600] text-pqText">
+              {tabHeader.title}
+            </div>
+            <button
+              type="button"
+              onClick={onClose || close}
+              aria-label={t('close', 'Close')}
+              className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onClose || close}
+            aria-label={t('close', 'Close')}
+            className="absolute end-[16px] top-[14px] z-[4] grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+          >
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+              <path
+                d="M6 6l12 12M18 6 6 18"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-pqInner p-[26px_28px_34px] text-pqText mobile:p-[16px_16px_28px]">
           <SettingsTabChromeProvider key={tab}>
             <SettingsTabPane tabHeader={tabHeader}>
               {tab === 'global_settings' && (

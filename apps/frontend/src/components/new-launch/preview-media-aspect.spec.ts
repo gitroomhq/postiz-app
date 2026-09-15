@@ -9,6 +9,7 @@ import {
   clampPreviewAspect,
   feedPreviewAspect,
   instagramFeedPreviewRange,
+  postHasPreview,
 } from './preview-media-aspect.ts';
 
 describe('feedPreviewAspect', () => {
@@ -40,6 +41,15 @@ describe('feedPreviewAspect', () => {
 
   it('caps ultra-wide images at 1.91:1', () => {
     assert.equal(feedPreviewAspect(2000, 1000), FEED_PREVIEW_MAX_WH);
+  });
+});
+
+describe('postHasPreview', () => {
+  it('treats a photo-only post as previewable', () => {
+    assert.equal(postHasPreview({ content: '', media: [{ id: '1' }] }), true);
+    assert.equal(postHasPreview({ content: '', image: [{ id: '1' }] }), true);
+    assert.equal(postHasPreview({ content: '', media: [] }), false);
+    assert.equal(postHasPreview({ content: 'hello' }), true);
   });
 });
 

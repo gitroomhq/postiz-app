@@ -43,7 +43,7 @@ export const PlatformAnalytics = () => {
   const t = useT();
   const router = useRouter();
   const { disableXAnalytics } = useVariables();
-  const { mobile, tablet } = useViewport();
+  const { mobile, tablet, touch } = useViewport();
 
   const [selected, setSelected] = useState('');
   const [key, setKey] = useState(7);
@@ -274,7 +274,10 @@ export const PlatformAnalytics = () => {
             <button
               type="button"
               onClick={() => mutate()}
-              className="mt-[4px] h-[34px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+              className={clsx(
+                'mt-[4px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+                touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
+              )}
             >
               {t('try_again', 'Try again')}
             </button>
@@ -298,7 +301,10 @@ export const PlatformAnalytics = () => {
             <button
               type="button"
               onClick={openAddChannel}
-              className="mt-[4px] h-[34px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+              className={clsx(
+                'mt-[4px] rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+                touch ? 'h-[44px] min-h-[44px] px-[18px]' : 'h-[34px]'
+              )}
             >
               {t('connect_a_channel', 'Connect a channel')}
             </button>
@@ -391,8 +397,12 @@ export const PlatformAnalytics = () => {
               })}
               onClick={openAddChannel}
               className={clsx(
-                'flex h-[36px] items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqBrandSoft',
-                channelsCollapsed ? 'w-[36px] shrink-0' : 'min-w-0 flex-1'
+                'flex items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqBrandSoft',
+                touch
+                  ? 'h-[44px] min-h-[44px] min-w-0 flex-1'
+                  : channelsCollapsed
+                    ? 'h-[36px] w-[36px] shrink-0'
+                    : 'h-[36px] min-w-0 flex-1'
               )}
             >
               <svg

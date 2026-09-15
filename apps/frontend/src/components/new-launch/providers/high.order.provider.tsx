@@ -14,6 +14,7 @@ import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { GeneralPreviewComponent } from '@gitroom/frontend/components/launches/general.preview.component';
+import { postHasPreview } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -257,7 +258,7 @@ export const withProvider = function <T extends object>(params: {
             {(current || isGlobal) &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
-              !value?.[0]?.content?.length &&
+              !postHasPreview(value?.[0]) &&
               // Global stacks many channels — one empty hint lives on the parent
               // so we don't repeat "Start writing…" per selected channel.
               !isGlobal && (
@@ -271,7 +272,7 @@ export const withProvider = function <T extends object>(params: {
             {(current || isGlobal) &&
               (tab === 0 ||
                 (!SettingsComponent && !data?.internalPlugs?.length)) &&
-              !!value?.[0]?.content?.length &&
+              postHasPreview(value?.[0]) &&
               (CustomPreviewComponent ? (
                 <CustomPreviewComponent
                   maximumCharacters={

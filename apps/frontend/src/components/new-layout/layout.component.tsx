@@ -172,11 +172,19 @@ const MissingBackendUrlNotice = () => (
  * this wrapper. No `overflow-hidden`: notifications hang an absolutely
  * positioned panel off itself.
  */
-const HeaderIcon = ({ children }: { children: ReactNode }) => (
-  <div className="grid size-[30px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText empty:hidden">
-    {children}
-  </div>
-);
+const HeaderIcon = ({ children }: { children: ReactNode }) => {
+  const { touch } = useViewport();
+  return (
+    <div
+      className={clsx(
+        'grid shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText empty:hidden',
+        touch ? 'size-[44px]' : 'size-[30px]'
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
 /**
  * Header, rail and page body.
@@ -257,14 +265,21 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="blurMe relative z-[40] flex h-[56px] shrink-0 items-center gap-[12px] border-b border-pqRailLine bg-pqRail pe-[16px]">
+      <header
+        className={clsx(
+          'blurMe relative z-[40] flex shrink-0 items-center border-b border-pqRailLine bg-pqRail',
+          mobile
+            ? 'h-[calc(56px+env(safe-area-inset-top,0px))] gap-[8px] pe-[8px] pt-[env(safe-area-inset-top,0px)]'
+            : 'h-[56px] gap-[12px] pe-[16px]'
+        )}
+      >
         {mobile ? (
           <button
             type="button"
             onClick={() => setDrawer((d) => !d)}
             aria-label={t('menu', 'Menu')}
             aria-expanded={drawer}
-            className="ms-[8px] grid size-[40px] shrink-0 place-items-center rounded-[10px] text-pqText transition-colors hover:bg-pqHover"
+            className="ms-[8px] grid size-[44px] shrink-0 place-items-center rounded-[10px] text-pqText transition-colors hover:bg-pqHover"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
               <path
@@ -321,7 +336,12 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
             Create Post is chrome, not a page action: it is the app's primary
             verb and has to be reachable from every route, including before any
             channel exists. The slot after it stays for page-level actions. */}
-        <div className="flex shrink-0 items-center gap-[10px]">
+        <div
+          className={clsx(
+            'flex shrink-0 items-center',
+            mobile ? 'gap-[4px]' : 'gap-[10px]'
+          )}
+        >
           <NewPost />
           <HeaderActionSlot />
           <div className="flex items-center gap-[4px] text-pqMuted">
@@ -331,7 +351,7 @@ const AppChrome = ({ children }: { children: ReactNode }) => {
               <NotificationComponent />
             </HeaderIcon>
           </div>
-          <HeaderDivider />
+          {!mobile && <HeaderDivider />}
           <UserMenu />
         </div>
       </header>

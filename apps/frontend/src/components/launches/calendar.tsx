@@ -70,6 +70,7 @@ import { useRouter } from 'next/navigation';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
+import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -865,6 +866,7 @@ export const ListView = () => {
   const modal = useModals();
   const router = useRouter();
   const { start: startTour } = useTour();
+  const { touch } = useViewport();
   const { longDatePattern } = useDateFormat();
   const {
     loading,
@@ -1030,7 +1032,10 @@ export const ListView = () => {
           <button
             type="button"
             onClick={() => router.push('/channels?add=1')}
-            className="mt-[2px] h-[36px] min-w-[200px] rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover"
+            className={clsx(
+              'mt-[2px] min-w-[200px] rounded-pqSm bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover',
+              touch ? 'h-[44px] min-h-[44px]' : 'h-[36px]'
+            )}
           >
             {t('add_your_first_channel', 'Add your first channel')}
           </button>
@@ -1128,6 +1133,7 @@ export const ListView = () => {
 
 export const Calendar = () => {
   const { display } = useCalendar();
+  const { mobile } = useViewport();
   return (
     <>
       {display === 'list' ? (
@@ -1135,7 +1141,13 @@ export const Calendar = () => {
       ) : display === 'day' ? (
         <DayView />
       ) : display === 'week' ? (
-        <WeekView />
+        mobile ? (
+          <MobileWeekAgenda />
+        ) : (
+          <WeekView />
+        )
+      ) : mobile ? (
+        <MobileMonthAgenda />
       ) : (
         <MonthView />
       )}
@@ -1723,6 +1735,7 @@ const CalendarItem: FC<{
   };
 }> = memo((props) => {
   const t = useT();
+  const { touch } = useViewport();
   const { timePattern } = useDateFormat();
   const {
     editPost,
@@ -1792,7 +1805,7 @@ const CalendarItem: FC<{
         // from list→Scheduled (put-back / cancel reschedule, leave QUEUE).
         source: 'calendar' as const,
       },
-      canDrag: !demo,
+      canDrag: !demo && !touch,
       collect: (monitor) => ({
         // 40%, not invisible: the design keeps the card faintly in place so you
         // can still see where it came from. (Doc 02 says "fully transparent" —
@@ -1800,7 +1813,7 @@ const CalendarItem: FC<{
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.state, date]
+    [demo, post.id, post.intervalInDays, post.state, date, touch]
   );
   // The accent stripe: tag colour when tagged; else published → ok, draft →
   // soft brand stripe (day view), otherwise brand for scheduled.
@@ -1991,6 +2004,9 @@ const CalendarItem: FC<{
               <EditPost tooltip={demo ? demoTooltip : undefined} />
             </button>
           )}
+          {canEdit && !demo && (
+            <CalendarMoveButton post={post} className={dayAction} />
+          )}
           <button type="button" className={dayAction} onClick={onDuplicate}>
             <Duplicate tooltip={demo ? demoTooltip : undefined} />
           </button>
@@ -2132,6 +2148,9 @@ const CalendarItem: FC<{
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />
           </button>
+        )}
+        {canEdit && !demo && (
+          <CalendarMoveButton post={post} className={actionButton} />
         )}
         <button type="button" className={actionButton} onClick={onDuplicate}>
           <Duplicate tooltip={demo ? demoTooltip : undefined} />
@@ -2358,6 +2377,9 @@ const ListItem: FC<{
           <button type="button" className={actionButton} onClick={onEdit}>
             <EditPost tooltip={demo ? demoTooltip : undefined} />
           </button>
+        )}
+        {canEdit && !demo && (
+          <CalendarMoveButton post={post} className={actionButton} />
         )}
         <button type="button" className={actionButton} onClick={onDuplicate}>
           <Duplicate tooltip={demo ? demoTooltip : undefined} />
@@ -2777,6 +2799,172 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
   }
 );
 
+/**
+ * Phone week: horizontal day chips + the Day agenda for the selected day.
+ * Keeps `display=week` in the URL for the tour and logo.
+ */
+const MobileWeekAgenda = () => {
+  const { startDate } = useCalendar();
+  const days = useMemo(() => {
+    const weekStart = newDayjs(startDate).startOf('day');
+    return Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
+  }, [startDate]);
+  const today = newDayjs();
+  const defaultDay = days.find((d) => d.isSame(today, 'day')) ?? days[0];
+  const [selectedKey, setSelectedKey] = useState(defaultDay.format('YYYY-MM-DD'));
+  useEffect(() => {
+    setSelectedKey(defaultDay.format('YYYY-MM-DD'));
+  }, [startDate]);
+  const selected =
+    days.find((d) => d.format('YYYY-MM-DD') === selectedKey) ?? defaultDay;
+  const isToday = useRangeHasToday(selected.format('YYYY-MM-DD'));
+  const initialHourRef = useInitialHourRef(isToday);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const { scrollToNowToken } = useCalendar();
+  const setScrollerRef = useCallback((el: HTMLDivElement | null) => {
+    scrollerRef.current = el;
+    openInitialHour(el, initialHourRef.current);
+  }, []);
+  useEffect(() => {
+    if (!scrollToNowToken) return;
+    scrollScrollerToHour(scrollerRef.current, nowScrollHour());
+  }, [scrollToNowToken]);
+
+  return (
+    <div
+      data-tour="cal-grid"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col text-pqText"
+    >
+      <div
+        data-tour="cal-day"
+        ref={setScrollerRef}
+        className="absolute inset-0 overflow-auto bg-pqInner scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+      >
+        <div
+          data-cal-sticky-head="1"
+          className="sticky top-0 z-[2] flex gap-[4px] border-b border-pqLine bg-pqInner px-[4px] pb-[10px] pt-[2px] shadow-[0_10px_0_0_var(--inner)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {days.map((day) => {
+            const key = day.format('YYYY-MM-DD');
+            const on = key === selected.format('YYYY-MM-DD');
+            const todayChip = day.isSame(today, 'day');
+            return (
+              <button
+                key={key}
+                type="button"
+                data-cal-today={todayChip ? '1' : undefined}
+                onClick={() => setSelectedKey(key)}
+                className={clsx(
+                  'flex min-h-[44px] min-w-0 flex-1 flex-col items-center justify-center rounded-[12px] px-[2px] py-[8px]',
+                  on ? 'bg-pqBrand text-pqOnBrand' : 'bg-pqSettings text-pqText'
+                )}
+              >
+                <span className="text-[11px] font-[600] uppercase tracking-[0.04em] opacity-80">
+                  {day.format('dd')}
+                </span>
+                <span className="text-[16px] font-[700]">{day.format('D')}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mx-auto flex w-full max-w-[860px] flex-col px-[4px] pb-[40px]">
+          {hours.map((hour) => (
+            <DayHourSection key={`${selectedKey}-${hour}`} hour={hour} day={selected} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Phone month: compact 7-column date picker. Tap a day to open that day's posts.
+ */
+const MobileMonthAgenda = () => {
+  const { startDate, posts, openPostsForDay } = useCalendar();
+  const localizedDays = useMemo(() => {
+    const currentLanguage = i18next.resolvedLanguage || 'en';
+    dayjs.locale(currentLanguage);
+    const days = [];
+    for (let i = 1; i <= 7; i++) {
+      days.push(newDayjs().day(i).format('dd'));
+    }
+    return days;
+  }, [i18next.resolvedLanguage]);
+
+  const calendarDays = useMemo(() => {
+    const monthStart = newDayjs(startDate);
+    const startOfMonth = newDayjs(new Date(monthStart.year(), monthStart.month(), 1));
+    const daysBeforeMonth = startOfMonth.isoWeekday() - 1;
+    const calendarStartDate = startOfMonth.subtract(daysBeforeMonth, 'day');
+    const days = [];
+    let currentDay = calendarStartDate;
+    for (let i = 0; i < 42; i++) {
+      days.push({
+        day: currentDay,
+        out: currentDay.month() !== monthStart.month(),
+      });
+      currentDay = currentDay.add(1, 'day');
+    }
+    return days;
+  }, [startDate]);
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const post of posts) {
+      const key = dayjs.utc(post.publishDate).local().format('YYYY-MM-DD');
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+    return map;
+  }, [posts]);
+
+  const today = newDayjs();
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col px-[4px] text-pqText">
+      <div className="grid grid-cols-7 gap-[4px] pb-[8px]">
+        {localizedDays.map((d) => (
+          <div
+            key={d}
+            className="text-center text-[11px] font-[600] uppercase tracking-[0.04em] text-pqMuted"
+          >
+            {d}
+          </div>
+        ))}
+        {calendarDays.map(({ day, out }) => {
+          const key = day.format('YYYY-MM-DD');
+          const count = counts.get(key) || 0;
+          const isToday = day.isSame(today, 'day');
+          return (
+            <button
+              key={key}
+              type="button"
+              disabled={out}
+              onClick={() => openPostsForDay(day.startOf('day'))}
+              className={clsx(
+                'flex min-h-[48px] flex-col items-center justify-center rounded-[10px]',
+                out && 'opacity-30',
+                isToday && 'bg-pqBrand text-pqOnBrand',
+                !isToday && !out && 'bg-pqSettings text-pqText'
+              )}
+            >
+              <span className="text-[14px] font-[600]">{day.format('D')}</span>
+              {count > 0 && (
+                <span
+                  className={clsx(
+                    'mt-[2px] size-[5px] rounded-full',
+                    isToday ? 'bg-pqOnBrand' : 'bg-pqBrand'
+                  )}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 /** ListItem + drag source so Day hour drops still receive posts. */
 const DayDraggableListItem: FC<{
   editPost: () => void;
@@ -2794,6 +2982,7 @@ const DayDraggableListItem: FC<{
 }> = memo((props) => {
   const { post, ...rest } = props;
   const demo = isClientDemoPost(post.id);
+  const { touch } = useViewport();
   const [{ opacity }, dragRef] = useDrag(
     () => ({
       type: 'post',
@@ -2803,12 +2992,12 @@ const DayDraggableListItem: FC<{
         state: post.state,
         source: 'calendar' as const,
       },
-      canDrag: !demo,
+      canDrag: !demo && !touch,
       collect: (monitor) => ({
         opacity: monitor.isDragging() ? 0.4 : 1,
       }),
     }),
-    [demo, post.id, post.intervalInDays, post.state]
+    [demo, post.id, post.intervalInDays, post.state, touch]
   );
   return (
     <div ref={dragRef as any} style={{ opacity }} className="min-w-0">

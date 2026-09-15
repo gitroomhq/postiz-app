@@ -48,6 +48,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import clsx from 'clsx';
+import { postHasPreview } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
 
 export const Providers = [
   {
@@ -225,7 +226,7 @@ export const ShowAllProviders = forwardRef((props, ref) => {
       const values = custom?.integrationValue?.length
         ? custom.integrationValue
         : global;
-      return !!values?.[0]?.content?.length;
+      return postHasPreview(values?.[0]);
     });
   }, [selectedIntegrations, previewFocus, internal, global]);
 

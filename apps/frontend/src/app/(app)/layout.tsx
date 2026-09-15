@@ -5,7 +5,7 @@ import '../global.css';
 import 'react-tooltip/dist/react-tooltip.css';
 import '@copilotkit/react-ui/styles.css';
 import LayoutContext from '@gitroom/frontend/components/layout/layout.context';
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
 import clsx from 'clsx';
 import { VariableContextComponent } from '@gitroom/react/helpers/variable.context';
@@ -44,6 +44,12 @@ function metadataBaseUrl(): URL {
   // Only reached without a usable FRONTEND_URL. postqueen.com is not ours.
   return new URL('http://localhost:4200');
 }
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),

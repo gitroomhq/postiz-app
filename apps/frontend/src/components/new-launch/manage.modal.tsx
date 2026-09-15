@@ -51,7 +51,8 @@ import { Spinner } from '@gitroom/react/ui/spinner';
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
+  const [composerPane, setComposerPane] = useState<'edit' | 'preview'>('edit');
   const ref = useRef(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
@@ -614,19 +615,23 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className="relative flex h-full w-full flex-1 p-[40px] tablet:p-[16px] mobile:p-0">
+    <div className={clsx(
+      'relative flex h-full w-full flex-1',
+      touch ? 'p-0' : 'p-[40px]'
+    )}>
       <div className="flex flex-1 flex-col overflow-hidden rounded-[20px] bg-pqInner shadow-pq mobile:rounded-none">
         <div
           className={clsx(
-            'flex flex-1',
-            // Design <760: editor + preview stack; preview capped ~340px.
-            mobile ? 'flex-col' : 'flex-row'
+            'flex min-h-0 flex-1',
+            // Phone/tablet: Edit | Preview tabs. Preview fills leftover height.
+            touch ? 'flex-col' : 'flex-row'
           )}
         >
           <div
             className={clsx(
               'flex min-h-0 flex-1 flex-col',
-              !mobile && 'border-e border-pqBorder'
+              !touch && 'border-e border-pqBorder',
+              touch && composerPane !== 'edit' && 'hidden'
             )}
           >
             <div className="flex h-[65px] items-center gap-[12px] rounded-ss-[20px] border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none">
@@ -637,6 +642,44 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
               />
+              {touch && (
+                <div className="ms-auto flex items-center gap-[8px]">
+                  <div className="flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
+                    <button
+                      type="button"
+                      onClick={() => setComposerPane('edit')}
+                      className={clsx(
+                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                        composerPane === 'edit'
+                          ? 'bg-pqInner text-pqText shadow-pqE1'
+                          : 'text-pqSoft'
+                      )}
+                    >
+                      {t('edit', 'Edit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setComposerPane('preview')}
+                      className={clsx(
+                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                        composerPane === 'preview'
+                          ? 'bg-pqInner text-pqText shadow-pqE1'
+                          : 'text-pqSoft'
+                      )}
+                    >
+                      {t('preview', 'Preview')}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={askClose}
+                    aria-label={t('close', 'Close')}
+                    className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                  >
+                    <CloseIcon size={16} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex-1 flex flex-col gap-[16px]">
               <div
@@ -646,7 +689,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   id="social-content"
                   className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
                 >
-                  <div className="flex w-full items-start gap-[16px]">
+                  <div className={clsx(
+                    'flex w-full items-start gap-[16px]',
+                    touch && 'flex-col'
+                  )}>
                     <div className="flex min-w-0 flex-1 flex-col gap-[12px]">
                       <div className="flex items-center gap-[8px]">
                         <span className="text-[11px] font-[700] uppercase tracking-[0.06em] text-pqSoft">
@@ -738,23 +784,54 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div
             className={clsx(
               'flex flex-col',
-              mobile
-                ? 'w-full max-h-[340px] shrink-0 border-t border-pqBorder'
+              touch
+                ? clsx(
+                    'w-full min-h-0 flex-1',
+                    composerPane !== 'preview' && 'hidden'
+                  )
                 : 'w-[580px]'
             )}
           >
             <div
               className={clsx(
                 'flex h-[65px] items-center border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none',
-                !mobile && 'rounded-se-[20px]'
+                !touch && 'rounded-se-[20px]'
               )}
             >
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
+              {touch && (
+                <div className="me-[8px] flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
+                  <button
+                    type="button"
+                    onClick={() => setComposerPane('edit')}
+                    className={clsx(
+                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                      composerPane === 'edit'
+                        ? 'bg-pqInner text-pqText shadow-pqE1'
+                        : 'text-pqSoft'
+                    )}
+                  >
+                    {t('edit', 'Edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComposerPane('preview')}
+                    className={clsx(
+                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
+                      composerPane === 'preview'
+                        ? 'bg-pqInner text-pqText shadow-pqE1'
+                        : 'text-pqSoft'
+                    )}
+                  >
+                    {t('preview', 'Preview')}
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={askClose}
                 aria-label={t('close', 'Close')}
-                className="grid h-[30px] w-[30px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
               >
                 <CloseIcon size={16} />
               </button>
@@ -769,24 +846,50 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-pqBorder flex min-w-0 items-center">
-          <div className="flex min-w-0 flex-1 items-center gap-[8px] overflow-x-auto overflow-y-hidden ps-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent">
+        <div
+          className={clsx(
+            'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
+            'max-[1179px]:flex-col max-[1179px]:gap-[10px] max-[1179px]:overflow-x-hidden max-[1179px]:px-[16px] max-[1179px]:py-[12px]',
+            touch
+              ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
+              : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent min-[1180px]:flex-row'
+          )}
+        >
+          <div
+            className={clsx(
+              'min-w-0 gap-[8px]',
+              'max-[1179px]:grid max-[1179px]:w-full max-[1179px]:grid-cols-2',
+              touch
+                ? 'grid w-full grid-cols-2'
+                : 'flex flex-1 items-center ps-[20px] min-[1180px]:flex'
+            )}
+          >
             {!dummy && (
-              <TagsComponent
-                name="tags"
-                label={t('tags', 'Tags')}
-                initial={tags}
-                onChange={(e) => {
-                  setTags(e.target.value);
-                }}
-              />
+              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+                <TagsComponent
+                  name="tags"
+                  label={t('tags', 'Tags')}
+                  initial={tags}
+                  onChange={(e) => {
+                    setTags(e.target.value);
+                  }}
+                />
+              </div>
             )}
 
             {!dummy && (
-              <RepeatComponent repeat={repeater} onChange={setRepeater} />
+              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+                <RepeatComponent repeat={repeater} onChange={setRepeater} />
+              </div>
             )}
           </div>
-          <div className="flex shrink-0 items-center justify-end gap-[8px] pe-[20px]">
+          <div
+            className={clsx(
+              'flex min-w-0 items-center justify-end gap-[8px]',
+              'max-[1179px]:w-full max-[1179px]:flex-col',
+              touch ? 'w-full flex-col' : 'shrink-0 pe-[20px]'
+            )}
+          >
             <ComposeAiAssistant />
             {existingData?.integration && (
               <button
@@ -799,28 +902,55 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <div>{t('delete_post', 'Delete Post')}</div>
               </button>
             )}
-            <DatePicker onChange={setDate} date={date} />
+            <DatePicker
+              onChange={setDate}
+              date={date}
+              className="max-[1179px]:!ml-0 max-[1179px]:w-full max-[1179px]:!flex-none"
+            />
+            <div
+              className={clsx(
+                'flex min-w-0 items-center justify-end gap-[8px]',
+                'max-[1179px]:w-full',
+                touch && 'w-full'
+              )}
+            >
             {!addEditSets && (
               <button
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
                 onClick={schedule('draft')}
-                className="relative flex h-[42px] cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple px-[18px] text-[14px] font-[600] disabled:cursor-not-allowed"
+                className={clsx(
+                  'relative flex cursor-pointer items-center justify-center overflow-hidden rounded-[10px] bg-btnSimple text-[14px] font-[600] disabled:cursor-not-allowed',
+                  'max-[1179px]:h-[44px] max-[1179px]:min-w-0 max-[1179px]:flex-1 max-[1179px]:px-[12px]',
+                  touch
+                    ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                    : 'h-[42px] px-[18px]'
+                )}
               >
                 {loading && (
                   <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] text-textColor">
                     <Spinner width={20} height={20} />
                   </div>
                 )}
-                <div className={clsx(loading && 'invisible')}>
+                <div
+                  className={clsx(
+                    'min-w-0 truncate whitespace-nowrap',
+                    loading && 'invisible'
+                  )}
+                >
                   {t('save_as_draft', 'Save as Draft')}
                 </div>
               </button>
             )}
             {addEditSets && (
               <button
-                className="btnSub flex h-[42px] min-w-[168px] items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                className={clsx(
+                  'btnSub flex items-center justify-center gap-[8px] rounded-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                  touch
+                    ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                    : 'h-[42px] min-w-[168px] px-[18px]'
+                )}
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -830,27 +960,35 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="relative" ref={postNowClickRef}>
-                <div className="flex" ref={postNowRef}>
+              <div className={clsx('relative', touch && 'flex min-w-0 flex-1')} ref={postNowClickRef}>
+                <div className={clsx('flex min-w-0', touch && 'w-full')} ref={postNowRef}>
                   <button
                     type="button"
                     disabled={
                       selectedIntegrations.length === 0 || loading || locked
                     }
                     onClick={schedule('schedule')}
-                    className="btnSub relative flex h-[42px] min-w-[168px] items-center justify-center rounded-s-[10px] bg-pqBrand px-[18px] text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                    className={clsx(
+                      'btnSub relative flex min-w-0 items-center justify-center overflow-hidden rounded-s-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                      'max-[1179px]:h-[44px] max-[1179px]:flex-1 max-[1179px]:px-[12px] max-[1179px]:min-w-0',
+                      touch
+                        ? 'h-[44px] min-w-0 flex-1 px-[12px]'
+                        : 'h-[42px] min-w-[168px] px-[18px]'
+                    )}
                   >
                     {loading && (
                       <div className="absolute left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%] text-white">
                         <Spinner width={20} height={20} />
                       </div>
                     )}
-                    <span className={clsx(loading && 'invisible')}>
+                    <span
+                      className={clsx(
+                        'min-w-0 truncate whitespace-nowrap',
+                        loading && 'invisible'
+                      )}
+                    >
                       {selectedIntegrations.length === 0
-                        ? t(
-                            'check_circles_above',
-                            'Check the circles above to pick a channel'
-                          )
+                        ? t('select_channels', 'Select channels')
                         : dummy
                         ? t('create_output', 'Create output')
                         : !existingData?.integration
@@ -870,7 +1008,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       aria-label={t('more', 'More')}
                       data-tooltip-id="tooltip"
                       data-tooltip-content={t('more', 'More')}
-                      className="grid h-[42px] w-[38px] place-items-center rounded-e-[10px] bg-pqBrand text-white shadow-[inset_1px_0_0_rgba(255,255,255,.24)] outline-none disabled:cursor-not-allowed disabled:opacity-80"
+                      className={clsx(
+                        'grid w-[38px] shrink-0 place-items-center rounded-e-[10px] bg-pqBrand text-white shadow-[inset_1px_0_0_rgba(255,255,255,.24)] outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                        touch ? 'h-[44px]' : 'h-[42px]'
+                      )}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -909,6 +1050,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

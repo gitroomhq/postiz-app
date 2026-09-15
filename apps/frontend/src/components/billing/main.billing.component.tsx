@@ -980,7 +980,7 @@ export const MainBillingComponent: FC<{
   return (
     <div className="flex flex-col gap-[24px]">
       <div className="flex flex-wrap items-center gap-[16px]">
-        <div className="flex min-w-[200px] flex-1 flex-col gap-[4px]">
+        <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
           <h2 className="font-display text-[26px] font-[600] -tracking-[0.02em] text-pqText">
             {t('plans', 'Plans')}
           </h2>
@@ -1075,7 +1075,7 @@ export const MainBillingComponent: FC<{
               />
             </svg>
           </div>
-          <div className="min-w-[220px] flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[14.5px] font-[600] -tracking-[0.01em] text-pqText">
               {t('payment_failed_title', 'We could not charge your credit card')}
             </div>
@@ -1183,7 +1183,7 @@ export const MainBillingComponent: FC<{
               />
             </svg>
           </div>
-          <div className="min-w-[220px] flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[14.5px] font-[600] -tracking-[0.01em] text-pqText">
               {t('discount_active', '{{percent}}% discount active', {
                 percent: discount.percentOff,
@@ -1236,7 +1236,7 @@ export const MainBillingComponent: FC<{
               />
             </svg>
           </div>
-          <div className="min-w-[220px] flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[14.5px] font-[600] -tracking-[0.01em] text-pqText">
               {t(
                 'cancel_notice_title',
@@ -1460,7 +1460,7 @@ export const MainBillingComponent: FC<{
           `moveToCheckout('FREE')` flow behind it, dialogs and all. */}
       {!!subscription?.id && (
         <div className="flex flex-wrap items-center gap-[12px] rounded-[14px] bg-pqInner p-[16px_18px] outline outline-1 -outline-offset-1 outline-pqBorder">
-          <div className="min-w-[200px] flex-1">
+          <div className="min-w-0 flex-1">
             <div className="text-[14px] font-[600] text-pqText">
               {t('portal_row_title', 'Payment method & invoices')}
             </div>

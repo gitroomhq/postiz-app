@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { useTourRunning } from '@gitroom/frontend/components/onboarding/tour';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 
 /**
  * Leave the Settings intercepting overlay (`@modal/(.)settings`) for another
@@ -84,6 +85,7 @@ export const RouteOverlayScrim: FC<{
   children: ReactNode;
 }> = ({ mode, kind, onClose, children }) => {
   const [body, setBody] = useState<HTMLElement | null>(null);
+  const { touch } = useViewport();
   const active = useRouteOverlayActive(kind);
   // Two scrims do not read as one darker scrim, they read as a broken
   // spotlight: the tour dims the app and cuts a hole over the step's target,
@@ -111,8 +113,10 @@ export const RouteOverlayScrim: FC<{
       {...dataAttrs}
       data-route-mode={mode}
       className={clsx(
-        'fixed inset-0 z-[90] flex items-center justify-center',
-        'p-[44px_24px] [@media(max-width:1180px)]:p-[20px] [@media(max-width:760px)]:p-0',
+        // Above header z-40 and rail z-45 so the card is not clipped by
+        // chrome. Create Post modals start at 200; sheets sit at 240.
+        'fixed inset-0 z-[220] flex items-center justify-center',
+        touch ? 'p-0' : 'p-[44px_24px]',
         !tourRunning && 'bg-pqPopup'
       )}
       // Dismiss-on-outside-click is right when the person opened this. During

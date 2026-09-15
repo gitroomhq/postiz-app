@@ -30,6 +30,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useAiAvailable } from '@gitroom/frontend/components/layout/user.context';
 import { PlugsDetailGhost } from '@gitroom/frontend/components/layout/loading';
 import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 export function convertBackRegex(s: string) {
   const matches = s.match(/\/(.*)\/([a-z]*)/);
   const pattern = matches?.[1] || '';
@@ -216,6 +217,7 @@ export const PlugItem: FC<{
 }> = (props) => {
   const { plug, addPlug, data, channelLabel } = props;
   const t = useT();
+  const { touch } = useViewport();
   const [activated, setActivated] = useState(!!data?.activated);
   useEffect(() => {
     setActivated(!!data?.activated);
@@ -281,7 +283,10 @@ export const PlugItem: FC<{
           e.stopPropagation();
           addPlug(data);
         }}
-        className="self-start rounded-pqSm bg-pqSettings px-[12px] py-[6px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+        className={clsx(
+          'self-start rounded-pqSm bg-pqSettings px-[12px] text-[12.5px] font-[600] text-pqText transition-colors hover:bg-pqHover',
+          touch ? 'h-[44px] min-h-[44px] px-[16px]' : 'py-[6px]'
+        )}
       >
         {ctaLabel}
       </button>
@@ -290,6 +295,7 @@ export const PlugItem: FC<{
 };
 export const Plug = () => {
   const plug = usePlugs();
+  const { mobile } = useViewport();
   const modals = useModals();
   const fetch = useFetch();
   const load = useCallback(async () => {
@@ -332,7 +338,14 @@ export const Plug = () => {
     return <PlugsDetailGhost />;
   }
   return (
-    <div className="mx-auto grid w-full max-w-[1000px] grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[10px]">
+    <div
+      className={clsx(
+        'mx-auto grid w-full max-w-[1000px] gap-[10px]',
+        mobile
+          ? 'grid-cols-1'
+          : 'grid-cols-[repeat(auto-fill,minmax(320px,1fr))]'
+      )}
+    >
       {plug.plugs.map((p) => (
         <PlugItem
           key={p.title + '-' + plug.providerId}

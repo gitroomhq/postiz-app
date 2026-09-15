@@ -45,6 +45,7 @@ export const PreviewMediaFrame: FC<{
 
   return (
     <div
+      data-pq="preview-media"
       className={clsx('relative w-full overflow-hidden bg-black/20', className)}
       style={{ aspectRatio: `${displayWH} / 1` }}
     >
