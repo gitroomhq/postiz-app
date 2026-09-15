@@ -1082,7 +1082,7 @@
   "plan_invoices_description": "Manage your subscription, payment method and invoices",
   "current_plan": "Current plan",
   "plan_lifetime_note": "One payment, done. Nothing renews and nothing is billed again.",
-  "invoices_none_lifetime": "There are no invoices — a founding member is never billed again.",
+  "invoices_none_lifetime": "No recurring invoices. Receipts for the one-time founding payment are in the billing portal.",
   "view_founding_membership": "View your founding membership",
   "invoices_live_in_portal": "Invoices, receipts and your payment method live in the billing portal.",
   "open_billing_portal": "Open billing portal",

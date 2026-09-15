@@ -1561,7 +1561,6 @@ please_fix_your_settings
 please_type_your_prompt
 please_wait
 portal_row_sub
-portal_row_sub_lifetime
 portal_row_title
 post
 post_already_published_drag

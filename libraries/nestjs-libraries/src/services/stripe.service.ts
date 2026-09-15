@@ -1264,6 +1264,12 @@ export class StripeService extends PaymentProviderAbstract {
 
   async portalLink(organizationId: string) {
     const customer = await this.getCustomerByOrganizationId(organizationId);
+    if (!customer) {
+      throw new HttpException(
+        'No billing customer on this organization.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
     return this.createBillingPortalLink(customer);
   }
 
