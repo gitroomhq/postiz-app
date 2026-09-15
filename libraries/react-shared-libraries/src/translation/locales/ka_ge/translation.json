@@ -57,6 +57,7 @@
   "channels": "არხები",
   "activate": "აქტივაცია",
   "this_channel_needs_to_be_refreshed": "ამ არხს განახლება სჭირდება,",
+  "no_data_in_this_period": "ამ პერიოდში მონაცემები არ არის",
   "click_here_to_refresh": "დააჭირეთ აქ განახლებისთვის",
   "can_t_show_analytics_yet": "ჯერ ანალიტიკა მიუწვდომელია",
   "you_have_to_add_social_media_channels": "დაამატეთ სოციალური მედიის არხები",

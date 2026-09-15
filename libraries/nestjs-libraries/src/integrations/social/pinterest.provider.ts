@@ -552,9 +552,7 @@ export class PinterestProvider
       .subtract(Math.min(date, 89), 'day')
       .format('YYYY-MM-DD');
 
-    const {
-      all: { daily_metrics },
-    } = await (
+    const json = await (
       await fetch(
         `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
         {
@@ -566,6 +564,11 @@ export class PinterestProvider
         }
       )
     ).json();
+    this.throwIfCannotFetch(json);
+    const daily_metrics = json?.all?.daily_metrics;
+    if (!daily_metrics) {
+      return [];
+    }
 
     return daily_metrics.reduce(
       (acc: any, item: any) => {

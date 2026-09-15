@@ -26,3 +26,13 @@ describe('mobile safe-area utilities', () => {
     assert.match(source, /\.pq-tap \{[\s\S]*min-height:\s*44px/);
   });
 });
+
+describe('pqfadeDown entry', () => {
+  it('does not restate a -50% X translate that would slide an end-anchored toast', () => {
+    const pqfadeDown = source.match(/@keyframes pqfadeDown \{[\s\S]*?\n\}/)?.[0];
+    assert.ok(pqfadeDown, 'pqfadeDown keyframes must exist');
+    assert.doesNotMatch(pqfadeDown, /translate\(-50%/);
+    assert.match(pqfadeDown, /translateY\(-16px\)/);
+    assert.match(pqfadeDown, /translateY\(0\)/);
+  });
+});

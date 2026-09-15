@@ -58,6 +58,7 @@
   "channels": "ערוצים",
   "activate": "הפעל",
   "this_channel_needs_to_be_refreshed": "הערוץ הזה צריך לרענון,",
+  "no_data_in_this_period": "אין נתונים בתקופה זו",
   "click_here_to_refresh": "לחץ כאן לרענון",
   "can_t_show_analytics_yet": "לא ניתן להציג נתוני אנליטיקה עדיין",
   "you_have_to_add_social_media_channels": "עליך להוסיף ערוצי מדיה חברתית",

@@ -15,6 +15,7 @@ import { readOrFetch } from '@gitroom/nestjs-libraries/integrations/read.or.fetc
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   stripQuery,
@@ -1508,7 +1509,18 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           },
         ],
       }));
-    } catch (err) {
+    } catch (err: any) {
+      if (
+        err instanceof RefreshToken ||
+        err instanceof Disconnect ||
+        err instanceof BadBody
+      ) {
+        throw err;
+      }
+      // twitter-api-v2 throws ApiResponseError, which never passes through
+      // this.fetch/handleErrors: classify it here so revoked tokens and
+      // missing scopes fail as reconnect, not as an empty period.
+      this.throwIfCannotFetch(err, err?.code);
       console.log(err);
     }
     return [];
@@ -1597,7 +1609,15 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
+    } catch (err: any) {
+      if (
+        err instanceof RefreshToken ||
+        err instanceof Disconnect ||
+        err instanceof BadBody
+      ) {
+        throw err;
+      }
+      this.throwIfCannotFetch(err, err?.code);
       console.log('Error fetching X post analytics:', err);
     }
 

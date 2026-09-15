@@ -964,11 +964,13 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     // require Graph API v23.0+:
     //   - page_total_media_view_unique: total unique views on the page's media (reach)
     //   - page_media_view: total media views, broken down between paid and organic
-    const { data } = await (
+    const json = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+    this.throwIfCannotFetch(json);
+    const { data } = json;
 
     // page_media_view returns paid/organic breakdowns as an object; sum them to
     // keep the single-total UI working.

@@ -35,7 +35,7 @@ export const ChannelsListEmpty: FC<{ hint?: string }> = ({ hint }) => {
         <div className="text-[13.5px] font-[600] text-pqText">
           {t('no_channels', 'No channels yet')}
         </div>
-        <div className="text-[12px] leading-[1.45] text-pqMuted text-pretty">
+          <div className="text-[12.5px] leading-[1.45] text-pqMuted text-pretty">
           {hint ??
             t(
               'channels_list_empty_hint',
