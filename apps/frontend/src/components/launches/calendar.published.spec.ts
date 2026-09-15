@@ -14,27 +14,28 @@ const weekStart = calendar.indexOf(
   'The error marker moved into the card',
 );
 const listStart = calendar.indexOf('const ListItem:');
+const listEnd = calendar.indexOf('const DayHourSection');
 const monthBlock = calendar.slice(monthStart, dayStart);
 const dayBlock = calendar.slice(dayStart, weekStart);
 const weekBlock = calendar.slice(weekStart, listStart);
+const listBlock = calendar.slice(
+  listStart,
+  listEnd > listStart ? listEnd : calendar.length,
+);
 
 function publishedClass(block: string) {
-  const call = block.indexOf("t('published', 'Published')");
-  assert.ok(call >= 0, 'Published label is printed');
-  const spanOpen = '<span className="';
+  assert.match(block, /t\('published', 'Published'\)/);
+  const re = /className="([^"]*)"/g;
   let chosen = '';
-  for (
-    let from = block.indexOf(spanOpen);
-    from >= 0 && from < call;
-    from = block.indexOf(spanOpen, from + spanOpen.length)
-  ) {
-    const start = from + spanOpen.length;
-    const quote = block.indexOf('"', start);
-    if (quote < 0 || quote > call) {
-      continue;
-    }
-    const cls = block.slice(start, quote);
-    if (cls.includes('shrink-0') && cls.includes('whitespace-nowrap')) {
+  let match;
+  while ((match = re.exec(block))) {
+    const cls = match[1];
+    if (cls.includes('invisible')) continue;
+    if (
+      cls.includes('shrink-0') &&
+      cls.includes('whitespace-nowrap') &&
+      (cls.includes('bg-pqOkSoft') || cls.includes('text-pqOk'))
+    ) {
       chosen = cls;
     }
   }
@@ -48,11 +49,13 @@ describe('calendar published label', () => {
     assert.match(monthBlock, /t\('published', 'Published'\)/);
   });
 
-  it('lets month time and title shrink so Published cannot clip to PUBLIS', () => {
+  it('puts month Published at the end so the title starts after time', () => {
     const cls = publishedClass(monthBlock);
     assert.match(cls, /shrink-0/);
     assert.match(cls, /whitespace-nowrap/);
+    assert.match(cls, /ms-auto/);
     assert.doesNotMatch(cls, /truncate/);
+    assert.doesNotMatch(monthBlock, /right-\[/);
     assert.match(
       monthBlock,
       /min-w-0 truncate text-\[10px\] font-\[700\] text-pqMuted/,
@@ -61,6 +64,11 @@ describe('calendar published label', () => {
       monthBlock,
       /min-w-0 flex-1 truncate text-\[10\.5px\] text-pqText/,
     );
+    const title = monthBlock.indexOf(
+      'min-w-0 flex-1 truncate text-[10.5px] text-pqText',
+    );
+    const chip = monthBlock.indexOf("t('published', 'Published')");
+    assert.ok(title >= 0 && chip > title, 'title precedes Published on the chip');
   });
 
   it('keeps day Published on a nowrap shrink-0 chip while the name truncates', () => {
@@ -68,40 +76,45 @@ describe('calendar published label', () => {
     assert.match(cls, /shrink-0/);
     assert.match(cls, /whitespace-nowrap/);
     assert.doesNotMatch(cls, /truncate/);
+    assert.doesNotMatch(dayBlock, /right-\[/);
     assert.match(dayBlock, /min-w-0 truncate text-\[11\.5px\] text-pqSoft/);
+    assert.match(dayBlock, /data-published-at="header"/);
+    assert.match(dayBlock, /data-published-at="title"/);
+    assert.match(dayBlock, /ms-auto flex h-\[16px\] shrink-0/);
   });
 
-  it('puts week Published on the title row, not the overflow-hidden time row', () => {
+  it('places list/day-agenda Published at the header end, else under the title at start', () => {
+    assert.match(listBlock, /data-published-at=\{\s*state === 'PUBLISHED' \? 'header' : undefined/);
+    assert.match(listBlock, /data-published-at="title"/);
+    assert.match(listBlock, /ms-auto flex h-\[20px\] shrink-0/);
+    assert.doesNotMatch(listBlock, /right-\[/);
+    const cls = publishedClass(listBlock);
+    assert.match(cls, /shrink-0/);
+    assert.match(cls, /whitespace-nowrap/);
+  });
+
+  it('places week Published on the header end when the card has room, else under the title at start', () => {
     const cls = publishedClass(weekBlock);
     assert.match(cls, /shrink-0/);
     assert.match(cls, /whitespace-nowrap/);
     assert.doesNotMatch(cls, /truncate/);
+    assert.doesNotMatch(weekBlock, /right-\[/);
+    assert.match(weekBlock, /data-published-at="header"/);
+    assert.match(weekBlock, /data-published-at="title"/);
+    assert.match(weekBlock, /ms-auto flex h-\[14px\] shrink-0/);
+    assert.match(calendar, /function usePublishedOnHeader/);
 
-    const timeRow = weekBlock.indexOf(
-      'flex min-w-0 items-center gap-[5px]',
-    );
-    const timeRowEnd = weekBlock.indexOf(
-      '<div className="flex min-w-0 items-start gap-[4px]">',
-      timeRow,
-    );
-    const chip = weekBlock.indexOf(
-      'flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft',
-    );
+    const headerChip = weekBlock.indexOf('data-published-at="header"');
+    const titleChip = weekBlock.indexOf('data-published-at="title"');
     const title = weekBlock.indexOf(
       "'min-w-0 flex-1 break-words text-start text-[11px] leading-[1.3] text-pqText'",
-      chip,
     );
-    assert.ok(timeRow >= 0, 'week time row exists');
-    assert.ok(timeRowEnd > timeRow, 'week title row follows the time row');
-    assert.ok(chip > timeRowEnd, 'Published is not a time-row sibling');
-    assert.ok(title > chip, 'title shrinks beside Published, not the chip');
+    assert.ok(headerChip >= 0, 'header placement exists');
+    assert.ok(titleChip > headerChip, 'title-row fallback follows the header chip');
+    assert.ok(title > titleChip, 'title still starts on its own row, left');
     assert.match(
-      weekBlock.slice(timeRow, timeRowEnd),
+      weekBlock,
       /min-w-0 truncate text-\[10px\] font-\[700\] -tracking-\[0\.1px\]/,
-    );
-    assert.doesNotMatch(
-      weekBlock.slice(timeRow, timeRowEnd),
-      /t\('published', 'Published'\)/,
     );
   });
 

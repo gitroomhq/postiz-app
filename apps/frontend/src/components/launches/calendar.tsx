@@ -6,6 +6,7 @@ import React, {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -71,6 +72,7 @@ import { useTour } from '@gitroom/frontend/components/onboarding/tour';
 import { Skeleton } from '@gitroom/react/ui/skeleton';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 import { CalendarMoveButton } from '@gitroom/frontend/components/layout/move-post-sheet';
+import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -119,6 +121,164 @@ export function displayPostState(
     return 'PUBLISHED';
   }
   return state;
+}
+
+/**
+ * How many week-hour previews fit in the cell without clipping See all.
+ *
+ * Compact 1-line cards are ~38px; the chip is 19px; cell chrome is 6px pad
+ * + 3px gaps. A 108px hour therefore holds two previews, and a shorter
+ * (phone/tablet) hour holds one. Month stays on its own 3-chip cap.
+ */
+const WEEK_PREVIEW_H = 38;
+const WEEK_CHIP_H = 19;
+const WEEK_SLOT_GAP = 3;
+const WEEK_SLOT_PAD = 6;
+const WEEK_SLOT_MAX = 2;
+
+export function weekSlotPreviewCount(slotHeight: number, total: number): number {
+  if (total <= 0) return 0;
+  if (total === 1) return 1;
+  const inner = Math.max(0, slotHeight - WEEK_SLOT_PAD);
+  const chip = total > WEEK_SLOT_MAX ? WEEK_CHIP_H + WEEK_SLOT_GAP : 0;
+  const budget = inner - chip;
+  const fit = Math.floor(
+    (budget + WEEK_SLOT_GAP) / (WEEK_PREVIEW_H + WEEK_SLOT_GAP)
+  );
+  return Math.max(1, Math.min(WEEK_SLOT_MAX, total, fit || 1));
+}
+
+const isVideoPath = (path: string) =>
+  hasExtension(path, 'mp4') || /\.webm$/i.test(path);
+
+/**
+ * First image/video on a calendar post. `Post.image` is a JSON string on the
+ * list/calendar payload and an array after `/posts/group/:id`. No media →
+ * null, so the card keeps today's layout (no empty hole).
+ */
+export function firstCalendarMedia(image: unknown): {
+  src: string;
+  video: boolean;
+} | null {
+  let list: unknown = image;
+  if (typeof image === 'string') {
+    const trimmed = image.trim();
+    if (!trimmed || trimmed === '[]' || trimmed === 'null') return null;
+    try {
+      list = JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const first = list.find(
+    (item): item is { path?: string; thumbnail?: string } =>
+      !!item && typeof item === 'object'
+  );
+  const path = typeof first?.path === 'string' ? first.path : '';
+  if (!path) return null;
+  const video = isVideoPath(path);
+  const thumb =
+    typeof first.thumbnail === 'string' && first.thumbnail
+      ? first.thumbnail
+      : '';
+  return { src: video && thumb ? thumb : path, video };
+}
+
+function CalendarMediaThumb({
+  image,
+  size,
+  className,
+}: {
+  image: unknown;
+  size: 'week' | 'month' | 'day';
+  className?: string;
+}) {
+  const media = firstCalendarMedia(image);
+  if (!media) return null;
+  const videoEl = media.video && isVideoPath(media.src);
+  return (
+    <span
+      data-ci-media={size}
+      className={clsx(
+        'relative shrink-0 overflow-hidden bg-pqSettings',
+        className
+      )}
+    >
+      {videoEl ? (
+        <video
+          className="h-full w-full object-cover"
+          src={`${media.src}#t=0.1`}
+          preload="metadata"
+          muted
+          playsInline
+          aria-hidden
+        />
+      ) : (
+        <img
+          className="h-full w-full object-cover"
+          src={media.src}
+          alt=""
+          decoding="async"
+        />
+      )}
+      {media.video && (
+        <span
+          className="pointer-events-none absolute inset-0 grid place-items-center"
+          aria-hidden
+        >
+          <span
+            data-ci-media-play="1"
+            className="grid place-items-center rounded-full bg-pqMediaScrim text-pqOnBrand"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M9 6.8v10.4L18 12 9 6.8Z" />
+            </svg>
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+const HEADER_BADGE_GAP = 5;
+
+/**
+ * Put Published on the header end when the card is wide enough that the chip
+ * would not collide with icons/time; otherwise keep it under the title at
+ * start (the previous layout). Measures this card, not the viewport — week
+ * columns, day cards, and RTL all share it. `ms-auto` mirrors in RTL.
+ */
+function usePublishedOnHeader(enabled: boolean) {
+  const headerRef = useRef<HTMLDivElement>(null);
+  const leadRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLSpanElement>(null);
+  const [onHeader, setOnHeader] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setOnHeader(false);
+      return;
+    }
+    const header = headerRef.current;
+    const lead = leadRef.current;
+    const badge = badgeRef.current;
+    if (!header || !lead || !badge) return;
+    const measure = () => {
+      setOnHeader(
+        header.clientWidth - lead.offsetWidth - HEADER_BADGE_GAP >=
+          badge.offsetWidth
+      );
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(header);
+    ro.observe(lead);
+    ro.observe(badge);
+    measure();
+    return () => ro.disconnect();
+  }, [enabled]);
+
+  return { headerRef, leadRef, badgeRef, onHeader };
 }
 
 function postChannelHandle(
@@ -1206,24 +1366,27 @@ export const CalendarColumn: FC<{
     // Design: overflow opens the Posts list for that day — not in-cell expand.
     openPostsForDay(getDate.startOf('day'));
   }, [openPostsForDay, getDate]);
-  // Prototype week: >2 groups → show 1 card + See all N. Month: up to 3 + +N more.
-  // Painting three full cards in a 108px week cell was clipping content and actions.
+  const cellEl = useRef<HTMLDivElement | null>(null);
+  const [weekVisible, setWeekVisible] = useState(WEEK_SLOT_MAX);
+  // Fit as many week previews as the hour height allows (typically 2 in 108px).
+  // A third full card still clips, so overflow is See all, not another card.
+  // Month stays dense at 3 chips + +N more.
   const list = useMemo(() => {
-    if (display === 'week' && postList.length > 2) {
-      return postList.slice(0, 1);
+    if (display === 'week') {
+      return postList.slice(0, weekVisible);
     }
     if (display === 'month') {
       return postList.slice(0, 3);
     }
     return postList;
-  }, [postList, display]);
+  }, [postList, display, weekVisible]);
   const showOverflowChip =
     display === 'week'
-      ? postList.length > 2
+      ? postList.length > weekVisible
       : display === 'month'
       ? postList.length > 3
       : false;
-  const cellClampTwo = display === 'week' && postList.length === 2;
+  const cellClampTwo = display === 'week' && list.length >= 2;
 
   const isBeforeNow = useMemo(() => {
     const originalUtc = getDate.startOf('hour');
@@ -1413,6 +1576,27 @@ export const CalendarColumn: FC<{
     ]
   );
 
+  const setCellRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      cellEl.current = node;
+      drop(node);
+    },
+    [drop]
+  );
+
+  useLayoutEffect(() => {
+    if (display !== 'week') return;
+    const el = cellEl.current;
+    if (!el) return;
+    const apply = () => {
+      setWeekVisible(weekSlotPreviewCount(el.clientHeight, postList.length));
+    };
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    apply();
+    return () => ro.disconnect();
+  }, [display, postList.length]);
+
   const addModal = useCallback(async () => {
     const set: any = !sets.length
       ? undefined
@@ -1502,7 +1686,7 @@ export const CalendarColumn: FC<{
     // top/gutter hairlines (`dayRows` template) — no extra borders here, or they
     // read as the white lines on the old autopost bands.
     <div
-      ref={drop as any}
+      ref={setCellRef as any}
       data-cell="1"
       // The slot this cell owns, so anything outside the grid can find a cell
       // by date without knowing the column order (design: `data-slot`).
@@ -1510,6 +1694,7 @@ export const CalendarColumn: FC<{
       data-dayslot={isDay ? '1' : undefined}
       data-filled={postList.length ? '1' : '0'}
       data-past={isBeforeNow ? '1' : '0'}
+      data-slot-previews={list.length}
       // Week never stacks: overflow is See all, not hover-scroll (prototype stackAttr:0).
       // Day grows with its posts (prototype min-height 64, no max).
       data-stack={
@@ -1573,9 +1758,9 @@ export const CalendarColumn: FC<{
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className={clsx(
-            'flex w-full flex-col text-[12px]',
+            'flex w-full shrink-0 flex-col justify-start text-[12px]',
             isDay ? 'gap-[6px]' : 'gap-[3px]',
-            isBeforeNow ? 'flex-1' : 'cursor-pointer'
+            !isBeforeNow && 'cursor-pointer'
           )}
         >
           {/* One pulse, not two. The cell itself used to pulse as well, and
@@ -1675,6 +1860,8 @@ export const CalendarColumn: FC<{
                   ? 'flex-1 min-h-[40px] w-full'
                   : !postList.length
                   ? 'min-h-full w-full p-[5px]'
+                  : showOverflowChip || list.length >= 2
+                  ? 'min-h-0 w-full'
                   : 'min-h-[40px] w-full',
                 'flex items-center justify-center cursor-pointer pb-[2.5px]'
               )}
@@ -1725,7 +1912,7 @@ const CalendarItem: FC<{
   state: State;
   display: 'day' | 'week' | 'month';
   showTime?: boolean;
-  /** Week with two cards uses 1-line clamp so both fit the 108px cell. */
+  /** Week packs two 1-line cards (and See all) into the 108px hour. */
   lineClamp?: 1 | 2;
   post: Post & {
     integration: Integration;
@@ -1750,6 +1937,12 @@ const CalendarItem: FC<{
     lineClamp = 2,
   } = props;
   const state = displayPostState(rawState, post.publishDate);
+  const {
+    headerRef,
+    leadRef,
+    badgeRef,
+    onHeader: publishedOnHeader,
+  } = usePublishedOnHeader(state === 'PUBLISHED');
   const channelHandle = postChannelHandle(post, integrations);
   // Past QUEUE paints as Published, but the API row is still editable QUEUE.
   const canEdit = rawState !== 'PUBLISHED';
@@ -1875,14 +2068,15 @@ const CalendarItem: FC<{
         <span className="min-w-0 truncate text-[10px] font-[700] text-pqMuted">
           {timeLabel}
         </span>
-        {state === 'PUBLISHED' && (
-          <span className="shrink-0 whitespace-nowrap text-[8px] font-[800] uppercase tracking-[0.04em] text-pqOk">
-            {t('published', 'Published')}
-          </span>
-        )}
+        <CalendarMediaThumb image={post.image} size="month" />
         <span className="min-w-0 flex-1 truncate text-[10.5px] text-pqText">
           {contentPreview}
         </span>
+        {state === 'PUBLISHED' && (
+          <span className="ms-auto shrink-0 whitespace-nowrap text-[8px] font-[800] uppercase tracking-[0.04em] text-pqOk">
+            {t('published', 'Published')}
+          </span>
+        )}
       </div>
     );
   }
@@ -1915,6 +2109,16 @@ const CalendarItem: FC<{
         )}
         style={{ opacity }}
       >
+        {state === 'PUBLISHED' && (
+          <span
+            ref={badgeRef}
+            aria-hidden
+            className="pointer-events-none invisible absolute flex h-[16px] shrink-0 items-center gap-[4px] whitespace-nowrap rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.03em] text-pqOk"
+          >
+            <span className="size-[5px] rounded-full bg-pqOk" />
+            {t('published', 'Published')}
+          </span>
+        )}
         <span
           className="w-[3px] shrink-0"
           style={{
@@ -1927,24 +2131,44 @@ const CalendarItem: FC<{
           aria-hidden="true"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-[6px] p-[9px_11px]">
-          <div className="break-words text-[13px] leading-[1.45] text-pqText">
+          <div className="break-words text-start text-[13px] leading-[1.45] text-pqText">
             {contentPreview}
           </div>
-          <div className="flex items-center gap-[7px]">
-            <img
-              className="size-[16px] shrink-0 rounded-[4px] object-cover"
-              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-              alt=""
-            />
-            <img
-              className="size-[16px] shrink-0 rounded-full object-cover"
-              src={post.integration.picture! || '/no-picture.jpg'}
-              alt=""
-            />
-            <span className="min-w-0 truncate text-[11.5px] text-pqSoft">
-              {post.integration.name}
-              {channelHandle ? ` · ${channelHandle}` : ''}
+          {state === 'PUBLISHED' && !publishedOnHeader && (
+            <span
+              data-published-at="title"
+              className="flex h-[16px] w-fit shrink-0 items-center gap-[4px] self-start whitespace-nowrap rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk"
+            >
+              <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
+              {t('published', 'Published')}
             </span>
+          )}
+          <div
+            ref={headerRef}
+            className="flex min-w-0 items-center gap-[7px]"
+          >
+            <div
+              ref={leadRef}
+              className="flex min-w-0 items-center gap-[7px]"
+            >
+              <img
+                className="size-[16px] shrink-0 rounded-[4px] object-cover"
+                src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+                alt=""
+              />
+              <img
+                className="size-[16px] shrink-0 rounded-full object-cover"
+                src={post.integration.picture! || '/no-picture.jpg'}
+                alt=""
+              />
+              <span className="min-w-0 truncate text-[11.5px] text-pqSoft">
+                {post.integration.name}
+                {channelHandle ? ` · ${channelHandle}` : ''}
+              </span>
+              <span className="shrink-0 text-[11.5px] font-[600] text-pqMuted">
+                {timeLabel}
+              </span>
+            </div>
             <span className="min-w-0 flex-1" />
             {/* Status chip: design only shows Draft; owner wants Scheduled too
                 (Posts panel colours). Sits before time — actions are top-end. */}
@@ -1962,8 +2186,11 @@ const CalendarItem: FC<{
                 {t('draft', 'Draft')}
               </span>
             )}
-            {state === 'PUBLISHED' && (
-              <span className="flex h-[16px] shrink-0 items-center gap-[4px] whitespace-nowrap rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk">
+            {state === 'PUBLISHED' && publishedOnHeader && (
+              <span
+                data-published-at="header"
+                className="ms-auto flex h-[16px] shrink-0 items-center gap-[4px] whitespace-nowrap rounded-full bg-pqOkSoft px-[6px] text-[9.5px] font-[800] uppercase tracking-[0.04em] text-pqOk"
+              >
                 <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
                 {t('published', 'Published')}
               </span>
@@ -1980,11 +2207,9 @@ const CalendarItem: FC<{
                 !
               </span>
             )}
-            <span className="shrink-0 text-[11.5px] font-[600] text-pqMuted">
-              {timeLabel}
-            </span>
           </div>
         </div>
+        <CalendarMediaThumb image={post.image} size="day" />
         <div
           data-ci-actions="1"
           onClick={(e) => e.stopPropagation()}
@@ -2043,6 +2268,16 @@ const CalendarItem: FC<{
         opacity,
       }}
     >
+      {state === 'PUBLISHED' && (
+        <span
+          ref={badgeRef}
+          aria-hidden
+          className="pointer-events-none invisible absolute flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk"
+        >
+          <span className="size-[5px] rounded-full bg-pqOk" />
+          {t('published', 'Published')}
+        </span>
+      )}
       {/* The error marker moved into the card's own top row, next to the
           status dot, because the card no longer overflows its cell. */}
       {showCreationMethodBadge && (
@@ -2058,48 +2293,77 @@ const CalendarItem: FC<{
         style={{ background: accent }}
         aria-hidden="true"
       />
-      <div className="flex min-w-0 flex-1 flex-col gap-[3px] py-[5px] pe-[6px] ps-[7px]">
-        <div className="flex min-w-0 items-center gap-[5px]">
-          <img
-            className="size-[16px] shrink-0 rounded-[4px] object-cover"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-            alt=""
-          />
-          <img
-            className="size-[16px] shrink-0 rounded-full object-cover"
-            src={post.integration.picture! || '/no-picture.jpg'}
-            alt=""
-          />
-          <span className="min-w-0 truncate text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
-            {/* `dayjs.utc(...).local()`, the same reading the cell above uses to
-                decide which hour row this card belongs in. `newDayjs(x)` parses
-                the stored UTC string as local, so the card printed the UTC hour
-                while sitting in the local one — a post scheduled for 07:00 read
-                "04:00" to anyone three hours off UTC. */}
-            {timeLabel}
-          </span>
-          {state === 'ERROR' && (
+      <div
+        className={clsx(
+          'flex min-w-0 flex-1 flex-col pe-[6px] ps-[7px]',
+          lineClamp === 1 ? 'gap-[2px] py-[3px]' : 'gap-[3px] py-[5px]'
+        )}
+      >
+        <div
+          ref={headerRef}
+          className="flex min-w-0 items-center gap-[5px]"
+        >
+          <div
+            ref={leadRef}
+            className="flex min-w-0 items-center gap-[5px]"
+          >
+            <img
+              className="size-[16px] shrink-0 rounded-[4px] object-cover"
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              alt=""
+            />
+            <img
+              className="size-[16px] shrink-0 rounded-full object-cover"
+              src={post.integration.picture! || '/no-picture.jpg'}
+              alt=""
+            />
+            <span className="min-w-0 truncate text-[10px] font-[700] -tracking-[0.1px] text-pqMuted">
+              {/* `dayjs.utc(...).local()`, the same reading the cell above uses to
+                  decide which hour row this card belongs in. `newDayjs(x)` parses
+                  the stored UTC string as local, so the card printed the UTC hour
+                  while sitting in the local one — a post scheduled for 07:00 read
+                  "04:00" to anyone three hours off UTC. */}
+              {timeLabel}
+            </span>
+            {state === 'ERROR' && (
+              <span
+                className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
+                data-tooltip-id="tooltip"
+                data-tooltip-content={postErrorText(
+                  post.error,
+                  'An error occurred while publishing this post'
+                )}
+              >
+                !
+              </span>
+            )}
+            {!!tagNames && (
+              <span className="grid h-[14px] min-w-0 max-w-[72px] shrink place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
+                {tagNames}
+              </span>
+            )}
+          </div>
+          {state === 'PUBLISHED' && publishedOnHeader && (
             <span
-              className="grid size-[14px] shrink-0 place-items-center rounded-full bg-pqDanger text-[10px] font-bold text-pqOnBrand"
-              data-tooltip-id="tooltip"
-              data-tooltip-content={postErrorText(
-                post.error,
-                'An error occurred while publishing this post'
-              )}
+              data-published-at="header"
+              className="ms-auto flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk"
             >
-              !
+              <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
+              {t('published', 'Published')}
             </span>
           )}
-          {!!tagNames && (
-            <span className="grid h-[14px] min-w-0 max-w-[72px] shrink place-items-center truncate rounded-[4px] bg-pqSettings px-[4px] text-[9px] font-[700] text-pqMuted">
-              {tagNames}
-            </span>
-          )}
-          <span className="min-w-0 flex-1" />
+          <CalendarMediaThumb
+            image={post.image}
+            size="week"
+            className={!publishedOnHeader ? 'ms-auto' : undefined}
+          />
         </div>
         <div className="flex min-w-0 items-start gap-[4px]">
-          {state === 'PUBLISHED' && (
-            <span className="mt-[1px] flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk">
+          {state === 'PUBLISHED' && !publishedOnHeader && (
+            <span
+              data-published-at="title"
+              className="mt-[1px] flex h-[14px] shrink-0 items-center gap-[3px] whitespace-nowrap rounded-full bg-pqOkSoft px-[5px] text-[8.5px] font-[800] uppercase tracking-[0.03em] text-pqOk"
+            >
               <span className="size-[5px] rounded-full bg-pqOk" aria-hidden />
               {t('published', 'Published')}
             </span>
@@ -2203,6 +2467,12 @@ const ListItem: FC<{
   const { disableXAnalytics } = useVariables();
   const { integrations } = useCalendar();
   const state = displayPostState(post.state, post.publishDate);
+  const {
+    headerRef,
+    leadRef,
+    badgeRef,
+    onHeader: publishedOnHeader,
+  } = usePublishedOnHeader(state === 'PUBLISHED');
   const channelHandle = postChannelHandle(post, integrations);
   // Same as calendar cells: display may say Published for past QUEUE.
   const canEdit = post.state !== 'PUBLISHED';
@@ -2257,6 +2527,16 @@ const ListItem: FC<{
       onClick={onEdit}
       className="group relative flex w-full min-w-0 cursor-pointer overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-shadow hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]"
     >
+      {state === 'PUBLISHED' && (
+        <span
+          ref={badgeRef}
+          aria-hidden
+          className="pointer-events-none invisible absolute flex h-[20px] shrink-0 items-center gap-[5px] whitespace-nowrap rounded-full pe-[8px] ps-[7px] text-[11px] font-[600] bg-pqOkSoft text-pqOk"
+        >
+          <span className="size-[5px] rounded-full bg-current" />
+          {t('published', 'Published')}
+        </span>
+      )}
       <span
         className="w-[3px] shrink-0"
         style={{
@@ -2269,31 +2549,39 @@ const ListItem: FC<{
         aria-hidden="true"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-[9px] pb-[11px] pe-[13px] ps-[14px] pt-[12px]">
-        <div className="flex min-w-0 items-center gap-[9px]">
-          <img
-            className="size-[26px] shrink-0 rounded-[8px] object-cover"
-            src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
-            alt=""
-          />
-          <img
-            className="size-[26px] shrink-0 rounded-[8px] object-cover"
-            src={post.integration.picture! || '/no-picture.jpg'}
-            alt=""
-          />
-          <span className="min-w-0 truncate text-[13px] font-[600] text-pqText">
-            {post.integration.name}
-          </span>
-          {!!channelHandle && (
-            <span className="min-w-0 truncate text-[12px] font-[500] text-pqMuted">
-              {channelHandle}
+        <div
+          ref={headerRef}
+          className="flex min-w-0 items-center gap-[9px]"
+        >
+          <div
+            ref={leadRef}
+            className="flex min-w-0 items-center gap-[9px]"
+          >
+            <img
+              className="size-[26px] shrink-0 rounded-[8px] object-cover"
+              src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
+              alt=""
+            />
+            <img
+              className="size-[26px] shrink-0 rounded-[8px] object-cover"
+              src={post.integration.picture! || '/no-picture.jpg'}
+              alt=""
+            />
+            <span className="min-w-0 truncate text-[13px] font-[600] text-pqText">
+              {post.integration.name}
             </span>
-          )}
-          <span className="shrink-0 text-[12.5px] font-[600] text-pqSoft">
-            {dayjs
-              .utc(post.publishDate)
-              .local()
-              .format(timePattern())}
-          </span>
+            {!!channelHandle && (
+              <span className="min-w-0 truncate text-[12px] font-[500] text-pqMuted">
+                {channelHandle}
+              </span>
+            )}
+            <span className="shrink-0 text-[12.5px] font-[600] text-pqSoft">
+              {dayjs
+                .utc(post.publishDate)
+                .local()
+                .format(timePattern())}
+            </span>
+          </div>
           <span className="min-w-0 flex-1" />
           {state === 'ERROR' && (
             <span
@@ -2312,34 +2600,53 @@ const ListItem: FC<{
               {post.creationMethod}
             </span>
           )}
-          <span
-            className={clsx(
-              'flex h-[20px] shrink-0 items-center gap-[5px] rounded-full pe-[8px] ps-[7px] text-[11px] font-[600]',
-              state === 'PUBLISHED'
-                ? 'bg-pqOkSoft text-pqOk'
-                : state === 'DRAFT'
-                ? 'bg-pqSettings text-pqSoft'
-                : state === 'ERROR'
-                ? 'bg-pqWarnSoft text-pqWarn'
-                : 'bg-pqBrandSoft text-pqBrand'
-            )}
-          >
+          {(state !== 'PUBLISHED' || publishedOnHeader) && (
             <span
-              className="size-[5px] rounded-full bg-current"
-              aria-hidden="true"
-            />
-            {state === 'PUBLISHED'
-              ? t('published', 'Published')
-              : state === 'DRAFT'
-              ? t('draft', 'Draft')
-              : state === 'ERROR'
-              ? t('error', 'Error')
-              : t('scheduled', 'Scheduled')}
-          </span>
+              data-published-at={
+                state === 'PUBLISHED' ? 'header' : undefined
+              }
+              className={clsx(
+                'ms-auto flex h-[20px] shrink-0 items-center gap-[5px] whitespace-nowrap rounded-full pe-[8px] ps-[7px] text-[11px] font-[600]',
+                state === 'PUBLISHED'
+                  ? 'bg-pqOkSoft text-pqOk'
+                  : state === 'DRAFT'
+                  ? 'bg-pqSettings text-pqSoft'
+                  : state === 'ERROR'
+                  ? 'bg-pqWarnSoft text-pqWarn'
+                  : 'bg-pqBrandSoft text-pqBrand'
+              )}
+            >
+              <span
+                className="size-[5px] rounded-full bg-current"
+                aria-hidden="true"
+              />
+              {state === 'PUBLISHED'
+                ? t('published', 'Published')
+                : state === 'DRAFT'
+                ? t('draft', 'Draft')
+                : state === 'ERROR'
+                ? t('error', 'Error')
+                : t('scheduled', 'Scheduled')}
+            </span>
+          )}
         </div>
-        <div className="line-clamp-2 break-words text-start text-[13.5px] leading-[1.5] text-pqText">
-          {stripHtmlValidation('none', post.content, false, true, false) ||
-            t('no_content', 'no content')}
+        <div className="flex min-w-0 items-start gap-[6px]">
+          {state === 'PUBLISHED' && !publishedOnHeader && (
+            <span
+              data-published-at="title"
+              className="mt-[2px] flex h-[20px] w-fit shrink-0 items-center gap-[5px] self-start whitespace-nowrap rounded-full bg-pqOkSoft pe-[8px] ps-[7px] text-[11px] font-[600] text-pqOk"
+            >
+              <span
+                className="size-[5px] rounded-full bg-current"
+                aria-hidden="true"
+              />
+              {t('published', 'Published')}
+            </span>
+          )}
+          <div className="min-w-0 flex-1 line-clamp-2 break-words text-start text-[13.5px] leading-[1.5] text-pqText">
+            {stripHtmlValidation('none', post.content, false, true, false) ||
+              t('no_content', 'no content')}
+          </div>
         </div>
         {!!post.tags?.length && (
           <div className="flex flex-wrap items-center gap-[5px]">
@@ -2359,6 +2666,7 @@ const ListItem: FC<{
           </div>
         )}
       </div>
+      <CalendarMediaThumb image={post.image} size="day" />
       <div
         data-ci-actions="1"
         onClick={(e) => e.stopPropagation()}
@@ -2773,6 +3081,7 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
                   : 'cursor-pointer text-pqMuted hover:bg-pqHover hover:text-pqText hover:shadow-[inset_0_0_0_1px_var(--brand)]'
               )}
             >
+              {/* Plus sits on the empty-hour control next to the i18n label. */}
               {!isBeforeNow && (
                 <svg
                   viewBox="0 0 24 24"
@@ -2780,7 +3089,8 @@ const DayHourSection: FC<{ hour: number; day: dayjs.Dayjs }> = memo(
                   height="15"
                   fill="none"
                   aria-hidden="true"
-                  className="shrink-0 text-pqSoft"
+                  data-empty-add="1"
+                  className="shrink-0"
                 >
                   <path
                     d="M12 5.5v13M5.5 12h13"
