@@ -507,11 +507,11 @@ export const Filters = () => {
                   aria-expanded={calPickOpen}
                   onClick={() => setCalPickOpen((o) => !o)}
                   className={clsx(
-                    'flex h-full w-full items-center justify-center px-[9px] text-[13px] font-[500] transition-colors hover:bg-pqHover',
+                    'flex h-full w-full min-w-0 items-center justify-center px-[9px] text-[13px] font-[500] transition-colors hover:bg-pqHover',
                     calPickOpen && 'bg-pqHover'
                   )}
                 >
-                  {getDisplayText()}
+                  <span className="min-w-0 truncate">{getDisplayText()}</span>
                 </button>
               </div>
               <div

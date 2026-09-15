@@ -33,7 +33,7 @@ export const AddPostButton: FC<{
       <button
         type="button"
         onClick={onClick}
-        className="mt-[12px] flex h-[40px] cursor-pointer select-none items-center justify-center gap-[8px] rounded-[10px] bg-pqPink ps-[16px] pe-[18px] text-[13.5px] font-[600] text-white transition-opacity hover:opacity-90"
+        className="mt-[12px] flex h-[40px] max-w-full cursor-pointer select-none items-center justify-center gap-[8px] rounded-[10px] bg-pqPink ps-[16px] pe-[18px] text-[13.5px] font-[600] text-white transition-opacity hover:opacity-90"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

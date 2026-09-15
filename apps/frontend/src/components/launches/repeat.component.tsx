@@ -56,7 +56,7 @@ export const RepeatComponent: FC<{
 }> = (props) => {
   const { repeat } = props;
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const list = getList(t);
   const [isOpen, setIsOpen] = useState(false);
   // Same overflow escape as DatePicker / Delay — footer clips absolute menus.
@@ -99,13 +99,13 @@ export const RepeatComponent: FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
           'flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px]',
-          mobile ? 'px-[8px]' : 'px-[16px]'
+          touch ? 'px-[8px]' : 'px-[16px]'
         )}
       >
         <div className="cursor-pointer">
           <RepeatIcon />
         </div>
-        {mobile ? (
+        {touch ? (
           repeat ? (
             <div className="min-w-0 cursor-pointer truncate">{everyLabel}</div>
           ) : null

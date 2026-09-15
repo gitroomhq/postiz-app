@@ -61,7 +61,7 @@ export const TagsComponentInner: FC<{
   }) => void;
 }> = ({ initial, onChange, name, mutate, allTags: data }) => {
   const t = useT();
-  const { mobile } = useViewport();
+  const { touch } = useViewport();
   const fetch = useFetch();
   const [isOpen, setIsOpen] = useState(false);
   const [allowClose, setAllowClose] = useState(true);
@@ -178,7 +178,7 @@ export const TagsComponentInner: FC<{
         role="button"
         aria-label={
           tagValue.length === 0
-            ? mobile
+            ? touch
               ? t('tags', 'Tags')
               : t('add_new_tag', 'Add New Tag')
             : tagValue[0].name
@@ -186,15 +186,15 @@ export const TagsComponentInner: FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
           'flex h-full min-w-0 flex-1 select-none items-center justify-center gap-[8px]',
-          mobile ? 'px-[10px]' : 'px-[16px]'
+          touch ? 'px-[10px]' : 'px-[16px]'
         )}
       >
         <div className="cursor-pointer">
           <TagIcon />
         </div>
-        <div className="flex min-w-0 cursor-pointer gap-[4px] truncate">
+        <div className="min-w-0 truncate whitespace-nowrap">
           {tagValue.length === 0 ? (
-            mobile ? t('tags', 'Tags') : t('add_new_tag', 'Add New Tag')
+            touch ? t('tags', 'Tags') : t('add_new_tag', 'Add New Tag')
           ) : (
             <>
               <div

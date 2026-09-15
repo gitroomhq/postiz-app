@@ -802,8 +802,8 @@ export const Editor: FC<{
             />
             {/* Ephemeral Connections tip — no filled panel; dismiss persists. */}
             {!num && !aiHintOff && !valueWithoutHtml.trim() && (
-              <div className="mx-[2px] mb-[2px] mt-[10px] flex flex-col gap-[10px] border-t border-pqLine pt-[12px]">
-                <div className="flex items-start gap-[12px]">
+              <div className="mx-[2px] mb-[2px] mt-[10px] flex min-w-0 flex-col gap-[10px] overflow-hidden border-t border-pqLine pt-[12px]">
+                <div className="flex min-w-0 items-start gap-[12px]">
                   <span
                     className="grid h-[28px] w-[28px] shrink-0 place-items-center text-pqBrand"
                     aria-hidden="true"
@@ -838,7 +838,7 @@ export const Editor: FC<{
                     <span className="text-[13.5px] font-[600] tracking-[-0.01em] text-pqText">
                       {t('let_ai_write_this_post', 'Draft with your AI')}
                     </span>
-                    <span className="text-[12.5px] leading-[1.45] text-pqMuted">
+                    <span className="break-words text-[12.5px] leading-[1.45] text-pqMuted">
                       {t(
                         'let_ai_write_this_post_sub',
                         'Connect Claude, ChatGPT, OpenClaw or Hermes — then ask them to draft this post'
@@ -867,7 +867,7 @@ export const Editor: FC<{
                     </svg>
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-[6px] ps-[40px]">
+                <div className="flex w-full min-w-0 flex-wrap items-center gap-[6px]">
                   {(
                     [
                       {
@@ -895,7 +895,7 @@ export const Editor: FC<{
                     <NextLink
                       key={tool.id}
                       href="/connections"
-                      className="flex h-[28px] shrink-0 items-center gap-[6px] rounded-full ps-[6px] pe-[10px] text-[12px] font-[600] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
+                      className="flex h-[28px] min-w-0 items-center gap-[6px] rounded-full ps-[6px] pe-[10px] text-[12px] font-[600] text-pqMuted transition-colors hover:bg-pqHover hover:text-pqText"
                     >
                       <SafeImage
                         src={tool.icon}

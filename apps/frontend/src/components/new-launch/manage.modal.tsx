@@ -859,17 +859,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         <div
           className={clsx(
             'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
+            'max-[1179px]:flex-col max-[1179px]:gap-[10px] max-[1179px]:overflow-x-hidden max-[1179px]:px-[16px] max-[1179px]:py-[12px]',
             touch
               ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
-              : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent'
+              : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent min-[1180px]:flex-row'
           )}
         >
           <div
             className={clsx(
               'min-w-0 gap-[8px]',
+              'max-[1179px]:grid max-[1179px]:w-full max-[1179px]:grid-cols-2',
               touch
                 ? 'grid w-full grid-cols-2'
-                : 'flex flex-1 items-center ps-[20px]'
+                : 'flex flex-1 items-center ps-[20px] min-[1180px]:flex'
             )}
           >
             {!dummy && (
@@ -894,6 +896,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div
             className={clsx(
               'flex min-w-0 items-center justify-end gap-[8px]',
+              'max-[1179px]:w-full max-[1179px]:flex-col',
               touch ? 'w-full flex-col' : 'shrink-0 pe-[20px]'
             )}
           >
@@ -911,11 +914,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <DatePicker
               onChange={setDate}
               date={date}
-              className={touch ? '!ml-0 w-full flex-none' : undefined}
+              className="max-[1179px]:!ml-0 max-[1179px]:w-full max-[1179px]:!flex-none"
             />
             <div
               className={clsx(
                 'flex min-w-0 items-center justify-end gap-[8px]',
+                'max-[1179px]:w-full',
                 touch && 'w-full'
               )}
             >
@@ -926,7 +930,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 }
                 onClick={schedule('draft')}
                 className={clsx(
-                  'relative flex cursor-pointer items-center justify-center rounded-[10px] bg-btnSimple text-[14px] font-[600] disabled:cursor-not-allowed',
+                  'relative flex cursor-pointer items-center justify-center overflow-hidden rounded-[10px] bg-btnSimple text-[14px] font-[600] disabled:cursor-not-allowed',
+                  'max-[1179px]:h-[44px] max-[1179px]:min-w-0 max-[1179px]:flex-1 max-[1179px]:px-[12px]',
                   touch
                     ? 'h-[44px] min-w-0 flex-1 px-[12px]'
                     : 'h-[42px] px-[18px]'
@@ -937,7 +942,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Spinner width={20} height={20} />
                   </div>
                 )}
-                <div className={clsx('truncate', loading && 'invisible')}>
+                <div
+                  className={clsx(
+                    'min-w-0 truncate whitespace-nowrap',
+                    loading && 'invisible'
+                  )}
+                >
                   {t('save_as_draft', 'Save as Draft')}
                 </div>
               </button>
@@ -968,7 +978,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     }
                     onClick={schedule('schedule')}
                     className={clsx(
-                      'btnSub relative flex items-center justify-center rounded-s-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                      'btnSub relative flex min-w-0 items-center justify-center overflow-hidden rounded-s-[10px] bg-pqBrand text-[14px] font-[600] text-white outline-none disabled:cursor-not-allowed disabled:opacity-80',
+                      'max-[1179px]:h-[44px] max-[1179px]:flex-1 max-[1179px]:px-[12px] max-[1179px]:min-w-0',
                       touch
                         ? 'h-[44px] min-w-0 flex-1 px-[12px]'
                         : 'h-[42px] min-w-[168px] px-[18px]'
@@ -979,14 +990,14 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         <Spinner width={20} height={20} />
                       </div>
                     )}
-                    <span className={clsx('truncate', loading && 'invisible')}>
+                    <span
+                      className={clsx(
+                        'min-w-0 truncate whitespace-nowrap',
+                        loading && 'invisible'
+                      )}
+                    >
                       {selectedIntegrations.length === 0
-                        ? touch
-                          ? t('select_channels', 'Select channels')
-                          : t(
-                              'check_circles_above',
-                              'Check the circles above to pick a channel'
-                            )
+                        ? t('select_channels', 'Select channels')
                         : dummy
                         ? t('create_output', 'Create output')
                         : !existingData?.integration
