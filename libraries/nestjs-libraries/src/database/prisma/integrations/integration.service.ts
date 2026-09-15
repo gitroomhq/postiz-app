@@ -737,15 +737,18 @@ export class IntegrationService {
         if (e instanceof HttpException) {
           throw e;
         }
+        // Invalid metrics, missing `values`, a quiet Graph 100, a TypeError in
+        // a mapper: none of those are a revoked token. The pane used to treat
+        // every leftover as "reconnect", so Instagram/Facebook looked broken
+        // while X (which already returned []) looked empty. Empty series is
+        // the honest answer; only RefreshToken / scopes / disconnect ask for
+        // a new login.
         Logger.warn(
           `Analytics fetch failed for ${getIntegration.providerIdentifier}: ${
             (e as Error)?.message || e
           }`
         );
-        throw new HttpException(
-          'This channel needs to be refreshed',
-          HttpStatus.BAD_REQUEST
-        );
+        return [];
       }
     }
 

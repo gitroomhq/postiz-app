@@ -552,19 +552,18 @@ export class PinterestProvider
       .subtract(Math.min(date, 89), 'day')
       .format('YYYY-MM-DD');
 
-    const json = await (
-      await fetch(
-        `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    ).json();
-    this.throwIfCannotFetch(json);
+    const response = await fetch(
+      `https://api.pinterest.com/v5/user_account/analytics?start_date=${since}&end_date=${until}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const json = await response.json();
+    this.throwIfCannotFetch(json, response.status);
     const daily_metrics = json?.all?.daily_metrics;
     if (!daily_metrics) {
       return [];
@@ -572,7 +571,7 @@ export class PinterestProvider
 
     return daily_metrics.reduce(
       (acc: any, item: any) => {
-        if (typeof item.metrics.PIN_CLICK_RATE !== 'undefined') {
+        if (typeof item?.metrics?.PIN_CLICK_RATE !== 'undefined') {
           acc[0].data.push({
             date: item.date,
             total: item.metrics.PIN_CLICK_RATE,

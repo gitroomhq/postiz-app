@@ -57,4 +57,26 @@ describe('analyticsFetchNeedsReconnect', () => {
       false
     );
   });
+
+  it('is false when Instagram insights need a Business account, not a new login', () => {
+    assert.equal(
+      analyticsFetchNeedsReconnect({
+        json: '{"error":{"message":"The user is not an Instagram Business"}}',
+        handleErrorType: 'refresh-token',
+        graphError: {
+          message: 'The user is not an Instagram Business',
+        },
+      }),
+      false
+    );
+  });
+
+  it('is true for a revoked Meta token string', () => {
+    assert.equal(
+      analyticsFetchNeedsReconnect({
+        json: '{"error":{"message":"REVOKED_ACCESS_TOKEN"}}',
+      }),
+      true
+    );
+  });
 });

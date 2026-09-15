@@ -1087,45 +1087,56 @@ export class InstagramProvider
     const until = dayjs().startOf('day').unix();
     const since = dayjs().subtract(date, 'day').unix();
 
-    const first = await (
-      await fetch(
-        `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-      )
-    ).json();
-    this.throwIfCannotFetch(first);
+    const firstResponse = await fetch(
+      `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric=follower_count,reach&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+    );
+    const first = await firstResponse.json();
+    this.throwIfCannotFetch(first, firstResponse.status);
     const { data } = first;
 
-    const second = await (
-      await fetch(
-        `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
-      )
-    ).json();
-    this.throwIfCannotFetch(second);
+    const secondResponse = await fetch(
+      `https://${type}/${META_GRAPH_API_VERSION}/${id}/insights?metric_type=total_value&metric=likes,views,comments,shares,saves,replies&access_token=${accessToken}&period=day&since=${since}&until=${until}`
+    );
+    const second = await secondResponse.json();
+    this.throwIfCannotFetch(second, secondResponse.status);
     const { data: data2 } = second;
     const analytics = [];
 
     analytics.push(
-      ...(data?.map((d: any) => ({
-        label: this.setTitle(d.name),
-        percentageChange: 5,
-        data: d.values.map((v: any) => ({
-          total: v.value,
-          date: dayjs(v.end_time).format('YYYY-MM-DD'),
-        })),
-      })) || [])
+      ...((Array.isArray(data) ? data : []) as any[])
+        .filter(
+          (d) => d && (Array.isArray(d.values) || d.total_value?.value != null)
+        )
+        .map((d: any) => ({
+          label: this.setTitle(d.name),
+          percentageChange: 5,
+          data: Array.isArray(d.values)
+            ? d.values.map((v: any) => ({
+                total: v?.value ?? 0,
+                date: dayjs(v?.end_time).format('YYYY-MM-DD'),
+              }))
+            : [
+                {
+                  total: d.total_value.value,
+                  date: dayjs().format('YYYY-MM-DD'),
+                },
+              ],
+        }))
     );
 
     analytics.push(
-      ...(data2?.map((d: any) => ({
-        label: this.setTitle(d.name),
-        percentageChange: 5,
-        data: [
-          {
-            total: d.total_value.value,
-            date: dayjs().format('YYYY-MM-DD'),
-          },
-        ],
-      })) || [])
+      ...((Array.isArray(data2) ? data2 : []) as any[])
+        .filter((d) => d?.total_value?.value != null)
+        .map((d: any) => ({
+          label: this.setTitle(d.name),
+          percentageChange: 5,
+          data: [
+            {
+              total: d.total_value.value,
+              date: dayjs().format('YYYY-MM-DD'),
+            },
+          ],
+        }))
     );
 
     return analytics;

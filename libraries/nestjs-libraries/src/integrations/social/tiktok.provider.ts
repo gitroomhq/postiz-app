@@ -955,6 +955,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       );
 
       const userStatsData = await userStatsResponse.json();
+      this.throwIfCannotFetch(userStatsData, userStatsResponse.status);
       const userStats = userStatsData?.data?.user;
 
       const result: AnalyticsData[] = [];
@@ -1007,6 +1008,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       );
 
       const videoListData = await videoListResponse.json();
+      this.throwIfCannotFetch(videoListData, videoListResponse.status);
       const videos = videoListData?.data?.videos;
 
       if (videos && videos.length > 0) {
@@ -1028,6 +1030,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         );
 
         const videoQueryData = await videoQueryResponse.json();
+        this.throwIfCannotFetch(videoQueryData, videoQueryResponse.status);
         const videoDetails = videoQueryData?.data?.videos;
 
         if (videoDetails && videoDetails.length > 0) {
