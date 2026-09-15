@@ -696,6 +696,30 @@ export class IntegrationRepository {
     }
   }
 
+  async enableAllIntegrations(org: string) {
+    const getChannels = await this._integration.model.integration.findMany({
+      where: {
+        organizationId: org,
+        disabled: true,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    for (const channel of getChannels) {
+      await this._integration.model.integration.update({
+        where: {
+          id: channel.id,
+        },
+        data: {
+          disabled: false,
+        },
+      });
+    }
+  }
+
   getPlugsByIntegrationId(org: string, id: string) {
     return this._plugs.model.plugs.findMany({
       where: {

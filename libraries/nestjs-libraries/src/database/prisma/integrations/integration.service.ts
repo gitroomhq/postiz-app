@@ -390,6 +390,10 @@ export class IntegrationService {
     return this._integrationRepository.disableIntegrations(org, totalChannels);
   }
 
+  async enableAllIntegrations(org: string) {
+    return this._integrationRepository.enableAllIntegrations(org);
+  }
+
   async checkForDeletedOnceAndUpdate(org: string, page: string) {
     return this._integrationRepository.checkForDeletedOnceAndUpdate(org, page);
   }
