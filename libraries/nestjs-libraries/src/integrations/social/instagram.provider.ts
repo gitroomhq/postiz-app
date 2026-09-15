@@ -367,6 +367,14 @@ export class InstagramProvider
       }
     }
 
+    if (body.indexOf('2207085') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram could not process the video, please check the video format, duration and resolution and try again',
+      };
+    }
+
     if (body.indexOf('2207077') > -1) {
       return {
         type: 'bad-body' as const,
@@ -631,11 +639,13 @@ export class InstagramProvider
     ).json();
 
     if (status_code === 'ERROR' || status_code === 'EXPIRED') {
+      const body = JSON.stringify({ status_code, status });
+      const handle = this.handleErrors(body, 200);
       throw new BadBody(
         this.identifier,
-        JSON.stringify({ status_code, status }),
+        body,
         '{}',
-        status || 'Instagram could not process the media'
+        handle?.value || status || 'Instagram could not process the media'
       );
     }
 
