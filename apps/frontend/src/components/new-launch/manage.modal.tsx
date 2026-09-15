@@ -67,6 +67,20 @@ const hideChatbaseWhileComposerOpen = () => {
       el.style.setProperty('pointer-events', 'none', 'important');
       el.style.setProperty('opacity', '0', 'important');
     });
+    document.querySelectorAll('iframe').forEach((el) => {
+      const style = window.getComputedStyle(el);
+      const src = el.getAttribute('src') || '';
+      if (
+        style.position === 'fixed' ||
+        src.includes('chatbase') ||
+        el.id.includes('chatbase')
+      ) {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+        el.style.setProperty('opacity', '0', 'important');
+      }
+    });
   };
   hide();
   const id = window.setInterval(hide, 100);
@@ -1103,15 +1117,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               phoneFlow && 'flex-row'
             )}
           >
-            {phoneFlow && (
-              <button
-                type="button"
-                onClick={() => setComposerPane('preview')}
-                className="flex h-[44px] min-w-0 flex-1 items-center justify-center rounded-[10px] bg-btnSimple text-[14px] font-[600]"
-              >
-                {t('back', 'Back')}
-              </button>
-            )}
             {!phoneFlow && <ComposeAiAssistant />}
             {!phoneFlow && existingData?.integration && (
               <button
@@ -1135,7 +1140,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               className={clsx(
                 'flex min-w-0 items-center justify-end gap-[8px]',
                 compactChrome && 'w-full',
-                phoneFlow && 'min-w-0 flex-[2]'
+                phoneFlow && 'min-w-0 flex-1'
               )}
             >
             {!addEditSets && (
