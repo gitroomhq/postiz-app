@@ -3,11 +3,11 @@ billingEnabled 55
 isTrailing 18
 tier.ai 7
 tier.autoPost 2
-tier.current 17
+tier.current 16
 tier.image_generator 2
 tier.month_price 3
 tier.team_members 2
 tier.webhooks 3
 tier.year_price 3
 trialLocked 6
-user.isLifetime 23
+user.isLifetime 22

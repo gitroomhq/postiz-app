@@ -395,7 +395,6 @@ chrome_extension_warning_intro
 chrome_extension_warning_reconnect
 chrome_extension_warning_tos
 chrome_extension_warning_unstable
-claim
 claude
 clear
 click_channel_to_customize
@@ -990,7 +989,6 @@ create_post_failed
 create_post_options
 create_post_title
 credentials
-current_package
 current_plan
 current_plan_lifetime
 current_time
@@ -1089,7 +1087,6 @@ end_free_trial
 end_trial_to_unlock
 enter_details
 enter_email
-enter_your_code
 error
 error_details
 error_occurred
@@ -1314,7 +1311,6 @@ label_article_title
 label_auto_add_music
 label_auto_add_signature
 label_branded_content
-label_code
 label_comments
 label_content_posting_method
 label_disclose_video_content
@@ -1341,7 +1337,6 @@ let_ai_write_this_post
 let_ai_write_this_post_sub
 lifetime_badge
 lifetime_deal
-lifetime_grants
 lifetime_payment_pending_body
 lifetime_retention_charge_failed
 lifetime_retention_unlocked

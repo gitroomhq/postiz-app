@@ -236,8 +236,8 @@ export type AnyTier = 'FREE' | PaidTier;
 export const LIFETIME_GRANT_TIER: PaidTier = 'PRO';
 
 /**
- * Tier granted by a founding purchase or lifetime code. Argument kept so call
- * sites stay stable; the current subscription no longer changes the grant.
+ * Tier granted by a founding purchase. Argument kept so call sites stay
+ * stable; the current subscription no longer changes the grant.
  */
 export const nextLifetimeTier = (_current?: string | null): PaidTier =>
   LIFETIME_GRANT_TIER;

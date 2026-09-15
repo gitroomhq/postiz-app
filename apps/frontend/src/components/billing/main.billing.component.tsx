@@ -41,7 +41,6 @@ import {
   BuyLifetime,
   FeatureRow,
   FoundingMember,
-  LifetimePackages,
 } from '@gitroom/frontend/components/billing/lifetime.deal';
 import { BillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
 
@@ -1442,9 +1441,9 @@ export const MainBillingComponent: FC<{
       )}
 
       {/* The lifetime surface, in place of the plan grid, once the founding
-          membership is paid for. The hero and the package cards are the same
-          components /billing/lifetime renders; MEMBER SINCE can only be named
-          here, where the subscription row's createdAt is in state. */}
+          membership is paid for. The hero is the same component
+          /billing/lifetime renders; MEMBER SINCE can only be named here, where
+          the subscription row's createdAt is in state. */}
       {lifetimePaid && (
         <div className="flex flex-col gap-[20px]">
           <FoundingMember
@@ -1452,7 +1451,6 @@ export const MainBillingComponent: FC<{
             trialing={false}
             memberSince={subscription?.createdAt}
           />
-          <LifetimePackages />
         </div>
       )}
       {/* The design's portal/cancel card: the portal keeps its handler, and the

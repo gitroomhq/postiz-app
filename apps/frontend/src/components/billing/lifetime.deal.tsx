@@ -12,10 +12,8 @@ import {
   pricing,
   tierLabel,
 } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
-import { useSWRConfig } from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useRouter } from 'next/navigation';
-import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -25,7 +23,7 @@ import { BillingNotConfigured } from './billing.not.configured';
  * The design's feature tick: a 17×17 brand tile with a white check, 13px muted
  * label — and the "Unlimited channels" line lifted to `--focused`/600 with the
  * `pqunlim` glow (gated by `pq-loop` for prefers-reduced-motion, the global.css
- * convention). One recipe for the plan cards and both lifetime package cards,
+ * convention). One recipe for the plan cards and the founding-member surface,
  * so the tick cannot drift between surfaces.
  */
 export const FeatureRow: FC<{ label: string; unlim?: boolean }> = ({
@@ -58,10 +56,10 @@ export const FeatureRow: FC<{ label: string; unlim?: boolean }> = ({
 /**
  * How long the founding-member offer has left, ticking.
  *
- * The window is real — twenty-four hours from registration — and the route that
- * redeems a code refuses once it closes, so this is a countdown to something
- * that happens. Earlier in this migration a lifetime countdown was declined on
- * the grounds that it counted down to nothing; that objection was about a
+ * The window is real — twenty-four hours from registration — and the checkout
+ * route refuses once it closes, so this is a countdown to something that
+ * happens. Earlier in this migration a lifetime countdown was declined on the
+ * grounds that it counted down to nothing; that objection was about a
  * fabricated deadline and does not apply to this one.
  *
  * Both sides read `lifetimeWindow()`, so the clock on screen and the rule on
@@ -254,7 +252,7 @@ export const BuyLifetime: FC<{
 };
 
 /**
- * What a founding member sees instead of the claim form — the design's amber
+ * What a founding member sees — the design's amber
  * hero: crown chip, "PostQueen {tier}" with the FOUNDING MEMBER pill, the heart
  * line, a price cluster, and (once paid) the facts row.
  *
@@ -400,189 +398,6 @@ export const FoundingMember: FC<{
   );
 };
 
-/**
- * The "Lifetime deal" heading plus the Current / Next package cards with the
- * code-claim form. One component because two screens render the identical
- * surface: /billing/lifetime, and the Billing page itself once the account is a
- * founding member.
- */
-export const LifetimePackages: FC<{ showHeading?: boolean }> = ({
-  showHeading = true,
-}) => {
-  const t = useT();
-  const fetch = useFetch();
-  const user = useUser();
-  const [code, setCode] = useState('');
-  const toast = useToaster();
-  const { mutate } = useSWRConfig();
-  const fireEvents = useFireEvents();
-  const claim = useCallback(async () => {
-    const { success } = await (
-      await fetch('/billing/lifetime', {
-        body: JSON.stringify({
-          code,
-        }),
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    ).json();
-    if (success) {
-      mutate('/user/self');
-      toast.show('Successfully claimed the code');
-      fireEvents('lifetime_claimed');
-    } else {
-      toast.show('Code already claimed or invalid code', 'warning');
-    }
-    setCode('');
-  }, [code]);
-  // Founding / code grant always Pro — same as Stripe grantLifetimeFromPayment.
-  const nextPackage = LIFETIME_GRANT_TIER;
-  const features = useMemo(() => {
-    if (!user?.tier) {
-      return [];
-    }
-    const currentPricing = user?.tier;
-    const list: Array<{ label: string; unlim?: boolean }> = [];
-    // Same very-large-number reading as the plan cards' Features — a channel
-    // count that means "unlimited" says so instead of printing the sentinel.
-    list.push(
-      user.totalChannels > 10000
-        ? {
-            label: t('plan_unlimited_channels', 'Unlimited channels'),
-            unlim: true,
-          }
-        : user.totalChannels === 1
-        ? { label: t('plan_one_channel', '1 channel') }
-        : {
-            label: t('plan_n_channels', '{{count}} channels', {
-              count: user.totalChannels,
-            }),
-          }
-    );
-    list.push(
-      currentPricing.posts_per_month > 10000
-        ? { label: t('plan_unlimited_posts', 'Unlimited posts per month') }
-        : {
-            label: t('plan_n_posts', '{{count}} posts per month', {
-              count: currentPricing.posts_per_month,
-            }),
-          }
-    );
-    if (currentPricing.team_members) {
-      list.push({ label: t('plan_unlimited_team', 'Unlimited team members') });
-    }
-    if (currentPricing?.ai) {
-      list.push({ label: t('plan_ai_autocomplete', 'AI auto-complete') });
-    }
-    return list;
-  }, [user, t]);
-  const nextFeature = useMemo(() => {
-    if (!user?.tier) {
-      return [];
-    }
-    const currentPricing = pricing[nextPackage];
-    const channelsOr = currentPricing.channel ?? 0;
-    const list: Array<{ label: string; unlim?: boolean }> = [];
-    list.push(
-      channelsOr > 10000
-        ? {
-            label: t('plan_unlimited_channels', 'Unlimited channels'),
-            unlim: true,
-          }
-        : channelsOr === 1
-        ? { label: t('plan_one_channel', '1 channel') }
-        : {
-            label: t('plan_n_channels', '{{count}} channels', {
-              count: channelsOr,
-            }),
-          }
-    );
-    list.push(
-      currentPricing.posts_per_month > 10000
-        ? { label: t('plan_unlimited_posts', 'Unlimited posts per month') }
-        : {
-            label: t('plan_n_posts', '{{count}} posts per month', {
-              count: currentPricing.posts_per_month,
-            }),
-          }
-    );
-    if (currentPricing.team_members) {
-      list.push({ label: t('plan_unlimited_team', 'Unlimited team members') });
-    }
-    if (currentPricing?.ai) {
-      list.push({ label: t('plan_ai_autocomplete', 'AI auto-complete') });
-    }
-    return list;
-  }, [user, nextPackage, t]);
-  if (!user?.tier) {
-    return null;
-  }
-  return (
-    <div className="flex flex-col gap-[20px]">
-      {showHeading && (
-        <h3 className="font-display text-[19px] font-[600] -tracking-[0.015em] text-pqText">
-          {t('lifetime_deal', 'Lifetime deal')}
-        </h3>
-      )}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-[13px]">
-        <div className="flex flex-col gap-[14px] rounded-[14px] bg-pqInner p-[20px] outline outline-1 -outline-offset-1 outline-pqBorder">
-          <div className="text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
-            {t('current_package', 'Current package')}
-          </div>
-          <div className="font-display text-[24px] font-[600] -tracking-[0.02em] text-pqText">
-            {user?.totalChannels > 8
-              ? 'EXTRA'
-              : tierLabel(user?.tier?.current)}
-          </div>
-          <div className="flex flex-col gap-[9px]">
-            {features.map((feature) => (
-              <FeatureRow key={feature.label} {...feature} />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-[14px] rounded-[14px] bg-pqInner p-[20px] outline outline-[1.5px] -outline-offset-1 outline-pqBrand">
-          <div className="text-[12px] font-[600] uppercase tracking-[0.06em] text-pqBrand">
-            {t('lifetime_grants', 'Lifetime grants')}
-          </div>
-          <div className="font-display text-[24px] font-[600] -tracking-[0.02em] text-pqText">
-            {tierLabel(nextPackage)}
-          </div>
-          <div className="flex flex-col gap-[9px]">
-            {nextFeature.map((feature) => (
-              <FeatureRow key={feature.label} {...feature} />
-            ))}
-          </div>
-          <div className="mt-[4px] flex items-end gap-[9px]">
-            <label className="flex min-w-0 flex-1 flex-col gap-[6px]">
-              <span className="text-[12px] font-[600] tracking-[0.02em] text-pqMuted">
-                {t('label_code', 'Code')}
-              </span>
-              <input
-                name="code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder={t('enter_your_code', 'Enter your code')}
-                className="h-[40px] w-full rounded-[10px] bg-pqBg px-[12px] font-mono text-[13px] tracking-[0.05em] text-pqText shadow-[inset_0_0_0_1px_var(--border)] outline-none placeholder:text-pqSoft focus:shadow-[inset_0_0_0_1px_var(--fieldRing)]"
-              />
-            </label>
-            <button
-              type="button"
-              disabled={code.length < 4}
-              onClick={claim}
-              className="h-[40px] shrink-0 rounded-[10px] bg-pqBrand px-[18px] text-[13.5px] font-[600] text-pqOnBrand transition-colors hover:bg-pqBrandHover disabled:pointer-events-none disabled:opacity-50"
-            >
-              {t('claim', 'Claim')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const LifetimeDeal = () => {
   const t = useT();
   const user = useUser();
@@ -595,8 +410,9 @@ export const LifetimeDeal = () => {
   if (!user?.tier) {
     return null;
   }
-  // FREE accounts claim codes / founding window. Trialing paid tiers can still
-  // convert to lifetime (Plans upsell) — do not bounce them back to /billing.
+  // FREE accounts see the founding-member purchase window. Trialing paid tiers
+  // can still convert to lifetime (Plans upsell) — do not bounce them back to
+  // /billing.
   if (
     user?.id &&
     user?.tier?.current !== 'FREE' &&
@@ -621,7 +437,6 @@ export const LifetimeDeal = () => {
       ) : (
         <LifetimeCountdown createdAt={user?.createdAt} />
       )}
-      <LifetimePackages showHeading={!!user?.isLifetime} />
     </div>
   );
 };

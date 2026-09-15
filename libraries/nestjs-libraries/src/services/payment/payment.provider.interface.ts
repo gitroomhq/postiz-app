@@ -111,10 +111,6 @@ export abstract class PaymentProviderAbstract {
     return this.notSupported();
   }
 
-  async lifetimeDeal(organizationId: string, code: string): Promise<any> {
-    return this.notSupported();
-  }
-
   // --- admin --------------------------------------------------------------
 
   async getCharges(organizationId: string): Promise<any> {

@@ -33,7 +33,6 @@
 /billing/embedded
 /billing/finish-trial
 /billing/is-trial-finished
-/billing/lifetime
 /billing/lifetime-checkout
 /billing/portal
 /billing/prorate
