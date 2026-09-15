@@ -363,16 +363,18 @@ export const LaunchesComponent = () => {
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
-  const totalNonDisabledChannels = useMemo(() => {
-    return (
-      integrations?.filter((integration: any) => !integration.disabled)
-        ?.length || 0
-    );
+  const validIntegrations = useMemo(() => {
+    return integrations?.filter(Boolean) || [];
   }, [integrations]);
+
+  const totalNonDisabledChannels = useMemo(() => {
+    return validIntegrations.filter((integration: any) => !integration.disabled)
+      .length;
+  }, [validIntegrations]);
   const changeItemGroup = useCallback(
     async (id: string, group: string) => {
       mutate(
-        integrations.map((integration: any) => {
+        validIntegrations.map((integration: any) => {
           if (integration.id === id) {
             return {
               ...integration,
@@ -393,15 +395,15 @@ export const LaunchesComponent = () => {
       });
       mutate();
     },
-    [integrations]
+    [validIntegrations]
   );
   const sortedIntegrations = useMemo(() => {
     return orderBy(
-      integrations,
+      validIntegrations,
       ['type', 'disabled', 'identifier'],
       ['desc', 'asc', 'asc']
     );
-  }, [integrations]);
+  }, [validIntegrations]);
   const menuIntegrations = useMemo(() => {
     return orderBy(
       Object.values(
