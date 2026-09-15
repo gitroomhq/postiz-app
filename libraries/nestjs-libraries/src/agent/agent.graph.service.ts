@@ -347,7 +347,10 @@ export class AgentGraphService {
           const uploadWithId = await this._mediaService.saveFile(
             state.orgId,
             name,
-            upload
+            upload,
+            p.image.startsWith('data:')
+              ? undefined
+              : new URL(p.image).pathname.split('/').pop() || undefined
           );
 
           return {
