@@ -38,7 +38,7 @@ import {
   ChevronDownIcon,
   CloseIcon,
   ExpandIcon,
-  RestoreIcon,
+  CollapseIcon,
   TrashIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
@@ -930,7 +930,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     }
                     className="grid size-[44px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
                   >
-                    {maximized ? <RestoreIcon /> : <ExpandIcon />}
+                    {maximized ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
                   </button>
                 )}
                 <button

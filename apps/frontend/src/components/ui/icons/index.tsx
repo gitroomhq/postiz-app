@@ -117,56 +117,6 @@ export const CloseIcon: FC<IconProps> = ({
   </svg>
 );
 
-/** Expand the composer to the viewport. */
-export const ExpandIcon: FC<IconProps> = ({
-  size = 16,
-  className,
-  ...props
-}) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 20 20"
-    fill="none"
-    className={className}
-    {...props}
-  >
-    <path
-      d="M11.5 3.5H16.5V8.5M16.5 3.5 11 9M8.5 16.5H3.5V11.5M3.5 16.5 9 11"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-/** Restore the composer from viewport-fill. */
-export const RestoreIcon: FC<IconProps> = ({
-  size = 16,
-  className,
-  ...props
-}) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 20 20"
-    fill="none"
-    className={className}
-    {...props}
-  >
-    <path
-      d="M16.5 8.5V3.5H11.5M16.5 3.5 11 9M3.5 11.5V16.5H8.5M3.5 16.5 9 11"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 // Small Close Icon (10x11 variant)
 export const CloseIconSmall: FC<IconProps> = ({
   size = 10,

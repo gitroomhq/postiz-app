@@ -55,7 +55,7 @@ describe('phone calendar and composer', () => {
 
   it('lets desktop maximize the composer to the viewport', () => {
     assert.match(manage, /ExpandIcon/);
-    assert.match(manage, /RestoreIcon/);
+    assert.match(manage, /CollapseIcon/);
     assert.match(manage, /t\('full_screen', 'Full screen'\)/);
     assert.match(manage, /fixed inset-0 z-\[401\]/);
   });
