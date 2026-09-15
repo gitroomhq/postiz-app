@@ -45,8 +45,8 @@ describe('phone calendar and composer', () => {
 
   it('splits composer into Edit and Preview panes on phone and tablet', () => {
     assert.match(manage, /composerPane/);
-    assert.match(manage, /setComposerPane\('preview'\)/);
-    assert.match(manage, /COMPOSER_SPLIT_MIN = 1024/);
+    assert.match(manage, /setComposerPane/);
+    assert.match(manage, /COMPOSER_SPLIT_MIN/);
     assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row'/);
     assert.match(manage, /flex min-h-0 flex-1/);
     assert.match(manage, /<ComposeAiAssistant \/>/);

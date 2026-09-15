@@ -45,28 +45,36 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
-import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import {
+  PQ_COMPOSER_SPLIT_MIN,
+  useViewport,
+} from '@gitroom/frontend/components/layout/use.viewport';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useClickOutside } from '@mantine/hooks';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { Spinner } from '@gitroom/react/ui/spinner';
 
 /** Side-by-side editor + preview once the viewport can hold a 420px preview. */
-export const COMPOSER_SPLIT_MIN = 1024;
+export const COMPOSER_SPLIT_MIN = PQ_COMPOSER_SPLIT_MIN;
 
 export type ComposerPane = 'edit' | 'preview' | 'schedule';
 
 const hideChatbaseWhileComposerOpen = () => {
+  const mark = 'data-pq-cbh';
+  const hideEl = (el: HTMLElement) => {
+    if (el.getAttribute(mark) !== '1') {
+      el.setAttribute(mark, '1');
+    }
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('visibility', 'hidden', 'important');
+    el.style.setProperty('pointer-events', 'none', 'important');
+    el.style.setProperty('opacity', '0', 'important');
+  };
   const selector =
     '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], [id*="chatbase"], iframe[src*="chatbase"]';
   const hide = () => {
     document.documentElement.setAttribute('data-pq-sheet', '1');
-    document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
-      el.style.setProperty('display', 'none', 'important');
-      el.style.setProperty('visibility', 'hidden', 'important');
-      el.style.setProperty('pointer-events', 'none', 'important');
-      el.style.setProperty('opacity', '0', 'important');
-    });
+    document.querySelectorAll<HTMLElement>(selector).forEach(hideEl);
     document.querySelectorAll('iframe').forEach((el) => {
       const style = window.getComputedStyle(el);
       const src = el.getAttribute('src') || '';
@@ -75,10 +83,7 @@ const hideChatbaseWhileComposerOpen = () => {
         src.includes('chatbase') ||
         el.id.includes('chatbase')
       ) {
-        el.style.setProperty('display', 'none', 'important');
-        el.style.setProperty('visibility', 'hidden', 'important');
-        el.style.setProperty('pointer-events', 'none', 'important');
-        el.style.setProperty('opacity', '0', 'important');
+        hideEl(el);
       }
     });
   };
@@ -87,7 +92,8 @@ const hideChatbaseWhileComposerOpen = () => {
   return () => {
     window.clearInterval(id);
     document.documentElement.removeAttribute('data-pq-sheet');
-    document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+    document.querySelectorAll<HTMLElement>(`[${mark}]`).forEach((el) => {
+      el.removeAttribute(mark);
       el.style.removeProperty('display');
       el.style.removeProperty('visibility');
       el.style.removeProperty('pointer-events');
@@ -146,8 +152,9 @@ const ComposerStepTabs: FC<{
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
-  const { mobile, touch, width } = useViewport();
-  const compactChrome = width < COMPOSER_SPLIT_MIN;
+  const { mobile, touch, splitComposer } = useViewport();
+  const compactChrome = !splitComposer;
+  const compactFooter = touch;
   const phoneFlow = mobile;
   const [composerPane, setComposerPane] = useState<ComposerPane>('edit');
   const [maximized, setMaximized] = useState(false);
@@ -1076,7 +1083,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           className={clsx(
             'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
             phoneFlow && composerPane !== 'schedule' && 'hidden',
-            compactChrome
+            compactFooter
               ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
               : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent min-[1180px]:flex-row'
           )}
@@ -1085,13 +1092,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div
             className={clsx(
               'min-w-0 gap-[8px]',
-              compactChrome
+              compactFooter
                 ? 'grid w-full grid-cols-2'
                 : 'flex flex-1 items-center ps-[20px]'
             )}
           >
             {!dummy && (
-              <div className={clsx('min-w-0', compactChrome && 'w-full [&>*]:w-full')}>
+              <div className={clsx('min-w-0', compactFooter && 'w-full [&>*]:w-full')}>
                 <TagsComponent
                   name="tags"
                   label={t('tags', 'Tags')}
@@ -1104,7 +1111,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
 
             {!dummy && (
-              <div className={clsx('min-w-0', compactChrome && 'w-full [&>*]:w-full')}>
+              <div className={clsx('min-w-0', compactFooter && 'w-full [&>*]:w-full')}>
                 <RepeatComponent repeat={repeater} onChange={setRepeater} />
               </div>
             )}
@@ -1113,7 +1120,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           <div
             className={clsx(
               'flex min-w-0 items-center justify-end gap-[8px]',
-              compactChrome ? 'w-full flex-col' : 'shrink-0 pe-[20px]',
+              compactFooter ? 'w-full flex-col' : 'shrink-0 pe-[20px]',
               phoneFlow && 'flex-row'
             )}
           >
@@ -1139,7 +1146,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <div
               className={clsx(
                 'flex min-w-0 items-center justify-end gap-[8px]',
-                compactChrome && 'w-full',
+                compactFooter && 'w-full',
                 phoneFlow && 'min-w-0 flex-1'
               )}
             >
@@ -1220,6 +1227,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         ? t('select_channels', 'Select channels')
                         : dummy
                         ? t('create_output', 'Create output')
+                        : phoneFlow
+                        ? t('schedule', 'Schedule')
                         : !existingData?.integration
                         ? t('add_to_calendar', 'Add to calendar')
                         : existingData?.posts?.[0]?.state === 'DRAFT'
