@@ -180,7 +180,6 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       .replace(/<\/strong>/g, '</b>')
       .replace(/<p>(.*?)<\/p>/g, '$1\n');
 
-    console.log(text);
     const processedMedia = this.processMedia(mediaFiles);
 
     // if there's no media, bot sends a text message only
