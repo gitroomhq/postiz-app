@@ -6,6 +6,7 @@ import {
   AUTH_OG_DESCRIPTION,
   AUTH_OG_IMAGE,
   AUTH_OG_IMAGE_PATH,
+  FACEBOOK_OG_APP_ID,
   authShareMetadata,
 } from './auth.open-graph.ts';
 
@@ -18,6 +19,8 @@ describe('authShareMetadata', () => {
     assert.equal(share.openGraph?.type, 'website');
     assert.equal(share.openGraph?.siteName, 'PostQueen');
     assert.equal(share.twitter?.card, 'summary_large_image');
+    assert.equal(share.facebook?.appId, FACEBOOK_OG_APP_ID);
+    assert.equal(FACEBOOK_OG_APP_ID, '1987692731891592');
     assert.deepEqual(share.openGraph?.images, [AUTH_OG_IMAGE]);
     assert.equal(AUTH_OG_IMAGE.url, AUTH_OG_IMAGE_PATH);
     assert.equal(AUTH_OG_IMAGE.width, 1200);
