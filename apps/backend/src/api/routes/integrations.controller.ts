@@ -121,6 +121,7 @@ export class IntegrationsController {
             analytics:
               !!findIntegration?.analytics &&
               !findIntegration.analyticsDisabled?.(),
+            analyticsIntervals: findIntegration?.analyticsIntervals || [],
             postAnalytics:
               !!findIntegration?.postsAnalytics &&
               !findIntegration.analyticsDisabled?.(),

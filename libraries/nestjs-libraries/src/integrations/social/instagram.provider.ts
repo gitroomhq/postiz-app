@@ -33,6 +33,7 @@ export class InstagramProvider
   implements SocialProvider
 {
   identifier = 'instagram';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;

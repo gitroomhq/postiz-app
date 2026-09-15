@@ -51,6 +51,7 @@ export interface IAuthenticator {
    * exposed for this provider.
    */
   analyticsDisabled?: () => boolean;
+  analyticsIntervals?: readonly number[];
   changeNickname?(
     id: string,
     accessToken: string,

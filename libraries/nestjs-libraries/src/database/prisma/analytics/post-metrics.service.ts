@@ -18,7 +18,10 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/analytics/post-metrics.query';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
-import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  Disconnect,
+  RefreshToken,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { GetAnalyticsPostsDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.analytics.posts.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 
@@ -54,17 +57,36 @@ export class PostMetricsService {
   }
 
   async enqueueOrgSync(organizationId: string) {
+    const workflowId = `analytics-sync-org-v1-${organizationId}-${Math.floor(
+      Date.now() / STALE_AFTER_MS,
+    )}`;
+    const client = this._temporalService.client.getRawClient();
+    if (!client) {
+      this.logger.error(
+        `Could not enqueue analytics sync for organization ${organizationId}: Temporal client unavailable`,
+      );
+      return false;
+    }
     try {
-      await this._temporalService.client
-        .getRawClient()
-        ?.workflow.start('analyticsSyncOrgWorkflowV1', {
-          workflowId: `analytics-sync-org-v1-${organizationId}`,
-          taskQueue: 'main',
-          args: [{ organizationId }],
-        });
+      await client.workflow.start('analyticsSyncOrgWorkflowV1', {
+        workflowId,
+        taskQueue: 'main',
+        args: [{ organizationId }],
+        workflowIdConflictPolicy: 'USE_EXISTING',
+        workflowIdReusePolicy: 'REJECT_DUPLICATE',
+      });
       return true;
     } catch (err) {
-      // Already running is the expected case when the page is opened twice.
+      if (
+        (err as { name?: string })?.name ===
+        'WorkflowExecutionAlreadyStartedError'
+      ) {
+        return false;
+      }
+      this.logger.error(
+        `Could not enqueue analytics sync for organization ${organizationId}`,
+        err as Error,
+      );
       return false;
     }
   }
@@ -147,7 +169,7 @@ export class PostMetricsService {
         ...byReleaseId.keys(),
       ]);
     } catch (err) {
-      if (err instanceof RefreshToken) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
         const refreshed =
           await this._refreshIntegrationService.refresh(integration);
         if (!refreshed || !refreshed.accessToken) {

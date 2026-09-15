@@ -64,6 +64,7 @@ const clientAndYoutube = () => {
 export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 200; // YouTube has strict upload quotas
   identifier = 'youtube';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'video' as const;
   name = 'YouTube';
   isBetweenSteps = true;

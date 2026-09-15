@@ -35,10 +35,10 @@ export function engagementRate(
   if (impressions == null || impressions <= 0) {
     return null;
   }
-  if (reactions == null && comments == null) {
+  if (reactions == null || comments == null) {
     return null;
   }
-  return (((reactions ?? 0) + (comments ?? 0)) / impressions) * 100;
+  return ((reactions + comments) / impressions) * 100;
 }
 
 function row(

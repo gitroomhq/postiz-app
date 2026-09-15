@@ -8,6 +8,7 @@ import {
   matchesAnalyticsQuery,
   previewText,
   sortAnalyticsPosts,
+  sumComplete,
   sumKnown,
   summarizeAnalyticsPosts,
   topAnalyticsPosts,
@@ -161,7 +162,7 @@ describe('mapSnapshotRow', () => {
     },
   };
 
-  it('keeps unknown metrics null and rates Facebook-style comments', () => {
+  it('keeps unknown metrics null and hides rates with unknown comments', () => {
     const mapped = mapSnapshotRow({
       ...base,
       postMetricSnapshots: [
@@ -174,7 +175,7 @@ describe('mapSnapshotRow', () => {
       ],
     });
     assert.equal(mapped.comments, null);
-    assert.equal(mapped.engagementRate, 5);
+    assert.equal(mapped.engagementRate, null);
     assert.equal(mapped.thumbnail, '/a.jpg');
   });
 
@@ -217,6 +218,21 @@ describe('sumKnown', () => {
   });
 });
 
+describe('sumComplete', () => {
+  it('returns null rather than presenting a partial mixed-provider total', () => {
+    assert.equal(
+      sumComplete(
+        [
+          row({ id: 'known', comments: 5 }),
+          row({ id: 'facebook', comments: null }),
+        ],
+        (post) => post.comments
+      ),
+      null
+    );
+  });
+});
+
 describe('summarizeAnalyticsPosts', () => {
   it('uses every filtered post rather than only the visible page', () => {
     const rows = [
@@ -250,6 +266,8 @@ describe('summarizeAnalyticsPosts', () => {
     const summary = summarizeAnalyticsPosts([
       row({ id: 'facebook', reactions: 10, comments: null }),
     ]);
+    assert.equal(summary.reactions, 10);
+    assert.equal(summary.comments, null);
     assert.equal(summary.engagementMix, null);
   });
 });

@@ -77,6 +77,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
   trialLocked = true;
   isBetweenSteps = false;
   scopes = [] as string[];
+  analyticsIntervals = [7, 30, 90] as const;
   analyticsDisabled = () => !!process.env.DISABLE_X_ANALYTICS;
   stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
   // X rate limits are per user (300 posts / 3 hours), not per app, so the cap

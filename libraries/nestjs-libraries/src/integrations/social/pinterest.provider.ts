@@ -55,6 +55,7 @@ export class PinterestProvider
   implements SocialProvider
 {
   identifier = 'pinterest';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'business' as const;
   name = 'Pinterest';
   isBetweenSteps = false;

@@ -34,6 +34,7 @@ export const META_GRAPH_API_VERSION = 'v25.0';
 )
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'social' as const;
   name = 'Facebook Page';
   isBetweenSteps = true;

@@ -27,6 +27,7 @@ export class LinkedinPageProvider
   implements SocialProvider
 {
   override identifier = 'linkedin-page';
+  analyticsIntervals = [7, 30, 90] as const;
   category = 'social' as const;
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;

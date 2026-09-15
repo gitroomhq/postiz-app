@@ -36,8 +36,9 @@ describe('engagementRate', () => {
     assert.equal(engagementRate(1000, null, null), null);
   });
 
-  it('uses reactions only when comments are unknown (Facebook)', () => {
-    assert.equal(engagementRate(1000, 50, null), 5);
+  it('is null when either formula input is unknown', () => {
+    assert.equal(engagementRate(1000, 50, null), null);
+    assert.equal(engagementRate(1000, null, 2), null);
   });
 
   it('divides reactions plus comments by impressions', () => {

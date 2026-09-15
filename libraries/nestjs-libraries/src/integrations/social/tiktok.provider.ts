@@ -35,6 +35,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
   identifier = 'tiktok';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'TikTok';
   isBetweenSteps = false;

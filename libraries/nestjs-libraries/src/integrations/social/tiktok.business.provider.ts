@@ -39,6 +39,7 @@ export class TiktokBusinessProvider
   implements SocialProvider
 {
   identifier = 'tiktok-business';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   // Add Channel lists both TikTok connections by this name; two cards reading
   // "Tiktok" and "TikTok" gave no way to tell them apart.

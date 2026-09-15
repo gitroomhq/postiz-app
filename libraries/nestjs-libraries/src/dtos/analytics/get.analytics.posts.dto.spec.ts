@@ -17,9 +17,10 @@ describe('toOptionalInt', () => {
     assert.equal(toOptionalInt('0'), 0);
   });
 
-  it('does not turn garbage into NaN', () => {
-    assert.equal(toOptionalInt('nope'), undefined);
-    assert.equal(toOptionalInt(Number.NaN), undefined);
+  it('keeps malformed numbers present so validation rejects them', () => {
+    assert.equal(Number.isNaN(toOptionalInt('nope')), true);
+    assert.equal(Number.isNaN(toOptionalInt('12junk')), true);
+    assert.equal(Number.isNaN(toOptionalInt(Number.NaN)), true);
   });
 });
 
@@ -50,5 +51,13 @@ describe('GetAnalyticsPostsDto', () => {
       invalid,
       new Set(['date', 'page', 'limit', 'sort'])
     );
+  });
+
+  it('rejects partially numeric query strings instead of truncating them', async () => {
+    const dto = plainToInstance(GetAnalyticsPostsDto, {
+      date: '12junk',
+    });
+    const invalid = new Set((await validate(dto)).map((error) => error.property));
+    assert.deepEqual(invalid, new Set(['date']));
   });
 });

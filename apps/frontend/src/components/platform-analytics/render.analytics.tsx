@@ -9,7 +9,6 @@ import clsx from 'clsx';
 import {
   analyticsHasActivity,
   analyticsResponseNeedsRefresh,
-  mergeWorkspaceCharts,
 } from './analytics-activity';
 
 interface AnalyticsDataItem {
@@ -356,112 +355,6 @@ export const RenderAnalytics: FC<{
 
   if (noPeriodData) {
     return <NoPeriodDataState />;
-  }
-
-  return <AnalyticsChartBoard rows={rows} totals={totals} />;
-};
-
-const workspaceChartLabel = (
-  key: 'impressions' | 'engagement' | 'audience',
-  t: (key: string, fallback: string) => string,
-) => {
-  if (key === 'impressions') {
-    return t('impressions', 'Impressions');
-  }
-  if (key === 'engagement') {
-    return t('engagement', 'Engagement');
-  }
-  return t('followers', 'Followers');
-};
-
-const workspaceChartHint = (
-  key: 'impressions' | 'engagement' | 'audience',
-  t: (key: string, fallback: string) => string,
-) => {
-  if (key === 'impressions') {
-    return t(
-      'workspace_impressions_hint',
-      'Views, reach, and impressions from each channel',
-    );
-  }
-  if (key === 'engagement') {
-    return t(
-      'workspace_engagement_hint',
-      'Likes, comments, clicks, saves, and similar from each channel',
-    );
-  }
-  return t(
-    'workspace_followers_hint',
-    'Followers and subscribers from each channel',
-  );
-};
-
-export const WorkspaceChannelCharts: FC<{
-  integrations: AnalyticsIntegration[];
-  date: number;
-}> = ({ integrations, date }) => {
-  const t = useT();
-  const fetch = useFetch();
-  const ids = integrations.map((item) => item.id).join(',');
-
-  const load = useCallback(async () => {
-    const bodies = await Promise.all(
-      integrations.map(async (integration) => {
-        const json = await (
-          await fetch(`/analytics/${integration.id}?date=${date}`)
-        ).json();
-        return Array.isArray(json) ? json : [];
-      }),
-    );
-    return mergeWorkspaceCharts(bodies.flat());
-  }, [date, fetch, ids]);
-
-  const { data, isLoading } = useSWR(
-    ids ? `/analytics-workspace-${ids}-${date}` : null,
-    load,
-    {
-      refreshInterval: 0,
-      refreshWhenHidden: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
-    },
-  );
-
-  const rows: AnalyticsDataItem[] = useMemo(
-    () =>
-      (data || []).map((item) => ({
-        label: workspaceChartLabel(item.key, t),
-        data: item.data,
-        hint: workspaceChartHint(item.key, t),
-      })),
-    [data, t],
-  );
-
-  const totals = useMemo(() => {
-    return rows.map((item) =>
-      new Intl.NumberFormat().format(
-        Math.round(
-          item.data.reduce((acc, point) => acc + Number(point.total), 0),
-        ),
-      ),
-    );
-  }, [rows]);
-
-  if (!ids) {
-    return null;
-  }
-
-  if (isLoading) {
-    return (
-      <div role="status" aria-busy="true" aria-label={t('loading', 'Loading')}>
-        <AnalyticsCardsGhost pills={false} />
-      </div>
-    );
-  }
-
-  if (!analyticsHasActivity(rows)) {
-    return null;
   }
 
   return <AnalyticsChartBoard rows={rows} totals={totals} />;

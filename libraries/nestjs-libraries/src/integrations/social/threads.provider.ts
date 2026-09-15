@@ -25,6 +25,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'Threads';
   isBetweenSteps = false;

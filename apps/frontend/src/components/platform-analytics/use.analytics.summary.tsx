@@ -52,6 +52,7 @@ export const useAnalyticsSummary = (params: {
   }, [fetch, params.enabled, query]);
 
   return useSWR(key, load, {
+    refreshInterval: (latest) => (latest?.syncing ? 5000 : 0),
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,

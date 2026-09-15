@@ -494,7 +494,7 @@ export const WorkspaceAnalytics: FC<{
                       wide &&
                         'min-[520px]:col-span-2 md:col-span-4 md:px-[16px] min-[1100px]:col-span-1 min-[1100px]:px-[12px]',
                       index === 0 &&
-                        'shadow-[inset_0_0_0_1px_rgba(124,58,237,0.4)]',
+                      'shadow-[inset_0_0_0_1px_var(--ring)]',
                     )}
                   >
                     <div className="min-w-0 flex-1">

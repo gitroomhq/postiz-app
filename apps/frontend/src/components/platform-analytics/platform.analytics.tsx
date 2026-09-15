@@ -6,7 +6,7 @@ import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/componen
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { RenderAnalytics, WorkspaceChannelCharts } from '@gitroom/frontend/components/platform-analytics/render.analytics';
+import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
 import { WorkspaceAnalytics } from '@gitroom/frontend/components/platform-analytics/workspace.analytics';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -112,6 +112,7 @@ export const PlatformAnalytics = () => {
         changeProfilePicture?: boolean;
         changeNickName?: boolean;
         analytics?: boolean;
+        analyticsIntervals?: readonly number[];
         postAnalytics?: boolean;
       }
     >;
@@ -202,58 +203,15 @@ export const PlatformAnalytics = () => {
     if (!currentIntegration) {
       return [];
     }
-    const arr = [];
-    if (
-      [
-        'facebook',
-        'instagram',
-        'instagram-standalone',
-        'linkedin-page',
-        'pinterest',
-        'youtube',
-        'threads',
-        'gmb',
-        'x',
-        'tiktok',
-        'tiktok-business',
-      ].indexOf(currentIntegration.identifier) !== -1
-    ) {
-      arr.push({
-        key: 7,
-        value: t('7_days', '7 Days'),
-      });
-    }
-    if (
-      [
-        'facebook',
-        'instagram',
-        'instagram-standalone',
-        'linkedin-page',
-        'pinterest',
-        'youtube',
-        'threads',
-        'gmb',
-        'x',
-        'tiktok',
-        'tiktok-business',
-      ].indexOf(currentIntegration.identifier) !== -1
-    ) {
-      arr.push({
-        key: 30,
-        value: t('30_days', '30 Days'),
-      });
-    }
-    if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x', 'gmb'].indexOf(
-        currentIntegration.identifier
-      ) !== -1
-    ) {
-      arr.push({
-        key: 90,
-        value: t('90_days', '90 Days'),
-      });
-    }
-    return arr;
+    return (currentIntegration.analyticsIntervals || []).map((interval) => ({
+      key: interval,
+      value:
+        interval === 7
+          ? t('7_days', '7 Days')
+          : interval === 30
+            ? t('30_days', '30 Days')
+            : t('90_days', '90 Days'),
+    }));
   }, [currentIntegration, selected, t]);
 
   const keys = useMemo(() => {
@@ -358,13 +316,7 @@ export const PlatformAnalytics = () => {
   const analyticsBody = (
     <>
       {selected === ALL_CHANNELS && !!keys && (
-        <>
-          <WorkspaceChannelCharts
-            integrations={sortedIntegrations}
-            date={keys}
-          />
-          <WorkspaceAnalytics date={keys} />
-        </>
+        <WorkspaceAnalytics date={keys} />
       )}
       {selected !== ALL_CHANNELS && !!currentIntegration && !!keys && (
         <>
@@ -822,13 +774,7 @@ export const PlatformAnalytics = () => {
               </div>
             </div>
             {!!keys && (
-              <>
-                <WorkspaceChannelCharts
-                  integrations={sortedIntegrations}
-                  date={keys}
-                />
-                <WorkspaceAnalytics date={keys} />
-              </>
+              <WorkspaceAnalytics date={keys} />
             )}
           </div>
         )}

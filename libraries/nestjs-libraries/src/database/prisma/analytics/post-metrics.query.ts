@@ -162,6 +162,24 @@ export function sumKnown(
   return any ? total : null;
 }
 
+export function sumComplete(
+  rows: AnalyticsPostRow[],
+  pick: (row: AnalyticsPostRow) => number | null
+): number | null {
+  if (rows.length === 0) {
+    return null;
+  }
+  let total = 0;
+  for (const row of rows) {
+    const value = pick(row);
+    if (value == null) {
+      return null;
+    }
+    total += value;
+  }
+  return total;
+}
+
 export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
   const channelRows = new Map<
     string,
@@ -188,20 +206,20 @@ export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
     weekdays[day === 0 ? 6 : day - 1] += 1;
   }
 
-  const reactions = sumKnown(rows, (row) => row.reactions);
-  const comments = sumKnown(rows, (row) => row.comments);
+  const reactions = sumComplete(rows, (row) => row.reactions);
+  const comments = sumComplete(rows, (row) => row.comments);
 
   return {
     posts: rows.length,
     reactions,
     comments,
-    impressions: sumKnown(rows, (row) => row.impressions),
+    impressions: sumComplete(rows, (row) => row.impressions),
     channels: [...channelRows.values()].map((channel) => ({
       integrationId: channel.integrationId,
       platform: channel.platform,
       channelName: channel.channelName,
       posts: channel.rows.length,
-      impressions: sumKnown(channel.rows, (row) => row.impressions),
+      impressions: sumComplete(channel.rows, (row) => row.impressions),
     })),
     weekdays,
     engagementMix:
@@ -255,10 +273,10 @@ function snapshotEngagementRate(
   if (impressions == null || impressions <= 0) {
     return null;
   }
-  if (reactions == null && comments == null) {
+  if (reactions == null || comments == null) {
     return null;
   }
-  return (((reactions ?? 0) + (comments ?? 0)) / impressions) * 100;
+  return ((reactions + comments) / impressions) * 100;
 }
 
 export function mapSnapshotRow(post: {

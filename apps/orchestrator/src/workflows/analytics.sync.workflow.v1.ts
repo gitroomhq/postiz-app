@@ -1,4 +1,9 @@
-import { continueAsNew, proxyActivities, sleep } from '@temporalio/workflow';
+import {
+  continueAsNew,
+  log,
+  proxyActivities,
+  sleep,
+} from '@temporalio/workflow';
 import { PostMetricsActivity } from '@gitroom/orchestrator/activities/post-metrics.activity';
 
 const { listPostMetricIntegrations, syncPostMetricsForIntegration } =
@@ -23,9 +28,19 @@ export async function analyticsSyncWorkflowV1() {
             target.organizationId,
             target.integrationId
           );
-        } catch (err) {}
+        } catch (err) {
+          log.warn('Analytics integration sync failed', {
+            organizationId: target.organizationId,
+            integrationId: target.integrationId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      log.error('Could not list analytics sync targets', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
     await sleep('1 hour');
   }
 
@@ -44,6 +59,12 @@ export async function analyticsSyncOrgWorkflowV1({
         target.organizationId,
         target.integrationId
       );
-    } catch (err) {}
+    } catch (err) {
+      log.warn('Organization analytics integration sync failed', {
+        organizationId: target.organizationId,
+        integrationId: target.integrationId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 }
