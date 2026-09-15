@@ -632,7 +632,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       <div className="flex flex-1 flex-col overflow-hidden rounded-[20px] bg-pqInner shadow-pq mobile:rounded-none">
         <div
           className={clsx(
-            'flex flex-1',
+            'flex min-h-0 flex-1',
             // Phone/tablet: Edit | Preview tabs. Preview fills leftover height.
             touch ? 'flex-col' : 'flex-row'
           )}

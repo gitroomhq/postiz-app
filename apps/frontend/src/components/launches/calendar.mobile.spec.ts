@@ -47,6 +47,7 @@ describe('phone calendar and composer', () => {
     assert.match(manage, /composerPane/);
     assert.match(manage, /setComposerPane\('preview'\)/);
     assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
+    assert.match(manage, /flex min-h-0 flex-1/);
     assert.match(manage, /!touch &&/);
     assert.match(manage, /import\('@copilotkit\/react-ui'\)/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
