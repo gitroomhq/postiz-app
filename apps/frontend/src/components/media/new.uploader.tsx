@@ -193,7 +193,7 @@ export function useUppyUploader(props: {
       });
     });
     uppy2.on('error', (result) => {
-      uppy2.clear();
+      uppy2.cancelAll();
       setLocked(false);
       props.onEnd();
       fileOrderIndex = 0;
