@@ -164,6 +164,7 @@ export const Component: FC<{
 
     return (
       <div
+        data-pq-composer-shell={isComposer ? '1' : undefined}
         style={{ zIndex }}
         className={clsx(
           'fixed inset-0 flex bg-popup transition-all animate-fadeIn text-newTextColor',

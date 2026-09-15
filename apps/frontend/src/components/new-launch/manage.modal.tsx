@@ -58,20 +58,26 @@ export type ComposerPane = 'edit' | 'preview' | 'schedule';
 
 const hideChatbaseWhileComposerOpen = () => {
   const selector =
-    '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]';
+    '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], [id*="chatbase"], iframe[src*="chatbase"]';
   const hide = () => {
+    document.documentElement.setAttribute('data-pq-sheet', '1');
     document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
       el.style.setProperty('display', 'none', 'important');
       el.style.setProperty('visibility', 'hidden', 'important');
+      el.style.setProperty('pointer-events', 'none', 'important');
+      el.style.setProperty('opacity', '0', 'important');
     });
   };
   hide();
-  const id = window.setInterval(hide, 250);
+  const id = window.setInterval(hide, 100);
   return () => {
     window.clearInterval(id);
+    document.documentElement.removeAttribute('data-pq-sheet');
     document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
       el.style.removeProperty('display');
       el.style.removeProperty('visibility');
+      el.style.removeProperty('pointer-events');
+      el.style.removeProperty('opacity');
     });
   };
 };
@@ -711,7 +717,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       data-pq-composer-max={maximized ? '1' : '0'}
       className={clsx(
         'relative flex h-full min-h-0 w-full flex-1',
-        maximized && !touch && 'fixed inset-0 z-[401]'
+        maximized && !touch && 'fixed inset-0 z-[401] h-dvh w-screen'
       )}
     >
       <div

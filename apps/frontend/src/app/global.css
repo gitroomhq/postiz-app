@@ -1647,3 +1647,12 @@ html:has([data-pq='composer']) iframe[src*='chatbase'] {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+html:has([data-pq-composer-max='1']) [data-pq-composer-shell] {
+  padding: 0 !important;
+}
+html:has([data-pq-composer-max='1']) [data-pq-composer-shell] > div {
+  max-width: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}

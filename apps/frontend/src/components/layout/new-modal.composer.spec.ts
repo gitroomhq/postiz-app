@@ -22,5 +22,6 @@ describe('composer modal chrome', () => {
     assert.match(source, /items-center justify-center/);
     assert.match(source, /max-w-\[1400px\]/);
     assert.match(source, /p-\[32px\]/);
+    assert.match(source, /data-pq-composer-shell/);
   });
 });
