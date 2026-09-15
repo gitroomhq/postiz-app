@@ -7,6 +7,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Button } from '@gitroom/react/form/button';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import { useSWRConfig } from 'swr';
+import { isPostsSwrKey } from '@gitroom/frontend/components/launches/posts-swr';
 import clsx from 'clsx';
 import { channelListSubtitle } from '@gitroom/frontend/components/channels/channel-handle';
 import { useDateFormat } from '@gitroom/frontend/components/launches/helpers/date.format';
@@ -105,13 +106,7 @@ export const ImportDebugPostModal: FC<{ close: () => void }> = ({ close }) => {
         body: JSON.stringify(importPayload),
       });
 
-      await mutate(
-        (key: string) =>
-          typeof key === 'string' &&
-          (key.startsWith('/posts-') || key.startsWith('/posts-list-')),
-        undefined,
-        { revalidate: true }
-      );
+      await mutate(isPostsSwrKey, undefined, { revalidate: true });
 
       toaster.show(
         t('debug_post_imported', 'Post imported as draft successfully'),

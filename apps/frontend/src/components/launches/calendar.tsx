@@ -158,7 +158,7 @@ export const usePostActions = (onMutate?: () => void) => {
   const fetch = useFetch();
   const modal = useModals();
   const toaster = useToaster();
-  const { integrations, reloadCalendarView } = useCalendar();
+  const { integrations, reloadCalendarView, dropPostGroupFromView } = useCalendar();
 
   const mutate = useCallback(() => {
     reloadCalendarView();
@@ -304,9 +304,9 @@ export const usePostActions = (onMutate?: () => void) => {
         'success'
       );
 
-      mutate();
+      dropPostGroupFromView(post.group || post.id);
     },
-    [toaster, t, fetch, mutate]
+    [toaster, t, fetch, dropPostGroupFromView]
   );
 
   const openStatistics = useCallback(

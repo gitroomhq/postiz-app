@@ -31,6 +31,8 @@ the check: an uncommitted one would reseed itself on every CI run and guard noth
 
 ## Log
 
+**Deleting a post left the row on screen until a full reload.** Toast said it was gone because DELETE succeeded, but the list/calendar SWR hooks only bound-mutated the fetch that is currently keyed — the other view is `null` and `keepPreviousData` kept the row. Delete now drops the group from every `/posts-` cache immediately, then revalidates. i18n 0.
+
 **Composer Copilot is the footer AI control on every viewport.** Merging `main` into the phone/tablet native PR replaced the desktop-only floating Copilot chip with `ComposeAiAssistant` in the composer footer. Phone and tablet keep Edit/Preview tabs and the stacked footer. i18n 0.
 
 **Touch viewport no longer re-renders the app on every resize pixel.** `useViewport()` is on calendar cards, chrome, composer, Settings. Listening to `resize` rebuilt that tree while a window was dragged. It now uses `matchMedia` and only updates when phone/tablet/desktop actually changes. Post HTML5 drag keys off `touch` (not a stale `innerWidth`). The composer’s Copilot chip loads only on desktop. i18n 0.
