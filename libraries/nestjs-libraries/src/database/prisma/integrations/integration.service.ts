@@ -339,14 +339,37 @@ export class IntegrationService {
     integration: Integration,
     err = ''
   ) {
+    const providerName = (
+      this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      )?.name || integration.providerIdentifier
+    )
+      .split('\n')[0]
+      .trim();
+    const account = integration.name?.trim();
+    const who =
+      account && account.toLowerCase() !== providerName.toLowerCase()
+        ? ` (${account})`
+        : '';
+    const message = `Could not refresh your ${providerName} channel${who}. Reconnect it to keep publishing.`;
+    const params = new URLSearchParams();
+    params.set('channel', integration.providerIdentifier);
+    params.set('focus', integration.id);
+    const link = `/channels?${params.toString()}`;
     await this._notificationService.inAppNotification(
       orgId,
-      `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
-      `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
+      message,
+      message,
       true,
       false,
-      'info'
+      'info',
+      link
     );
+    if (err?.trim()) {
+      console.error(
+        `[integrations] refresh failed for ${integration.providerIdentifier} ${integration.id}: ${err.trim()}`
+      );
+    }
   }
 
   async refreshNeeded(org: string, id: string) {
@@ -493,7 +516,8 @@ export class IntegrationService {
           } back on.`,
           true,
           false,
-          'info'
+          'info',
+          '/billing'
         );
       } catch (err) {
         console.error(`[integrations] downgrade notice failed for ${org}`, err);
@@ -531,7 +555,8 @@ export class IntegrationService {
           } switched back on and can publish.`,
           true,
           false,
-          'info'
+          'info',
+          '/channels'
         );
       } catch (err) {
         console.error(`[integrations] upgrade notice failed for ${org}`, err);

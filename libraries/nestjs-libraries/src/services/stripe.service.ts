@@ -1754,7 +1754,8 @@ export class StripeService extends PaymentProviderAbstract {
       "We could not charge your card for PostQueen. Update your payment method from Billing and we'll try again — nothing is cancelled yet.",
       true,
       false,
-      'info'
+      'info',
+      '/billing'
     );
 
     return { ok: true };
@@ -1812,7 +1813,8 @@ export class StripeService extends PaymentProviderAbstract {
       'A payment for PostQueen was disputed with your bank, so your plan has been suspended. Contact support if this was not you.',
       true,
       false,
-      'info'
+      'info',
+      '/billing'
     );
 
     return { ok: true, revoked: true };
@@ -1854,7 +1856,8 @@ export class StripeService extends PaymentProviderAbstract {
       'Your PostQueen payment was refunded, so the plan it paid for has ended. Subscribe again any time from Billing.',
       true,
       false,
-      'info'
+      'info',
+      '/billing'
     );
     return { ok: true, revoked: true };
   }

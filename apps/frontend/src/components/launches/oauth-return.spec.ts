@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { oauthReturnPath } from './oauth-return.ts';
+import { channelFocusPath, oauthReturnPath } from './oauth-return.ts';
 
 const continueSource = readFileSync(
   fileURLToPath(new URL('./continue.integration.tsx', import.meta.url)),
@@ -62,6 +62,17 @@ describe('oauthReturnPath', () => {
       /[?&]id=/,
     );
   });
+
+  it('builds a notification reconnect URL with channel + focus', () => {
+    assert.equal(
+      channelFocusPath({ provider: 'youtube', focus: 'yt-row-1' }),
+      '/channels?channel=youtube&focus=yt-row-1',
+    );
+    assert.equal(
+      channelFocusPath({ provider: 'youtube' }),
+      '/channels?channel=youtube',
+    );
+  });
 });
 
 describe('OAuth continue default return', () => {
@@ -93,11 +104,15 @@ describe('Channels OAuth landing', () => {
   it('mutates the list when ?added= lands and waits for the focused row', () => {
     assert.match(
       channelsSource,
-      /selectAddedIntegration\(\s*list,\s*addedProvider,\s*searchParams\.get\('focus'\)/,
+      /selectAddedIntegration\(\s*list,\s*providerHint,\s*focusId/,
     );
+    assert.match(channelsSource, /searchParams\.get\('channel'\)/);
     assert.match(channelsSource, /void mutate\(\)\.finally/);
     assert.match(channelsSource, /if \(!match\?\.id\) \{/);
-    assert.match(channelsSource, /stripChannelQuery\(\['added', 'msg', 'focus'\]\)/);
+    assert.match(
+      channelsSource,
+      /stripChannelQuery\(\['added', 'msg', 'focus', 'channel'\]\)/,
+    );
     assert.doesNotMatch(
       channelsSource,
       /else if \(list\[0\]\?\.id\) \{\s*setSelected\(list\[0\]\.id\)/,

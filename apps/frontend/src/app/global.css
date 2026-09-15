@@ -1335,6 +1335,22 @@ html[dir='rtl'] .lbox {
   }
 }
 
+/* One-shot ring when a notification deep-links onto a channel row. */
+@keyframes pqchannelflash {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  30%,
+  70% {
+    box-shadow: inset 0 0 0 1.5px var(--focused);
+  }
+}
+
+.pq-channel-flash {
+  animation: pqchannelflash 1.4s ease-out 1;
+}
+
 /* Toast / drop-in entry. Y-only: the toaster is `fixed` + `end-[24px]`, not
    centered with `translateX(-50%)`. Restating a -50% X translate here used to
    park the toast left of its final slot for 0.24s, then snap it right when the
@@ -1497,6 +1513,10 @@ html[dir='rtl'] .lbox {
   .pq-loop,
   .pq-loop::before,
   .pq-loop::after {
+    animation: none !important;
+  }
+
+  .pq-channel-flash {
     animation: none !important;
   }
 

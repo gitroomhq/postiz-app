@@ -629,10 +629,13 @@ export const ChannelsComponent: FC = () => {
   // for on a list that already had channels.
   const openedAddForEmpty = useRef(false);
   const addOpenGeneration = useRef(0);
-  const addedConsumed = useRef(false);
+  const consumedFocusKey = useRef('');
+  // Boolean was wrong once we also deep-link from notifications: an OAuth
+  // `added=` consume on this page load then ignored a later Reconnect click.
   const focusedFromAdded = useRef(false);
   const addedRefreshStarted = useRef(false);
   const [addedRefreshDone, setAddedRefreshDone] = useState(false);
+  const [flashId, setFlashId] = useState('');
 
   // Design `_autoSide`: collapse under 1180 on viewport transitions only.
   // `collapseMenu` must stay out of the deps — otherwise expanding on tablet
@@ -742,11 +745,18 @@ export const ChannelsComponent: FC = () => {
       // Last-channel delete must not keep the post-connect focus lock, or Add
       // Channel never opens and a leftover confirm can sit on the empty rail.
       focusedFromAdded.current = false;
-      addedConsumed.current = true;
+      consumedFocusKey.current =
+        [
+          searchParams.get('added'),
+          searchParams.get('channel'),
+          searchParams.get('focus'),
+        ]
+          .filter(Boolean)
+          .join('|') || 'deleted';
       setSelected((currentId) => (currentId === id ? '' : currentId));
-      stripChannelQuery(['added', 'msg', 'focus']);
+      stripChannelQuery(['added', 'msg', 'focus', 'channel']);
     },
-    [stripChannelQuery]
+    [stripChannelQuery, searchParams]
   );
 
   const closeAddPane = useCallback(() => {
@@ -784,13 +794,20 @@ export const ChannelsComponent: FC = () => {
     if (!listSettled) return;
 
     const addedProvider = searchParams.get('added');
-    const returningFromConnect = !!addedProvider && !addedConsumed.current;
+    const channelProvider = searchParams.get('channel');
+    const focusId = searchParams.get('focus');
+    const providerHint = addedProvider || channelProvider;
+    const focusKey = [addedProvider, channelProvider, focusId]
+      .filter(Boolean)
+      .join('|');
+    const returningFromConnect =
+      !!focusKey && consumedFocusKey.current !== focusKey;
 
     if (returningFromConnect) {
       const match = selectAddedIntegration(
         list,
-        addedProvider,
-        searchParams.get('focus'),
+        providerHint,
+        focusId,
       );
       // SWR keeps the pre-connect list (`revalidateIfStale` / `OnFocus` off).
       // After social-connect 201 the new row is missing until we mutate —
@@ -804,16 +821,22 @@ export const ChannelsComponent: FC = () => {
         }
         return;
       }
-      addedConsumed.current = true;
+      consumedFocusKey.current = focusKey;
       focusedFromAdded.current = true;
       closeAddPane();
       setSelected(match.id);
+      setFlashId(match.id);
       setDetailOpen(true);
+      requestAnimationFrame(() => {
+        document
+          .querySelector(`[data-channel="${match.id}"]`)
+          ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
       const msg = searchParams.get('msg');
       if (msg) {
         toast.show(msg, 'success');
       }
-      stripChannelQuery(['added', 'msg', 'focus']);
+      stripChannelQuery(['added', 'msg', 'focus', 'channel']);
       return;
     }
 
@@ -854,6 +877,14 @@ export const ChannelsComponent: FC = () => {
     addedRefreshDone,
   ]);
 
+  useEffect(() => {
+    if (!flashId) {
+      return;
+    }
+    const timer = window.setTimeout(() => setFlashId(''), 1600);
+    return () => window.clearTimeout(timer);
+  }, [flashId]);
+
   // Tour last step + Finish leave Add Channel open (design chAdd:'connect').
   //
   // `?add=1` is consumed and then dropped, the way `now=` is on the calendar.
@@ -872,7 +903,19 @@ export const ChannelsComponent: FC = () => {
     if (focusedFromAdded.current) {
       return;
     }
-    if (searchParams.get('added') && !addedConsumed.current) {
+    if (
+      (searchParams.get('added') ||
+        searchParams.get('channel') ||
+        searchParams.get('focus')) &&
+      consumedFocusKey.current !==
+        [
+          searchParams.get('added'),
+          searchParams.get('channel'),
+          searchParams.get('focus'),
+        ]
+          .filter(Boolean)
+          .join('|')
+    ) {
       return;
     }
     // Once, by ref rather than by the URL: `replaceState` does not tell the
@@ -1218,7 +1261,8 @@ export const ChannelsComponent: FC = () => {
                 'relative flex cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:justify-center group-[.sidebar]:px-0',
                 !adding && current?.id === integration.id
                   ? 'bg-pqNavActive'
-                  : 'hover:bg-pqHover'
+                  : 'hover:bg-pqHover',
+                flashId === integration.id && 'pq-channel-flash'
               )}
             >
               <span className="relative h-[32px] w-[32px] shrink-0">

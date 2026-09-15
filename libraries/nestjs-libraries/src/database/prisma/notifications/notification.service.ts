@@ -48,12 +48,21 @@ export class NotificationService {
     message: string,
     sendEmail = false,
     digest = false,
-    type: NotificationType = 'success'
+    type: NotificationType = 'success',
+    link?: string | null
   ) {
-    await this._notificationRepository.createNotification(orgId, message);
+    await this._notificationRepository.createNotification(orgId, message, link);
     if (!sendEmail) {
       return;
     }
+
+    const emailMessage = link
+      ? `${message} ${
+          link.startsWith('http')
+            ? link
+            : `${process.env.FRONTEND_URL || ''}${link}`
+        }`
+      : message;
 
     if (digest) {
       try {
@@ -66,7 +75,7 @@ export class NotificationService {
               [
                 {
                   title: subject,
-                  message,
+                  message: emailMessage,
                   type,
                 },
               ],
@@ -86,7 +95,7 @@ export class NotificationService {
       return;
     }
 
-    await this.sendEmailsToOrg(orgId, subject, message, type);
+    await this.sendEmailsToOrg(orgId, subject, emailMessage, type);
   }
 
   async sendEmailsToOrg(
