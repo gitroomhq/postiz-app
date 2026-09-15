@@ -287,8 +287,10 @@ export const Component: FC<{
               </div>
               <div
                 className={clsx(
-                  'min-h-0 overflow-y-auto whitespace-pre-line pe-[16px]',
-                  !!modal.height && !!modal.size && 'flex flex-1 flex-col'
+                  'min-h-0 whitespace-pre-line pe-[16px]',
+                  !!modal.height && !!modal.size
+                    ? 'flex flex-1 flex-col overflow-hidden'
+                    : 'overflow-y-auto'
                 )}
               >
                 {RenderComponent}

@@ -126,6 +126,7 @@ const MediaThumb: FC<{ media: MediaRow; className?: string }> = ({
         className="h-full w-full object-cover"
         src={mediaDirectory.set(media.path)}
         alt={media.originalName || media.name || 'media'}
+        decoding="async"
       />
     </div>
   );
@@ -949,7 +950,12 @@ export const MediaBox: FC<{
   // (that is /media only). DropFiles is scoped to the toolbar so a drag cover
   // never sits over the thumbs.
   return (
-    <div className="flex w-full flex-col gap-[12px]">
+    <div
+      className={clsx(
+        'flex w-full flex-col gap-[12px]',
+        touch && 'h-full min-h-0'
+      )}
+    >
       {fileInput}
       <DropFiles
         disabled={loading}
@@ -968,11 +974,14 @@ export const MediaBox: FC<{
 
       {uppyBar}
 
-          {/* Filters tight above gallery — owner.
-              Cap only when content exceeds ~2 rows (8 cells @ 4 cols). Shorter
-              pages size naturally with no inner scrollbar. Pagination stays
-              outside. Compact thumb→meta gap; overscroll contained. */}
-      <div className="flex flex-col gap-[8px]">
+          {/* Filters tight above gallery. Desktop caps ~2 rows; phone/tablet
+              fills the remaining sheet so thumbs stay large. */}
+      <div
+        className={clsx(
+          'flex flex-col gap-[8px]',
+          touch && 'min-h-0 flex-1'
+        )}
+      >
         <div className="flex shrink-0 flex-wrap items-center gap-[10px]">
           {filterTabs}
         </div>
@@ -980,8 +989,10 @@ export const MediaBox: FC<{
         <div
           className={clsx(
             'relative p-[3px] pe-[4px] overscroll-contain',
-            (isLoading || visibleMedia.length > 8) &&
-              'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
+            touch
+              ? 'min-h-0 flex-1 overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
+              : (isLoading || visibleMedia.length > 8) &&
+                'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
           )}
         >
           {isLoading && !data && (

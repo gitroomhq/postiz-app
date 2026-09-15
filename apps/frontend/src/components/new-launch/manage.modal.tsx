@@ -633,7 +633,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         <div
           className={clsx(
             'flex flex-1',
-            // Design <760: editor + preview stack; preview capped ~340px.
+            // Phone/tablet: Edit | Preview tabs. Preview fills leftover height.
             touch ? 'flex-col' : 'flex-row'
           )}
         >

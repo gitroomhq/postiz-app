@@ -16,6 +16,7 @@ import { ReactSortable } from 'react-sortablejs';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { useFeatureSetupHint } from '@gitroom/frontend/components/media/feature.setup.hint';
 import {
   InsertMediaIcon,
@@ -179,6 +180,7 @@ export const MultiMediaComponent: FC<{
   const user = useUser();
   const modals = useModals();
   const t = useT();
+  const { touch } = useViewport();
   const { billingEnabled, plontoKey, aiEnabled } = useVariables();
   const setupHint = useFeatureSetupHint();
   // The hosted service hides what it has no key for. A self-hosted instance
@@ -244,6 +246,7 @@ export const MultiMediaComponent: FC<{
       closeOnEscape: true,
       size: 'min(1200px, calc(100vw - 64px))',
       maxSize: 'min(1200px, calc(100vw - 64px))',
+      ...(touch ? { height: '100%' } : {}),
       children: (close) => (
         <MediaBox
           setMedia={changeMedia}
@@ -252,7 +255,7 @@ export const MultiMediaComponent: FC<{
         />
       ),
     });
-  }, [changeMedia, currentMedia, modals, t]);
+  }, [changeMedia, currentMedia, modals, t, touch]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
@@ -368,6 +371,7 @@ export const MultiMediaComponent: FC<{
                       className={clsx(
                         'absolute -end-[6px] -top-[6px] z-[20] grid size-[16px] cursor-pointer place-items-center rounded-full bg-pqPop text-pqMuted shadow-[0_1px_3px_rgba(0,0,0,0.4),inset_0_0_0_1px_var(--border)] hover:bg-pqDanger hover:text-pqOnBrand',
                         !ghost &&
+                          !touch &&
                           'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100'
                       )}
                     >
@@ -533,6 +537,7 @@ export const MediaComponent: FC<{
   height?: number;
 }> = (props) => {
   const t = useT();
+  const { touch } = useViewport();
 
   const { name, type, label, description, onChange, value, width, height } =
     props;
@@ -593,6 +598,7 @@ export const MediaComponent: FC<{
       closeOnEscape: true,
       size: 'min(1200px, calc(100vw - 64px))',
       maxSize: 'min(1200px, calc(100vw - 64px))',
+      ...(touch ? { height: '100%' } : {}),
       children: (close) => (
         <MediaBox
           setMedia={changeMedia}
@@ -602,7 +608,7 @@ export const MediaComponent: FC<{
         />
       ),
     });
-  }, [t, changeMedia, type, currentMedia]);
+  }, [t, changeMedia, type, currentMedia, touch]);
   const clearMedia = useCallback(() => {
     setCurrentMedia(undefined);
     onChange({

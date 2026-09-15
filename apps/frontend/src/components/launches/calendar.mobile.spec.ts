@@ -52,6 +52,18 @@ describe('phone calendar and composer', () => {
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
   });
 
+  it('keeps X/general preview photos inside a feed aspect frame', () => {
+    const preview = readFileSync(
+      fileURLToPath(
+        new URL('../launches/general.preview.component.tsx', import.meta.url)
+      ),
+      'utf8',
+    );
+    assert.match(preview, /PreviewMediaFrame/);
+    assert.match(preview, /FEED_PREVIEW_MIN_WH/);
+    assert.match(preview, /FEED_PREVIEW_MAX_WH/);
+  });
+
   it('keeps the composer footer from overlapping on phone and tablet', () => {
     assert.match(manage, /grid w-full grid-cols-2/);
     assert.match(manage, /t\('select_channels', 'Select channels'\)/);
