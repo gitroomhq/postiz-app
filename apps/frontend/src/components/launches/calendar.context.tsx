@@ -13,8 +13,13 @@ import {
   useState,
 } from 'react';
 import dayjs from 'dayjs';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import {
+  dropPostGroupFromRows,
+  dropPostGroupFromSwrData,
+  isPostsSwrKey,
+} from '@gitroom/frontend/components/launches/posts-swr';
 import type { Post, Integration, Tags } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { usePathname, useSearchParams } from 'next/navigation';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -143,6 +148,9 @@ export const CalendarContext = createContext({
     }
   >,
   reloadCalendarView: () => {
+    /** empty **/
+  },
+  dropPostGroupFromView: (_groupId: string) => {
     /** empty **/
   },
   display: 'week',
@@ -278,6 +286,7 @@ export const CalendarWeekProvider: FC<{
   ready?: boolean;
 }> = ({ children, integrations, ready = true }) => {
   const fetch = useFetch();
+  const { mutate: globalMutate } = useSWRConfig();
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
@@ -484,7 +493,6 @@ export const CalendarWeekProvider: FC<{
   const {
     data: calendarData,
     isLoading: calendarIsLoading,
-    mutate: mutateCalendar,
   } = useSWR(
     filters.display !== 'list' ? `/posts-${params}` : null,
     loadData,
@@ -504,7 +512,6 @@ export const CalendarWeekProvider: FC<{
   const {
     data: listData,
     isLoading: listIsLoading,
-    mutate: mutateList,
   } = useSWR(
     filters.display === 'list' || postsPanelOpen
       ? `/posts-list-${listParams}`
@@ -755,9 +762,12 @@ export const CalendarWeekProvider: FC<{
     if (!rows.length && !realPosts.length && tourDemo.length) {
       rows = mapTourDemo();
     }
-    // Day deep-link: if the list endpoint hasn't returned that day yet, fall
-    // back to calendar rows already on screen (See all from a cell).
+    // Day deep-link: if this list page has not loaded yet, fall back to
+    // calendar rows already on screen (See all from a cell). After the list
+    // fetch (or an optimistic delete) has a payload, do not resurrect rows
+    // from the other view's keepPreviousData cache.
     if (
+      !listData &&
       listRange.startsWith('day:') &&
       !rows.some((p) => postInListRange(p.publishDate, listRange, weekStart))
     ) {
@@ -777,6 +787,7 @@ export const CalendarWeekProvider: FC<{
     });
     return rows;
   }, [
+    listData,
     rawListPosts,
     matchChannel,
     realPosts,
@@ -855,11 +866,26 @@ export const CalendarWeekProvider: FC<{
     }
   }, [posts]);
 
-  // Combined reload function that handles both calendar and list views
+  // Bound mutate on a null-key hook is a no-op (list view unbinds calendar,
+  // calendar view unbinds list unless the panel is open). Prefix-match every
+  // `/posts-` key so both caches, including keepPreviousData from the other
+  // view, actually refetch.
   const reloadCalendarView = useCallback(() => {
-    mutateCalendar();
-    mutateList();
-  }, [mutateCalendar, mutateList]);
+    void globalMutate(isPostsSwrKey, undefined, { revalidate: true });
+  }, [globalMutate]);
+
+  const dropPostGroupFromView = useCallback(
+    (groupId: string) => {
+      if (!groupId) return;
+      setInternalData((d) => dropPostGroupFromRows(d, groupId));
+      void globalMutate(
+        isPostsSwrKey,
+        (current) => dropPostGroupFromSwrData(current, groupId),
+        { revalidate: true }
+      );
+    },
+    [globalMutate]
+  );
 
   // Determine loading state based on current view
   const loading = filters.display === 'list' ? listIsLoading : calendarIsLoading;
@@ -878,6 +904,7 @@ export const CalendarWeekProvider: FC<{
       value={{
         trendings,
         reloadCalendarView,
+        dropPostGroupFromView,
         ...filters,
         posts: calendarPosts,
         loading,

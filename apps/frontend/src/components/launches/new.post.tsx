@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import { useSWRConfig } from 'swr';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import dayjs from 'dayjs';
+import { isPostsSwrKey } from '@gitroom/frontend/components/launches/posts-swr';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -100,9 +101,7 @@ export const NewPost = () => {
   // Matching the prefix reaches both, and reaches them from pages where the
   // calendar context is not mounted at all.
   const reloadCalendarView = useCallback(() => {
-    globalMutate(
-      (key) => typeof key === 'string' && key.startsWith('/posts-')
-    );
+    globalMutate(isPostsSwrKey);
   }, [globalMutate]);
 
   /**

@@ -44,6 +44,7 @@ import { useShortlinkPreference } from '@gitroom/frontend/components/settings/sh
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useClickOutside } from '@mantine/hooks';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { Spinner } from '@gitroom/react/ui/spinner';
@@ -58,6 +59,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [postNowOpen, setPostNowOpen] = useState(false);
   const toaster = useToaster();
+  const { dropPostGroupFromView } = useCalendar();
   const modal = useModals();
   const { formatShortWeekdayTime } = useDateFormat();
   const [showSettings, setShowSettings] = useState(false);
@@ -220,10 +222,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       return;
     }
 
+    dropPostGroupFromView(existingData.group);
     mutate();
     modal.closeAll();
     return;
-  }, [existingData, mutate, modal, toaster, t]);
+  }, [existingData, mutate, modal, toaster, t, dropPostGroupFromView]);
 
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
