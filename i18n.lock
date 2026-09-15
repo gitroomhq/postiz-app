@@ -338,6 +338,7 @@ checksums:
     predicted_github_trending_change: db2e35c6bb26939186948182195e84df
     duplicate_post: 550d07a1efcab352409ecdbaa16acfcc
     preview_post: a86240c3451c3d5737b6acf358e1d056
+    open_post: 7973a6d7427806d086720278a9b5dba0
     post_statistics: 946015ed60528cf3b173135542053d3e
     draft: e8a92958ad300aacfe46c2bf6644927e
     week_number: 94b8a343e6e9a25c021e055ad974c68e
