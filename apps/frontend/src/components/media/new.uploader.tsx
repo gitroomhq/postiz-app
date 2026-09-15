@@ -12,6 +12,7 @@ import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
+import { useMediaSettings } from '@gitroom/frontend/components/settings/media-settings.component';
 import { uniqBy } from 'lodash';
 
 export class CompressionWrapper<M = any, B = any> extends Compressor<any, any> {
@@ -48,7 +49,10 @@ export function useUppyUploader(props: {
     useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
-  return useMemo(() => {
+  const { data: mediaSettings } = useMediaSettings();
+  const skipMediaRescale = !!mediaSettings?.skipMediaRescale;
+  const uppy = useMemo(() => {
+    const useTransloadit = transloadit.length > 0 && !skipMediaRescale;
     // Track file order to maintain original sequence after upload
     let fileOrderIndex = 0;
 
@@ -84,7 +88,7 @@ export function useUppyUploader(props: {
           if (type === 'video/*') {
             return ['video/mp4', 'video/mpeg', 'video/quicktime'];
           }
-          if (type === 'video/mp4' && transloadit && transloadit.length > 0) {
+          if (type === 'video/mp4' && useTransloadit) {
             return ['video/mp4', 'video/mpeg', 'video/quicktime'];
           }
           return [type];
@@ -168,14 +172,14 @@ export function useUppyUploader(props: {
     });
 
     const { plugin, options } = getUppyUploadPlugin(
-      transloadit.length > 0 ? 'transloadit' : storageProvider,
+      useTransloadit ? 'transloadit' : storageProvider,
       fetch,
       backendUrl,
       transloadit
     );
 
     uppy2.use(plugin, options);
-    if (!disableImageCompression) {
+    if (!disableImageCompression && !skipMediaRescale) {
       uppy2.use(CompressionWrapper, {
         convertTypes: ['image/jpeg', 'image/png', 'image/webp'],
         maxWidth: 1000,
@@ -222,7 +226,7 @@ export function useUppyUploader(props: {
         return;
       }
 
-      if (transloadit.length > 0) {
+      if (useTransloadit) {
         // @ts-ignore
         const allRes = result.transloadit[0].results;
         const toSave = uniqBy<{ name: string; originalName: string; order: number }>(
@@ -280,5 +284,9 @@ export function useUppyUploader(props: {
       });
     });
     return uppy2;
-  }, []);
+  }, [skipMediaRescale]);
+
+  useEffect(() => () => uppy.destroy(), [uppy]);
+
+  return uppy;
 }
