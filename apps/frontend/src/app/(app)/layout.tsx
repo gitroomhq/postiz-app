@@ -36,6 +36,7 @@ import { areCookiesSecured } from '@gitroom/helpers/utils/cookies.secured';
 import {
   AUTH_OG_IMAGE,
   AUTH_OG_IMAGE_PATH,
+  FACEBOOK_OG_APP_ID,
 } from '@gitroom/frontend/components/auth/auth.open-graph';
 
 function metadataBaseUrl(): URL {
@@ -79,6 +80,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     images: [AUTH_OG_IMAGE_PATH],
+  },
+  facebook: {
+    appId: FACEBOOK_OG_APP_ID,
   },
 };
 

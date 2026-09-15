@@ -19,9 +19,15 @@ export const AUTH_OG_IMAGE = {
   type: 'image/png',
 } as const;
 
+/**
+ * App A — PostQueen Facebook. Not Instagram (App B) or Threads (App C).
+ * Next.js `facebook.appId` renders `<meta property="fb:app_id" … />`.
+ */
+export const FACEBOOK_OG_APP_ID = '1987692731891592';
+
 export function authShareMetadata(
   url: string
-): Pick<Metadata, 'description' | 'openGraph' | 'twitter'> {
+): Pick<Metadata, 'description' | 'openGraph' | 'twitter' | 'facebook'> {
   return {
     description: AUTH_OG_DESCRIPTION,
     openGraph: {
@@ -37,6 +43,9 @@ export function authShareMetadata(
       title: 'PostQueen',
       description: AUTH_OG_DESCRIPTION,
       images: [AUTH_OG_IMAGE_PATH],
+    },
+    facebook: {
+      appId: FACEBOOK_OG_APP_ID,
     },
   };
 }
