@@ -312,6 +312,102 @@ body *::-webkit-scrollbar-thumb {
   }
 }
 
+/* Calendar card media: rest is a square thumb. Pointer hover (desktop)
+   grows that same thumb in place (~2×, origin inline-end) — not a second
+   detached preview. Token shadow, no reflow, no hour-gutter cover.
+   Touch / mobile / tablet: no grow. */
+[data-ci-media] {
+  z-index: 2;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transform-origin: center right;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+[dir='rtl'] [data-ci-media] {
+  transform-origin: center left;
+}
+
+[data-ci-media='week'] {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-sm);
+  --ci-media-scale: 2;
+}
+
+[data-ci-media='month'] {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  --ci-media-scale: 2;
+}
+
+[data-ci-media='day'] {
+  width: 56px;
+  height: 56px;
+  margin-inline-end: 12px;
+  margin-block: auto;
+  border-radius: var(--r-md);
+  --ci-media-scale: 2;
+}
+
+[data-ci-media-play] {
+  width: 10px;
+  height: 10px;
+}
+
+[data-ci-media-play] svg {
+  width: 6px;
+  height: 6px;
+  margin-inline-start: 1px;
+}
+
+[data-ci-media='day'] [data-ci-media-play] {
+  width: 22px;
+  height: 22px;
+}
+
+[data-ci-media='day'] [data-ci-media-play] svg {
+  width: 10px;
+  height: 10px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-ci]:hover [data-ci-media] {
+    z-index: 4;
+    transform: scale(var(--ci-media-scale, 2));
+    box-shadow: var(--e2), inset 0 0 0 1px var(--border);
+  }
+
+  [data-ci]:has([data-ci-media]):hover {
+    overflow: visible;
+    z-index: 8;
+  }
+
+  [data-cell]:has([data-ci]:hover [data-ci-media]) {
+    overflow: visible;
+    z-index: 8;
+  }
+}
+
+[data-mobile='1'] [data-ci]:hover [data-ci-media],
+[data-tablet='1'] [data-ci]:hover [data-ci-media] {
+  transform: none;
+  box-shadow: inset 0 0 0 1px var(--border);
+  z-index: 2;
+}
+
+[data-mobile='1'] [data-ci]:has([data-ci-media]):hover,
+[data-tablet='1'] [data-ci]:has([data-ci-media]):hover {
+  overflow: hidden;
+  z-index: 2;
+}
+
+[data-mobile='1'] [data-cell]:has([data-ci]:hover [data-ci-media]),
+[data-tablet='1'] [data-cell]:has([data-ci]:hover [data-ci-media]) {
+  overflow: hidden;
+  z-index: auto;
+}
+
 /* A past hour in the calendar. Diagonal hairlines rather than a flat fill, so
    the cell still reads as part of the grid while saying it is closed. Lives
    here because a repeating-gradient is unreadable as a Tailwind arbitrary
