@@ -26,6 +26,9 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
 
 export const SVGLine = () => {
   return (
@@ -107,6 +110,70 @@ export const OpenClose: FC<{
     </svg>
   );
 };
+const EditGroupNameModal: FC<{
+  name: string;
+  id: string;
+  close: () => void;
+  resolve: (value: string) => void;
+}> = (props) => {
+  const t = useT();
+  const { close, name, id, resolve } = props;
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [groupName, setGroupName] = useState<string>(name);
+  const save = useCallback(async () => {
+    const response = await fetch(`/integrations/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: groupName }),
+    });
+    if (!response.ok) {
+      const { message } = await response.json().catch(() => ({} as any));
+      toaster.show(
+        (Array.isArray(message) ? message[0] : message) ||
+          t('could_not_save_group', 'Could not save the group.'),
+        'warning'
+      );
+      return;
+    }
+    resolve(groupName);
+    close();
+  }, [groupName, id]);
+  return (
+    <div>
+      <Input
+        name="name"
+        disableForm={true}
+        label={t('group_name', 'Name')}
+        value={groupName}
+        onChange={(e) => setGroupName(e.target.value)}
+      />
+      <Button onClick={save} className="mt-[16px]">
+        {t('save', 'Save')}
+      </Button>
+    </div>
+  );
+};
+
+const EditPencil = () => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <path
+        d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
 export const MenuGroupComponent: FC<
   MenuComponentInterface & {
     changeItemGroup: (id: string, group: string) => void;
@@ -133,8 +200,35 @@ export const MenuGroupComponent: FC<
     changeItemGroup,
     collapsed,
   } = props;
+  const t = useT();
+  const modals = useModals();
+  const toaster = useToaster();
   const [isOpen, setIsOpen] = useState(
     !!+(localStorage.getItem(group.name + '_isOpen') || '1')
+  );
+  const editGroupName = useCallback(
+    async (e: any) => {
+      e.stopPropagation();
+      const val: string | undefined = await new Promise((resolve) => {
+        modals.openModal({
+          title: t('edit_group_name', 'Edit group name'),
+          children: (close) => (
+            <EditGroupNameModal
+              name={group.name}
+              id={group.id}
+              close={close}
+              resolve={resolve}
+            />
+          ),
+        });
+      });
+      if (!val) {
+        return;
+      }
+      await mutate();
+      toaster.show(t('group_updated', 'Group Updated'), 'success');
+    },
+    [group.name, group.id, mutate, modals, t]
   );
   const changeOpenClose = useCallback(
     (e: any) => {
@@ -173,7 +267,7 @@ export const MenuGroupComponent: FC<
       )}
       {!!group.name && (
         <div
-          className="flex items-center gap-[5px] cursor-pointer"
+          className="flex items-center gap-[5px] cursor-pointer group"
           onClick={changeOpenClose}
         >
           <div>
@@ -190,6 +284,14 @@ export const MenuGroupComponent: FC<
           >
             {group.name}
           </div>
+          {!collapsed && (
+            <div
+              className="hidden group-hover:block hover:opacity-70"
+              onClick={editGroupName}
+            >
+              <EditPencil />
+            </div>
+          )}
         </div>
       )}
       <div
