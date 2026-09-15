@@ -161,6 +161,19 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
 
   useEffect(() => {
     if (!open || touch) return;
+    const nodes = () =>
+      document.querySelectorAll<HTMLElement>(
+        '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]'
+      );
+    const hide = () => {
+      nodes().forEach((el) => {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+      });
+    };
+    hide();
+    const id = window.setInterval(hide, 100);
     const onDown = (e: MouseEvent) => {
       const node = e.target as Node;
       if (
@@ -177,6 +190,7 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
+      window.clearInterval(id);
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };

@@ -1087,7 +1087,30 @@ export const Tour: FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-tourdemo', running ? '1' : '0');
-    return () => root.setAttribute('data-tourdemo', '0');
+    const nodes = () =>
+      document.querySelectorAll<HTMLElement>(
+        '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]'
+      );
+    const apply = () => {
+      nodes().forEach((el) => {
+        if (running) {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('pointer-events', 'none', 'important');
+        }
+      });
+    };
+    apply();
+    const id = window.setInterval(apply, 100);
+    return () => {
+      root.setAttribute('data-tourdemo', '0');
+      window.clearInterval(id);
+      nodes().forEach((el) => {
+        el.style.removeProperty('display');
+        el.style.removeProperty('visibility');
+        el.style.removeProperty('pointer-events');
+      });
+    };
   }, [running]);
 
   if (!current || !opened) return null;

@@ -73,7 +73,7 @@ describe('product tour Connect steps', () => {
     assert.match(overlay, /if \(!orgId\) return/);
     assert.match(overlay, /isMobileTour\(vw\)/);
     assert.match(overlay, /min-h-\[44px\]/);
-    assert.match(overlay, /maxHeight/);
+    assert.match(overlay, /setInterval\(apply, 100\)/);
     assert.match(css, /\[data-tourdemo='1'\] #chatbase-bubble-button/);
     assert.match(css, /\[data-tourdemo='1'\] iframe\[src\*='chatbase'\]/);
     assert.match(chatbase, /hideChatbaseForChrome/);
