@@ -58,21 +58,26 @@ export const ChatbaseComponentLoad: FC = () => {
  */
 const pinChatbaseTrailing = (el: HTMLElement) => {
   const rtl = document.documentElement.getAttribute('dir') === 'rtl';
-  const wantLeft = rtl ? '20px' : 'auto';
-  const wantRight = rtl ? 'auto' : '20px';
+  const box = Math.max(el.offsetWidth || 60, 52);
+  const wantLeft = rtl ? '20px' : `${Math.max(20, window.innerWidth - box - 20)}px`;
+  const wantRight = 'auto';
   if (el.style.getPropertyValue('left') === wantLeft &&
       el.style.getPropertyValue('right') === wantRight) {
     return;
   }
   el.style.setProperty('left', wantLeft, 'important');
   el.style.setProperty('right', wantRight, 'important');
-  el.style.setProperty('inset-inline-start', 'auto', 'important');
-  el.style.setProperty('inset-inline-end', '20px', 'important');
+  el.style.setProperty('inset-inline-start', rtl ? '20px' : 'auto', 'important');
+  el.style.setProperty('inset-inline-end', rtl ? 'auto' : '20px', 'important');
 };
 
 const chatbaseShouldHide = () =>
   document.documentElement.getAttribute('data-tourdemo') === '1' ||
-  !!document.documentElement.getAttribute('data-pq-sheet');
+  !!document.documentElement.getAttribute('data-pq-sheet') ||
+  !!document.querySelector('[data-pq="mobile-sheet"]') ||
+  !!document.querySelector(
+    '[data-pq="getting-started"] [aria-expanded="true"]'
+  );
 
 const hideChatbaseForChrome = (el: HTMLElement) => {
   if (chatbaseShouldHide()) {
@@ -182,21 +187,12 @@ export const installChatbaseChrome = () => {
   let raf = 0;
   const tick = () => {
     pinAllChatbase();
-    raf = chatbaseShouldHide() ? requestAnimationFrame(tick) : 0;
+    raf = requestAnimationFrame(tick);
   };
-  const onRoot = () => {
-    if (chatbaseShouldHide() && !raf) raf = requestAnimationFrame(tick);
-  };
-  const hideObserver = new MutationObserver(onRoot);
-  hideObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-tourdemo', 'data-pq-sheet'],
-  });
-  onRoot();
+  raf = requestAnimationFrame(tick);
   chromeCleanup = () => {
     observer.disconnect();
     rootObserver.disconnect();
-    hideObserver.disconnect();
     window.clearInterval(interval);
     if (raf) cancelAnimationFrame(raf);
     chromeCleanup = null;

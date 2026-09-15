@@ -79,7 +79,7 @@ describe('product tour Connect steps', () => {
     assert.match(chatbase, /hideChatbaseForChrome/);
     assert.match(chatbase, /setProperty\('display', 'none', 'important'\)/);
     assert.match(chatbase, /data-pq-cbh/);
-    assert.match(chatbase, /installChatbaseChrome/);
+    assert.match(chatbase, /aria-expanded/);
     assert.match(chatbase, /requestAnimationFrame\(tick\)/);
   });
 });
