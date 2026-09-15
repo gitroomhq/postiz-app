@@ -91,7 +91,7 @@ export const PlanInvoicesComponent: FC = () => {
           </button>
           {lifetime && (
             <Link
-              href="/billing/lifetime"
+              href="/billing"
               data-plan-invoices-link="lifetime"
               className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
             >

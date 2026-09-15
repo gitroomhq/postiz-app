@@ -1,10 +1,11 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import {
   LIFETIME_GRANT_TIER,
   LIFETIME_PRICE,
@@ -264,10 +265,8 @@ export const BuyLifetime: FC<{
  * had been charged when they had not.
  *
  * The plan named is the one on the account, not a fixed 'PRO' — the prototype
- * hardcodes a fallback because it has no account to read. The design's MEMBER
- * SINCE cell renders only when the caller can pass a real date (the Billing
- * screen has the subscription row's `createdAt`; the user context on
- * /billing/lifetime does not), so the row is 4 cells there and 3 here.
+ * hardcodes a fallback because it has no account to read. MEMBER SINCE renders
+ * when the caller passes `createdAt` from the subscription row.
  */
 export const FoundingMember: FC<{
   tier: string;
@@ -399,11 +398,49 @@ export const FoundingMember: FC<{
   );
 };
 
+/**
+ * Paid founding billing. `/billing` and `/billing/lifetime` used to be two
+ * leftover pages (Plans + FAQ vs a deal hero with no FAQ). Same stack on both.
+ */
+export const FoundingPaidSurface: FC<{
+  memberSince?: string | Date | null;
+}> = ({ memberSince }) => {
+  const t = useT();
+  const user = useUser();
+  return (
+    <div
+      data-founding-paid-surface="1"
+      className="flex flex-col gap-[24px]"
+    >
+      <h2 className="font-display text-[26px] font-[600] -tracking-[0.02em] text-pqText">
+        {t('founding_member', 'Founding member')}
+      </h2>
+      <FoundingMember
+        tier={user?.tier?.current || 'PRO'}
+        trialing={false}
+        memberSince={memberSince}
+      />
+      <BillingPortalRow lifetime />
+      <FAQComponent />
+    </div>
+  );
+};
+
 export const LifetimeDeal = () => {
   const t = useT();
   const user = useUser();
   const router = useRouter();
+  const fetch = useFetch();
   const { billingEnabled } = useVariables();
+  const load = useCallback(async (path: string) => {
+    return await (await fetch(path)).json();
+  }, [fetch]);
+  const lifetimePaid =
+    !!user?.isLifetime && !user?.isTrailing && !user?.lifetimePaymentPending;
+  const { data: billing } = useSWR(
+    lifetimePaid ? '/user/subscription' : null,
+    load
+  );
   // Billing off: no founding offer to show, and no founding state to be in.
   if (!billingEnabled) {
     return <BillingNotConfigured />;
@@ -422,6 +459,11 @@ export const LifetimeDeal = () => {
   ) {
     router.replace('/billing');
     return null;
+  }
+  if (lifetimePaid) {
+    return (
+      <FoundingPaidSurface memberSince={billing?.subscription?.createdAt} />
+    );
   }
   return (
     <div className="flex flex-col gap-[24px]">
