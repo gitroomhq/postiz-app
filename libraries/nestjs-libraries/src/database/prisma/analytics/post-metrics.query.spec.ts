@@ -96,6 +96,22 @@ describe('sortAnalyticsPosts', () => {
       ['b', 'c'],
     );
   });
+
+  it('keeps unknown metrics last when sorting ascending', () => {
+    const sorted = sortAnalyticsPosts(
+      [
+        row({ id: 'unknown', comments: null }),
+        row({ id: 'high', comments: 12 }),
+        row({ id: 'low', comments: 4 }),
+      ],
+      'comments',
+      'asc',
+    );
+    assert.deepEqual(
+      sorted.map((post) => post.id),
+      ['low', 'high', 'unknown'],
+    );
+  });
 });
 
 describe('analyticsPublishDateRange', () => {

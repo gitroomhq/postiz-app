@@ -11,7 +11,6 @@ import { WorkspaceAnalytics } from '@gitroom/frontend/components/platform-analyt
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
 import useCookie from 'react-use-cookie';
 import {
   AnalyticsCardsGhost,
@@ -26,44 +25,12 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
 import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
-// Providers that actually implement channel `analytics()`. LinkedIn personal,
-// Telegram, Bluesky, Reddit, Discord, Slack, Mastodon, Twitch, Kick,
-// WordPress, VK, Tumblr, and the rest have no insights API here — listing
-// them would only ever paint an empty pane (or, worse, a reconnect prompt).
-const allowedIntegrations = [
-  'facebook',
-  'instagram',
-  'instagram-standalone',
-  'linkedin-page',
-  'tiktok',
-  'tiktok-business',
-  'youtube',
-  'gmb',
-  'pinterest',
-  'threads',
-  'x',
-];
-
 const ALL_CHANNELS = '__all__';
-
-const postAnalyticsIntegrations = [
-  'facebook',
-  'instagram',
-  'instagram-standalone',
-  'linkedin-page',
-  'tiktok',
-  'tiktok-business',
-  'youtube',
-  'pinterest',
-  'threads',
-  'x',
-];
 
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
   const t = useT();
   const router = useRouter();
-  const { disableXAnalytics } = useVariables();
   const { mobile, tablet, touch } = useViewport();
 
   const [selected, setSelected] = useState('');
@@ -98,14 +65,10 @@ export const PlatformAnalytics = () => {
     const integrations = Array.isArray(body?.integrations)
       ? body.integrations
       : [];
-    const int = integrations.filter((f: any) => {
-      if (f.identifier === 'x' && disableXAnalytics) {
-        return false;
-      }
-      return true;
-    });
-    return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
-  }, [fetch, disableXAnalytics]);
+    return integrations.filter((integration: { analytics?: boolean }) =>
+      Boolean(integration.analytics)
+    );
+  }, [fetch]);
 
   const { data, isLoading, error, mutate } = useSWR('analytics-list', load, {
     revalidateOnFocus: false,
@@ -148,6 +111,8 @@ export const PlatformAnalytics = () => {
         inBetweenSteps?: boolean;
         changeProfilePicture?: boolean;
         changeNickName?: boolean;
+        analytics?: boolean;
+        postAnalytics?: boolean;
       }
     >;
   }, [data]);
@@ -404,7 +369,7 @@ export const PlatformAnalytics = () => {
       {selected !== ALL_CHANNELS && !!currentIntegration && !!keys && (
         <>
           <RenderAnalytics integration={currentIntegration} date={keys} />
-          {postAnalyticsIntegrations.includes(currentIntegration.identifier) && (
+          {currentIntegration.postAnalytics && (
             <WorkspaceAnalytics
               date={keys}
               integrationIds={currentIntegration.id}
@@ -934,9 +899,7 @@ export const PlatformAnalytics = () => {
             {!!keys && (
               <>
                 <RenderAnalytics integration={currentIntegration} date={keys} />
-                {postAnalyticsIntegrations.includes(
-                  currentIntegration.identifier
-                ) && (
+                {currentIntegration.postAnalytics && (
                   <WorkspaceAnalytics
                     date={keys}
                     integrationIds={currentIntegration.id}

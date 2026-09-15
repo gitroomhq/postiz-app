@@ -93,6 +93,14 @@ export function sortAnalyticsPosts(
 ) {
   const direction = dir === 'asc' ? 1 : -1;
   return [...rows].sort((a, b) => {
+    if (sort !== 'published') {
+      const field = sort === 'engagement' ? 'engagementRate' : sort;
+      const leftUnknown = a[field] == null;
+      const rightUnknown = b[field] == null;
+      if (leftUnknown !== rightUnknown) {
+        return leftUnknown ? 1 : -1;
+      }
+    }
     const diff = sortValue(a, sort) - sortValue(b, sort);
     if (diff !== 0) {
       return diff * direction;

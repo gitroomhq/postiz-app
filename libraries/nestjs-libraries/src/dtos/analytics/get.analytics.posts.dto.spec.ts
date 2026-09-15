@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { GetAnalyticsPostsDto } from './get.analytics.posts.dto.ts';
 import { toOptionalInt } from './optional-int.ts';
 
 describe('toOptionalInt', () => {
@@ -17,5 +20,35 @@ describe('toOptionalInt', () => {
   it('does not turn garbage into NaN', () => {
     assert.equal(toOptionalInt('nope'), undefined);
     assert.equal(toOptionalInt(Number.NaN), undefined);
+  });
+});
+
+describe('GetAnalyticsPostsDto', () => {
+  it('transforms valid query strings into bounded numbers', async () => {
+    const dto = plainToInstance(GetAnalyticsPostsDto, {
+      date: '7',
+      page: '0',
+      limit: '20',
+      sort: 'engagement',
+      dir: 'desc',
+    });
+    assert.deepEqual(await validate(dto), []);
+    assert.equal(dto.date, 7);
+    assert.equal(dto.page, 0);
+    assert.equal(dto.limit, 20);
+  });
+
+  it('rejects out-of-range pagination, dates, and unknown sorting', async () => {
+    const dto = plainToInstance(GetAnalyticsPostsDto, {
+      date: '91',
+      page: '-1',
+      limit: '101',
+      sort: 'opaque-platform-score',
+    });
+    const invalid = new Set((await validate(dto)).map((error) => error.property));
+    assert.deepEqual(
+      invalid,
+      new Set(['date', 'page', 'limit', 'sort'])
+    );
   });
 });
