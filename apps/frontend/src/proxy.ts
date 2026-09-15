@@ -14,6 +14,7 @@ import {
   isLoginOauthCallback,
   loginOauthAuthPath,
 } from '@gitroom/frontend/components/auth/google-login-return';
+import { unauthenticatedRootNeedsShareHtml } from '@gitroom/frontend/components/auth/auth.open-graph';
 acceptLanguage.languages(languages);
 
 // This function can be marked `async` if using `await` inside
@@ -103,6 +104,19 @@ export async function proxy(request: NextRequest) {
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
   if (!nextUrl.pathname.startsWith('/auth') && !authCookie) {
+    // Logged-out `/` used to 307 with no HTML. Share crawlers scrape the
+    // homepage URL and may read that first response. Rewrite so `/` is 200
+    // with the same og:* / fb:app_id head as login. `?org=` still 307s.
+    if (
+      unauthenticatedRootNeedsShareHtml(nextUrl.pathname, {
+        hasAuth: false,
+        hasOrgQuery: !!org,
+      })
+    ) {
+      return NextResponse.rewrite(new URL('/auth/login', nextUrl.href), {
+        request: { headers: requestHeaders },
+      });
+    }
     const providers = ['google', 'settings'];
     const findIndex = providers.find((p) => nextUrl.href.indexOf(p) > -1);
     const additional = !findIndex

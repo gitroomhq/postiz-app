@@ -25,6 +25,20 @@ export const AUTH_OG_IMAGE = {
  */
 export const FACEBOOK_OG_APP_ID = '1987692731891592';
 
+/**
+ * Facebook's Sharing Debugger scrapes `https://app.postqueen.ai/` and may
+ * parse that first response without following the logged-out 307 to
+ * `/auth/login`. A redirect body is not HTML, so `/` has to render the
+ * share tags itself. Org-join (`?org=`) still 307s — that flow sets a cookie.
+ */
+export function unauthenticatedRootNeedsShareHtml(
+  pathname: string,
+  options: { hasAuth: boolean; hasOrgQuery: boolean }
+): boolean {
+  if (options.hasAuth || options.hasOrgQuery) return false;
+  return pathname === '/' || pathname === '';
+}
+
 export function authShareMetadata(
   url: string
 ): Pick<Metadata, 'description' | 'openGraph' | 'twitter' | 'facebook'> {

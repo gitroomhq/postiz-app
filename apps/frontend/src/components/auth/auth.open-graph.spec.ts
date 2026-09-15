@@ -8,14 +8,15 @@ import {
   AUTH_OG_IMAGE_PATH,
   FACEBOOK_OG_APP_ID,
   authShareMetadata,
+  unauthenticatedRootNeedsShareHtml,
 } from './auth.open-graph.ts';
 
 describe('authShareMetadata', () => {
-  it('sets the tags Facebook Sharing Debugger asks for on /auth/login', () => {
-    const share = authShareMetadata('/auth/login');
+  it('sets the tags Facebook Sharing Debugger asks for on the public homepage', () => {
+    const share = authShareMetadata('/');
     assert.equal(share.openGraph?.title, 'PostQueen');
     assert.equal(share.openGraph?.description, AUTH_OG_DESCRIPTION);
-    assert.equal(share.openGraph?.url, '/auth/login');
+    assert.equal(share.openGraph?.url, '/');
     assert.equal(share.openGraph?.type, 'website');
     assert.equal(share.openGraph?.siteName, 'PostQueen');
     assert.equal(share.twitter?.card, 'summary_large_image');
@@ -35,5 +36,38 @@ describe('authShareMetadata', () => {
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
     assert.equal(png.readUInt32BE(16), 1200);
     assert.equal(png.readUInt32BE(20), 630);
+  });
+});
+
+describe('unauthenticatedRootNeedsShareHtml', () => {
+  it('rewrites logged-out `/` so the 307 is not the first document', () => {
+    assert.equal(
+      unauthenticatedRootNeedsShareHtml('/', {
+        hasAuth: false,
+        hasOrgQuery: false,
+      }),
+      true
+    );
+    assert.equal(
+      unauthenticatedRootNeedsShareHtml('/auth/login', {
+        hasAuth: false,
+        hasOrgQuery: false,
+      }),
+      false
+    );
+    assert.equal(
+      unauthenticatedRootNeedsShareHtml('/', {
+        hasAuth: true,
+        hasOrgQuery: false,
+      }),
+      false
+    );
+    assert.equal(
+      unauthenticatedRootNeedsShareHtml('/', {
+        hasAuth: false,
+        hasOrgQuery: true,
+      }),
+      false
+    );
   });
 });
