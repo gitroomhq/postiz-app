@@ -114,13 +114,15 @@ export const ContinueIntegration: FC<{
       });
 
       // If public endpoint fails with specific errors, try authenticated endpoint
+      let parsedError: any = null;
       if (data.status === HttpStatusCode.BadRequest) {
-        const errorData = await data.json().catch(() => ({}));
+        parsedError = await data.json().catch(() => ({}));
         // "Invalid connection type" means this wasn't started as a public flow
         if (
-          errorData.message?.includes('Invalid connection type') ||
-          errorData.message?.includes('Invalid or expired state')
+          parsedError.message?.includes('Invalid connection type') ||
+          parsedError.message?.includes('Invalid or expired state')
         ) {
+          parsedError = null;
           data = await fetch(`/integrations/social-connect/${provider}`, {
             method: 'POST',
             body: JSON.stringify({ ...modifiedParams, timezone }),
@@ -148,7 +150,8 @@ export const ContinueIntegration: FC<{
         data.status !== HttpStatusCode.Ok &&
         data.status !== HttpStatusCode.Created
       ) {
-        const errorData = await data.json().catch(() => ({}));
+        const errorData =
+          parsedError ?? (await data.json().catch(() => ({})));
         setErrorMessage(
           errorData.message || errorData.msg || 'Could not add provider'
         );
