@@ -1,5 +1,6 @@
 import {
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PostDetails,
   PostResponse,
   SocialProvider,
@@ -268,6 +269,19 @@ export class InstagramStandaloneProvider
       accessToken,
       postId,
       date,
+      'graph.instagram.com'
+    );
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    return instagramProvider.postsAnalytics(
+      integrationId,
+      accessToken,
+      platformPostIds,
       'graph.instagram.com'
     );
   }

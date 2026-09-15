@@ -3,6 +3,8 @@ import { describe, it } from 'node:test';
 import {
   analyticsHasActivity,
   analyticsResponseNeedsRefresh,
+  mergeWorkspaceCharts,
+  workspaceChartBucket,
 } from './analytics-activity.ts';
 
 describe('analyticsHasActivity', () => {
@@ -65,5 +67,56 @@ describe('analyticsResponseNeedsRefresh', () => {
       }),
       false
     );
+  });
+});
+
+describe('workspaceChartBucket', () => {
+  it('maps channel labels without provider checks', () => {
+    assert.equal(workspaceChartBucket('Search impressions'), 'impressions');
+    assert.equal(workspaceChartBucket('Views'), 'impressions');
+    assert.equal(workspaceChartBucket('Reach'), 'impressions');
+    assert.equal(workspaceChartBucket('Reactions'), 'engagement');
+    assert.equal(workspaceChartBucket('Pin clicks'), 'engagement');
+    assert.equal(workspaceChartBucket('Direction requests'), 'engagement');
+    assert.equal(workspaceChartBucket('Subscribers'), 'audience');
+    assert.equal(workspaceChartBucket('Followers'), 'audience');
+    assert.equal(workspaceChartBucket('Desktop Map Views'), 'impressions');
+    assert.equal(workspaceChartBucket('Phone Calls'), 'engagement');
+    assert.equal(workspaceChartBucket('Website Clicks'), 'engagement');
+  });
+});
+
+describe('mergeWorkspaceCharts', () => {
+  it('sums matching series by date and drops empty buckets', () => {
+    const merged = mergeWorkspaceCharts([
+      {
+        label: 'Impressions',
+        data: [
+          { date: '2026-09-01', total: 10 },
+          { date: '2026-09-02', total: 20 },
+        ],
+      },
+      {
+        label: 'Views',
+        data: [{ date: '2026-09-01', total: 5 }],
+      },
+      {
+        label: 'Followers',
+        data: [{ date: '2026-09-01', total: 100 }],
+      },
+      {
+        label: 'Engagement rate',
+        average: true,
+        data: [{ date: '2026-09-01', total: 2.4 }],
+      },
+    ]);
+    assert.deepEqual(
+      merged.map((row) => row.key),
+      ['impressions', 'audience']
+    );
+    assert.deepEqual(merged[0].data, [
+      { date: '2026-09-01', total: 15 },
+      { date: '2026-09-02', total: 20 },
+    ]);
   });
 });

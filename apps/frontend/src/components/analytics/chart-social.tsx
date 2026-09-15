@@ -19,58 +19,69 @@ function mergeDataPoints(data: TotalList[], numPoints: number): TotalList[] {
 export const ChartSocial: FC<{
   data: TotalList[];
   color?: 'purple' | 'green' | 'blue';
+  variant?: 'spark' | 'hero';
+  label?: string;
 }> = (props) => {
-  const { data, color = 'purple' } = props;
+  const { data, color = 'purple', variant = 'spark', label = 'Total' } = props;
   const [mode] = useCookie('mode', 'light');
+  const dark = mode === 'dark';
 
   const list = useMemo(() => {
-    const merged = data.length < 7 ? data : mergeDataPoints(data, 7);
-    if (merged.length === 1) {
-      return [
-        // duplicating single datapoints metrics for chart to display a line on analytics
-        merged[0],
-        merged[0],
-      ];
+    const source =
+      variant === 'hero' || data.length < 7
+        ? data
+        : mergeDataPoints(data, 7);
+    if (source.length === 1) {
+      return [source[0], source[0]];
     }
-    return merged;
-  }, [data]);
+    return source;
+  }, [data, variant]);
 
-  const ref = useRef<any>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
   const chart = useRef<null | DrawChart>(null);
 
   const colorSchemes = {
     purple: {
       start: 'rgba(97, 43, 211, 0.8)',
-      end: 'rgba(97, 43, 211, 0.1)',
+      end: 'rgba(97, 43, 211, 0.08)',
       border: 'rgb(97, 43, 211)',
     },
     green: {
       start: 'rgba(50, 213, 131, 0.8)',
-      end: 'rgba(50, 213, 131, 0.1)',
+      end: 'rgba(50, 213, 131, 0.08)',
       border: 'rgb(50, 213, 131)',
     },
     blue: {
       start: 'rgba(29, 155, 240, 0.8)',
-      end: 'rgba(29, 155, 240, 0.1)',
+      end: 'rgba(29, 155, 240, 0.08)',
       border: 'rgb(29, 155, 240)',
     },
   };
 
   const colors = colorSchemes[color];
+  const hero = variant === 'hero';
 
   useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
     const ctx = ref.current.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, ref.current.height);
+    if (!ctx) {
+      return;
+    }
+    const gradient = ctx.createLinearGradient(0, 0, 0, ref.current.height || 240);
     gradient.addColorStop(0, colors.start);
     gradient.addColorStop(1, colors.end);
+    const tick = dark ? '#6e6e78' : '#777';
+    const grid = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
-    chart.current = new DrawChart(ref.current!, {
+    chart.current = new DrawChart(ref.current, {
       type: 'line',
       options: {
         maintainAspectRatio: false,
         responsive: true,
         animation: {
-          duration: 750,
+          duration: hero ? 450 : 750,
           easing: 'easeOutQuart',
         },
         interaction: {
@@ -80,21 +91,45 @@ export const ChartSocial: FC<{
         layout: {
           padding: {
             left: 0,
-            right: 0,
-            top: 4,
-            bottom: 0,
+            right: 4,
+            top: 8,
+            bottom: hero ? 4 : 0,
           },
         },
         scales: {
           y: {
             beginAtZero: true,
-            display: false,
+            display: hero,
+            border: { display: false },
+            grid: {
+              display: hero,
+              color: grid,
+            },
+            ticks: {
+              color: tick,
+              font: { size: 11 },
+              maxTicksLimit: 5,
+              callback: (value) => {
+                const n = Number(value);
+                if (Math.abs(n) >= 1_000_000) {
+                  return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+                }
+                if (Math.abs(n) >= 1_000) {
+                  return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+                }
+                return String(n);
+              },
+            },
           },
           x: {
-            display: false,
+            display: hero,
+            border: { display: false },
+            grid: { display: false },
             ticks: {
-              stepSize: 10,
-              maxTicksLimit: 7,
+              color: tick,
+              font: { size: 11 },
+              maxTicksLimit: 8,
+              maxRotation: 0,
             },
           },
         },
@@ -104,10 +139,10 @@ export const ChartSocial: FC<{
           },
           tooltip: {
             enabled: true,
-            backgroundColor: mode === 'dark' ? '#1e1d1d' : '#fff',
-            titleColor: mode === 'dark' ? '#fff' : '#000',
-            bodyColor: mode === 'dark' ? '#9c9c9c' : '#777',
-            borderColor: mode === 'dark' ? '#2b2b2b' : '#e7e9eb',
+            backgroundColor: dark ? '#1f1f24' : '#fff',
+            titleColor: dark ? '#ededf0' : '#000',
+            bodyColor: dark ? '#9b9ba4' : '#777',
+            borderColor: dark ? '#26262c' : '#e7e9eb',
             borderWidth: 1,
             padding: 10,
             cornerRadius: 8,
@@ -129,24 +164,24 @@ export const ChartSocial: FC<{
           {
             borderColor: colors.border,
             borderWidth: 2,
-            label: 'Total',
+            label,
             backgroundColor: gradient,
             fill: true,
             data: list.map((row) => row.total),
-            tension: 0.4,
+            tension: 0.35,
             pointRadius: 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: colors.border,
-            pointHoverBorderColor: mode === 'dark' ? '#1e1d1d' : '#fff',
+            pointHoverBorderColor: dark ? '#1e1d1d' : '#fff',
             pointHoverBorderWidth: 2,
           },
         ],
       },
     });
     return () => {
-      chart?.current?.destroy();
+      chart.current?.destroy();
     };
-  }, []);
+  }, [colors.border, colors.end, colors.start, dark, hero, label, list]);
 
-  return <canvas className="w-full h-full" ref={ref} />;
+  return <canvas className="h-full w-full" ref={ref} />;
 };

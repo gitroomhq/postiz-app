@@ -34,6 +34,17 @@ export interface IAuthenticator {
     postId: string,
     fromDate: number,
   ): Promise<AnalyticsData[]>;
+  /**
+   * Lifetime totals for many platform post ids at once. Used by the snapshot
+   * sync, never by the per-post Statistics modal (that still calls
+   * `postAnalytics`). Omit a field when this provider does not fetch it —
+   * callers must treat `null` as "unknown", never as zero.
+   */
+  postsAnalytics?(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]>;
   changeNickname?(
     id: string,
     accessToken: string,
@@ -55,6 +66,15 @@ export interface AnalyticsData {
   data: Array<{ total: string; date: string }>;
   percentageChange: number;
 }
+
+export type NormalizedPostMetrics = {
+  platformPostId: string;
+  impressions: number | null;
+  reactions: number | null;
+  comments: number | null;
+  shares: number | null;
+  raw?: Record<string, number>;
+};
 
 
 export type GenerateAuthUrlResponse = {

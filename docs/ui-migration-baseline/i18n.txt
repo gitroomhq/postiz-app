@@ -83,6 +83,7 @@ ai_not_configured_body
 ai_post
 all
 all_channels
+all_channels_hint
 all_dates
 all_notifications_marked_as_read
 all_platforms
@@ -96,8 +97,11 @@ alt_text_subtitle
 amount
 analytics
 analytics_empty_connect_hint
+analytics_lifetime_totals_hint
 analytics_load_failed
 analytics_load_failed_hint
+analytics_posts_load_failed
+analytics_posts_load_failed_hint
 analytics_summary_range
 and
 announcement_color
@@ -388,6 +392,7 @@ check_circles_above
 checkout_not_finished_logout
 choose_a_new_password
 choose_a_video_type
+choose_channel
 choose_image
 choose_upload_without_posting_description
 chrome_extension_notice
@@ -1085,6 +1090,7 @@ enable
 enable_channel
 end_free_trial
 end_trial_to_unlock
+eng_rate
 enter_details
 enter_email
 error
@@ -1272,6 +1278,7 @@ import_as_draft
 import_debug_post
 import_from
 import_selected
+impressions
 insert_emoji
 insert_media
 instagram_add_audio
@@ -1463,12 +1470,16 @@ no_notifications_hint
 no_original_urls
 no_pickable_channels
 no_plugs_for_these_channels
+no_post_performance
+no_post_performance_hint
 no_posts
 no_posts_yet
 no_published_posts
 no_short_link_results
 no_statistics_available
 no_time_slots
+no_top_posts
+no_top_posts_hint
 no_upcoming_posts
 none
 none_yet
@@ -1519,6 +1530,7 @@ payment_failed_title
 payment_required
 per_month
 per_year
+performance_per_post
 personal_voice_i_am_happy_to_announce
 pick_a_date
 pick_a_day
@@ -1612,6 +1624,7 @@ range_30d
 range_7d
 range_90d
 re_authorise_with_the_platform
+reactions
 reactivate_subscription
 read_the_docs
 ready_to_connect
@@ -1620,6 +1633,7 @@ reconnect_before_new_post
 reconnect_channel
 redirect_url
 refresh_channel
+refreshing_analytics
 refund_selected
 refund_selected_confirm
 refunded
@@ -1775,6 +1789,7 @@ subtitle_posts
 subtitle_settings
 success_emails
 success_emails_description
+summary
 super_admin
 support_mail_body
 support_mail_subject
@@ -1835,6 +1850,7 @@ to_your_telegram_group_channel_and_click_here
 today
 tomorrow
 tone
+top_5_posts
 top_title_add_api_key_for
 top_title_add_member
 tour_add_channel_text
@@ -1883,6 +1899,7 @@ understanding_the_category
 unlock_team_members
 unpin_chats
 unpin_sidebar
+untitled_post
 update
 update_credentials
 update_key

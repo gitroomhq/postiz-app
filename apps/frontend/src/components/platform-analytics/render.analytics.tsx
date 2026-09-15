@@ -1,4 +1,4 @@
-import { FC, ReactNode, useCallback, useMemo } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { ChartSocial } from '@gitroom/frontend/components/analytics/chart-social';
@@ -9,6 +9,7 @@ import clsx from 'clsx';
 import {
   analyticsHasActivity,
   analyticsResponseNeedsRefresh,
+  mergeWorkspaceCharts,
 } from './analytics-activity';
 
 interface AnalyticsDataItem {
@@ -16,6 +17,7 @@ interface AnalyticsDataItem {
   data: Array<{ total: number; date: string }>;
   average?: boolean;
   percentageChange?: number;
+  hint?: string;
 }
 
 const TrendIndicator: FC<{ value: number; average?: boolean }> = ({
@@ -55,13 +57,15 @@ const AnalyticsCard: FC<{
   item: AnalyticsDataItem;
   total: string | number;
   index: number;
-}> = ({ item, total, index }) => {
+  compact?: boolean;
+  active?: boolean;
+  onSelect?: () => void;
+}> = ({ item, total, index, compact, active, onSelect }) => {
   const colorVariants = ['purple', 'green', 'amber'] as const;
   const color = colorVariants[index % colorVariants.length];
   const hasDataPoints = item.data.length >= 1;
-
-  return (
-    <div className="flex flex-col overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]">
+  const inner = (
+    <>
       <div className="flex items-center gap-[9px] px-[17px] pt-[15px]">
         <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
           {item.label}
@@ -81,11 +85,13 @@ const AnalyticsCard: FC<{
             </div>
           </div>
           <div className="px-[12px] pb-[12px] pt-[8px]">
-            <div className="relative h-[100px]">
+            <div className={clsx('relative', compact ? 'h-[48px]' : 'h-[100px]')}>
               <ChartSocial
                 data={item.data}
                 color={color === 'amber' ? 'blue' : color}
-                key={`chart-${index}`}
+                variant="spark"
+                label={item.label}
+                key={`chart-${index}-${compact ? 's' : 'm'}`}
               />
             </div>
           </div>
@@ -97,6 +103,104 @@ const AnalyticsCard: FC<{
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (onSelect) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        className={clsx(
+          'flex flex-col overflow-hidden rounded-pqMd bg-pqPop text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow]',
+          active
+            ? 'shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]'
+            : 'hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]'
+        )}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]">
+      {inner}
+    </div>
+  );
+};
+
+const AnalyticsChartBoard: FC<{
+  rows: AnalyticsDataItem[];
+  totals: Array<string | number>;
+  hint?: string;
+}> = ({ rows, totals, hint }) => {
+  const t = useT();
+  const [active, setActive] = useState(0);
+  const safe = rows.length ? Math.min(active, rows.length - 1) : 0;
+  const item = rows[safe];
+  const colorVariants = ['purple', 'green', 'amber'] as const;
+  const color = colorVariants[safe % colorVariants.length];
+
+  if (!item) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-[13px]">
+      <div
+        className={clsx(
+          'grid grid-cols-2 gap-[10px]',
+          rows.length >= 4
+            ? 'lg:grid-cols-4'
+            : rows.length > 2
+              ? 'lg:grid-cols-3'
+              : 'lg:grid-cols-2'
+        )}
+      >
+        {rows.map((row, index) => (
+          <AnalyticsCard
+            key={row.label}
+            item={row}
+            total={totals[index]}
+            index={index}
+            compact
+            active={index === safe}
+            onSelect={() => setActive(index)}
+          />
+        ))}
+      </div>
+      <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="flex items-center gap-[9px] px-[17px] pt-[15px] pb-[2px]">
+          <span className="min-w-0 flex-1 truncate text-[12px] font-[600] uppercase tracking-[0.06em] text-pqSoft">
+            {item.data.length > 2
+              ? `${t('daily', 'Daily')} ${item.label.toLowerCase()}`
+              : item.label}
+          </span>
+          {item.percentageChange !== undefined && (
+            <TrendIndicator
+              value={item.percentageChange}
+              average={item.average}
+            />
+          )}
+        </div>
+        {(item.hint || hint) ? (
+          <div className="px-[17px] pb-[2px] text-[12px] text-pqMuted">
+            {item.hint || hint}
+          </div>
+        ) : null}
+        <div className="px-[12px] pb-[16px] pt-[8px]">
+          <div className="relative h-[260px]">
+            <ChartSocial
+              data={item.data}
+              color={color === 'amber' ? 'blue' : color}
+              variant="hero"
+              label={item.label}
+              key={`hero-${item.label}`}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -300,15 +404,113 @@ export const RenderAnalytics: FC<{
   }
 
   return (
-    <div className="grid grid-cols-1 gap-[13px] sm:grid-cols-2 lg:grid-cols-3">
-      {rows.map((item: AnalyticsDataItem, index: number) => (
-        <AnalyticsCard
-          key={`analytics-${index}`}
-          item={item}
-          total={totals[index]}
-          index={index}
-        />
-      ))}
-    </div>
+    <AnalyticsChartBoard rows={rows} totals={totals} />
   );
+};
+
+const workspaceChartLabel = (
+  key: 'impressions' | 'engagement' | 'audience',
+  t: (key: string, fallback: string) => string
+) => {
+  if (key === 'impressions') {
+    return t('impressions', 'Impressions');
+  }
+  if (key === 'engagement') {
+    return t('engagement', 'Engagement');
+  }
+  return t('followers', 'Followers');
+};
+
+const workspaceChartHint = (
+  key: 'impressions' | 'engagement' | 'audience',
+  t: (key: string, fallback: string) => string
+) => {
+  if (key === 'impressions') {
+    return t(
+      'workspace_impressions_hint',
+      'Views, reach, and impressions from each channel'
+    );
+  }
+  if (key === 'engagement') {
+    return t(
+      'workspace_engagement_hint',
+      'Likes, comments, clicks, saves, and similar from each channel'
+    );
+  }
+  return t(
+    'workspace_followers_hint',
+    'Followers and subscribers from each channel'
+  );
+};
+
+export const WorkspaceChannelCharts: FC<{
+  integrations: AnalyticsIntegration[];
+  date: number;
+}> = ({ integrations, date }) => {
+  const t = useT();
+  const fetch = useFetch();
+  const ids = integrations.map((item) => item.id).join(',');
+
+  const load = useCallback(async () => {
+    const bodies = await Promise.all(
+      integrations.map(async (integration) => {
+        const json = await (
+          await fetch(`/analytics/${integration.id}?date=${date}`)
+        ).json();
+        return Array.isArray(json) ? json : [];
+      })
+    );
+    return mergeWorkspaceCharts(bodies.flat());
+  }, [date, fetch, ids]);
+
+  const { data, isLoading } = useSWR(
+    ids ? `/analytics-workspace-${ids}-${date}` : null,
+    load,
+    {
+      refreshInterval: 0,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    }
+  );
+
+  const rows: AnalyticsDataItem[] = useMemo(
+    () =>
+      (data || []).map((item) => ({
+        label: workspaceChartLabel(item.key, t),
+        data: item.data,
+        percentageChange: item.percentageChange,
+        hint: workspaceChartHint(item.key, t),
+      })),
+    [data, t]
+  );
+
+  const totals = useMemo(() => {
+    return rows.map((item) =>
+      new Intl.NumberFormat().format(
+        Math.round(
+          item.data.reduce((acc, point) => acc + Number(point.total), 0)
+        )
+      )
+    );
+  }, [rows]);
+
+  if (!ids) {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div role="status" aria-busy="true" aria-label={t('loading', 'Loading')}>
+        <AnalyticsCardsGhost pills={false} />
+      </div>
+    );
+  }
+
+  if (!analyticsHasActivity(rows)) {
+    return null;
+  }
+
+  return <AnalyticsChartBoard rows={rows} totals={totals} />;
 };

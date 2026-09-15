@@ -1,10 +1,12 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapLinkedInShareStats } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { LinkedinProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.provider';
 import dayjs from 'dayjs';
@@ -567,6 +569,60 @@ export class LinkedinPageProvider
       }));
 
     return result as any;
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const shareStatsUrl = `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
+          `urn:li:organization:${integrationId}`
+        )}&shares=List(${encodeURIComponent(postId)})`;
+
+        const { elements: shareElements }: { elements: PostShareStatElement[] } =
+          await (
+            await fetch(shareStatsUrl, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'LinkedIn-Version': '202601',
+                'X-Restli-Protocol-Version': '2.0.0',
+              },
+            })
+          ).json();
+
+        let socialActions: SocialActionsResponse | null = null;
+        try {
+          socialActions = await (
+            await fetch(
+              `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+                postId
+              )}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'LinkedIn-Version': '202601',
+                  'X-Restli-Protocol-Version': '2.0.0',
+                },
+              }
+            )
+          ).json();
+        } catch (e) {
+          // Social actions may not be available for all posts
+        }
+
+        const stats = shareElements?.[0]?.totalShareStatistics;
+        rows.push(mapLinkedInShareStats(postId, stats, socialActions));
+      } catch (err) {
+        console.error('Error fetching LinkedIn posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 
   @Plug({

@@ -29,3 +29,83 @@ export function analyticsResponseNeedsRefresh(data: unknown): boolean {
   );
   return /needs to be refreshed/i.test(message);
 }
+
+export type WorkspaceChartKey = 'impressions' | 'engagement' | 'audience';
+
+export function workspaceChartBucket(label: string): WorkspaceChartKey | null {
+  if (/\b(rate|average|%)\b/i.test(label) && !/\b(impression|view|reach)\b/i.test(label)) {
+    return null;
+  }
+  if (/follow|subscriber/i.test(label)) {
+    return 'audience';
+  }
+  if (/impression|view|reach/i.test(label)) {
+    return 'impressions';
+  }
+  if (
+    /engag|reaction|like|comment|click|share|save|call|direction/i.test(label)
+  ) {
+    return 'engagement';
+  }
+  return null;
+}
+
+export function mergeWorkspaceCharts(
+  rows: Array<{
+    label: string;
+    average?: boolean;
+    data?: Array<{ total: number | string; date: string }>;
+  }>
+): Array<{
+  key: WorkspaceChartKey;
+  data: Array<{ total: number; date: string }>;
+  percentageChange: number;
+}> {
+  const buckets: Record<WorkspaceChartKey, Map<string, number>> = {
+    impressions: new Map(),
+    engagement: new Map(),
+    audience: new Map(),
+  };
+
+  for (const row of rows) {
+    if (row.average) {
+      continue;
+    }
+    const key = workspaceChartBucket(row.label || '');
+    if (!key) {
+      continue;
+    }
+    for (const point of row.data || []) {
+      const date = String(point.date || '');
+      if (!date) {
+        continue;
+      }
+      buckets[key].set(
+        date,
+        (buckets[key].get(date) || 0) + (Number(point.total) || 0)
+      );
+    }
+  }
+
+  return (['impressions', 'engagement', 'audience'] as const).flatMap((key) => {
+    const map = buckets[key];
+    if (![...map.values()].some((value) => value !== 0)) {
+      return [];
+    }
+    const data = [...map.entries()]
+      .sort(
+        ([left], [right]) =>
+          Date.parse(left) - Date.parse(right) || left.localeCompare(right)
+      )
+      .map(([date, total]) => ({ date, total }));
+    const first = data[0]?.total || 0;
+    const last = data[data.length - 1]?.total || 0;
+    return [
+      {
+        key,
+        data,
+        percentageChange: first ? ((last - first) / first) * 100 : 0,
+      },
+    ];
+  });
+}

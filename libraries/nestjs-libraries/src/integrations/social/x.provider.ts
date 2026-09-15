@@ -4,11 +4,13 @@ import { parseFragment } from 'parse5';
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapXPublicMetrics } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
 import { readOrFetch } from '@gitroom/nestjs-libraries/integrations/read.or.fetch';
@@ -25,7 +27,7 @@ import { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated
 import { timer } from '@gitroom/helpers/utils/timer';
 import { PostPlug } from '@gitroom/helpers/decorators/post.plug';
 import dayjs from 'dayjs';
-import { uniqBy } from 'lodash';
+import { chunk, uniqBy } from 'lodash';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
@@ -1495,8 +1497,17 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         }
       );
 
+      const xChannelLabels: Record<string, string> = {
+        impression_count: 'Impressions',
+        like_count: 'Likes',
+        retweet_count: 'Retweets',
+        reply_count: 'Replies',
+        quote_count: 'Quotes',
+        bookmark_count: 'Bookmarks',
+      };
+
       return Object.entries(metrics).map(([key, value]) => ({
-        label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
+        label: xChannelLabels[key] || key,
         percentageChange: 5,
         data: [
           {
@@ -1619,6 +1630,51 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       }
       this.throwIfCannotFetch(err, err?.code);
       console.log('Error fetching X post analytics:', err);
+    }
+
+    return [];
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    if (process.env.DISABLE_X_ANALYTICS || platformPostIds.length === 0) {
+      return [];
+    }
+
+    const [accessTokenSplit, accessSecretSplit] = accessToken.split(':');
+    const client = new TwitterApi({
+      appKey: process.env.X_API_KEY!,
+      appSecret: process.env.X_API_SECRET!,
+      accessToken: accessTokenSplit,
+      accessSecret: accessSecretSplit,
+    });
+
+    const ids = uniqBy(platformPostIds, (id) => id);
+    const rows: NormalizedPostMetrics[] = [];
+
+    try {
+      for (const batch of chunk(ids, 100)) {
+        const data = await client.v2.tweets(batch, {
+          'tweet.fields': ['public_metrics'],
+        });
+        for (const tweet of data.data || []) {
+          rows.push(mapXPublicMetrics(tweet.id, tweet.public_metrics));
+        }
+      }
+      return rows;
+    } catch (err: any) {
+      if (
+        err instanceof RefreshToken ||
+        err instanceof Disconnect ||
+        err instanceof BadBody
+      ) {
+        throw err;
+      }
+      this.throwIfCannotFetch(err, err?.code);
+      console.log('Error fetching X posts analytics:', err);
     }
 
     return [];

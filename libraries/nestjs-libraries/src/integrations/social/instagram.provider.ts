@@ -1,11 +1,13 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapInstagramMediaInsights } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
@@ -1267,5 +1269,33 @@ export class InstagramProvider
       console.error('Error fetching Instagram post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    token: string,
+    platformPostIds: string[],
+    type = 'graph.facebook.com'
+  ): Promise<NormalizedPostMetrics[]> {
+    const [accessToken] = token.split('___');
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const { data } = await (
+          await fetch(
+            `https://${type}/${META_GRAPH_API_VERSION}/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`
+          )
+        ).json();
+        if (!data || data.length === 0) {
+          continue;
+        }
+        rows.push(mapInstagramMediaInsights(postId, data));
+      } catch (err) {
+        console.error('Error fetching Instagram posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }
