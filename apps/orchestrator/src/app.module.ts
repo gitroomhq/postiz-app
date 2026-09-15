@@ -8,6 +8,8 @@ import { IntegrationsActivity } from '@gitroom/orchestrator/activities/integrati
 import { VideoActivity } from '@gitroom/orchestrator/activities/video.activity';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { HealthController } from '@gitroom/orchestrator/health.controller';
+import { SentryModule } from '@sentry/nestjs/setup';
+import { FILTER } from '@gitroom/nestjs-libraries/sentry/sentry.exception';
 
 const activities = [
   PostActivity,
@@ -18,14 +20,15 @@ const activities = [
 ];
 @Module({
   imports: [
+    SentryModule.forRoot(),
     DatabaseModule,
     VideoModule,
     getTemporalModule(true, require.resolve('./workflows'), activities),
   ],
   controllers: [HealthController],
-  providers: [...activities],
+  providers: [...activities, FILTER],
   get exports() {
-    return [...this.providers, ...this.imports];
+    return [...activities, ...this.imports];
   },
 })
 export class AppModule {}

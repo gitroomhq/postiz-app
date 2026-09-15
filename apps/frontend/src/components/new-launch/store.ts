@@ -143,6 +143,7 @@ const initialState = {
   activateExitButton: true,
   date: newDayjs(),
   postComment: PostComment.ALL,
+  repeater: undefined as undefined | number,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
   tab: 0 as 0,

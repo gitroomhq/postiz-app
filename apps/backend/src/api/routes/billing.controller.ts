@@ -18,6 +18,8 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import dayjs from 'dayjs';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
 
@@ -74,7 +76,14 @@ export class BillingController {
     const provider = await this.provider(org);
     try {
       await provider.finishTrial(org);
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'finish_trial',
+        org_id: org.id,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
     return {
       finish: true,
     };
@@ -166,17 +175,36 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @GetUserFromRequest() user: User
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await (await this.provider(org)).setToCancel(org.id);
 
-    return (await this.provider(org)).setToCancel(org.id);
+    if (result.cancel_at) {
+      const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
+      try {
+        await this._notificationService.sendEmail(
+          user.email,
+          'Your subscription has been cancelled',
+          `${
+            isFutureCancel
+              ? `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+                  result.cancel_at
+                ).format('MMMM D, YYYY')}.`
+              : 'Your subscription has been cancelled and access to paid features has ended.'
+          }<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+            process.env.FRONTEND_URL
+          }/billing">billing page</a>.`
+        );
+      } catch (err) {
+        logger.error('cancellation_email_failed', {
+          org_id: org.id,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
+    }
+
+    return result;
   }
 
   @Post('/prorate')

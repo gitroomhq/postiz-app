@@ -13,7 +13,7 @@ We have 3 important folders
 
 - apps/backend - this is where the API code is (NESTJS)
 - apps/orchestrator - this is temporal, it's for background jobs (NESTJS) it contains all the workflows and activities
-- apps/frontend - this is the code of the frontend (Vite ReactJS)
+- apps/frontend - this is the code of the frontend (Next.js 16, App Router, runs on port 4200)
 - /libraries contains a lot of services shared between backend and orchestrator and frontend components.
 
 We are using only pnpm, don't use any other dependency manager.
@@ -59,7 +59,10 @@ const useCommunity = () => {
 
 - Linting of the project can run only from the root.
 - Use only pnpm.
+- Never commit directly to `main` or `staging` without explicit permission.
+- For commits on any branch, use a short title and only the bare minimum description; never include Claude co-author attribution.
 - Never use RAW SQL queries, always use Prisma.
+- Whenever you introduce a new environment variable anywhere in the code, you **must** also add it to `.env.example`, in the section it belongs to, with a short comment explaining what it does and its default. Optional variables stay commented out, variables required to boot stay uncommented. If you rename or remove an environment variable, update `.env.example` in the same change.
 - The system is in production with many users, if you want to change something, you need to be sure that you are not breaking anything for existing users and a migration might be needed
 - Whenever you generate a PR, PR description, or similar, **always** follow the PR Template (.github/PULL_REQUEST_TEMPLATE.md)
 - Every PR description **must** contain a `# QA` section with real, numbered steps a reviewer can follow to verify the change (setup, action, expected result), written so they can be run without asking the author anything. This is not optional and applies to humans and agents alike, including one-line fixes. The section is extracted verbatim and shown on the review board, so:
@@ -67,9 +70,35 @@ const useCommunity = () => {
   - Never leave the template placeholder in place, and never write `N/A`, `TBD`, `todo`, `none` or a bare empty checkbox as the whole section - those all count as no QA at all and the board will show the PR as missing testing notes.
   - Steps inside a fenced code block are ignored, so keep them as plain numbered lines. Write each step as a numbered checkbox (`1. [ ] step`) so a reviewer can tick it off while working through it - the numbering is what the board extracts, the checkbox is for the reviewer.
 - Every PR description **must** answer `# What kind of change does this PR introduce?` with actual detail, not just a category. `Bug fix.` / `Feature.` on its own is not acceptable. State the type, the area it touches (backend, frontend, orchestrator, a specific provider or screen), and in one to three sentences what concretely changed and where - the key function, endpoint, file or field - plus what deliberately stayed the same. A reader should understand the change from this section alone, without opening the diff.
+- Every PR that changes behaviour **must** add or update tests covering it. Unit tests for pure logic and services, integration tests for anything crossing the database or a provider boundary, an E2E spec for a new user-facing flow, and a workflow test for orchestrator changes. If a change genuinely cannot be tested (config, copy, generated files), say so explicitly in the PR and why - "no tests" without a reason is not acceptable. This is separate from the `# QA` section, which stays required: `# QA` is for a human reviewer, tests are for CI.
 - Avoid as much as possible creating new files with pure logic of algorithms, it's usually wrong
 - When you write code, make sure that what you add looks like something similar somewhere else in the code, don't make weird patterns
 - When you finished running, run another agents that matches the new code with the existing system code, to see that it looks similar and is not a weird pattern.
 - Workflows files can never be changed if they are already in origin/main, because changing a workflow will fail all its activities, instead create a new workflow with the version, and everywhere the workflow being called, change it to the new workflow version.
 - Workflows activities parameters cannot be changed, as it will break the workflow, if we need to change the parameters, if we need to change the parameters, we need to create a new activity with the new parameters, and then create a new workflow that uses the new activity.
-- Code must always be generic, there can't be a way that a specific logic, let's say facebook or instagram, appear in a file that use a generic logic, instead, we need to edit the interface of the provider, add another function, and then generically call it from the generic code, and then implement the specific logic in the provider implementation. we can't have something like if(facebookProvider) {} inside a non facebook provider file. 
+- Code must always be generic, there can't be a way that a specific logic, let's say facebook or instagram, appear in a file that use a generic logic, instead, we need to edit the interface of the provider, add another function, and then generically call it from the generic code, and then implement the specific logic in the provider implementation. we can't have something like if(facebookProvider) {} inside a non facebook provider file.
+
+## Testing
+
+Four tiers, all run from the root. Vitest projects are defined in `vitest.config.mts`; shared helpers live in `libraries/testing` and are imported as `@gitroom/testing/*`.
+
+| Tier | Command | What it covers |
+|---|---|---|
+| unit | `pnpm test:unit` | Pure logic, services with mocked collaborators, provider contracts, React leaf components. No network, no database. |
+| integration | `pnpm test:integration` | Nest controllers and middleware over supertest against a real Postgres. |
+| workflows | `pnpm test:workflows` | Orchestrator workflows on a Temporal time-skipping server with stubbed activities. No Docker needed. |
+| e2e | `pnpm test:e2e` | Playwright against the full stack: Postgres, Redis, Temporal, backend, orchestrator and frontend. |
+| deploy gate | `pnpm test:e2e:prod` | Playwright against an already-deployed Postiz, to decide whether it may go to production. Starts nothing. Not run by CI. |
+
+Conventions:
+
+- Unit tests are co-located as `*.spec.ts` next to the file under test. Integration, workflow and E2E specs live under `tests/` and `e2e/`. Every build tsconfig already excludes `*.spec.ts` and `*.test.ts`, so co-location costs nothing.
+- Integration tests refuse to run unless `DATABASE_URL` names a database containing `test`, because schema setup uses `prisma db push --accept-data-loss`.
+- Provider HTTP is intercepted with MSW at the network layer, so provider code runs unmodified. The shared fake Mastodon instance in `libraries/testing/src/msw/handlers/mastodon.router.ts` is mounted both in-process (MSW) and as a real HTTP server for E2E.
+- A provider deep-suite that only needs a handful of endpoints uses `stubFetch` from `libraries/testing/src/http/fetch.stub.ts` instead of standing up an MSW router. It routes `globalThis.fetch` by URL, so `this.fetch` and every raw `fetch` in the provider still run their real request building and error parsing, and an unrouted URL throws rather than silently resolving.
+- E2E requires `NOT_SECURED=true`, `DISABLE_SSRF_PROTECTION=true`, and both `STRIPE_*` keys unset. `e2e/global.setup.ts` asserts this and fails with an explanation rather than a confusing test failure.
+- A new provider added to `socialIntegrationList` is automatically covered by the contract suite in `libraries/nestjs-libraries/src/integrations/provider.contract.spec.ts`, including a snapshot of its Temporal task queue. If that snapshot changes, connected channels are about to break - do not update it blindly.
+- Adding a provider deep-suite or a workflow test is preferred over widening the contract suite with provider-specific assertions.
+- Coverage is collected and reported but not enforced. There is no threshold to satisfy yet.
+- ReportPortal reporting is opt-in via `RP_ENABLE`/`RP_ENDPOINT`/`RP_PROJECT` (repo variables) and `RP_API_KEY` (secret). It always fails soft: an unreachable ReportPortal never fails a build, and JUnit XML is written regardless.
+- The deploy gate (`e2e/prod`, `playwright.prod.config.ts`) is the only suite that talks to a real deployment, and it is tiered by environment so that an invocation with nothing set skips everything and passes: `POSTIZ_SMOKE_URL` alone checks reachability and public-API auth rejection; adding `POSTIZ_SMOKE_API_KEY` adds read-only checks and a draft create/list/delete round-trip; adding `POSTIZ_SMOKE_PUBLISH_CHANNELS` **really publishes to the real social accounts** behind those channel ids. Postiz can delete its own record but cannot retract a published post, so only name throwaway accounts. It has no retries, for the same reason.
