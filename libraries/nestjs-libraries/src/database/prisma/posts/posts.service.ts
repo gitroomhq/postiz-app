@@ -83,6 +83,10 @@ export class PostsService {
     return this._postRepository.updatePost(id, postId, releaseURL);
   }
 
+  setReleaseDetails(id: string, postId: string, releaseURL: string) {
+    return this._postRepository.setReleaseDetails(id, postId, releaseURL);
+  }
+
   async getMissingContent(
     orgId: string,
     postId: string,
