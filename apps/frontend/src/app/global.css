@@ -1556,7 +1556,7 @@ html[dir='rtl'] .lbox {
   overflow: visible;
 }
 
-[data-sb][data-hov='1'] a,
+[data-sb][data-hov='1'] a:not([data-pq='getting-started-channels']),
 [data-sb][data-hov='1'] button:not([data-sb-pin='1']) {
   width: 34px;
   margin-inline: auto;
