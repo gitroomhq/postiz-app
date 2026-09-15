@@ -196,6 +196,15 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
 [dir="rtl"] [id^="chatbase-bubble"] {
   left: 20px !important;
   right: auto !important;
+}
+[data-tourdemo='1'] #chatbase-bubble-button,
+[data-tourdemo='1'] #chatbase-bubble-window,
+[data-tourdemo='1'] [id^="chatbase-bubble"],
+[data-pq-sheet] #chatbase-bubble-button,
+[data-pq-sheet] #chatbase-bubble-window,
+[data-pq-sheet] [id^="chatbase-bubble"] {
+  display: none !important;
+  pointer-events: none !important;
 }`;
       document.head.appendChild(style);
     }

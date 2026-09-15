@@ -44,6 +44,18 @@ export const MobileSheet: FC<{
 
   useEffect(() => {
     if (!open) return;
+    const root = document.documentElement;
+    const n = Number(root.getAttribute('data-pq-sheet') || '0') + 1;
+    root.setAttribute('data-pq-sheet', String(n));
+    return () => {
+      const left = Number(root.getAttribute('data-pq-sheet') || '1') - 1;
+      if (left <= 0) root.removeAttribute('data-pq-sheet');
+      else root.setAttribute('data-pq-sheet', String(left));
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };

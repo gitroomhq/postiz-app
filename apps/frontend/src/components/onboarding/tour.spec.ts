@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { STEPS, TOUR_COPY } from './tour.steps.ts';
+
+const overlay = readFileSync(
+  fileURLToPath(new URL('./tour.tsx', import.meta.url)),
+  'utf8',
+);
+const css = readFileSync(
+  fileURLToPath(new URL('../../app/global.css', import.meta.url)),
+  'utf8',
+);
 
 describe('product tour Connect steps', () => {
   it('walks calendar, Connect hub, then publishing channels', () => {
@@ -50,5 +61,12 @@ describe('product tour Connect steps', () => {
       TOUR_COPY['connect-featured'].text,
       /every other MCP client/
     );
+  });
+
+  it('hides Chatbase over the tour and phone sheets, and uses a 44px Next on phones', () => {
+    assert.match(overlay, /isMobileTour\(vw\)/);
+    assert.match(overlay, /min-h-\[44px\]/);
+    assert.match(css, /\[data-tourdemo='1'\] #chatbase-bubble-button/);
+    assert.match(css, /\[data-pq-sheet\] #chatbase-bubble-button/);
   });
 });

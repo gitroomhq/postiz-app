@@ -30,6 +30,7 @@ import {
 import {
   TOUR_CARD_H,
   clipSpotlight,
+  isMobileTour,
   placeByBand,
   placeTourCard,
   tourCardWidth,
@@ -1266,7 +1267,12 @@ export const Tour: FC = () => {
             onClick={() =>
               last ? finish({ leaveOnAddChannel: true }) : next()
             }
-            className="rounded-pqSm bg-pqBrand px-[14px] py-[6px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover"
+            className={clsx(
+              'rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover',
+              isMobileTour(vw)
+                ? 'min-h-[44px] min-w-[44px] px-[16px]'
+                : 'py-[6px]'
+            )}
           >
             {last ? t('finish', 'Finish') : t('next', 'Next')}
           </button>
