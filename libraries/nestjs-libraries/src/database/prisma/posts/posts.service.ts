@@ -209,10 +209,28 @@ export class PostsService {
     // }
 
     try {
+      let releaseId = post.releaseId;
+      if (integrationProvider.resolveReleaseId) {
+        const resolved = await integrationProvider.resolveReleaseId(
+          getIntegration.token,
+          releaseId,
+          getIntegration
+        );
+        if (resolved && resolved.postId !== releaseId) {
+          await this._postRepository.updateResolvedRelease(
+            post.id,
+            orgId,
+            resolved.postId,
+            resolved.releaseURL
+          );
+          releaseId = resolved.postId;
+        }
+      }
+
       const loadAnalytics = await integrationProvider.postAnalytics(
         getIntegration.internalId,
         getIntegration.token,
-        post.releaseId,
+        releaseId,
         date
       );
       await ioRedis.set(
