@@ -48,7 +48,7 @@ export const withProvider = function <T extends object>(params: {
     maximumCharacters?: number;
   }>;
   dto?: any;
-  maximumCharacters?: number | ((settings: any) => number);
+  maximumCharacters?: number | ((settings: any, hasMedia?: boolean) => number);
 }) {
   const {
     postComment,
@@ -117,6 +117,14 @@ export const withProvider = function <T extends object>(params: {
               JSON.parse(
                 selectedIntegration.integration.additionalSettings || '[]'
               )
+            ),
+        typeof maximumCharacters === 'number'
+          ? maximumCharacters
+          : maximumCharacters(
+              JSON.parse(
+                selectedIntegration.integration.additionalSettings || '[]'
+              ),
+              true
             )
       );
 
@@ -356,7 +364,7 @@ export const getProviderSettingsMeta = (component: unknown) => {
         CustomPreviewComponent?: FC<{ maximumCharacters?: number }>;
         dto?: any;
         postComment: PostComment;
-        maximumCharacters?: number | ((settings: any) => number);
+        maximumCharacters?: number | ((settings: any, hasMedia?: boolean) => number);
       }
     | undefined;
 };
