@@ -109,7 +109,7 @@ const ConnectChannelStrip: FC<{
       {label && (
         <span className="text-[12px] font-[500] text-pqSoft">{label}</span>
       )}
-      <span className="flex items-center gap-[6px]">
+      <span className="flex flex-wrap items-center gap-[6px]">
         {GETTING_STARTED_CONNECT_ICONS.map((id) => (
           <img
             key={id}

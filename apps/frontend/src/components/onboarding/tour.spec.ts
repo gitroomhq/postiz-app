@@ -12,6 +12,10 @@ const css = readFileSync(
   fileURLToPath(new URL('../../app/global.css', import.meta.url)),
   'utf8',
 );
+const chatbase = readFileSync(
+  fileURLToPath(new URL('../layout/chatbase.component.tsx', import.meta.url)),
+  'utf8',
+);
 
 describe('product tour Connect steps', () => {
   it('walks calendar, Connect hub, then publishing channels', () => {
@@ -66,7 +70,11 @@ describe('product tour Connect steps', () => {
   it('hides Chatbase over the tour and phone sheets, and uses a 44px Next on phones', () => {
     assert.match(overlay, /isMobileTour\(vw\)/);
     assert.match(overlay, /min-h-\[44px\]/);
+    assert.match(overlay, /maxHeight/);
     assert.match(css, /\[data-tourdemo='1'\] #chatbase-bubble-button/);
     assert.match(css, /\[data-pq-sheet\] #chatbase-bubble-button/);
+    assert.match(chatbase, /hideChatbaseForChrome/);
+    assert.match(chatbase, /setProperty\('display', 'none', 'important'\)/);
+    assert.match(chatbase, /data-pq-cbh/);
   });
 });

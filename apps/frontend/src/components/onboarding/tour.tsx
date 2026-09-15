@@ -29,6 +29,7 @@ import {
 } from './tour.steps';
 import {
   TOUR_CARD_H,
+  TOUR_MARGIN,
   clipSpotlight,
   isMobileTour,
   placeByBand,
@@ -1054,6 +1055,22 @@ export const Tour: FC = () => {
     return () => window.clearTimeout(id);
   }, [running, opened, rect]);
 
+  // Placement used a fixed 196px card. Long Featured copy on a phone is
+  // taller than that, so Next sat under the home indicator. Measure the
+  // live card and re-place; cap the height so a landscape phone still fits.
+  const [cardH, setCardH] = useState(TOUR_CARD_H);
+  useLayoutEffect(() => {
+    if (!running || !opened) {
+      setCardH(TOUR_CARD_H);
+      return;
+    }
+    const el = cardRef.current;
+    if (!el) return;
+    const h = el.getBoundingClientRect().height;
+    if (!h) return;
+    setCardH((prev) => (Math.abs(prev - h) < 1 ? prev : h));
+  }, [running, opened, step, current?.key]);
+
   // The demo cards fade in one at a time rather than appearing fully formed.
   // Done in CSS off a root attribute — the same element and the same idiom as
   // `data-mobile` / `data-tablet` — because the cards are rendered by the
@@ -1081,8 +1098,9 @@ export const Tour: FC = () => {
   const pos = !spotRect
     ? null
     : (current.key === 'cal-grid' && band && !huge
-        ? placeByBand(spotRect, band, rtl, vw, vh)
-        : null) || placeTourCard(spotRect, huge, current.key, vw, vh, rtl);
+        ? placeByBand(spotRect, band, rtl, vw, vh, cardH)
+        : null) ||
+      placeTourCard(spotRect, huge, current.key, vw, vh, rtl, cardH);
   // Caret only when the card sits beside the target (LTR: right; RTL: left).
   const showCaret =
     !!spot &&
@@ -1207,9 +1225,10 @@ export const Tour: FC = () => {
         // and bloom instead of a neutral border, and a wash down from the top.
         // The wash is a background *image* over `bg-pqPop` — an alpha token set
         // as background-color would replace the surface instead of tinting it.
-        className="absolute rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
+        className="absolute overflow-y-auto rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
         style={{
           width: cardW,
+          maxHeight: Math.max(120, vh - 2 * TOUR_MARGIN),
           backgroundImage:
             'linear-gradient(180deg, var(--tourCardWash), transparent 58%)',
           ...(pos

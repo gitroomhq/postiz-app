@@ -14,14 +14,15 @@ const onScreen = (
   pos: { l: number; t: number },
   vw: number,
   vh: number,
-  cardW = tourCardWidth(vw)
+  cardW = tourCardWidth(vw),
+  cardH = TOUR_CARD_H
 ) => {
   assert.ok(pos.l >= TOUR_MARGIN - 0.5, `left ${pos.l}`);
   assert.ok(pos.t >= TOUR_MARGIN - 0.5, `top ${pos.t}`);
   assert.ok(pos.l + cardW <= vw - TOUR_MARGIN + 0.5, `right ${pos.l + cardW} > ${vw}`);
   assert.ok(
-    pos.t + TOUR_CARD_H <= vh - TOUR_MARGIN + 0.5,
-    `bottom ${pos.t + TOUR_CARD_H} > ${vh}`
+    pos.t + cardH <= vh - TOUR_MARGIN + 0.5,
+    `bottom ${pos.t + cardH} > ${vh}`
   );
 };
 
@@ -134,5 +135,31 @@ describe('tour overlay geometry', () => {
     const pos = placeByBand(grid, band, false, vw, vh);
     assert.ok(pos);
     onScreen(pos, vw, vh);
+  });
+
+  it('keeps a tall phone card fully on screen so Next is tappable', () => {
+    const vw = 390;
+    const vh = 844;
+    const cardH = 280;
+    const target = { t: 96, l: 12, w: 260, h: 44 };
+    const pos = placeTourCard(target, false, 'connect-pq', vw, vh, false, cardH);
+    onScreen(pos, vw, vh, tourCardWidth(vw), cardH);
+    assert.ok(pos.t + cardH <= vh - TOUR_MARGIN + 0.5);
+  });
+
+  it('still fits a tall card on a short landscape phone', () => {
+    const vw = 844;
+    const vh = 390;
+    const cardH = 280;
+    const pos = placeTourCard(
+      { t: 40, l: 16, w: 812, h: 200 },
+      false,
+      'cal-grid',
+      vw,
+      vh,
+      false,
+      cardH
+    );
+    onScreen(pos, vw, vh, tourCardWidth(vw), cardH);
   });
 });

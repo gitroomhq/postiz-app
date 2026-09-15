@@ -175,6 +175,7 @@ describe('getting started wiring', () => {
     assert.match(widget, /data-pq="getting-started-add-channel"/);
     assert.match(widget, /href="\/channels"/);
     assert.match(widget, /Connect your channel/);
+    assert.match(widget, /flex-wrap/);
     assert.match(widget, /\/icons\/platforms\/\$\{id\}\.png/);
   });
 

@@ -67,9 +67,35 @@ const pinChatbaseTrailing = (el: HTMLElement) => {
   el.style.setProperty('inset-inline-end', '20px', 'important');
 };
 
+const chatbaseShouldHide = () =>
+  document.documentElement.getAttribute('data-tourdemo') === '1' ||
+  !!document.documentElement.getAttribute('data-pq-sheet');
+
+const hideChatbaseForChrome = (el: HTMLElement) => {
+  if (chatbaseShouldHide()) {
+    if (el.getAttribute('data-pq-cbh') !== '1') {
+      el.setAttribute(
+        'data-pq-cbh-display',
+        el.style.getPropertyValue('display')
+      );
+      el.setAttribute('data-pq-cbh', '1');
+    }
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('pointer-events', 'none', 'important');
+    return;
+  }
+  if (el.getAttribute('data-pq-cbh') !== '1') return;
+  const prev = el.getAttribute('data-pq-cbh-display');
+  el.removeAttribute('data-pq-cbh');
+  el.removeAttribute('data-pq-cbh-display');
+  if (prev) el.style.setProperty('display', prev);
+  else el.style.removeProperty('display');
+  el.style.removeProperty('pointer-events');
+};
+
 const CHATBASE_PIN_STYLE_ID = 'pq-chatbase-pin-trailing';
 const CHATBASE_PIN_SELECTOR =
-  '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"]';
+  '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]';
 
 const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
   const { chatbaseBotId } = useVariables();
@@ -212,16 +238,25 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
     const pinAll = () => {
       document
         .querySelectorAll<HTMLElement>(CHATBASE_PIN_SELECTOR)
-        .forEach(pinChatbaseTrailing);
+        .forEach((el) => {
+          hideChatbaseForChrome(el);
+          if (!chatbaseShouldHide()) pinChatbaseTrailing(el);
+        });
     };
     pinAll();
     // childList only — watching `style` would re-fire on our own setProperty.
     const observer = new MutationObserver(pinAll);
     observer.observe(document.body, { childList: true, subtree: true });
+    const rootObserver = new MutationObserver(pinAll);
+    rootObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-tourdemo', 'data-pq-sheet'],
+    });
     const interval = window.setInterval(pinAll, 2000);
 
     return () => {
       observer.disconnect();
+      rootObserver.disconnect();
       window.clearInterval(interval);
     };
   }, []);
