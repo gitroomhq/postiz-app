@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "Đang chờ bạn phê duyệt...",
   "farcaster_signer_revoked": "Phê duyệt Farcaster đã bị thu hồi, vui lòng thử lại",
   "farcaster_signer_failed": "Không thể bắt đầu kết nối với Farcaster",
+  "farcaster_scan_instructions": "Quét mã QR bằng điện thoại của bạn, hoặc sao chép liên kết và mở nó trên điện thoại, sau đó phê duyệt Postiz trong ứng dụng Farcaster.",
+  "farcaster_copy_link": "Sao chép liên kết Farcaster",
   "farcaster_approval_timeout": "Phê duyệt Farcaster đã hết thời gian, vui lòng thử lại",
   "edit_autopost": "Chỉnh sửa tự động đăng",
   "add_autopost_title": "Thêm tự động đăng",

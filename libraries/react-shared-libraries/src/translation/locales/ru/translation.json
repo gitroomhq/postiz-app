@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "Ожидание вашего одобрения...",
   "farcaster_signer_revoked": "Одобрение Farcaster было отозвано, попробуйте ещё раз",
   "farcaster_signer_failed": "Не удалось запустить соединение с Farcaster",
+  "farcaster_scan_instructions": "Просканируйте QR-код с помощью телефона или скопируйте ссылку и откройте её на телефоне, затем подтвердите Postiz в приложении Farcaster.",
+  "farcaster_copy_link": "Скопировать ссылку Farcaster",
   "farcaster_approval_timeout": "Время ожидания одобрения Farcaster истекло, попробуйте ещё раз",
   "edit_autopost": "Редактировать автопост",
   "add_autopost_title": "Добавить автопост",

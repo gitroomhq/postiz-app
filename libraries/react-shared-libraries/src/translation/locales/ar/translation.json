@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "بانتظار موافقتك...",
   "farcaster_signer_revoked": "تم إلغاء موافقة Farcaster، يرجى المحاولة مرة أخرى",
   "farcaster_signer_failed": "فشل بدء الاتصال بـ Farcaster",
+  "farcaster_scan_instructions": "امسح رمز الاستجابة السريعة (QR) بهاتفك، أو انسخ الرابط وافتحه على هاتفك، ثم وافق على Postiz في تطبيق Farcaster.",
+  "farcaster_copy_link": "انسخ رابط Farcaster",
   "farcaster_approval_timeout": "انتهت مهلة موافقة Farcaster، يرجى المحاولة مرة أخرى",
   "edit_autopost": "تعديل النشر التلقائي",
   "add_autopost_title": "إضافة نشر تلقائي",

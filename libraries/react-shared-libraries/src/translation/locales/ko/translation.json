@@ -582,6 +582,8 @@
   "farcaster_waiting_for_approval": "승인을 기다리는 중...",
   "farcaster_signer_revoked": "Farcaster 승인이 취소되었습니다. 다시 시도해 주세요.",
   "farcaster_signer_failed": "Farcaster 연결을 시작하지 못했습니다.",
+  "farcaster_scan_instructions": "휴대폰으로 QR 코드를 스캔하거나 링크를 복사해서 휴대폰에서 연 다음, Farcaster 앱에서 Postiz를 승인하세요.",
+  "farcaster_copy_link": "Farcaster 링크 복사",
   "farcaster_approval_timeout": "Farcaster 승인 시간이 초과되었습니다. 다시 시도해 주세요.",
   "edit_autopost": "자동 게시 수정",
   "add_autopost_title": "자동 게시 추가",
