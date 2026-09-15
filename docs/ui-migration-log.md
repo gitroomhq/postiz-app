@@ -1341,10 +1341,10 @@ All leftover order is now Agents, Bots, Chat, Editors, Automation. Coding agents
 
 **i18n +1 net.** A 48px attachment cannot hold grab dots, a close chip and an alt/sun control. Hover now leaves the image alone: the whole thumb is the drag handle, and a 16px remove sits on the top-end corner (same hanging-X pattern as the comment composer). Alt text stays in the Media Library ⋯ menu. Dropped `reorder_media` and `media_settings`. Added `copy_debug_json_admin`, `open_link`, `view_post` from the calendar / notification pass that had not updated this baseline. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
 
-## Buttons look clickable on hover
-
-**i18n 0.** Tailwind 4 preflight leaves `cursor: default` on `<button>`. Connect had a local `[&_button]:cursor-pointer` patch; Channel Edit / Move / Copy / Set up plug did not. One `@layer base` rule after the Tailwind import sets pointer on links, buttons, `[role=button]`, `summary`, `label[for]`, and `select`, and `not-allowed` on disabled. Channel detail rows are the control (no nested CTA button). Set up plug uses `hover:bg-pqBrandHover`.
-
 ## Analytics empty period is not a reconnect
 
 **i18n +1 (`no_data_in_this_period`).** The channel analytics pane treated a successful empty series the same as a 4xx / revoked token: "This channel needs to be refreshed" plus Refresh Channel. X returns `[]` when there were no tweets in the selected range, so a quiet week looked like a broken OAuth connection. Empty or all-zero series now say there is no data in this period, without the reconnect CTA. Token / 401 / 403 / missing-scope failures still throw so the pane keeps Refresh Channel. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.
+
+## Channels: X options nests Long posts
+
+**i18n +7.** Channels → X treated “X options” and “Verified” as two sibling tiles, so the row did not read as a child of the accordion. They now share one `pqPop` card: collapsed is a single control, expanded shows the child inset (`pqThird`, title-aligned indent, `pqLine` divider). The stored flag is still `title: "Verified"` (composer 280 vs 4000). Visible copy is **Long posts** / **X Premium character limit** — not the blue check, and not “Applies to every post on this channel.” Edit still POSTs the same JSON. Facebook / Instagram / Threads / YouTube keep returning `null` from `PublishingOptions` when `additionalSettings` is empty. Channel list selected name is semibold; empty-list hint matches settings row size. `scripts/ui-migration-check.sh --update` wrote `i18n.txt` only.

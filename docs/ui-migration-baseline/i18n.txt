@@ -1481,6 +1481,7 @@ oauth_start_failed
 off
 ok
 oldest
+one_publishing_option
 one_selected
 only_option_to_connect
 open_auto_plugs
@@ -1598,6 +1599,7 @@ publication_date
 publish_at_least_one_post_today_to_keep_the_streak_alive
 published
 publishing_now
+publishing_options
 purchase
 range_30d
 range_7d
@@ -1951,6 +1953,11 @@ x_lock_perk_analytics
 x_lock_perk_plugs
 x_lock_perk_publish
 x_lock_sub
+x_long_posts
+x_long_posts_description
+x_long_posts_disabled
+x_long_posts_enabled
+x_long_posts_hint
 yes
 yes_cancel
 yes_cancel_coupon
