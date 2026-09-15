@@ -15,6 +15,7 @@ export function analyticsPublishDateRange(days: number, now = new Date()) {
 
 export type AnalyticsPostRow = {
   id: string;
+  group: string;
   content: string;
   thumbnail: string | null;
   publishDate: string;
@@ -206,6 +207,8 @@ export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
     weekdays[day === 0 ? 6 : day - 1] += 1;
   }
 
+  const knownReactions = sumKnown(rows, (row) => row.reactions);
+  const knownComments = sumKnown(rows, (row) => row.comments);
   const reactions = sumComplete(rows, (row) => row.reactions);
   const comments = sumComplete(rows, (row) => row.comments);
 
@@ -223,9 +226,8 @@ export function summarizeAnalyticsPosts(rows: AnalyticsPostRow[]) {
     })),
     weekdays,
     engagementMix:
-      rows.length > 0 &&
-      rows.every((row) => row.reactions != null && row.comments != null)
-        ? { reactions: reactions!, comments: comments! }
+      knownReactions != null || knownComments != null
+        ? { reactions: knownReactions, comments: knownComments }
         : null,
   };
 }
@@ -263,6 +265,7 @@ function snapshotEngagementRate(
 
 export function mapSnapshotRow(post: {
   id: string;
+  group?: string | null;
   content: string;
   image: string | null;
   publishDate: Date;
@@ -284,6 +287,7 @@ export function mapSnapshotRow(post: {
   const previous = post.postMetricSnapshots[1];
   return {
     id: post.id,
+    group: post.group || post.id,
     content: post.content,
     thumbnail: firstMediaPath(post.image),
     publishDate: post.publishDate.toISOString(),

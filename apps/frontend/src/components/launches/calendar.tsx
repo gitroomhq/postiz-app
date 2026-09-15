@@ -151,14 +151,18 @@ export const useDemoPostAction = () => {
   return { explain, demoTooltip: message };
 };
 
-// Shared hook for post actions (edit, delete, statistics)
-/** Shared by calendar cells, list rows, and the Posts queue panel. */
-export const usePostActions = (onMutate?: () => void) => {
+/** Shared by calendar cells, list rows, the Posts queue panel, and Analytics. */
+export const usePostActions = (
+  onMutate?: () => void,
+  options?: { integrations?: Integrations[] },
+) => {
   const t = useT();
   const fetch = useFetch();
   const modal = useModals();
   const toaster = useToaster();
-  const { integrations, reloadCalendarView, dropPostGroupFromView } = useCalendar();
+  const calendar = useCalendar();
+  const integrations = options?.integrations ?? calendar.integrations;
+  const { reloadCalendarView, dropPostGroupFromView } = calendar;
 
   const mutate = useCallback(() => {
     reloadCalendarView();
@@ -305,8 +309,9 @@ export const usePostActions = (onMutate?: () => void) => {
       );
 
       dropPostGroupFromView(post.group || post.id);
+      mutate();
     },
-    [toaster, t, fetch, dropPostGroupFromView]
+    [toaster, t, fetch, dropPostGroupFromView, mutate]
   );
 
   const openStatistics = useCallback(
@@ -3119,7 +3124,7 @@ export const Duplicate = ({ tooltip }: ActionIconProps = {}) => {
     </svg>
   );
 };
-const Preview = ({ tooltip }: ActionIconProps = {}) => {
+export const Preview = ({ tooltip }: ActionIconProps = {}) => {
   const t = useT();
   return (
     <svg

@@ -10,6 +10,8 @@ import { Pagination } from '@gitroom/frontend/components/media/media.pagination'
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import { AnalyticsPostMenu } from '@gitroom/frontend/components/platform-analytics/analytics-post-menu';
+import { capChannelMix } from '@gitroom/frontend/components/platform-analytics/channel-mix';
 import {
   AnalyticsPostRow,
   useAnalyticsPosts,
@@ -46,16 +48,25 @@ type ChannelSummary = {
 
 const ChannelMix: FC<{ rows: ChannelSummary[] }> = ({ rows }) => {
   const t = useT();
-  const mix = useMemo(
-    () =>
-      rows
-        .filter((row) => row.impressions != null)
-        .sort(
-          (a, b) =>
-            (b.impressions ?? 0) - (a.impressions ?? 0) || b.posts - a.posts,
+  const { visible, other } = useMemo(() => capChannelMix(rows), [rows]);
+  const mix = useMemo(() => {
+    if (!other) {
+      return visible;
+    }
+    return [
+      ...visible,
+      {
+        integrationId: '__other__',
+        platform: 'other',
+        channelName: t('plus_n_channels', '+{count} channels').replace(
+          '{count}',
+          String(other.count),
         ),
-    [rows],
-  );
+        posts: other.posts,
+        impressions: other.impressions,
+      },
+    ];
+  }, [other, t, visible]);
   const barMax = Math.max(...mix.map((row) => row.impressions ?? 0), 1);
   if (mix.length < 2) {
     return null;
@@ -81,7 +92,10 @@ const ChannelMix: FC<{ rows: ChannelSummary[] }> = ({ rows }) => {
   });
 
   return (
-    <section className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
+    <section
+      data-pq="channel-mix"
+      className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]"
+    >
       <div className="mb-[14px] font-display text-[16px] font-[600] text-pqText">
         {t('by_channel', 'By channel')}
       </div>
@@ -117,7 +131,7 @@ const ChannelMix: FC<{ rows: ChannelSummary[] }> = ({ rows }) => {
                     {row.posts}
                   </span>
                   <span className="w-[48px] shrink-0 text-end tabular-nums text-pqText">
-                    {formatCount(row.impressions)}
+                    {amount > 0 ? formatCount(row.impressions) : ''}
                   </span>
                 </div>
                 <div className="h-[8px] overflow-hidden rounded-full bg-pqSettings">
@@ -187,18 +201,31 @@ const WeekdayPulse: FC<{ counts: number[] }> = ({ counts }) => {
 };
 
 const EngagementSplit: FC<{
-  mix: { reactions: number; comments: number } | null | undefined;
+  mix:
+    | { reactions: number | null; comments: number | null }
+    | null
+    | undefined;
 }> = ({ mix }) => {
   const t = useT();
-  const reactions = mix?.reactions ?? 0;
-  const comments = mix?.comments ?? 0;
-  const total = reactions + comments;
-  if (!mix || !total) {
+  const reactions = mix?.reactions ?? null;
+  const comments = mix?.comments ?? null;
+  const knownTotal = (reactions ?? 0) + (comments ?? 0);
+  if (!mix || knownTotal <= 0) {
     return null;
   }
-  const reactionPct = Math.round((reactions / total) * 100);
+  const reactionPct =
+    reactions == null
+      ? 0
+      : comments == null
+        ? 100
+        : Math.round((reactions / knownTotal) * 100);
+  const commentPct =
+    comments == null ? null : reactions == null ? 100 : 100 - reactionPct;
   return (
-    <section className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
+    <section
+      data-pq="engagement-mix"
+      className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]"
+    >
       <div className="mb-[14px] font-display text-[16px] font-[600] text-pqText">
         {t('engagement_mix', 'Engagement mix')}
       </div>
@@ -206,11 +233,15 @@ const EngagementSplit: FC<{
         {t('engagement_mix_hint', 'Known reactions vs comments on these posts')}
       </div>
       <div className="flex h-[14px] overflow-hidden rounded-full bg-pqSettings">
-        <div
-          className="h-full bg-pqBrand"
-          style={{ width: `${reactionPct}%` }}
-        />
-        <div className="h-full flex-1 bg-pqOk" />
+        {reactions != null && reactions > 0 && (
+          <div
+            className="h-full bg-pqBrand"
+            style={{ width: `${reactionPct}%` }}
+          />
+        )}
+        {comments != null && comments > 0 && (
+          <div className="h-full flex-1 bg-pqOk" />
+        )}
       </div>
       <div className="mt-[14px] grid grid-cols-2 gap-[12px]">
         <div>
@@ -220,7 +251,9 @@ const EngagementSplit: FC<{
           <div className="mt-[4px] text-[22px] font-[600] tabular-nums text-pqText">
             {formatCount(reactions)}
           </div>
-          <div className="text-[12px] text-pqMuted">{reactionPct}%</div>
+          <div className="text-[12px] text-pqMuted">
+            {reactions == null ? '' : `${reactionPct}%`}
+          </div>
         </div>
         <div>
           <div className="text-[11px] font-[600] uppercase tracking-[0.06em] text-pqMuted">
@@ -229,7 +262,9 @@ const EngagementSplit: FC<{
           <div className="mt-[4px] text-[22px] font-[600] tabular-nums text-pqText">
             {formatCount(comments)}
           </div>
-          <div className="text-[12px] text-pqMuted">{100 - reactionPct}%</div>
+          <div className="text-[12px] text-pqMuted">
+            {commentPct == null ? '' : `${commentPct}%`}
+          </div>
         </div>
       </div>
     </section>
@@ -252,11 +287,11 @@ export const WorkspaceAnalyticsGhost = () => (
   <div className="flex flex-col gap-[18px]">
     <div className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
       <Skeleton className="mb-[12px] h-[14px] w-[92px]" />
-      <div className="grid grid-cols-1 gap-[10px] min-[520px]:grid-cols-2 md:grid-cols-4 min-[1100px]:grid-cols-5">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="flex gap-[10px] overflow-hidden min-[1100px]:grid min-[1100px]:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] shadow-[inset_0_0_0_1px_var(--border)]"
+            className="flex w-[min(220px,72vw)] shrink-0 items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] shadow-[inset_0_0_0_1px_var(--border)] min-[1100px]:w-auto"
           >
             <div className="min-w-0 flex-1 space-y-[8px]">
               <Skeleton className="h-[10px] w-[28%]" />
@@ -266,15 +301,18 @@ export const WorkspaceAnalyticsGhost = () => (
             <Skeleton className="size-[56px] shrink-0 rounded-[8px]" />
           </div>
         ))}
-        <div className="flex items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] shadow-[inset_0_0_0_1px_var(--border)] min-[520px]:col-span-2 md:col-span-4 min-[1100px]:col-span-1">
-          <div className="min-w-0 flex-1 space-y-[8px]">
-            <Skeleton className="h-[10px] w-[22%]" />
-            <Skeleton className="h-[12px] w-[70%]" />
-            <Skeleton className="h-[12px] w-[40%]" />
-          </div>
-          <Skeleton className="size-[56px] shrink-0 rounded-[8px] md:size-[72px] min-[1100px]:size-[56px]" />
-        </div>
       </div>
+    </div>
+    <div className="grid grid-cols-1 gap-[13px] md:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]"
+        >
+          <Skeleton className="mb-[14px] h-[14px] w-[40%]" />
+          <Skeleton className="h-[72px] w-full rounded-[8px]" />
+        </div>
+      ))}
     </div>
     <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
       {Array.from({ length: 6 }).map((_, i) => (
@@ -422,13 +460,20 @@ export const WorkspaceAnalytics: FC<{
     showReactions ? 'minmax(108px,0.45fr)' : ''
   } ${showComments ? 'minmax(108px,0.45fr)' : ''} ${
     showEngagement ? 'minmax(96px,0.4fr)' : ''
-  } ${showImpressions ? 'minmax(120px,0.5fr)' : ''} 40px`;
-  const channelMixRows = (summary.data?.channels || []).filter(
-    (row) => row.impressions != null,
+  } ${showImpressions ? 'minmax(120px,0.5fr)' : ''} 40px 40px`;
+  const channelMixRows = summary.data?.channels || [];
+  const cappedMix = capChannelMix(channelMixRows);
+  const showChannelMix = cappedMix.visible.length + (cappedMix.other ? 1 : 0) > 1;
+  const weekdayCounts = summary.data?.weekdays || [];
+  const showPostingDays = weekdayCounts.some((count) => count > 0);
+  const engagementMix = summary.data?.engagementMix;
+  const showEngagementMix = !!(
+    engagementMix &&
+    ((engagementMix.reactions != null && engagementMix.reactions > 0) ||
+      (engagementMix.comments != null && engagementMix.comments > 0))
   );
-  const showChannelMix =
-    channelMixRows.length > 1 &&
-    channelMixRows.some((row) => (row.impressions ?? 0) > 0);
+  const trioCount =
+    Number(showChannelMix) + Number(showPostingDays) + Number(showEngagementMix);
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -438,64 +483,63 @@ export const WorkspaceAnalytics: FC<{
         </div>
       )}
 
-      <div
-        className={clsx(
-          'grid grid-cols-1 gap-[13px]',
-          showChannelMix &&
-            'xl:grid-cols-[minmax(260px,0.85fr)_minmax(0,1.4fr)]',
-        )}
+      <section
+        data-pq="top-posts"
+        className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]"
       >
-        {showChannelMix && <ChannelMix rows={channelMixRows} />}
-        <section className="rounded-pqMd bg-pqPop p-[16px] shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="mb-[12px] flex flex-wrap items-center gap-[12px]">
-            <div className="min-w-0 flex-1 font-display text-[16px] font-[600] text-pqText">
-              {t('top_5_posts', 'Top 5 posts')}
-            </div>
-            {showComments && (
-              <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
-                {(
-                  [
-                    ['reactions', t('reactions', 'Reactions')],
-                    ['comments', t('comments', 'Comments')],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setTopMetric(key)}
-                    className={clsx(
-                      'h-[32px] min-h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
-                      mobile && 'min-h-[44px] px-[14px]',
-                      (rankingByComments ? 'comments' : 'reactions') === key
-                        ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
-                        : 'font-[500] text-pqMuted hover:text-pqText',
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
+        <div className="mb-[12px] flex flex-wrap items-center gap-[12px]">
+          <div className="min-w-0 flex-1 font-display text-[16px] font-[600] text-pqText">
+            {t('top_5_posts', 'Top 5 posts')}
           </div>
-          {topPosts.length ? (
-            <div className="grid grid-cols-1 gap-[10px] min-[520px]:grid-cols-2 md:grid-cols-4 min-[1100px]:grid-cols-5">
-              {topPosts.map((post, index) => {
-                const metric = rankingByComments
-                  ? post.comments
-                  : post.reactions;
-                const wide = index === 4;
-                return (
+          {showComments && (
+            <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+              {(
+                [
+                  ['reactions', t('reactions', 'Reactions')],
+                  ['comments', t('comments', 'Comments')],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTopMetric(key)}
+                  className={clsx(
+                    'h-[32px] min-h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
+                    mobile && 'min-h-[44px] px-[14px]',
+                    (rankingByComments ? 'comments' : 'reactions') === key
+                      ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
+                      : 'font-[500] text-pqMuted hover:text-pqText',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {topPosts.length ? (
+          <div
+            className="flex snap-x snap-mandatory gap-[10px] overflow-x-auto min-[1100px]:grid min-[1100px]:overflow-visible"
+            style={{
+              gridTemplateColumns: `repeat(${topPosts.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {topPosts.map((post, index) => {
+              const metric = rankingByComments
+                ? post.comments
+                : post.reactions;
+              return (
+                <div
+                  key={post.id}
+                  className={clsx(
+                    'flex w-[min(220px,72vw)] shrink-0 snap-start items-center gap-[8px] rounded-[10px] bg-pqInner p-[12px] shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)] min-[1100px]:w-auto min-[1100px]:min-w-0',
+                    index === 0 && 'shadow-[inset_0_0_0_1px_var(--ring)]',
+                  )}
+                >
                   <button
-                    key={post.id}
                     type="button"
                     onClick={() => openStatistics(post.id)}
-                    className={clsx(
-                      'flex min-w-0 items-center gap-[12px] rounded-[10px] bg-pqInner p-[12px] text-start shadow-[inset_0_0_0_1px_var(--border)] transition-[box-shadow] hover:shadow-[inset_0_0_0_1px_var(--brand),var(--e2)]',
-                      wide &&
-                        'min-[520px]:col-span-2 md:col-span-4 md:px-[16px] min-[1100px]:col-span-1 min-[1100px]:px-[12px]',
-                      index === 0 &&
-                      'shadow-[inset_0_0_0_1px_var(--ring)]',
-                    )}
+                    className="flex min-w-0 flex-1 items-center gap-[12px] text-start"
                   >
                     <div className="min-w-0 flex-1">
                       <div
@@ -524,27 +568,30 @@ export const WorkspaceAnalytics: FC<{
                         </div>
                       )}
                     </div>
-                    <PostThumb
-                      post={post}
-                      className={clsx(
-                        'size-[56px]',
-                        wide && 'md:size-[72px] min-[1100px]:size-[56px]',
-                      )}
-                    />
+                    <PostThumb post={post} className="size-[56px]" />
                   </button>
-                );
-              })}
-            </div>
-          ) : (
-            <EmptyState title={t('no_top_posts', 'No posts in this period')} />
-          )}
-        </section>
-      </div>
+                  <AnalyticsPostMenu post={post} />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState title={t('no_top_posts', 'No posts in this period')} />
+        )}
+      </section>
 
-      {(summary.data?.posts || 0) > 0 && (
-        <div className="grid grid-cols-1 gap-[13px] md:grid-cols-2">
-          <WeekdayPulse counts={summary.data?.weekdays || []} />
-          <EngagementSplit mix={summary.data?.engagementMix} />
+      {trioCount > 0 && (
+        <div
+          data-pq="analytics-trio"
+          className={clsx(
+            'grid grid-cols-1 gap-[13px]',
+            trioCount === 2 && 'md:grid-cols-2',
+            trioCount >= 3 && 'md:grid-cols-2 xl:grid-cols-3',
+          )}
+        >
+          {showChannelMix && <ChannelMix rows={channelMixRows} />}
+          {showPostingDays && <WeekdayPulse counts={weekdayCounts} />}
+          {showEngagementMix && <EngagementSplit mix={engagementMix} />}
         </div>
       )}
 
@@ -566,26 +613,31 @@ export const WorkspaceAnalytics: FC<{
           <div className="flex flex-col gap-[10px]">
             {list?.posts?.length ? (
               list.posts.map((post, index) => (
-                <button
+                <div
                   key={post.id}
-                  type="button"
-                  onClick={() => openStatistics(post.id)}
-                  className="flex flex-col gap-[12px] rounded-pqMd bg-pqPop p-[14px] text-start shadow-[inset_0_0_0_1px_var(--border)]"
+                  className="flex flex-col gap-[12px] rounded-pqMd bg-pqPop p-[14px] shadow-[inset_0_0_0_1px_var(--border)]"
                 >
                   <div className="flex min-w-0 items-center gap-[10px]">
-                    <span className="w-[22px] shrink-0 text-[12px] tabular-nums text-pqMuted">
-                      #{page * (list.limit || 20) + index + 1}
-                    </span>
-                    <PostThumb post={post} />
-                    <div className="min-w-0 flex-1">
-                      <div className="line-clamp-2 text-[14px] text-pqText">
-                        {previewText(post.content) ||
-                          t('untitled_post', 'Untitled post')}
+                    <button
+                      type="button"
+                      onClick={() => openStatistics(post.id)}
+                      className="flex min-w-0 flex-1 items-center gap-[10px] text-start"
+                    >
+                      <span className="w-[22px] shrink-0 text-[12px] tabular-nums text-pqMuted">
+                        #{page * (list.limit || 20) + index + 1}
+                      </span>
+                      <PostThumb post={post} />
+                      <div className="min-w-0 flex-1">
+                        <div className="line-clamp-2 text-[14px] text-pqText">
+                          {previewText(post.content) ||
+                            t('untitled_post', 'Untitled post')}
+                        </div>
+                        <div className="truncate text-[12px] text-pqMuted">
+                          {post.channelName} · {formatDate(post.publishDate)}
+                        </div>
                       </div>
-                      <div className="truncate text-[12px] text-pqMuted">
-                        {post.channelName} · {formatDate(post.publishDate)}
-                      </div>
-                    </div>
+                    </button>
+                    <AnalyticsPostMenu post={post} />
                   </div>
                   <div className="grid grid-cols-2 gap-[8px]">
                     {showReactions && formatCount(post.reactions) && (
@@ -613,7 +665,7 @@ export const WorkspaceAnalytics: FC<{
                       />
                     )}
                   </div>
-                </button>
+                </div>
               ))
             ) : (
               <div className="rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
@@ -663,6 +715,7 @@ export const WorkspaceAnalytics: FC<{
                     onClick={() => toggleSort('impressions')}
                   />
                 )}
+                <span />
                 <span />
               </div>
               {list?.posts?.length ? (
@@ -727,6 +780,7 @@ export const WorkspaceAnalytics: FC<{
                         />
                       </svg>
                     </button>
+                    <AnalyticsPostMenu post={post} />
                   </div>
                 ))
               ) : (

@@ -76,6 +76,7 @@ export class PostMetricsRepository {
       },
       select: {
         id: true,
+        group: true,
         content: true,
         image: true,
         publishDate: true,
@@ -150,6 +151,7 @@ export class PostMetricsRepository {
       },
       select: {
         id: true,
+        group: true,
         content: true,
         image: true,
         publishDate: true,

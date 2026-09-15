@@ -83,7 +83,6 @@ ai_not_configured_body
 ai_post
 all
 all_channels
-all_channels_hint
 all_dates
 all_notifications_marked_as_read
 all_platforms
@@ -1103,6 +1102,7 @@ end_trial_to_unlock
 eng_rate
 engagement_mix
 engagement_mix_hint
+enlarge_image
 enter_details
 enter_email
 error
@@ -1190,6 +1190,7 @@ global_settings
 go_back_to_login
 go_to_billing
 go_to_integrations
+go_to_post
 got_it
 grid
 guide_bluesky
@@ -1582,10 +1583,12 @@ please_fill_all_required_fields
 please_fix_your_settings
 please_type_your_prompt
 please_wait
+plus_n_channels
 portal_row_sub
 portal_row_sub_lifetime
 portal_row_title
 post
+post_actions
 post_already_published_drag
 post_already_published_republish_warning
 post_analytics

@@ -17,6 +17,7 @@ import {
 const row = (
   partial: Partial<AnalyticsPostRow> & { id: string },
 ): AnalyticsPostRow => ({
+  group: partial.group || partial.id,
   content: '',
   thumbnail: null,
   publishDate: '2026-09-01T10:00:00.000Z',
@@ -174,6 +175,16 @@ describe('mapSnapshotRow', () => {
     assert.equal(mapped.comments, null);
     assert.equal(mapped.engagementRate, null);
     assert.equal(mapped.thumbnail, '/a.jpg');
+    assert.equal(mapped.group, 'p1');
+  });
+
+  it('keeps the post group for duplicate and delete', () => {
+    const mapped = mapSnapshotRow({
+      ...base,
+      group: 'grp-9',
+      postMetricSnapshots: [],
+    });
+    assert.equal(mapped.group, 'grp-9');
   });
 
   it('is null when impressions are missing even if reactions exist', () => {
@@ -259,12 +270,13 @@ describe('summarizeAnalyticsPosts', () => {
     assert.deepEqual(summary.engagementMix, { reactions: 15, comments: 3 });
   });
 
-  it('hides the engagement mix when any field is unknown', () => {
+  it('keeps the engagement mix when some comments are unknown', () => {
     const summary = summarizeAnalyticsPosts([
       row({ id: 'facebook', reactions: 10, comments: null }),
+      row({ id: 'x', reactions: 4, comments: 2 }),
     ]);
-    assert.equal(summary.reactions, 10);
+    assert.equal(summary.reactions, 14);
     assert.equal(summary.comments, null);
-    assert.equal(summary.engagementMix, null);
+    assert.deepEqual(summary.engagementMix, { reactions: 14, comments: 2 });
   });
 });

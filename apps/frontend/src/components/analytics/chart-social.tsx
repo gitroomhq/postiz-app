@@ -1,9 +1,20 @@
 'use client';
 
-import { FC, useEffect, useRef } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import DrawChart from 'chart.js/auto';
 import { TotalList } from '@gitroom/frontend/components/analytics/stars.and.forks.interface';
 import useCookie from 'react-use-cookie';
+import {
+  chartDayLabel,
+  chartTooltipBox,
+} from '@gitroom/frontend/components/analytics/chart-social-label';
+
+export { chartDayLabel, chartTooltipBox };
+
+function formatTooltipValue(value: number) {
+  return new Intl.NumberFormat().format(value);
+}
 
 export const ChartSocial: FC<{
   data: TotalList[];
@@ -18,9 +29,17 @@ export const ChartSocial: FC<{
   const list = data;
 
   const ref = useRef<HTMLCanvasElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const chart = useRef<null | DrawChart>(null);
 
   const hero = variant === 'hero';
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!ref.current) {
@@ -63,6 +82,50 @@ export const ChartSocial: FC<{
     gradient.addColorStop(1, colors.end);
     const tick = token('--soft');
     const grid = token('--line');
+
+    const hideTip = () => {
+      const tip = tipRef.current;
+      if (tip) {
+        tip.style.display = 'none';
+      }
+    };
+
+    const placeTip = (tooltip: {
+      opacity: number;
+      caretX: number;
+      caretY: number;
+      dataPoints?: Array<{ label?: unknown; parsed: { y: number | null } }>;
+    }) => {
+      const canvas = ref.current;
+      const tip = tipRef.current;
+      const title = titleRef.current;
+      const body = bodyRef.current;
+      if (!canvas || !tip || !title || !body) {
+        return;
+      }
+      if (tooltip.opacity === 0 || !tooltip.dataPoints?.length) {
+        hideTip();
+        return;
+      }
+      const point = tooltip.dataPoints[0];
+      title.textContent = chartDayLabel(String(point.label ?? ''));
+      body.textContent = `${label}: ${formatTooltipValue(Number(point.parsed.y))}`;
+      tip.style.display = 'block';
+      const rect = canvas.getBoundingClientRect();
+      const caretX = rect.left + tooltip.caretX;
+      const caretY = rect.top + tooltip.caretY;
+      const box = tip.getBoundingClientRect();
+      const next = chartTooltipBox(
+        caretX,
+        caretY,
+        box.width,
+        box.height,
+        window.innerWidth,
+        window.innerHeight,
+      );
+      tip.style.left = `${next.left}px`;
+      tip.style.top = `${next.top}px`;
+    };
 
     chart.current = new DrawChart(ref.current, {
       type: 'line',
@@ -127,29 +190,8 @@ export const ChartSocial: FC<{
             display: false,
           },
           tooltip: {
-            enabled: true,
-            position: 'nearest',
-            // The hero has enough canvas above the caret; the 48px scorecard
-            // spark does not, so Chart.js places that tooltip beside the point.
-            // In both cases the 6px hover point stays visible and inspectable.
-            yAlign: hero ? 'bottom' : 'center',
-            caretPadding: 10,
-            backgroundColor: token('--pop'),
-            titleColor: token('--text'),
-            bodyColor: token('--muted'),
-            borderColor: token('--border'),
-            borderWidth: 1,
-            padding: 10,
-            cornerRadius: 8,
-            displayColors: false,
-            titleFont: {
-              size: 12,
-              weight: 'normal',
-            },
-            bodyFont: {
-              size: 14,
-              weight: 'bold',
-            },
+            enabled: false,
+            external: ({ tooltip }) => placeTip(tooltip),
           },
         },
       },
@@ -174,9 +216,39 @@ export const ChartSocial: FC<{
       },
     });
     return () => {
+      hideTip();
       chart.current?.destroy();
     };
   }, [color, dark, hero, label, list]);
 
-  return <canvas className="h-full w-full" ref={ref} />;
+  return (
+    <>
+      <canvas
+        className="h-full w-full"
+        ref={ref}
+        data-pq={hero ? 'chart-hero' : 'chart-spark'}
+      />
+      {mounted &&
+        createPortal(
+          <div
+            ref={tipRef}
+            data-pq="chart-tooltip"
+            className="pointer-events-none fixed z-[80] min-w-[72px] rounded-[8px] bg-pqPop px-[10px] py-[10px] shadow-[inset_0_0_0_1px_var(--border)]"
+            style={{ display: 'none', left: 0, top: 0 }}
+          >
+            <div
+              ref={titleRef}
+              data-pq="chart-tooltip-title"
+              className="text-[12px] font-normal text-pqText"
+            />
+            <div
+              ref={bodyRef}
+              data-pq="chart-tooltip-body"
+              className="text-[14px] font-bold text-pqMuted"
+            />
+          </div>,
+          document.body,
+        )}
+    </>
+  );
 };

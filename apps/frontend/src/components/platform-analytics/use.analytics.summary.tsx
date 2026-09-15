@@ -20,8 +20,8 @@ export type AnalyticsSummaryResponse = {
   }>;
   weekdays: number[];
   engagementMix: {
-    reactions: number;
-    comments: number;
+    reactions: number | null;
+    comments: number | null;
   } | null;
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
@@ -26,6 +26,33 @@ import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-a
 import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 const ALL_CHANNELS = '__all__';
+
+const AllChannelsMosaic: FC<{
+  integrations: Array<{ id: string; identifier: string }>;
+}> = ({ integrations }) => {
+  const shown = integrations.slice(0, 4);
+  const extra = Math.max(0, integrations.length - 4);
+  return (
+    <span
+      data-pq="all-channels-mosaic"
+      className="relative grid size-[32px] shrink-0 grid-cols-2 grid-rows-2 gap-[1px] overflow-hidden rounded-[8px] bg-pqSettings p-[1px]"
+    >
+      {shown.map((integration) => (
+        <img
+          key={integration.id}
+          src={`/icons/platforms/${integration.identifier}.png`}
+          alt=""
+          className="size-full object-cover"
+        />
+      ))}
+      {extra > 0 && (
+        <span className="absolute bottom-0 end-0 rounded-pqSm bg-pqInner px-[3px] text-[8px] font-[700] leading-[14px] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
+          +{extra}
+        </span>
+      )}
+    </span>
+  );
+};
 
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
@@ -342,9 +369,7 @@ export const PlatformAnalytics = () => {
             className="flex min-h-[44px] items-center gap-[10px] rounded-pqSm bg-pqSettings px-[10px] text-start"
           >
             {selected === ALL_CHANNELS ? (
-              <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-pqInner text-[11px] font-[700] text-pqText">
-                {sortedIntegrations.length}
-              </span>
+              <AllChannelsMosaic integrations={sortedIntegrations} />
             ) : (
               <span className="relative h-[32px] w-[32px] shrink-0">
                 <ImageWithFallback
@@ -407,19 +432,20 @@ export const PlatformAnalytics = () => {
                 type="button"
                 onClick={() => selectChannel(ALL_CHANNELS)}
                 className={clsx(
-                  'flex items-center gap-[10px] rounded-pqSm px-[9px] py-[10px] text-start',
+                  'flex min-h-[44px] items-center gap-[10px] rounded-pqSm px-[9px] py-[10px] text-start',
                   selected === ALL_CHANNELS ? 'bg-pqNavActive' : 'hover:bg-pqHover'
                 )}
               >
-                <span className="flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-pqSettings text-[11px] font-[700]">
-                  {sortedIntegrations.length}
-                </span>
+                <AllChannelsMosaic integrations={sortedIntegrations} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px]">
                     {t('all_channels', 'All channels')}
                   </span>
                   <span className="block truncate text-[12px] text-pqMuted">
-                    {t('all_channels_hint', 'Summary and posts')}
+                    {t('n_channels', '{count} channels').replace(
+                      '{count}',
+                      String(sortedIntegrations.length)
+                    )}
                   </span>
                 </span>
               </button>
@@ -607,13 +633,11 @@ export const PlatformAnalytics = () => {
                   selectChannel(ALL_CHANNELS);
                 }}
                 className={clsx(
-                  'relative flex cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:justify-center group-[.sidebar]:px-0',
+                  'relative flex min-h-[44px] cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:min-h-0 group-[.sidebar]:justify-center group-[.sidebar]:px-0',
                   selected === ALL_CHANNELS ? 'bg-pqNavActive' : 'hover:bg-pqHover'
                 )}
               >
-                <span className="relative flex h-[32px] w-[32px] shrink-0 items-center justify-center rounded-full bg-pqSettings text-[11px] font-[700] text-pqText">
-                  {sortedIntegrations.length}
-                </span>
+                <AllChannelsMosaic integrations={sortedIntegrations} />
                 <span
                   data-crl="1"
                   className="min-w-0 flex-1 group-[.sidebar]:hidden"
@@ -622,7 +646,10 @@ export const PlatformAnalytics = () => {
                     {t('all_channels', 'All channels')}
                   </span>
                   <span className="block truncate text-[12px] text-pqMuted">
-                    {t('all_channels_hint', 'Summary and posts')}
+                    {t('n_channels', '{count} channels').replace(
+                      '{count}',
+                      String(sortedIntegrations.length)
+                    )}
                   </span>
                 </span>
               </div>

@@ -6,6 +6,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 
 export type AnalyticsPostRow = {
   id: string;
+  group: string;
   content: string;
   thumbnail: string | null;
   publishDate: string;
