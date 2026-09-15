@@ -1,13 +1,16 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   Logger,
+  Param,
   Post,
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { sign } from 'jsonwebtoken';
@@ -30,6 +33,16 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { ChangePasswordDto } from '@gitroom/nestjs-libraries/dtos/users/change.password.dto';
+import { RequestEmailChangeDto } from '@gitroom/nestjs-libraries/dtos/users/request.email.change.dto';
+import { ConfirmEmailChangeDto } from '@gitroom/nestjs-libraries/dtos/users/confirm.email.change.dto';
+import { DeleteAccountDto } from '@gitroom/nestjs-libraries/dtos/users/delete.account.dto';
+import { SameOriginGuard } from '@gitroom/backend/services/auth/same-origin.guard';
+import { AbuseGuardService } from '@gitroom/nestjs-libraries/services/abuse-guard.service';
+import {
+  isLinkableProvider,
+  oauthLinkNonceFromState,
+} from '@gitroom/helpers/auth/account-security';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
@@ -55,7 +68,8 @@ export class UsersController {
     private _authService: AuthService,
     private _orgService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _abuseGuardService: AbuseGuardService
   ) {}
 
   @Get('/chatbase-token')
@@ -128,9 +142,13 @@ export class UsersController {
     }
 
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    const { password: _password, ...safeUser } = user as User & {
+      password?: string | null;
+    };
+    void _password;
     // @ts-ignore
     return {
-      ...user,
+      ...safeUser,
       orgId: organization.id,
       // Billing off: the top tier's own number, which the UI renders as
       // "Unlimited" (10000 was shown as a literal 10000).
@@ -179,6 +197,7 @@ export class UsersController {
         organization?.users[0]?.role === 'ADMIN'
           ? organization?.apiKey
           : '',
+      orgName: organization.name,
     };
   }
 
@@ -283,11 +302,156 @@ export class UsersController {
   }
 
   @Post('/personal')
+  @UseGuards(SameOriginGuard)
   async changePersonal(
     @GetUserFromRequest() user: User,
     @Body() body: UserDetailDto
   ) {
     return this._userService.changePersonal(user.id, body);
+  }
+
+  @Get('/identities')
+  async getIdentities(@GetUserFromRequest() user: User) {
+    return this._userService.getIdentities(user.id);
+  }
+
+  @Post('/identities/:provider/link')
+  @UseGuards(SameOriginGuard)
+  async linkIdentity(
+    @GetUserFromRequest() user: User,
+    @Param('provider') provider: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response,
+    @RealIP() ip: string
+  ) {
+    this.assertNotImpersonating(req);
+    if (!isLinkableProvider(provider)) {
+      throw new HttpException('Unknown provider', 400);
+    }
+    await this.assertAbuse('identity_link', user.email, ip);
+
+    const state = `link-${makeId(16)}`;
+    const nonce = oauthLinkNonceFromState(state);
+    if (!nonce) {
+      throw new HttpException('Could not start the link session', 400);
+    }
+    const ticket = this._authService.oauthLinkTicket(user.id, nonce);
+    response.cookie('oauth_state', state, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(areCookiesSecured()
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 10),
+    });
+    response.cookie('oauth_link_user', ticket, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(areCookiesSecured()
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 10),
+    });
+
+    const url = await this._authService.oauthLink(provider, { state });
+    return { url };
+  }
+
+  @Delete('/identities/:provider')
+  @UseGuards(SameOriginGuard)
+  async unlinkIdentity(
+    @GetUserFromRequest() user: User,
+    @Param('provider') provider: string,
+    @Req() req: Request,
+    @RealIP() ip: string
+  ) {
+    this.assertNotImpersonating(req);
+    await this.assertAbuse('identity_link', user.email, ip);
+    return this._userService.unlinkIdentity(user.id, provider);
+  }
+
+  @Post('/password')
+  @UseGuards(SameOriginGuard)
+  async changePassword(
+    @GetUserFromRequest() user: User,
+    @Body() body: ChangePasswordDto,
+    @Req() req: Request,
+    @RealIP() ip: string
+  ) {
+    this.assertNotImpersonating(req);
+    await this.assertAbuse('password_change', user.email, ip);
+    return this._userService.changePassword(
+      user.id,
+      body,
+      this.isStepUp(req, user.id)
+    );
+  }
+
+  @Post('/email/request')
+  @UseGuards(SameOriginGuard)
+  async requestEmailChange(
+    @GetUserFromRequest() user: User,
+    @Body() body: RequestEmailChangeDto,
+    @Req() req: Request,
+    @RealIP() ip: string
+  ) {
+    this.assertNotImpersonating(req);
+    await this.assertAbuse('email_change', user.email, ip);
+    return this._userService.requestEmailChange(
+      user.id,
+      body.email,
+      body.password,
+      this.isStepUp(req, user.id)
+    );
+  }
+
+  @Post('/email/confirm')
+  @UseGuards(SameOriginGuard)
+  async confirmEmailChange(
+    @GetUserFromRequest() user: User,
+    @Body() body: ConfirmEmailChangeDto,
+    @Req() req: Request
+  ) {
+    this.assertNotImpersonating(req);
+    return this._userService.confirmEmailChange(user.id, body.token);
+  }
+
+  private assertNotImpersonating(req: Request) {
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate) {
+      throw new HttpException(
+        'This action is not allowed while impersonating',
+        400
+      );
+    }
+  }
+
+  private isStepUp(req: Request, userId: string) {
+    const token =
+      (req.cookies?.stepup as string | undefined) ||
+      (req.headers.stepup as string | undefined);
+    return this._authService.isFreshOauth(token, userId);
+  }
+
+  private async assertAbuse(
+    action: 'password_change' | 'email_change' | 'identity_link',
+    email: string,
+    ip: string
+  ) {
+    const decision = await this._abuseGuardService.challenge({
+      action,
+      email,
+      ip,
+    });
+    if (!decision.allow) {
+      throw new HttpException('Too many requests, please try again later', 429);
+    }
   }
 
   @Get('/email-notifications')
@@ -296,6 +460,7 @@ export class UsersController {
   }
 
   @Post('/email-notifications')
+  @UseGuards(SameOriginGuard)
   async updateEmailNotifications(
     @GetUserFromRequest() user: User,
     @Body() body: EmailNotificationsDto
@@ -404,18 +569,21 @@ export class UsersController {
   }
 
   @Post('/delete-account')
+  @UseGuards(SameOriginGuard)
   async deleteAccount(
     @GetUserFromRequest() user: User,
+    @Body() body: DeleteAccountDto,
     @Req() req: Request,
     @Res({ passthrough: true }) response: Response
   ) {
-    const impersonate = req.cookies.impersonate || req.headers.impersonate;
-    if (impersonate) {
-      throw new HttpException(
-        'Account cannot be deleted while impersonating',
-        400
-      );
-    }
+    this.assertNotImpersonating(req);
+
+    await this._userService.confirmDeleteAccount(
+      user.id,
+      body.email,
+      body.password,
+      this.isStepUp(req, user.id)
+    );
 
     // Cancel billing before scrubbing the account — once the account is
     // deleted there is no way to retry a failed cancellation

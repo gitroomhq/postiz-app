@@ -288,7 +288,14 @@ export class BillingController {
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
     this.assertBillingEnabled();
-    const { url } = await (await this.provider(org)).portalLink(org.id);
+    // Stripe Customer Portal is how web customers update the card, tax IDs,
+    // and download invoices — including founding members. Those entitlements
+    // are often a local `manual` subscription row (admin gift / impersonate),
+    // not a Stripe Price. Routing this through getProviderForOrganization
+    // throws "Payment provider manual not found" and the button looks dead.
+    // Mobile (RevenueCat) still has to manage billing in the store.
+    await this._paymentService.assertWebPortal(org.id);
+    const { url } = await this._stripeService.portalLink(org.id);
     return {
       portal: url,
     };

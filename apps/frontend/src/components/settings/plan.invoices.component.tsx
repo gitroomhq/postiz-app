@@ -11,17 +11,11 @@ import { pricing, tierLabel } from '@gitroom/nestjs-libraries/database/prisma/su
 /**
  * Settings → Plan & invoices.
  *
- * The design names this tab; it did not exist here. Two states, because the
- * account can be in two genuinely different situations and telling a founding
- * member to "manage your subscription" would be nonsense:
- *
- * - **Subscribed.** The plan, and a link into Stripe's billing portal, which is
- *   where invoice history actually lives. `GET /billing/portal` already existed
- *   for the Billing screen's payment-method link.
- * - **Founding member.** There is no subscription and no portal session to make,
- *   so there are no invoices to list. It says what is true — one payment, kept
- *   plan, nothing to renew — and links to the lifetime page rather than pointing
- *   at a portal that would fail to open.
+ * The design names this tab; it did not exist here. Invoice history and the
+ * card on file live in Stripe's billing portal (`GET /billing/portal`), the
+ * same surface Billing uses. Founding members have no *recurring* invoices,
+ * but they still have a Stripe customer after the one-time payment — so they
+ * get the portal too (receipts, card, tax IDs), plus an empty-state line.
  *
  * `GET /billing/charges` is deliberately *not* used: it is superadmin-only
  * (`billing.controller.ts:189`), so a tab built on it would answer 400 for
@@ -73,30 +67,19 @@ export const PlanInvoicesComponent: FC = () => {
         </div>
       </div>
 
-      {lifetime ? (
-        <div className="flex flex-col items-start gap-[10px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="text-[13.5px] leading-[1.55] text-pqMuted">
-            {t(
-              'invoices_none_lifetime',
-              'There are no invoices — a founding member is never billed again.'
-            )}
-          </div>
-          <Link
-            href="/billing/lifetime"
-            data-plan-invoices-link="lifetime"
-            className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
-          >
-            {t('view_founding_membership', 'View your founding membership')}
-          </Link>
+      <div className="flex flex-col items-start gap-[10px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="text-[13.5px] leading-[1.55] text-pqMuted">
+          {lifetime
+            ? t(
+                'invoices_none_lifetime',
+                'No recurring invoices. Receipts for the one-time founding payment are in the billing portal.'
+              )
+            : t(
+                'invoices_live_in_portal',
+                'Invoices, receipts and your payment method live in the billing portal.'
+              )}
         </div>
-      ) : (
-        <div className="flex flex-col items-start gap-[10px] rounded-pqMd bg-pqPop p-[15px_16px] shadow-[inset_0_0_0_1px_var(--border)]">
-          <div className="text-[13.5px] leading-[1.55] text-pqMuted">
-            {t(
-              'invoices_live_in_portal',
-              'Invoices, receipts and your payment method live in the billing portal.'
-            )}
-          </div>
+        <div className="flex flex-wrap items-center gap-[8px]">
           <button
             type="button"
             data-plan-invoices-link="portal"
@@ -106,8 +89,17 @@ export const PlanInvoicesComponent: FC = () => {
           >
             {t('open_billing_portal', 'Open billing portal')}
           </button>
+          {lifetime && (
+            <Link
+              href="/billing/lifetime"
+              data-plan-invoices-link="lifetime"
+              className="rounded-pqSm bg-pqBtnSimple px-[14px] py-[9px] text-[13px] font-[600] text-pqText transition-colors hover:bg-pqHover"
+            >
+              {t('view_founding_membership', 'View your founding membership')}
+            </Link>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

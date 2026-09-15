@@ -7,7 +7,10 @@ export type GuardAction =
   | 'otp_verify'
   | 'login'
   | 'register'
-  | 'forgot';
+  | 'forgot'
+  | 'password_change'
+  | 'email_change'
+  | 'identity_link';
 
 export interface GuardChallengeInput {
   action: GuardAction;
@@ -93,6 +96,18 @@ export class AbuseGuardService {
       forgot: {
         email: int('GUARD_FORGOT_EMAIL', 5),
         ip: int('GUARD_FORGOT_IP', 20),
+      },
+      password_change: {
+        email: int('GUARD_PASSWORD_CHANGE_EMAIL', 5),
+        ip: int('GUARD_PASSWORD_CHANGE_IP', 20),
+      },
+      email_change: {
+        email: int('GUARD_EMAIL_CHANGE_EMAIL', 5),
+        ip: int('GUARD_EMAIL_CHANGE_IP', 20),
+      },
+      identity_link: {
+        email: int('GUARD_IDENTITY_LINK_EMAIL', 5),
+        ip: int('GUARD_IDENTITY_LINK_IP', 20),
       },
     };
   }

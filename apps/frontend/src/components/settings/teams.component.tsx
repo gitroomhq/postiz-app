@@ -16,7 +16,6 @@ import { AddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/add.te
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import copy from 'copy-to-clipboard';
-import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SettingsPaneEditor } from '@gitroom/frontend/components/settings/settings-pane-editor';
 import { useRouter } from 'next/navigation';
@@ -66,9 +65,11 @@ export const AddMember: FC<{
         body: JSON.stringify(values),
       });
 
-      if (!response?.ok) {
+        if (!response?.ok) {
+        const { message } = await response.json().catch(() => ({ message: '' }));
         toast.show(
-          t('team_invite_failed', 'Could not send the invitation, please try again'),
+          message ||
+            t('team_invite_failed', 'Could not send the invitation, please try again'),
           'warning'
         );
         return;
@@ -157,6 +158,8 @@ type TeamRow = {
   user: {
     email: string;
     id: string;
+    name?: string | null;
+    providerName?: string;
   };
 };
 
@@ -168,6 +171,7 @@ export const TeamsComponent: FC = () => {
   const fetch = useFetch();
   const user = useUser();
   const t = useT();
+  const toast = useToaster();
   const [inviting, setInviting] = useState(false);
   const myLevel = user?.role === 'USER' ? 0 : user?.role === 'ADMIN' ? 1 : 2;
   const getLevel = useCallback(
@@ -193,28 +197,96 @@ export const TeamsComponent: FC = () => {
   });
 
   const remove = useCallback(
-    (toRemove: {
-        user: {
-          id: string;
-        };
-      }) =>
+    (toRemove: TeamRow) =>
       async () => {
+        const isSelf = toRemove.user.id === user?.id;
         if (
           !(await deleteDialog(
-            t(
-              'are_you_sure_remove_team_member',
-              'Are you sure you want to remove this team member?'
-            )
+            isSelf
+              ? t(
+                  'are_you_sure_leave_workspace',
+                  'Are you sure you want to leave this workspace?'
+                )
+              : t(
+                  'are_you_sure_remove_team_member',
+                  'Are you sure you want to remove this team member?'
+                ),
+            isSelf ? t('leave', 'Leave') : undefined
           ))
         ) {
           return;
         }
-        await fetch(`/settings/team/${toRemove.user.id}`, {
-          method: 'DELETE',
-        });
+        const res = isSelf
+          ? await fetch('/settings/team/leave', { method: 'POST' })
+          : await fetch(`/settings/team/${toRemove.user.id}`, {
+              method: 'DELETE',
+            });
+        if (!res.ok) {
+          const { message } = await res.json().catch(() => ({ message: '' }));
+          toast.show(
+            message || t('team_action_failed', 'Could not update the team'),
+            'warning'
+          );
+          return;
+        }
         await mutate();
       },
-    [t, fetch, mutate]
+    [t, fetch, mutate, user?.id, toast]
+  );
+
+  const changeRole = useCallback(
+    async (member: TeamRow, role: 'USER' | 'ADMIN') => {
+      if (role === member.role) {
+        return;
+      }
+      const res = await fetch(`/settings/team/${member.user.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const { message } = await res.json().catch(() => ({ message: '' }));
+        toast.show(
+          message || t('team_action_failed', 'Could not update the team'),
+          'warning'
+        );
+        return;
+      }
+      await mutate();
+    },
+    [fetch, mutate, t, toast]
+  );
+
+  const transfer = useCallback(
+    async (member: TeamRow) => {
+      if (
+        !(await deleteDialog(
+          t(
+            'transfer_ownership_confirm',
+            'Transfer Super Admin to this member? You will become an Admin.'
+          ),
+          t('transfer', 'Transfer'),
+          t('transfer_ownership', 'Transfer ownership'),
+          undefined,
+          false
+        ))
+      ) {
+        return;
+      }
+      const res = await fetch('/settings/team/transfer', {
+        method: 'POST',
+        body: JSON.stringify({ userId: member.user.id, confirm: true }),
+      });
+      if (!res.ok) {
+        const { message } = await res.json().catch(() => ({ message: '' }));
+        toast.show(
+          message || t('team_action_failed', 'Could not update the team'),
+          'warning'
+        );
+        return;
+      }
+      await mutate();
+    },
+    [fetch, mutate, t, toast]
   );
 
   if (data?.kind === 'upgrade') {
@@ -243,6 +315,7 @@ export const TeamsComponent: FC = () => {
   }
 
   const rows = data?.kind === 'ok' ? data.users : [];
+  const superAdminCount = rows.filter((r) => r.role === 'SUPERADMIN').length;
 
   // An empty roster and a roster in flight are the same `[]` here, so the
   // member list waits for the fetch rather than offering "Invite member" to a
@@ -271,51 +344,110 @@ export const TeamsComponent: FC = () => {
 
   return (
     <div className="mt-[18px] flex flex-col gap-[10px]">
-      <div className="overflow-hidden rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
-        {rows.map((p) => (
-          <div
-            key={p.user.id}
-            className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
-          >
-            <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pqBrand text-[12px] font-[700] text-white">
-              {capitalize(p.user.email.split('@')[0]).split('.')[0].slice(0, 1)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13.5px] font-[600]">
-                {capitalize(p.user.email.split('@')[0]).split('.')[0]}
-              </div>
-              <div className="mt-[1px] truncate text-[12px] text-pqMuted">
-                {p.user.email}
-              </div>
-            </div>
-            <div className="grid h-[21px] shrink-0 place-items-center rounded-[999px] bg-pqSettings px-[9px] text-[11px] font-[600] text-pqMuted">
-              {p.role === 'USER'
-                ? t('user', 'User')
-                : p.role === 'ADMIN'
-                ? t('admin', 'Admin')
-                : t('super_admin', 'Super Admin')}
-            </div>
-            <button
-              type="button"
-              onClick={remove(p)}
-              aria-label={t('remove', 'Remove')}
-              className={clsx(
-                'grid h-[28px] w-[28px] place-items-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn',
-                +myLevel > +getLevel(p.role) ? '' : 'invisible'
-              )}
-            >
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
-                <path
-                  d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+      <div className="overflow-x-auto rounded-pqMd bg-pqPop shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="min-w-[360px]">
+        <div className="flex items-center gap-[11px] border-b border-pqLine px-[15px] py-[8px] text-[11px] font-[600] uppercase tracking-[0.04em] text-pqMuted">
+          <div className="min-w-0 flex-1">{t('member', 'Member')}</div>
+          <div className="w-[104px] shrink-0">{t('role', 'Role')}</div>
+          <div className="w-[108px] shrink-0 text-end">
+            {t('actions', 'Actions')}
           </div>
-        ))}
+        </div>
+        {rows.map((p) => {
+          const displayName =
+            p.user.name?.trim() ||
+            capitalize(p.user.email.split('@')[0]).split('.')[0];
+          const canManage = +myLevel > +getLevel(p.role);
+          const isSelf = p.user.id === user?.id;
+          const canLeave =
+            isSelf && !(p.role === 'SUPERADMIN' && superAdminCount <= 1);
+          const canTransfer =
+            user?.role === 'SUPERADMIN' &&
+            p.role === 'ADMIN' &&
+            !isSelf;
+          return (
+            <div
+              key={p.user.id}
+              className="flex items-center gap-[11px] border-b border-pqLine p-[13px_15px] last:border-b-0"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-[11px]">
+                <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-pqBrand text-[12px] font-[700] text-pqOnBrand">
+                  {displayName.slice(0, 1)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-[600]">
+                    {displayName}
+                  </div>
+                  <div className="mt-[1px] truncate text-[12px] text-pqMuted">
+                    {p.user.email}
+                  </div>
+                </div>
+              </div>
+              <div className="w-[104px] shrink-0">
+                {canManage && p.role !== 'SUPERADMIN' ? (
+                  <select
+                    aria-label={t('role', 'Role')}
+                    value={p.role}
+                    onChange={(e) =>
+                      changeRole(p, e.target.value as 'USER' | 'ADMIN')
+                    }
+                    className="h-[28px] w-full rounded-[7px] border-0 bg-pqSettings px-[8px] text-[12px] font-[600] text-pqText outline-none"
+                  >
+                    <option value="USER">{t('user', 'User')}</option>
+                    <option value="ADMIN">{t('admin', 'Admin')}</option>
+                  </select>
+                ) : (
+                  <div className="grid h-[21px] w-fit place-items-center rounded-[999px] bg-pqSettings px-[9px] text-[11px] font-[600] text-pqMuted">
+                    {p.role === 'USER'
+                      ? t('user', 'User')
+                      : p.role === 'ADMIN'
+                      ? t('admin', 'Admin')
+                      : t('super_admin', 'Super Admin')}
+                  </div>
+                )}
+              </div>
+              <div className="flex w-[108px] shrink-0 items-center justify-end gap-[6px]">
+                {canTransfer ? (
+                  <button
+                    type="button"
+                    onClick={() => transfer(p)}
+                    className="h-[28px] rounded-[7px] px-[8px] text-[12px] font-[600] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                  >
+                    {t('transfer', 'Transfer')}
+                  </button>
+                ) : null}
+                {canLeave ? (
+                  <button
+                    type="button"
+                    onClick={remove(p)}
+                    className="h-[28px] rounded-[7px] px-[8px] text-[12px] font-[600] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+                  >
+                    {t('leave', 'Leave')}
+                  </button>
+                ) : null}
+                {canManage ? (
+                  <button
+                    type="button"
+                    onClick={remove(p)}
+                    aria-label={t('remove', 'Remove')}
+                    className="grid h-[28px] w-[28px] place-items-center rounded-[7px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn"
+                  >
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                      <path
+                        d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+        </div>
       </div>
       <button
         type="button"

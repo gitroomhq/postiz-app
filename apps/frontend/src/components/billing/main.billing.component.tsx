@@ -42,6 +42,7 @@ import {
   FeatureRow,
   FoundingMember,
 } from '@gitroom/frontend/components/billing/lifetime.deal';
+import { BillingPortalRow } from '@gitroom/frontend/components/billing/billing.portal.row';
 import { BillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
 
 type SubscriptionWithPlatform = Subscription & {
@@ -563,7 +564,8 @@ export const MainBillingComponent: FC<{
   }, [sub]);
   // This is the recovery path behind the payment-failed banner, so it has to
   // fail loudly. Unchecked, a 500 (no Stripe customer row, Stripe down) made
-  // `portal` undefined and navigated the user to `/undefined`.
+  // `portal` undefined and navigated the user to `/undefined`. The same
+  // handler is used by `BillingPortalRow` on the payment-method card.
   const updatePayment = useCallback(async () => {
     const response = await fetch('/billing/portal');
     const { portal } = response?.ok
@@ -1453,47 +1455,27 @@ export const MainBillingComponent: FC<{
           />
         </div>
       )}
-      {/* The design's portal/cancel card: the portal keeps its handler, and the
-          cancel action becomes the ghost the design draws — same
-          `moveToCheckout('FREE')` flow behind it, dialogs and all. */}
-      {!!subscription?.id && (
-        <div className="flex flex-wrap items-center gap-[12px] rounded-[14px] bg-pqInner p-[16px_18px] outline outline-1 -outline-offset-1 outline-pqBorder">
-          <div className="min-w-0 flex-1">
-            <div className="text-[14px] font-[600] text-pqText">
-              {t('portal_row_title', 'Payment method & invoices')}
-            </div>
-            <div className="mt-[2px] text-[12.5px] text-pqMuted">
-              {user?.isLifetime
-                ? t(
-                    'portal_row_sub_lifetime',
-                    'Download the receipt for your founding-member payment.'
-                  )
-                : t(
-                    'portal_row_sub',
-                    'Update your card or download past invoices.'
-                  )}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={updatePayment}
-            className="h-[38px] rounded-[10px] bg-pqSettings px-[15px] text-[13px] font-[600] text-pqText transition-shadow hover:shadow-[inset_0_0_0_999px_var(--hover)]"
-          >
-            {t('open_billing_portal', 'Open billing portal')}
-          </button>
-          {isGeneral && !subscription?.cancelAt && !lifetimePaid && (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={moveToCheckout('FREE')}
-              className="h-[38px] rounded-[10px] bg-transparent px-[15px] text-[13px] font-[500] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn disabled:pointer-events-none disabled:opacity-60"
-            >
-              {user?.isLifetime
-                ? t('cancel_trial', 'Cancel trial')
-                : t('cancel_subscription_1', 'Cancel subscription')}
-            </button>
-          )}
-        </div>
+      {/* Payment method / invoices: Stripe Customer Portal. Founding members
+          have no recurring subscription to cancel, but they still have a card
+          and a founding receipt — do not hide this row with the plan grid. */}
+      {(!!subscription?.id || !!user?.isLifetime) && (
+        <BillingPortalRow
+          lifetime={!!user?.isLifetime}
+          extra={
+            isGeneral && !subscription?.cancelAt && !lifetimePaid ? (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={moveToCheckout('FREE')}
+                className="h-[38px] rounded-[10px] bg-transparent px-[15px] text-[13px] font-[500] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqWarn disabled:pointer-events-none disabled:opacity-60"
+              >
+                {user?.isLifetime
+                  ? t('cancel_trial', 'Cancel trial')
+                  : t('cancel_subscription_1', 'Cancel subscription')}
+              </button>
+            ) : null
+          }
+        />
       )}
       <FAQComponent />
     </div>

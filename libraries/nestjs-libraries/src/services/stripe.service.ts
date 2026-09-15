@@ -713,6 +713,18 @@ export class StripeService extends PaymentProviderAbstract {
     );
   }
 
+  async syncCustomerName(organization: { paymentId?: string | null; name: string }) {
+    if (
+      !process.env.STRIPE_PUBLISHABLE_KEY ||
+      !organization.paymentId?.startsWith('cus_')
+    ) {
+      return;
+    }
+    await stripe.customers.update(organization.paymentId, {
+      name: organization.name,
+    });
+  }
+
   /**
    * The organization's Stripe customer, created on first use.
    *
@@ -729,7 +741,7 @@ export class StripeService extends PaymentProviderAbstract {
    * the losing request from leaving a spare customer behind.
    */
   async createOrGetCustomer(organization: Organization) {
-    if (organization.paymentId) {
+    if (organization.paymentId?.startsWith('cus_')) {
       return organization.paymentId;
     }
 
@@ -745,12 +757,24 @@ export class StripeService extends PaymentProviderAbstract {
         )}`,
       }
     );
-    await this._subscriptionService.setCustomerIdIfEmpty(
-      organization.id,
-      customer.id
-    );
+    // Empty paymentId: first-writer-wins. A leftover user id (admin-granted
+    // lifetime used to store that instead of a Stripe customer) is not a
+    // customer — overwrite it so the portal has a real cus_ to open.
+    if (!organization.paymentId) {
+      await this._subscriptionService.setCustomerIdIfEmpty(
+        organization.id,
+        customer.id
+      );
+    } else {
+      await this._subscriptionService.updateCustomerId(
+        organization.id,
+        customer.id
+      );
+    }
     const stored = await this._organizationService.getOrgById(organization.id);
-    return stored?.paymentId || customer.id;
+    return stored?.paymentId?.startsWith('cus_')
+      ? stored.paymentId
+      : customer.id;
   }
 
   async getPackages() {
@@ -1047,9 +1071,52 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async createBillingPortalLink(customer: string) {
-    return stripe.billingPortal.sessions.create({
-      customer,
-      return_url: process.env['FRONTEND_URL'] + '/billing',
+    const return_url = process.env['FRONTEND_URL'] + '/billing';
+    try {
+      return await stripe.billingPortal.sessions.create({
+        customer,
+        return_url,
+      });
+    } catch (err) {
+      const message = String((err as { message?: string })?.message || '');
+      if (
+        !/portal has not been configured|No configuration provided/i.test(
+          message
+        )
+      ) {
+        throw err;
+      }
+      const configuration = await this.ensureBillingPortalConfiguration();
+      return stripe.billingPortal.sessions.create({
+        customer,
+        configuration: configuration.id,
+        return_url,
+      });
+    }
+  }
+
+  /**
+   * Invoice history + payment-method update. Used only when the account has
+   * no default Customer Portal configuration in Stripe yet.
+   */
+  private async ensureBillingPortalConfiguration() {
+    const existing = await stripe.billingPortal.configurations.list({
+      active: true,
+      limit: 1,
+    });
+    if (existing.data[0]) {
+      return existing.data[0];
+    }
+    return stripe.billingPortal.configurations.create({
+      business_profile: { headline: 'PostQueen' },
+      features: {
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        customer_update: {
+          enabled: true,
+          allowed_updates: ['email', 'address', 'name', 'phone', 'tax_id'],
+        },
+      },
     });
   }
 
@@ -1263,7 +1330,17 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async portalLink(organizationId: string) {
-    const customer = await this.getCustomerByOrganizationId(organizationId);
+    const org = await this._organizationService.getOrgById(organizationId);
+    if (!org) {
+      throw new HttpException(
+        'No billing customer on this organization.',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    // Gifted founding members often have no Stripe customer yet (or a user id
+    // stuffed into paymentId). Create one so they can add a card and see
+    // invoice history — empty is fine; a 400 is not.
+    const customer = await this.createOrGetCustomer(org);
     return this.createBillingPortalLink(customer);
   }
 

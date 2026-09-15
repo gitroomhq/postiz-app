@@ -61,7 +61,12 @@ export function Register() {
       router.replace('/auth/login');
       return;
     }
-    const { token } = await res.json();
+    const body = await res.json();
+    if (body.linked) {
+      router.replace('/settings?tab=account');
+      return;
+    }
+    const { token } = body;
     if (token) {
       setCode(token);
       setShow(true);

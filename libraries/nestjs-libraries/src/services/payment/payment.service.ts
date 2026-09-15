@@ -62,6 +62,23 @@ export class PaymentService {
     };
   }
 
+  /**
+   * Stripe Customer Portal is a web/Stripe surface. Block it only when the
+   * live subscription is on another platform (RevenueCat / app stores).
+   * Unknown historic providers (`manual` gifted lifetime) are treated as web:
+   * those orgs still need card + invoice history, and looking them up as a
+   * PaymentProvider throws.
+   */
+  async assertWebPortal(organizationId: string) {
+    const subscription = await this.getSubscription(organizationId);
+    if (subscription?.platform && subscription.platform !== 'web') {
+      throw new HttpException(
+        `Your subscription is managed on ${subscription.platform}, please use ${subscription.platform} to manage it`,
+        400
+      );
+    }
+  }
+
   // The provider that handles billing actions for this organization on the
   // given platform: the one owning the current subscription, otherwise the
   // platform default. Throws when the subscription lives on another platform.

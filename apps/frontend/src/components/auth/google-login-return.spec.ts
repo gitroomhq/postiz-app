@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  isLinkOauthState,
   isLoginOauthCallback,
   isLoginOauthState,
   loginOauthAuthPath,
@@ -49,5 +50,21 @@ describe('Google login OAuth return', () => {
   it('does not rewrite Sign in without a code', () => {
     const search = new URLSearchParams('state=login-nonce');
     assert.equal(isLoginOauthCallback('/auth/login', search), false);
+  });
+
+  it('sends a linked-account Google callback to Settings → Account', () => {
+    assert.equal(isLinkOauthState('link-AbC123'), true);
+    assert.equal(isLoginOauthState('link-AbC123'), true);
+    const search = new URLSearchParams(
+      'code=oauth-code&state=link-AbC123&scope=email'
+    );
+    assert.equal(
+      isLoginOauthCallback('/integrations/social/youtube', search),
+      true
+    );
+    assert.equal(
+      loginOauthAuthPath(search),
+      '/settings?code=oauth-code&state=link-AbC123&scope=email&provider=GOOGLE&tab=account'
+    );
   });
 });

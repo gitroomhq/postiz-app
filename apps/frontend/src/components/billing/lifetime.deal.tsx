@@ -18,6 +18,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { BillingNotConfigured } from './billing.not.configured';
+import { BillingPortalRow } from './billing.portal.row';
 
 /**
  * The design's feature tick: a 17×17 brand tile with a white check, 13px muted
@@ -437,6 +438,7 @@ export const LifetimeDeal = () => {
       ) : (
         <LifetimeCountdown createdAt={user?.createdAt} />
       )}
+      {user?.isLifetime && <BillingPortalRow lifetime />}
     </div>
   );
 };
