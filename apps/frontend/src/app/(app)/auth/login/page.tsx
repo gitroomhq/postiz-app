@@ -4,13 +4,13 @@ import { Metadata } from 'next';
 import { authShareMetadata } from '@gitroom/frontend/components/auth/auth.open-graph';
 
 /**
- * Facebook's Sharing Debugger scrapes this public HTML after a 307 from `/`.
- * og:image has to be an absolute https PNG/JPG — the SVG favicon is ignored.
- * fb:app_id is App A (PostQueen Facebook), not Instagram or Threads.
+ * Sharing Debugger scrapes https://app.postqueen.ai/ (then used to 307 here).
+ * This page is also rewritten onto `/` so the first HTML has og:* / fb:app_id.
+ * og:url stays `/` — the URL Meta was asked to scrape. App A, not IG/Threads.
  */
 export const metadata: Metadata = {
   title: 'Login',
-  ...authShareMetadata('/auth/login'),
+  ...authShareMetadata('/'),
 };
 export default async function Auth() {
   return <Login />;
