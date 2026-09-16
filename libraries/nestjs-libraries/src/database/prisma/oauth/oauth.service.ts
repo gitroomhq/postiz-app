@@ -7,18 +7,21 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { extractBearerToken } from '@gitroom/nestjs-libraries/chat/oauth-types';
 import { createHash } from 'crypto';
+import { OAuthApp } from '@prisma/client';
 
 const openAiOAuthClientId = () =>
   process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
 
 const enableOidcEmailClaims = () => Boolean(openAiOAuthClientId());
 
-const oauthScope = (clientId: string) =>
-  [
-    ...(clientId === openAiOAuthClientId() ? ['openid', 'email'] : []),
-    'mcp:read',
-    'mcp:write',
-  ].join(' ');
+// Verified-domain match: exact host or a subdomain of it (spoof-safe, the
+// leading dot means evilclaude.ai and claude.ai.evil.com are both rejected)
+const isVerifiedHost = (host: string, verifiedDomains: string[]) =>
+  verifiedDomains.some(
+    (domain) => host === domain || host.endsWith('.' + domain)
+  );
+
+type EmailClaimsApp = Pick<OAuthApp, 'clientId' | 'dynamic' | 'redirectUris'>;
 
 // Schemes a browser would execute instead of navigating away from the
 // consent screen, so they can never be a redirect_uri
@@ -152,10 +155,7 @@ export class OAuthService {
       }
 
       const host = parsed.hostname.toLowerCase();
-      const isVerified = verifiedDomains.some(
-        (domain) => host === domain || host.endsWith('.' + domain)
-      );
-      if (!isVerified) {
+      if (!isVerifiedHost(host, verifiedDomains)) {
         throw new HttpException(
           {
             error: 'invalid_redirect_uri',
@@ -203,6 +203,53 @@ export class OAuthService {
       response_types: ['code'],
       scope: 'mcp:read mcp:write',
     };
+  }
+
+  // Email claims (openid/email scope + userinfo) go to the static ChatGPT app
+  // and to dynamically registered clients whose web callbacks all live on a
+  // verified domain (DCR_VERIFIED_DOMAINS). Everything else, including every
+  // dynamic client on a self-hosted install with no verified domains, only
+  // gets the mcp scopes
+  private allowsEmailClaims(app: EmailClaimsApp) {
+    if (!enableOidcEmailClaims()) {
+      return false;
+    }
+    if (app.clientId === openAiOAuthClientId()) {
+      return true;
+    }
+    if (!app.dynamic) {
+      return false;
+    }
+
+    const verifiedDomains = this.verifiedDomainList();
+    if (!verifiedDomains.length) {
+      return false;
+    }
+
+    const webHosts: string[] = [];
+    for (const uri of JSON.parse(app.redirectUris || '[]') as string[]) {
+      try {
+        const parsed = new URL(uri);
+        if (parsed.protocol === 'https:') {
+          webHosts.push(parsed.hostname.toLowerCase());
+        }
+      } catch {
+        return false;
+      }
+    }
+
+    return (
+      webHosts.length > 0 &&
+      webHosts.every((host) => isVerifiedHost(host, verifiedDomains))
+    );
+  }
+
+  private grantedScope(app: EmailClaimsApp) {
+    return [
+      ...(this.allowsEmailClaims(app) ? ['openid', 'email'] : []),
+      'mcp:read',
+      'mcp:write',
+    ].join(' ');
   }
 
   async validateAuthorizationRequest(
@@ -359,7 +406,7 @@ export class OAuthService {
       cus: paymentId,
       access_token: token,
       token_type: 'bearer',
-      scope: oauthScope(clientId),
+      scope: this.grantedScope(app),
     };
   }
 
@@ -395,7 +442,7 @@ export class OAuthService {
       );
     }
 
-    if (authorizationRecord.oauthApp.clientId !== openAiOAuthClientId()) {
+    if (!this.allowsEmailClaims(authorizationRecord.oauthApp)) {
       throw new HttpException(
         {
           error: 'insufficient_scope',
