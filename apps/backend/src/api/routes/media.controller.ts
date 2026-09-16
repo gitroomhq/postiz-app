@@ -159,7 +159,8 @@ export class MediaController {
     @Param('endpoint') endpoint: string
   ) {
     const upload = await handleR2Upload(endpoint, req, res);
-    if (endpoint !== 'complete-multipart-upload') {
+    // a rejected or failed completion has already answered with its own status
+    if (endpoint !== 'complete-multipart-upload' || res.headersSent) {
       return upload;
     }
 
