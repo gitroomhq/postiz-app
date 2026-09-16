@@ -29,7 +29,9 @@ import {
 } from './tour.steps';
 import {
   TOUR_CARD_H,
+  TOUR_MARGIN,
   clipSpotlight,
+  isMobileTour,
   placeByBand,
   placeTourCard,
   tourCardWidth,
@@ -53,8 +55,9 @@ export { STEPS, TOUR_COPY, type StepMeta } from './tour.steps';
 
 const RING_PAD = 8;
 
-/** Dismissal is per-browser. It is a UI preference, not account data. */
+/** Dismissal is per organization in this browser, not a global UI preference. */
 const STORAGE_KEY = 'pq-tour-seen';
+const seenKey = (orgId: string) => `${STORAGE_KEY}:${orgId}`;
 /**
  * "This account has a first run owing." Set the moment the server says so,
  * cleared when the tour actually opens.
@@ -163,10 +166,11 @@ export const useTour = () =>
  */
 export const useTourRunning = () => useTourStore((state) => state.running);
 
-/** True when this browser has already been through the tour. */
-export const tourSeen = () => {
+/** True when this browser has already been through the tour for this org. */
+export const tourSeen = (orgId?: string) => {
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
+    if (!orgId) return false;
+    return localStorage.getItem(seenKey(orgId)) === '1';
   } catch (err) {
     // Safari in private mode throws on localStorage. Treat it as unseen; a
     // repeated tour is a smaller failure than a tour nobody can start.
@@ -174,9 +178,9 @@ export const tourSeen = () => {
   }
 };
 
-const markSeen = () => {
+const markSeen = (orgId?: string) => {
   try {
-    localStorage.setItem(STORAGE_KEY, '1');
+    if (orgId) localStorage.setItem(seenKey(orgId), '1');
     // Whatever was owing has now been shown, or deliberately dismissed.
     localStorage.removeItem(PENDING_KEY);
   } catch (err) {
@@ -761,6 +765,8 @@ const TourDragGhost: FC<{ ghost: Ghost }> = ({ ghost }) => {
 
 export const Tour: FC = () => {
   const t = useT();
+  const user = useUser();
+  const orgId = user?.orgId || '';
   const router = useRouter();
   const pathname = usePathname();
   const steps = useSteps();
@@ -817,7 +823,7 @@ export const Tour: FC = () => {
 
   const finish = useCallback(
     (opts?: { leaveOnAddChannel?: boolean }) => {
-      markSeen();
+      markSeen(orgId);
       // Finish on the last step leaves Add Channel open (design). Esc still
       // dismisses without forcing that route.
       if (opts?.leaveOnAddChannel) {
@@ -830,13 +836,15 @@ export const Tour: FC = () => {
       setRect(null);
       setBand(null);
     },
-    [router, stop, stripTourQuery]
+    [orgId, router, stop, stripTourQuery]
   );
 
   // First-run and Help both land here. `?onboarding=` is kept as an alias so
   // auth redirects and OAuth return URLs keep working after the old modal died.
-  // Soft entry only: if this browser already finished the tour, leave the URL
-  // alone as a no-op (Help → Setup tour still calls `start()` directly).
+  // Soft entry only: if this organization already finished the tour in this
+  // browser, leave the URL alone as a no-op (Help → Setup tour still calls
+  // `start()` directly). A second workspace in the same browser still gets
+  // its own first run — seen is per org, not global.
   const { start } = useTourStore(
     useShallow((state) => ({ start: state.start }))
   );
@@ -850,9 +858,12 @@ export const Tour: FC = () => {
     const asked =
       !!query.get('tour') || !!query.get('onboarding') || tourPending();
     if (!asked) return;
+    // User context is still loading. Do not latch urlStarted or we will
+    // swallow the first run, and do not consult a missing org id as "seen".
+    if (!orgId) return;
 
     urlStarted.current = true;
-    if (tourSeen()) {
+    if (tourSeen(orgId)) {
       clearTourPending();
       stripTourQuery();
       return;
@@ -868,7 +879,7 @@ export const Tour: FC = () => {
       router.replace(`/launches?${params.toString()}`);
     }
     start();
-  }, [query, start, stripTourQuery, pathname, router]);
+  }, [orgId, query, start, stripTourQuery, pathname, router]);
 
   // A step's path may carry a query — the settings tabs are deep-linked — so
   // "are we there yet" has to compare the params too, not just the pathname.
@@ -1053,6 +1064,22 @@ export const Tour: FC = () => {
     return () => window.clearTimeout(id);
   }, [running, opened, rect]);
 
+  // Placement used a fixed 196px card. Long Featured copy on a phone is
+  // taller than that, so Next sat under the home indicator. Measure the
+  // live card and re-place; cap the height so a landscape phone still fits.
+  const [cardH, setCardH] = useState(TOUR_CARD_H);
+  useLayoutEffect(() => {
+    if (!running || !opened) {
+      setCardH(TOUR_CARD_H);
+      return;
+    }
+    const el = cardRef.current;
+    if (!el) return;
+    const h = el.getBoundingClientRect().height;
+    if (!h) return;
+    setCardH((prev) => (Math.abs(prev - h) < 1 ? prev : h));
+  }, [running, opened, step, current?.key]);
+
   // The demo cards fade in one at a time rather than appearing fully formed.
   // Done in CSS off a root attribute — the same element and the same idiom as
   // `data-mobile` / `data-tablet` — because the cards are rendered by the
@@ -1060,7 +1087,30 @@ export const Tour: FC = () => {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute('data-tourdemo', running ? '1' : '0');
-    return () => root.setAttribute('data-tourdemo', '0');
+    const nodes = () =>
+      document.querySelectorAll<HTMLElement>(
+        '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]'
+      );
+    const apply = () => {
+      nodes().forEach((el) => {
+        if (running) {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('pointer-events', 'none', 'important');
+        }
+      });
+    };
+    apply();
+    const id = window.setInterval(apply, 100);
+    return () => {
+      root.setAttribute('data-tourdemo', '0');
+      window.clearInterval(id);
+      nodes().forEach((el) => {
+        el.style.removeProperty('display');
+        el.style.removeProperty('visibility');
+        el.style.removeProperty('pointer-events');
+      });
+    };
   }, [running]);
 
   if (!current || !opened) return null;
@@ -1080,8 +1130,9 @@ export const Tour: FC = () => {
   const pos = !spotRect
     ? null
     : (current.key === 'cal-grid' && band && !huge
-        ? placeByBand(spotRect, band, rtl, vw, vh)
-        : null) || placeTourCard(spotRect, huge, current.key, vw, vh, rtl);
+        ? placeByBand(spotRect, band, rtl, vw, vh, cardH)
+        : null) ||
+      placeTourCard(spotRect, huge, current.key, vw, vh, rtl, cardH);
   // Caret only when the card sits beside the target (LTR: right; RTL: left).
   const showCaret =
     !!spot &&
@@ -1206,9 +1257,10 @@ export const Tour: FC = () => {
         // and bloom instead of a neutral border, and a wash down from the top.
         // The wash is a background *image* over `bg-pqPop` — an alpha token set
         // as background-color would replace the surface instead of tinting it.
-        className="absolute rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
+        className="absolute overflow-y-auto rounded-[16px] bg-pqPop p-[20px] shadow-pqTourCard outline-none animate-pqPop"
         style={{
           width: cardW,
+          maxHeight: Math.max(120, vh - 2 * TOUR_MARGIN),
           backgroundImage:
             'linear-gradient(180deg, var(--tourCardWash), transparent 58%)',
           ...(pos
@@ -1266,7 +1318,12 @@ export const Tour: FC = () => {
             onClick={() =>
               last ? finish({ leaveOnAddChannel: true }) : next()
             }
-            className="rounded-pqSm bg-pqBrand px-[14px] py-[6px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover"
+            className={clsx(
+              'rounded-pqSm bg-pqBrand px-[14px] text-[13px] font-[500] text-pqOnBrand hover:bg-pqBrandHover',
+              isMobileTour(vw)
+                ? 'min-h-[44px] min-w-[44px] px-[16px]'
+                : 'py-[6px]'
+            )}
           >
             {last ? t('finish', 'Finish') : t('next', 'Next')}
           </button>

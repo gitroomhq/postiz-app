@@ -39,7 +39,7 @@ export const clampTourPos = (
   vw: number,
   vh: number,
   cardW: number,
-  cardH: number
+  cardH: number = TOUR_CARD_H
 ) => {
   const maxL = Math.max(TOUR_MARGIN, vw - cardW - TOUR_MARGIN);
   const maxT = Math.max(TOUR_MARGIN, vh - cardH - TOUR_MARGIN);
@@ -117,10 +117,10 @@ export const placeTourCard = (
   key: string,
   vw: number,
   vh: number,
-  rtl: boolean
+  rtl: boolean,
+  cardH: number = TOUR_CARD_H
 ) => {
   const cardW = tourCardWidth(vw);
-  const cardH = TOUR_CARD_H;
   const MARGIN = TOUR_MARGIN;
 
   if (isMobileTour(vw) && !huge) {
@@ -210,13 +210,13 @@ export const placeByBand = (
   band: TourRect,
   rtl: boolean,
   vw: number,
-  vh: number
+  vh: number,
+  cardH: number = TOUR_CARD_H
 ) => {
   if (isMobileTour(vw)) {
-    return placeTourCard(r, false, 'cal-grid', vw, vh, rtl);
+    return placeTourCard(r, false, 'cal-grid', vw, vh, rtl, cardH);
   }
   const cardW = tourCardWidth(vw);
-  const cardH = TOUR_CARD_H;
   const gap = 14;
   const under = band.t + band.h + gap;
   const beside = rtl ? band.l - cardW - gap : band.l + band.w + gap;

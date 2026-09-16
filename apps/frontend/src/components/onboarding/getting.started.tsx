@@ -3,13 +3,14 @@
 import { FC, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
-import { useAddProvider } from '@gitroom/frontend/components/launches/helpers/use.add.provider';
 import { useTour } from '@gitroom/frontend/components/onboarding/tour';
+import { GETTING_STARTED_CONNECT_ICONS } from '@gitroom/frontend/components/onboarding/getting-started';
 import { useGettingStarted } from '@gitroom/frontend/components/onboarding/use.getting.started';
 
 const RING = 2 * Math.PI * 7;
@@ -81,13 +82,72 @@ const StepMark: FC<{ done: boolean }> = ({ done }) =>
     </span>
   );
 
+const ConnectChannelStrip: FC<{
+  onNavigate: () => void;
+  label?: string;
+  rail?: boolean;
+}> = ({ onNavigate, label, rail }) => {
+  const t = useT();
+  const { touch } = useViewport();
+  const icon = touch ? 'size-[36px]' : 'size-[32px]';
+  const text = label || t('getting_started_channel', 'Connect your channel');
+  return (
+    <Link
+      href="/channels"
+      prefetch={true}
+      data-pq="getting-started-channels"
+      {...(rail ? { 'data-sbh': '1' } : {})}
+      onClick={onNavigate}
+      aria-label={text}
+      className={clsx(
+        'flex cursor-pointer flex-col gap-[8px]',
+        rail
+          ? 'mt-[4px] w-full rounded-pqSm px-[8px] py-[8px] hover:bg-pqHover hover:text-pqText'
+          : 'mt-[8px]'
+      )}
+    >
+      {label && (
+        <span className="text-[12px] font-[500] text-pqSoft">{label}</span>
+      )}
+      <span className="flex flex-wrap items-center gap-[6px]">
+        {GETTING_STARTED_CONNECT_ICONS.map((id) => (
+          <img
+            key={id}
+            src={`/icons/platforms/${id}.png`}
+            alt=""
+            width={36}
+            height={36}
+            className={clsx(icon, 'shrink-0 rounded-[8px] object-cover')}
+          />
+        ))}
+        <span
+          data-pq="getting-started-add-channel"
+          aria-hidden="true"
+          className={clsx(
+            icon,
+            'grid shrink-0 place-items-center rounded-[8px] border border-pqBorder text-pqMuted'
+          )}
+        >
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+            <path
+              d="M8 3.25v9.5M3.25 8h9.5"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
+      </span>
+    </Link>
+  );
+};
+
 export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
   const t = useT();
   const router = useRouter();
   const { touch } = useViewport();
   const { start: startTour } = useTour();
   const gs = useGettingStarted();
-  const openAddProvider = useAddProvider(() => gs.mutateChannels());
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { referenceRef, floatingRef } = useAnchoredPopover<
@@ -101,6 +161,19 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
 
   useEffect(() => {
     if (!open || touch) return;
+    const nodes = () =>
+      document.querySelectorAll<HTMLElement>(
+        '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]'
+      );
+    const hide = () => {
+      nodes().forEach((el) => {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+      });
+    };
+    hide();
+    const id = window.setInterval(hide, 100);
     const onDown = (e: MouseEvent) => {
       const node = e.target as Node;
       if (
@@ -117,6 +190,7 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
+      window.clearInterval(id);
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
@@ -124,12 +198,8 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
 
   const close = () => setOpen(false);
 
-  const addChannel = () => {
+  const openChannels = () => {
     close();
-    router.push('/channels');
-    if (!gs.channel) {
-      void openAddProvider();
-    }
   };
 
   const createPost = () => {
@@ -156,6 +226,7 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
   const title = gs.complete
     ? t('youre_all_set', "You're all set")
     : t('getting_started', 'Getting started');
+  const connectLabel = t('getting_started_channel', 'Connect your channel');
   const progressLabel = `${gs.done}/${gs.total}`;
 
   const next =
@@ -252,20 +323,38 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
     </div>
   ) : (
     <div className="flex flex-col gap-[2px]">
-      {step(
-        'channel',
-        gs.channel,
-        t('getting_started_channel', 'Connect a channel'),
-        t(
-          'getting_started_channel_hint',
-          'X, LinkedIn, Instagram, YouTube, or any other network'
-        ),
-        {
-          primary: next === 'channel',
-          label: t('add_channel', 'Add Channel'),
-          onClick: addChannel,
-        }
-      )}
+      <div
+        className={clsx(
+          'flex w-full items-start gap-[10px] rounded-pqSm px-[8px] py-[8px]',
+          touch && 'min-h-[44px]',
+          !gs.channel && next === 'channel' && 'bg-pqNavActive'
+        )}
+      >
+        <StepMark done={gs.channel} />
+        <div className="min-w-0 flex-1 text-start">
+          <div
+            className={clsx(
+              'text-[13.5px] font-[600]',
+              gs.channel
+                ? 'text-pqMuted line-through decoration-pqLine'
+                : 'text-pqText'
+            )}
+          >
+            {connectLabel}
+          </div>
+          {!gs.channel && (
+            <>
+              <ConnectChannelStrip onNavigate={openChannels} />
+              <div className="mt-[2px] text-[12px] leading-[1.35] text-pqSoft">
+                {t(
+                  'getting_started_channel_hint',
+                  'X, LinkedIn, Instagram, YouTube, or any other network'
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
       {step(
         'schedule',
         gs.scheduled,
@@ -351,6 +440,14 @@ export const GettingStarted: FC<{ collapsed: boolean }> = ({ collapsed }) => {
           {progressLabel}
         </span>
       </button>
+
+      {!gs.channel && (
+        <ConnectChannelStrip
+          rail
+          onNavigate={openChannels}
+          label={connectLabel}
+        />
+      )}
 
       {touch ? (
         <MobileSheet open={open} onClose={close} title={title}>

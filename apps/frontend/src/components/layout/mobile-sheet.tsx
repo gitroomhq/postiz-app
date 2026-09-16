@@ -44,6 +44,32 @@ export const MobileSheet: FC<{
 
   useEffect(() => {
     if (!open) return;
+    const root = document.documentElement;
+    const n = Number(root.getAttribute('data-pq-sheet') || '0') + 1;
+    root.setAttribute('data-pq-sheet', String(n));
+    const nodes = () =>
+      document.querySelectorAll<HTMLElement>(
+        '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]'
+      );
+    const hide = () => {
+      nodes().forEach((el) => {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+      });
+    };
+    hide();
+    const id = window.setInterval(hide, 100);
+    return () => {
+      window.clearInterval(id);
+      const left = Number(root.getAttribute('data-pq-sheet') || '1') - 1;
+      if (left <= 0) root.removeAttribute('data-pq-sheet');
+      else root.setAttribute('data-pq-sheet', String(left));
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };

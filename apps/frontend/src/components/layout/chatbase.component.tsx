@@ -2,7 +2,7 @@
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     chatbase: any;
   }
 }
@@ -16,6 +16,9 @@ import useSWR from 'swr';
 
 export const ChatbaseComponent: FC = () => {
   const { isChatBase } = useVariables();
+  // Chrome (hide over tour/sheets, pin trailing) must run even before the
+  // bot script loads — Chatbase writes the iframe with inline !important.
+  useEffect(() => installChatbaseChrome(), []);
   if (!isChatBase) {
     return null;
   }
@@ -55,21 +58,146 @@ export const ChatbaseComponentLoad: FC = () => {
  */
 const pinChatbaseTrailing = (el: HTMLElement) => {
   const rtl = document.documentElement.getAttribute('dir') === 'rtl';
-  const wantLeft = rtl ? '20px' : 'auto';
-  const wantRight = rtl ? 'auto' : '20px';
+  const box = Math.max(el.offsetWidth || 60, 52);
+  const wantLeft = rtl ? '20px' : `${Math.max(20, window.innerWidth - box - 20)}px`;
+  const wantRight = 'auto';
   if (el.style.getPropertyValue('left') === wantLeft &&
       el.style.getPropertyValue('right') === wantRight) {
     return;
   }
   el.style.setProperty('left', wantLeft, 'important');
   el.style.setProperty('right', wantRight, 'important');
-  el.style.setProperty('inset-inline-start', 'auto', 'important');
-  el.style.setProperty('inset-inline-end', '20px', 'important');
+  el.style.setProperty('inset-inline-start', rtl ? '20px' : 'auto', 'important');
+  el.style.setProperty('inset-inline-end', rtl ? 'auto' : '20px', 'important');
+};
+
+const chatbaseShouldHide = () =>
+  document.documentElement.getAttribute('data-tourdemo') === '1' ||
+  !!document.documentElement.getAttribute('data-pq-sheet') ||
+  !!document.querySelector('[data-pq="mobile-sheet"]') ||
+  !!document.querySelector(
+    '[data-pq="getting-started"] [aria-expanded="true"]'
+  );
+
+const hideChatbaseForChrome = (el: HTMLElement) => {
+  if (chatbaseShouldHide()) {
+    if (
+      el.getAttribute('data-pq-cbh') === '1' &&
+      el.style.getPropertyValue('display') === 'none'
+    ) {
+      return;
+    }
+    if (el.getAttribute('data-pq-cbh') !== '1') {
+      el.setAttribute(
+        'data-pq-cbh-display',
+        el.style.getPropertyValue('display')
+      );
+      el.setAttribute('data-pq-cbh', '1');
+    }
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('visibility', 'hidden', 'important');
+    el.style.setProperty('opacity', '0', 'important');
+    el.style.setProperty('pointer-events', 'none', 'important');
+    return;
+  }
+  if (el.getAttribute('data-pq-cbh') !== '1') return;
+  const prev = el.getAttribute('data-pq-cbh-display');
+  el.removeAttribute('data-pq-cbh');
+  el.removeAttribute('data-pq-cbh-display');
+  if (prev) el.style.setProperty('display', prev);
+  else el.style.removeProperty('display');
+  el.style.removeProperty('visibility');
+  el.style.removeProperty('opacity');
+  el.style.removeProperty('pointer-events');
 };
 
 const CHATBASE_PIN_STYLE_ID = 'pq-chatbase-pin-trailing';
 const CHATBASE_PIN_SELECTOR =
-  '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"]';
+  '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], iframe[src*="chatbase"]';
+
+const injectChatbasePinStyle = () => {
+  if (document.getElementById(CHATBASE_PIN_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = CHATBASE_PIN_STYLE_ID;
+  style.textContent = `
+#chatbase-bubble-button,
+#chatbase-bubble-window,
+[id^="chatbase-bubble"],
+iframe[src*="chatbase"] {
+  left: auto !important;
+  right: 20px !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: 20px !important;
+}
+[dir="rtl"] #chatbase-bubble-button,
+[dir="rtl"] #chatbase-bubble-window,
+[dir="rtl"] [id^="chatbase-bubble"],
+[dir="rtl"] iframe[src*="chatbase"] {
+  left: 20px !important;
+  right: auto !important;
+}
+[data-tourdemo='1'] #chatbase-bubble-button,
+[data-tourdemo='1'] #chatbase-bubble-window,
+[data-tourdemo='1'] [id^="chatbase-bubble"],
+[data-tourdemo='1'] iframe[src*="chatbase"],
+[data-pq-sheet] #chatbase-bubble-button,
+[data-pq-sheet] #chatbase-bubble-window,
+[data-pq-sheet] [id^="chatbase-bubble"],
+[data-pq-sheet] iframe[src*="chatbase"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}`;
+  document.head.appendChild(style);
+};
+
+const pinAllChatbase = () => {
+  document.querySelectorAll<HTMLElement>(CHATBASE_PIN_SELECTOR).forEach((el) => {
+    hideChatbaseForChrome(el);
+    if (!chatbaseShouldHide()) pinChatbaseTrailing(el);
+    watchChatbaseNode(el);
+  });
+};
+
+const watchedChatbase = new WeakSet<Element>();
+const watchChatbaseNode = (el: HTMLElement) => {
+  if (watchedChatbase.has(el)) return;
+  watchedChatbase.add(el);
+  const obs = new MutationObserver(pinAllChatbase);
+  obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+};
+
+let chromeCleanup: (() => void) | null = null;
+
+/** Hide the bubble over the tour / sheets and pin it trailing. Idempotent. */
+export const installChatbaseChrome = () => {
+  if (typeof document === 'undefined') return;
+  if (chromeCleanup) return;
+  injectChatbasePinStyle();
+  pinAllChatbase();
+  const observer = new MutationObserver(pinAllChatbase);
+  observer.observe(document.body, { childList: true, subtree: true });
+  const rootObserver = new MutationObserver(pinAllChatbase);
+  rootObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-tourdemo', 'data-pq-sheet'],
+  });
+  const interval = window.setInterval(pinAllChatbase, 500);
+  let raf = 0;
+  const tick = () => {
+    pinAllChatbase();
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+  chromeCleanup = () => {
+    observer.disconnect();
+    rootObserver.disconnect();
+    window.clearInterval(interval);
+    if (raf) cancelAnimationFrame(raf);
+    chromeCleanup = null;
+  };
+};
 
 const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
   const { chatbaseBotId } = useVariables();
@@ -178,42 +306,9 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
       },
     });
 
-    // Survive Chatbase re-applying dashboard "Align: Left" after mount.
-    if (!document.getElementById(CHATBASE_PIN_STYLE_ID)) {
-      const style = document.createElement('style');
-      style.id = CHATBASE_PIN_STYLE_ID;
-      style.textContent = `
-#chatbase-bubble-button,
-#chatbase-bubble-window,
-[id^="chatbase-bubble"] {
-  left: auto !important;
-  right: 20px !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: 20px !important;
-}
-[dir="rtl"] #chatbase-bubble-button,
-[dir="rtl"] #chatbase-bubble-window,
-[dir="rtl"] [id^="chatbase-bubble"] {
-  left: 20px !important;
-  right: auto !important;
-}`;
-      document.head.appendChild(style);
-    }
-
-    const pinAll = () => {
-      document
-        .querySelectorAll<HTMLElement>(CHATBASE_PIN_SELECTOR)
-        .forEach(pinChatbaseTrailing);
-    };
-    pinAll();
-    // childList only — watching `style` would re-fire on our own setProperty.
-    const observer = new MutationObserver(pinAll);
-    observer.observe(document.body, { childList: true, subtree: true });
-    const interval = window.setInterval(pinAll, 2000);
-
+    installChatbaseChrome();
     return () => {
-      observer.disconnect();
-      window.clearInterval(interval);
+      /* chrome lives for the app session — Support keeps it mounted */
     };
   }, []);
   return null;

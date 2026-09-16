@@ -1,5 +1,17 @@
 export const GETTING_STARTED_TOTAL = 3;
 
+/**
+ * Logos on the empty "Connect your channel" step. Same idea as Buffer's
+ * sidebar strip: three or four network pictures plus a + that opens
+ * `/channels`. These identifiers match `/icons/platforms/{id}.png`.
+ */
+export const GETTING_STARTED_CONNECT_ICONS = [
+  'facebook',
+  'instagram',
+  'x',
+  'youtube',
+] as const;
+
 export const gettingStartedDismissKey = (orgId: string) =>
   `pq-gs-dismissed:${orgId}`;
 

@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   GETTING_STARTED_TOTAL,
+  GETTING_STARTED_CONNECT_ICONS,
   gettingStartedDismissKey,
   gettingStartedProgress,
   gettingStartedVisible,
@@ -157,9 +158,25 @@ describe('getting started wiring', () => {
     assert.match(widget, /MobileSheet/);
     assert.match(widget, /useAnchoredPopover/);
     assert.match(widget, /data-pq="create-post"/);
-    assert.match(widget, /useAddProvider/);
     assert.match(widget, /touch \? 'h-\[44px\]/);
     assert.doesNotMatch(widget, /\/settings/);
+    assert.doesNotMatch(widget, /useAddProvider/);
+  });
+
+  it('shows a Buffer-style channel strip that opens /channels', () => {
+    assert.deepEqual([...GETTING_STARTED_CONNECT_ICONS], [
+      'facebook',
+      'instagram',
+      'x',
+      'youtube',
+    ]);
+    assert.match(widget, /GETTING_STARTED_CONNECT_ICONS/);
+    assert.match(widget, /data-pq="getting-started-channels"/);
+    assert.match(widget, /data-pq="getting-started-add-channel"/);
+    assert.match(widget, /href="\/channels"/);
+    assert.match(widget, /Connect your channel/);
+    assert.match(widget, /flex-wrap/);
+    assert.match(widget, /\/icons\/platforms\/\$\{id\}\.png/);
   });
 
   it('retires Help Take a tour once the checklist is complete, not only after a publish', () => {

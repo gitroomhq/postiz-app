@@ -1652,7 +1652,7 @@ html[dir='rtl'] .lbox {
   overflow: visible;
 }
 
-[data-sb][data-hov='1'] a,
+[data-sb][data-hov='1'] a:not([data-pq='getting-started-channels']),
 [data-sb][data-hov='1'] button:not([data-sb-pin='1']) {
   width: 34px;
   margin-inline: auto;
@@ -1751,4 +1751,21 @@ html:has([data-pq-composer-max='1']) [data-pq-composer-shell] > div {
   max-width: none !important;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Chatbase's bubble is position:fixed at a huge z-index, so the tour card and
+   phone/tablet sheets cannot cover it. Hide it for those surfaces — the pin
+   to trailing still loses on some viewports and the N sat on Next / Got it. */
+[data-tourdemo='1'] #chatbase-bubble-button,
+[data-tourdemo='1'] #chatbase-bubble-window,
+[data-tourdemo='1'] [id^='chatbase-bubble'],
+[data-tourdemo='1'] iframe[src*='chatbase'],
+[data-pq-sheet] #chatbase-bubble-button,
+[data-pq-sheet] #chatbase-bubble-window,
+[data-pq-sheet] [id^='chatbase-bubble'],
+[data-pq-sheet] iframe[src*='chatbase'] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
