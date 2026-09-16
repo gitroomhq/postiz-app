@@ -124,7 +124,7 @@ export class OAuthAuthorizedController {
     if (body.action === 'deny') {
       const redirectUrl = new URL(redirectTarget);
       redirectUrl.searchParams.set('error', 'access_denied');
-      redirectUrl.searchParams.set('iss', this._oauthService.issuer());
+      redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
       if (body.state) {
         redirectUrl.searchParams.set('state', body.state);
       }
@@ -148,7 +148,7 @@ export class OAuthAuthorizedController {
     // pick their shared callback and to verify the response came from this AS
     const redirectUrl = new URL(redirectTarget);
     redirectUrl.searchParams.set('code', code);
-    redirectUrl.searchParams.set('iss', this._oauthService.issuer());
+    redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }
