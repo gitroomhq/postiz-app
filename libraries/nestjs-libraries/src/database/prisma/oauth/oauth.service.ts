@@ -38,6 +38,12 @@ const browserSchemes = [
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
+  // RFC 8414 path-based issuer shared by every OAuth MCP resource, the same
+  // value start.mcp.ts advertises in the discovery documents
+  issuer() {
+    return new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString();
+  }
+
   async getApp(orgId: string) {
     const app = await this._oauthRepository.getAppByOrgId(orgId);
     if (!app) return false;
