@@ -371,8 +371,22 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         identifier: body.identifier,
         password: body.password,
       });
-    } catch (err) {
-      throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
+    } catch (err: any) {
+      // Only a definite 4xx (bad password, account taken down) means the
+      // credentials are broken. A 5xx or network error is Bluesky being
+      // unavailable: let it propagate as a transient failure instead of
+      // marking the channel as disconnected.
+      const status = err?.status;
+      if (
+        typeof status === 'number' &&
+        status >= 400 &&
+        status < 500 &&
+        status !== 429
+      ) {
+        throw new RefreshToken('bluesky', JSON.stringify(err), {} as BodyInit);
+      }
+
+      throw err;
     }
 
     return agent;
@@ -612,11 +626,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       // this is safe and beats exhausting the check budget into a misleading
       // "check your account" warning.
       if ((pendingData.prepFailures || 0) >= 4) {
+        const reason = (err as any)?.message || String(err);
         throw new BadBody(
           'bluesky',
-          JSON.stringify({}),
+          JSON.stringify({ message: reason }),
           {} as any,
-          'Could not prepare the post for Bluesky, nothing was published, please try again'
+          `Could not prepare the post for Bluesky, nothing was published: ${reason}`
         );
       }
 
