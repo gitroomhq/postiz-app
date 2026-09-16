@@ -560,6 +560,91 @@ export class IntegrationRepository {
     });
   }
 
+  async getChannelHealth(org: string) {
+    const [integrations, lastPublished, lastErrored] = await Promise.all([
+      this._integration.model.integration.findMany({
+        where: {
+          organizationId: org,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          id: true,
+          internalId: true,
+          name: true,
+          providerIdentifier: true,
+          type: true,
+          disabled: true,
+          refreshNeeded: true,
+          inBetweenSteps: true,
+          tokenExpiration: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      this._posts.model.post.findMany({
+        where: {
+          organizationId: org,
+          state: 'PUBLISHED',
+          deletedAt: null,
+        },
+        orderBy: [{ integrationId: 'asc' }, { publishDate: 'desc' }],
+        distinct: ['integrationId'],
+        select: {
+          id: true,
+          integrationId: true,
+          publishDate: true,
+          releaseURL: true,
+        },
+      }),
+      this._posts.model.post.findMany({
+        where: {
+          organizationId: org,
+          state: 'ERROR',
+          deletedAt: null,
+        },
+        orderBy: [{ integrationId: 'asc' }, { updatedAt: 'desc' }],
+        distinct: ['integrationId'],
+        select: {
+          id: true,
+          integrationId: true,
+          updatedAt: true,
+          error: true,
+        },
+      }),
+    ]);
+
+    const publishedByIntegration = new Map(
+      lastPublished.map((post) => [post.integrationId, post])
+    );
+    const erroredByIntegration = new Map(
+      lastErrored.map((post) => [post.integrationId, post])
+    );
+
+    return integrations.map((integration) => {
+      const published = publishedByIntegration.get(integration.id);
+      const errored = erroredByIntegration.get(integration.id);
+
+      return {
+        ...integration,
+        lastPublishedAt: published?.publishDate || null,
+        lastPublishedPostId: published?.id || null,
+        lastPublishedUrl: published?.releaseURL || null,
+        lastErrorAt: errored?.updatedAt || null,
+        lastErrorPostId: errored?.id || null,
+        lastError: errored?.error || null,
+      };
+    });
+  }
+
   async disableChannel(org: string, id: string) {
     await this._integration.model.integration.update({
       where: {

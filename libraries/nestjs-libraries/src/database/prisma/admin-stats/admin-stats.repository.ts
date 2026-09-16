@@ -6,6 +6,13 @@ export interface StatsParams {
   from: Date;
   to: Date;
   unknownOnly?: boolean;
+  organizationId?: string;
+}
+
+export interface OrgActivityParams {
+  from: Date;
+  to: Date;
+  organizationId: string;
 }
 
 // Unknown errors are stored as the serialized error payload, e.g.
@@ -15,6 +22,23 @@ const UNKNOWN_ERROR_TOKEN = '"message":"Unknown Error"';
 interface PerSocial {
   provider: string;
   count: number;
+}
+
+interface PerState {
+  state: string;
+  count: number;
+}
+
+export interface OrgActivityResponse {
+  from: string;
+  to: string;
+  organizationId: string;
+  errors: { total: number; perSocial: PerSocial[] };
+  posts: { total: number; perSocial: PerSocial[] };
+  connected: { total: number; perSocial: PerSocial[] };
+  postsByState: PerState[];
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
 }
 
 export interface StatsResponse {
@@ -47,6 +71,9 @@ export class AdminStatsRepository {
       ...(params.unknownOnly
         ? { message: { contains: UNKNOWN_ERROR_TOKEN } }
         : {}),
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -77,6 +104,9 @@ export class AdminStatsRepository {
       parentPostId: null,
       deletedAt: null,
       publishDate: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -254,6 +284,9 @@ export class AdminStatsRepository {
     const where: Prisma.IntegrationWhereInput = {
       deletedAt: null,
       createdAt: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -273,6 +306,60 @@ export class AdminStatsRepository {
           count: g._count._all,
         }))
       ),
+    };
+  }
+
+  private async postStateStats(params: OrgActivityParams) {
+    const grouped = await this._post.model.post.groupBy({
+      by: ['state'],
+      where: {
+        organizationId: params.organizationId,
+        parentPostId: null,
+        deletedAt: null,
+        publishDate: { gte: params.from, lte: params.to },
+      },
+      _count: { _all: true },
+    });
+
+    return grouped
+      .map((g) => ({ state: g.state as string, count: g._count._all }))
+      .sort((a, b) => b.count - a.count || a.state.localeCompare(b.state));
+  }
+
+  private async activityRange(organizationId: string) {
+    const { _min, _max } = await this._post.model.post.aggregate({
+      where: { organizationId, state: 'PUBLISHED', deletedAt: null },
+      _min: { publishDate: true },
+      _max: { publishDate: true },
+    });
+
+    return {
+      firstActivityAt: _min.publishDate?.toISOString() || null,
+      lastActivityAt: _max.publishDate?.toISOString() || null,
+    };
+  }
+
+  async getOrgActivity(
+    params: OrgActivityParams
+  ): Promise<OrgActivityResponse> {
+    const [errors, posts, connected, postsByState, activity] =
+      await Promise.all([
+        this.errorStats(params),
+        this.postStats(params),
+        this.connectedStats(params),
+        this.postStateStats(params),
+        this.activityRange(params.organizationId),
+      ]);
+
+    return {
+      from: params.from.toISOString(),
+      to: params.to.toISOString(),
+      organizationId: params.organizationId,
+      errors,
+      posts,
+      connected,
+      postsByState,
+      ...activity,
     };
   }
 
