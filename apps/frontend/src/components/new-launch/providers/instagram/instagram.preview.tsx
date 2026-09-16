@@ -9,6 +9,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
 import { PreviewMediaFrame } from '@gitroom/frontend/components/new-launch/preview-media';
 import { instagramFeedPreviewRange } from '@gitroom/frontend/components/new-launch/preview-media-aspect';
+import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 export const InstagramPreview: FC<{
@@ -70,10 +71,15 @@ export const InstagramPreview: FC<{
     <div className="py-[10px] flex flex-col px-[15px] w-full gap-[10px] bg-bgInstagram rounded-[12px]">
       <div className="flex gap-[10px] items-center">
         <div className="w-[36px] h-[36px]">
-          <img
-            src={integration?.picture || '/no-picture.jpg'}
-            alt="social"
-            className="rounded-full relative z-[2] w-[36px] h-[36px]"
+          <ChannelAvatar
+            integration={{
+              picture: integration?.picture,
+              identifier: integration?.identifier || 'instagram',
+              name: integration?.name,
+            }}
+            size={36}
+            rounded="full"
+            badge={false}
           />
         </div>
         <div className="flex min-w-0 flex-col leading-[18px]">
@@ -104,12 +110,22 @@ export const InstagramPreview: FC<{
         />
       ) : (
         <div
-          style={{ background: 'url(/no-video-youtube.png)' }}
-          className={
+          style={
             isStory
-              ? '!bg-cover w-full aspect-[9/16] rounded-[8px] overflow-hidden'
-              : '!bg-cover w-full aspect-[4/5] rounded-[8px] overflow-hidden'
+              ? {
+                  background: 'url(/no-video-youtube.png)',
+                  aspectRatio: '9 / 16',
+                  maxHeight: 'min(34vh, 300px)',
+                  width: 'min(100%, calc(min(34vh, 300px) * 9 / 16))',
+                }
+              : {
+                  background: 'url(/no-video-youtube.png)',
+                  aspectRatio: '4 / 5',
+                  maxHeight: 'min(34vh, 300px)',
+                  width: 'min(100%, calc(min(34vh, 300px) * 4 / 5))',
+                }
           }
+          className="mx-auto !bg-cover overflow-hidden rounded-[8px]"
         />
       )}
       <div
@@ -203,10 +219,15 @@ export const InstagramPreview: FC<{
             <div key={index} className="flex flex-col gap-[12px]">
               <div className="flex gap-[10px] leading-[17px]">
                 <div className="h-[34px]">
-                  <img
-                    src={integration?.picture || '/no-picture.jpg'}
-                    alt="social"
-                    className="rounded-full relative z-[2] h-[34px] w-[34px]"
+                  <ChannelAvatar
+                    integration={{
+                      picture: integration?.picture,
+                      identifier: integration?.identifier || 'instagram',
+                      name: integration?.name,
+                    }}
+                    size={34}
+                    rounded="full"
+                    badge={false}
                   />
                 </div>
                 <div className="flex flex-col gap-[6px] flex-1">

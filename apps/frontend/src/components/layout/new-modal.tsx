@@ -152,30 +152,54 @@ export const Component: FC<{
   );
 
   if (modal.removeLayout) {
+    // Create Post used to pass fullScreen + size 80% together. Inline width
+    // won, so the card sat left-aligned at 80% on desktop and left a 20%
+    // strip of overlay on phones — not native, and not the max-w-[1400px]
+    // classNames intended. Composer: phones/tablets fill the viewport;
+    // desktop is a centered card the composer can maximize from inside.
+    const isComposer = modal.id === 'add-edit-modal';
+    const composerDesktop = isComposer && !touch;
+    const fillViewport =
+      (isComposer && touch) || (!isComposer && !!modal.fullScreen);
+
     return (
       <div
+        data-pq-composer-shell={isComposer ? '1' : undefined}
         style={{ zIndex }}
         className={clsx(
-          !modal.fullScreen
-            ? 'pb-[50px] min-w-full min-h-full'
-            : 'w-full h-full',
-          'fixed flex left-0 top-0 bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
+          'fixed inset-0 flex bg-popup transition-all animate-fadeIn text-newTextColor',
+          composerDesktop
+            ? 'items-center justify-center overflow-hidden p-[32px]'
+            : fillViewport
+            ? 'overflow-hidden'
+            : 'min-h-full min-w-full overflow-y-auto pb-[50px]',
           !isLast && '!overflow-hidden'
         )}
       >
-        <div className={clsx(modal.fullScreen && 'flex', 'relative flex-1')}>
+        <div
+          className={clsx(
+            composerDesktop &&
+              'flex h-full max-h-full w-full max-w-[1400px]',
+            fillViewport && 'flex h-dvh w-full',
+            !fillViewport && !composerDesktop && 'relative flex-1'
+          )}
+        >
           <div
             className={clsx(
-              modal.fullScreen
-                ? 'flex flex-1'
-                : 'absolute top-0 left-0 min-w-full min-h-full'
+              composerDesktop || fillViewport
+                ? 'flex min-h-0 min-w-0 flex-1'
+                : 'absolute top-0 left-0 min-h-full min-w-full'
             )}
           >
             <div
               className={clsx(
-                modal.fullScreen ? 'w-full h-full flex-1' : 'mx-auto py-[48px]'
+                composerDesktop || fillViewport
+                  ? 'flex h-full min-h-0 w-full flex-1'
+                  : 'mx-auto py-[48px]'
               )}
-              {...(modal.size && { style: { width: modal.size } })}
+              {...(modal.size &&
+                !composerDesktop &&
+                !fillViewport && { style: { width: modal.size } })}
             >
               {typeof modal.children === 'function'
                 ? modal.children(closeModalFunction)

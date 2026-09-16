@@ -1,11 +1,14 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapTikTokBusinessVideoStats } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
+import { chunk } from 'lodash';
 import dayjs from 'dayjs';
 import {
   BadBody,
@@ -36,6 +39,7 @@ export class TiktokBusinessProvider
   implements SocialProvider
 {
   identifier = 'tiktok-business';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   // Add Channel lists both TikTok connections by this name; two cards reading
   // "Tiktok" and "TikTok" gave no way to tell them apart.
@@ -1206,5 +1210,88 @@ export class TiktokBusinessProvider
       console.error('Error fetching TikTok Business post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const resolved: string[] = [];
+    const requestedByResolved = new Map<string, string>();
+
+    for (const postId of platformPostIds) {
+      if (postId.indexOf('_pub_url') === -1) {
+        resolved.push(postId);
+        requestedByResolved.set(postId, postId);
+        continue;
+      }
+      try {
+        const post = await (
+          await this.fetch(
+            `${this.baseUrl}/business/publish/status/?business_id=${encodeURIComponent(
+              integrationId
+            )}&publish_id=${encodeURIComponent(postId)}`,
+            {
+              method: 'GET',
+              headers: {
+                'Access-Token': accessToken,
+              },
+            }
+          )
+        ).json();
+        this.throwIfTokenError(post);
+        if (post?.data?.post_ids?.[0]) {
+          const publicId = String(post.data.post_ids[0]);
+          resolved.push(publicId);
+          requestedByResolved.set(publicId, postId);
+        }
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error resolving TikTok Business publish id:', err);
+      }
+    }
+
+    const rows: NormalizedPostMetrics[] = [];
+    for (const batch of chunk(resolved, 20)) {
+      try {
+        const videoQueryData = await (
+          await this.fetch(
+            `${this.baseUrl}/business/video/list/?business_id=${encodeURIComponent(
+              integrationId
+            )}&fields=${encodeURIComponent(
+              JSON.stringify(['item_id', 'likes', 'comments', 'shares', 'video_views'])
+            )}&filters=${encodeURIComponent(
+              JSON.stringify({ video_ids: batch })
+            )}`,
+            {
+              method: 'GET',
+              headers: {
+                'Access-Token': accessToken,
+              },
+            }
+          )
+        ).json();
+        this.throwIfTokenError(videoQueryData);
+        for (const video of videoQueryData?.data?.videos || []) {
+          const resolvedId = String(video.item_id || video.id);
+          rows.push(
+            mapTikTokBusinessVideoStats(
+              requestedByResolved.get(resolvedId) || resolvedId,
+              video
+            )
+          );
+        }
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching TikTok Business posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

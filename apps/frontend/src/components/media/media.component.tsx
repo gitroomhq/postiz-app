@@ -29,7 +29,10 @@ const Polonto = dynamic(
 const showModalEmitter = new EventEmitter();
 
 export { Pagination } from '@gitroom/frontend/components/media/media.pagination';
-import { MediaBox } from '@gitroom/frontend/components/media/media.box';
+import {
+  MediaBox,
+  MEDIA_LIBRARY_PICKER_HEIGHT,
+} from '@gitroom/frontend/components/media/media.box';
 export { MediaBox };
 
 export const ShowMediaBoxModal: FC = () => {
@@ -246,7 +249,7 @@ export const MultiMediaComponent: FC<{
       closeOnEscape: true,
       size: 'min(1200px, calc(100vw - 64px))',
       maxSize: 'min(1200px, calc(100vw - 64px))',
-      ...(touch ? { height: '100%' } : {}),
+      height: touch ? '100%' : MEDIA_LIBRARY_PICKER_HEIGHT,
       children: (close) => (
         <MediaBox
           setMedia={changeMedia}
@@ -598,7 +601,7 @@ export const MediaComponent: FC<{
       closeOnEscape: true,
       size: 'min(1200px, calc(100vw - 64px))',
       maxSize: 'min(1200px, calc(100vw - 64px))',
-      ...(touch ? { height: '100%' } : {}),
+      height: touch ? '100%' : MEDIA_LIBRARY_PICKER_HEIGHT,
       children: (close) => (
         <MediaBox
           setMedia={changeMedia}

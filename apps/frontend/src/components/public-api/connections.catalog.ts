@@ -1325,7 +1325,7 @@ openclaw onboard --install-daemon`,
       label: t('conn_group_featured', 'Featured'),
       blurb: t(
         'conn_group_featured_blurb',
-        'Chat products that call PostQueen over MCP. One URL, 14 tools.'
+        'Chat products that call PostQueen over MCP. One URL, 17 tools.'
       ),
       items: [
         {
@@ -2034,7 +2034,7 @@ openclaw onboard --install-daemon`,
               title: t('conn_step_verify', 'Check it worked'),
               detail: t(
                 'conn_gemini_verify',
-                'Start Gemini CLI and run the slash command /mcp. postqueen should show as connected with 14 tools. Then ask it to list your connected social media accounts.'
+                'Start Gemini CLI and run the slash command /mcp. postqueen should show as connected with 17 tools. Then ask it to list your connected social media accounts.'
               ),
               code: '/mcp',
             },
@@ -2106,7 +2106,7 @@ openclaw onboard --install-daemon`,
           short: t('conn_other_mcp_short', 'Any other MCP client with the URL'),
           intro: t(
             'conn_other_mcp_intro',
-            'PostQueen exposes 14 tools at a single streamable HTTP endpoint (13 registry tools plus ask_postqueen). If your editor or agent can reach a remote MCP server, use the URL below (API key in the path or as a Bearer token). Get your key from Settings → API Keys.'
+            'PostQueen exposes 17 tools at a single streamable HTTP endpoint (16 registry tools plus ask_postqueen). If your editor or agent can reach a remote MCP server, use the URL below (API key in the path or as a Bearer token). Get your key from Settings → API Keys.'
           ),
           examples: [
             sample({

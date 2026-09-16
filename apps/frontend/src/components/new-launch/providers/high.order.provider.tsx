@@ -22,7 +22,7 @@ import useSWR from 'swr';
 import { InternalChannels } from '@gitroom/frontend/components/launches/internal.channels';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 import { formatChannelHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
 class Empty {
@@ -80,7 +80,6 @@ export const withProvider = function <T extends object>(params: {
       dummy,
       setChars,
       setComments,
-      setHide,
     } = useLaunchStore(
       useShallow((state) => ({
         date: state.date,
@@ -89,7 +88,6 @@ export const withProvider = function <T extends object>(params: {
         dummy: state.dummy,
         internal: state.internal.find((p) => p.integration.id === props.id),
         integrations: state.selectedIntegrations,
-        setHide: state.setHide,
         allIntegrations: state.integrations,
         justCurrent: state.current,
         current: state.current === props.id,
@@ -184,9 +182,18 @@ export const withProvider = function <T extends object>(params: {
       reValidateMode: 'onChange',
     });
 
+    const revealChannel = () => {
+      setCurrent(props.id);
+    };
+
     useImperativeHandle(
       ref,
       () => ({
+        // manage.modal focus(id, 'fix'|'preview') reads these on the handle.
+        // They used to live only on isValid()'s return, so validation toasts
+        // never actually switched the editor to the failing channel.
+        fix: revealChannel,
+        preview: revealChannel,
         isValid: async () => {
           const settings = form.getValues();
           return {
@@ -205,14 +212,8 @@ export const withProvider = function <T extends object>(params: {
                       selectedIntegration.integration.additionalSettings || '[]'
                     )
                   ),
-            fix: () => {
-              setCurrent(props.id);
-              setHide(true);
-            },
-            preview: () => {
-              setCurrent(props.id);
-              setHide(true);
-            },
+            fix: revealChannel,
+            preview: revealChannel,
           };
         },
         getValues: () => {
@@ -227,7 +228,7 @@ export const withProvider = function <T extends object>(params: {
           return form.trigger();
         },
       }),
-      [value]
+      [value, selectedIntegration, setCurrent]
     );
 
     return (
@@ -251,7 +252,7 @@ export const withProvider = function <T extends object>(params: {
               // tab still shows only the active id. Filter chips hide via CSS
               // data attribute when parent marks the card filtered out.
               !current && !isGlobal && 'hidden',
-              isGlobal && 'mb-[12px] last:mb-0'
+              isGlobal && 'mb-[16px] last:mb-0 snap-start'
             )}
             data-preview-channel={props.id}
           >
@@ -314,22 +315,11 @@ export const withProvider = function <T extends object>(params: {
                   )}
                   {isGlobal && (
                     <div className="mb-[14px] flex items-center gap-[12px] border-b border-pqLine pb-[14px]">
-                      <div className="relative">
-                        <SafeImage
-                          alt={selectedIntegration?.integration.name!}
-                          width={36}
-                          height={36}
-                          className="h-[36px] min-h-[36px] w-[36px] min-w-[36px] rounded-full"
-                          src={selectedIntegration?.integration.picture}
-                        />
-                        <SafeImage
-                          alt={selectedIntegration?.integration.identifier}
-                          width={14}
-                          height={14}
-                          className="absolute -bottom-[2px] -end-[2px] h-[14px] min-h-[14px] w-[14px] min-w-[14px] rounded-[14px]"
-                          src={`/icons/platforms/${selectedIntegration?.integration.identifier}.png`}
-                        />
-                      </div>
+                      <ChannelAvatar
+                        integration={selectedIntegration.integration}
+                        size={36}
+                        rounded="full"
+                      />
                       <div>
                         <div className="text-[15px] font-[600] tracking-[-0.01em] text-pqText">
                           {selectedIntegration?.integration.name}

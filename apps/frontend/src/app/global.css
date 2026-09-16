@@ -1732,3 +1732,23 @@ html[dir='rtl'] .lbox {
   left: 20px !important;
   right: auto !important;
 }
+
+/* Chatbase's iframe uses inline !important; JS in ManageModal also hides it.
+   :has() covers the first paint before the interval runs. */
+html:has([data-pq='composer']) #chatbase-bubble-button,
+html:has([data-pq='composer']) #chatbase-bubble-window,
+html:has([data-pq='composer']) [id^='chatbase-bubble'],
+html:has([data-pq='composer']) iframe[src*='chatbase'] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html:has([data-pq-composer-max='1']) [data-pq-composer-shell] {
+  padding: 0 !important;
+}
+html:has([data-pq-composer-max='1']) [data-pq-composer-shell] > div {
+  max-width: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}

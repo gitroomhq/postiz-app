@@ -59,7 +59,7 @@ export const TiktokPreview: FC<{
     return { text: finalValue, images: p.image };
   });
   return (
-    <div className="p-[15px] absolute left-0 top-0 w-full h-full flex justify-center bg-newBgColorInner">
+    <div className="flex w-full justify-center p-[15px] bg-newBgColorInner">
       <div className="relative">
         <SliderComponent
           list={renderContent?.[0]?.images.map((image, index) => (
@@ -72,7 +72,7 @@ export const TiktokPreview: FC<{
               <VideoOrImage autoplay={true} src={mediaDir.set(image.path)} />
             </a>
           ))}
-          className="h-full bg-black aspect-[calc(9/16)] rounded-[3px] overflow-hidden"
+          className="mx-auto w-full max-w-[280px] bg-black aspect-[9/16] max-h-[min(34vh,300px)] rounded-[3px] overflow-hidden"
         />
         <div className="absolute pointer-events-none w-full h-full start-0 top-0 px-[12px] py-[25px] justify-end items-start text-white flex flex-col">
           <div className="text-[14px] font-[500]">

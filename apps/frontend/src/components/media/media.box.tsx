@@ -41,6 +41,10 @@ const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 export const MEDIA_LIBRARY_THUMB_ASPECT = 'aspect-square';
 /** Out of flow so a landscape file cannot stretch the cell. Crop, don't squash. */
 export const MEDIA_LIBRARY_THUMB_FILL = 'absolute inset-0 h-full w-full';
+/** Desktop picker sheet: header + two square rows + footer, without clipping row 2. */
+export const MEDIA_LIBRARY_PICKER_HEIGHT = 'min(760px, 86vh)';
+/** 140px tile + caption + gap, twice — the gallery never shrinks below two rows. */
+export const MEDIA_LIBRARY_TWO_ROW_MIN = 'min(348px,42vh)';
 
 const formatSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -950,12 +954,7 @@ export const MediaBox: FC<{
   // (that is /media only). DropFiles is scoped to the toolbar so a drag cover
   // never sits over the thumbs.
   return (
-    <div
-      className={clsx(
-        'flex w-full flex-col gap-[12px]',
-        touch && 'h-full min-h-0'
-      )}
-    >
+    <div className="flex h-full min-h-0 w-full flex-col gap-[12px]">
       {fileInput}
       <DropFiles
         disabled={loading}
@@ -974,26 +973,16 @@ export const MediaBox: FC<{
 
       {uppyBar}
 
-          {/* Filters tight above gallery. Desktop caps ~2 rows; phone/tablet
-              fills the remaining sheet so thumbs stay large. */}
-      <div
-        className={clsx(
-          'flex flex-col gap-[8px]',
-          touch && 'min-h-0 flex-1'
-        )}
-      >
+          {/* Gallery fills the sheet under the filters. Desktop min-height is
+              two full square rows so the second row is never half-cut. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-[8px]">
         <div className="flex shrink-0 flex-wrap items-center gap-[10px]">
           {filterTabs}
         </div>
 
         <div
-          className={clsx(
-            'relative p-[3px] pe-[4px] overscroll-contain',
-            touch
-              ? 'min-h-0 flex-1 overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
-              : (isLoading || visibleMedia.length > 8) &&
-                'max-h-[min(264px,28vh)] overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'
-          )}
+          className="relative min-h-0 flex-1 overflow-y-auto p-[3px] pe-[4px] overscroll-contain scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner"
+          style={!touch ? { minHeight: MEDIA_LIBRARY_TWO_ROW_MIN } : undefined}
         >
           {isLoading && !data && (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-[14px] gap-y-[12px]">

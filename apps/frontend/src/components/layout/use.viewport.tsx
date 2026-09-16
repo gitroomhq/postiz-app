@@ -28,6 +28,8 @@ import {
  */
 export const PQ_MOBILE_MAX = 760;
 export const PQ_TABLET_MAX = 1180;
+/** Side-by-side composer columns once both an editor and a 420px preview fit. */
+export const PQ_COMPOSER_SPLIT_MIN = 1024;
 
 export interface Viewport {
   width: number;
@@ -40,6 +42,8 @@ export interface Viewport {
    * phone stack — hamburger, week chips, settings push — still uses `mobile`.
    */
   touch: boolean;
+  /** Editor + preview side by side (iPad landscape and up). */
+  splitComposer: boolean;
 }
 
 export const measureViewport = (width: number): Viewport => ({
@@ -48,13 +52,15 @@ export const measureViewport = (width: number): Viewport => ({
   tablet: width >= PQ_MOBILE_MAX && width < PQ_TABLET_MAX,
   desktop: width >= PQ_TABLET_MAX,
   touch: width < PQ_TABLET_MAX,
+  splitComposer: width >= PQ_COMPOSER_SPLIT_MIN,
 });
 
 const sameBucket = (a: Viewport, b: Viewport) =>
   a.mobile === b.mobile &&
   a.tablet === b.tablet &&
   a.desktop === b.desktop &&
-  a.touch === b.touch;
+  a.touch === b.touch &&
+  a.splitComposer === b.splitComposer;
 
 // The server has no width. The design's own fallback is 1440, and desktop is
 // the layout that degrades most gracefully if the first client measurement
@@ -96,12 +102,17 @@ export const ViewportProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const tabletMq = window.matchMedia(
       `(min-width: ${PQ_MOBILE_MAX}px) and (max-width: ${PQ_TABLET_MAX - 1}px)`
     );
+    const composerMq = window.matchMedia(
+      `(min-width: ${PQ_COMPOSER_SPLIT_MIN}px)`
+    );
     apply();
     mobileMq.addEventListener('change', apply);
     tabletMq.addEventListener('change', apply);
+    composerMq.addEventListener('change', apply);
     return () => {
       mobileMq.removeEventListener('change', apply);
       tabletMq.removeEventListener('change', apply);
+      composerMq.removeEventListener('change', apply);
     };
   }, []);
 

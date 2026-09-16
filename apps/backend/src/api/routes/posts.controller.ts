@@ -121,7 +121,7 @@ export class PostsController {
 
   @Get('/find-slot')
   async findSlot(@GetOrgFromRequest() org: Organization) {
-    return { date: await this._postsService.findFreeDateTime(org.id) };
+    return { date: await this._postsService.findSoonDateTime(org.id) };
   }
 
   @Get('/find-slot/:id')

@@ -1,16 +1,16 @@
 'use client';
 
 import useSWR from 'swr';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react';
 import { sortIntegrationsByProviderImportance } from '@gitroom/frontend/components/launches/helpers/sort.integrations';
 import clsx from 'clsx';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { RenderAnalytics } from '@gitroom/frontend/components/platform-analytics/render.analytics';
+import { WorkspaceAnalytics } from '@gitroom/frontend/components/platform-analytics/workspace.analytics';
 import { useRouter } from 'next/navigation';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { useVariables } from '@gitroom/react/helpers/variable.context';
 import useCookie from 'react-use-cookie';
 import {
   AnalyticsCardsGhost,
@@ -18,35 +18,46 @@ import {
 } from '@gitroom/frontend/components/layout/loading';
 import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
 import { TwoColumnDetailDrawer } from '@gitroom/frontend/components/layout/two-column-detail-drawer';
+import { MobileSheet } from '@gitroom/frontend/components/layout/mobile-sheet';
 import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import type { Integration } from '@gitroom/nestjs-libraries/database/prisma/generated/client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { ChannelsPageEmpty } from '@gitroom/frontend/components/ui/no-channels-art';
 import { channelListSubtitle, channelNameWithHandle } from '@gitroom/frontend/components/channels/channel-handle';
 
-// Providers that actually implement channel `analytics()`. LinkedIn personal,
-// Telegram, Bluesky, Reddit, Discord, Slack, Mastodon, Twitch, Kick,
-// WordPress, VK, Tumblr, and the rest have no insights API here — listing
-// them would only ever paint an empty pane (or, worse, a reconnect prompt).
-const allowedIntegrations = [
-  'facebook',
-  'instagram',
-  'instagram-standalone',
-  'linkedin-page',
-  'tiktok',
-  'tiktok-business',
-  'youtube',
-  'gmb',
-  'pinterest',
-  'threads',
-  'x',
-];
+const ALL_CHANNELS = '__all__';
+
+const AllChannelsMosaic: FC<{
+  integrations: Array<{ id: string; identifier: string }>;
+}> = ({ integrations }) => {
+  const shown = integrations.slice(0, 4);
+  const extra = Math.max(0, integrations.length - 4);
+  return (
+    <span
+      data-pq="all-channels-mosaic"
+      className="relative grid size-[32px] shrink-0 grid-cols-2 grid-rows-2 gap-[1px] overflow-hidden rounded-[8px] bg-pqSettings p-[1px]"
+    >
+      {shown.map((integration) => (
+        <img
+          key={integration.id}
+          src={`/icons/platforms/${integration.identifier}.png`}
+          alt=""
+          className="size-full object-cover"
+        />
+      ))}
+      {extra > 0 && (
+        <span className="absolute bottom-0 end-0 rounded-pqSm bg-pqInner px-[3px] text-[8px] font-[700] leading-[14px] text-pqText shadow-[inset_0_0_0_1px_var(--border)]">
+          +{extra}
+        </span>
+      )}
+    </span>
+  );
+};
 
 export const PlatformAnalytics = () => {
   const fetch = useFetch();
   const t = useT();
   const router = useRouter();
-  const { disableXAnalytics } = useVariables();
   const { mobile, tablet, touch } = useViewport();
 
   const [selected, setSelected] = useState('');
@@ -55,10 +66,16 @@ export const PlatformAnalytics = () => {
   const channelsCollapsed = !mobile && collapseMenu === '1';
   const autoCollapsed = useRef(false);
   const rowRef = useRef<HTMLDivElement>(null);
-  // Phone: list full-bleed; detail is a drawer. Auto-select must not open it.
+  // Phone: the dashboard is the page. The channel picker is a sheet.
   const [detailOpen, setDetailOpen] = useState(false);
+  const [channelSheetOpen, setChannelSheetOpen] = useState(false);
   const toaster = useToaster();
 
+  const selectChannel = useCallback((id: string) => {
+    setSelected(id);
+    setDetailOpen(true);
+    setChannelSheetOpen(false);
+  }, []);
   const closeDetail = useCallback(() => setDetailOpen(false), []);
 
   const load = useCallback(async () => {
@@ -75,14 +92,10 @@ export const PlatformAnalytics = () => {
     const integrations = Array.isArray(body?.integrations)
       ? body.integrations
       : [];
-    const int = integrations.filter((f: any) => {
-      if (f.identifier === 'x' && disableXAnalytics) {
-        return false;
-      }
-      return true;
-    });
-    return int.filter((f: any) => allowedIntegrations.includes(f.identifier));
-  }, [fetch, disableXAnalytics]);
+    return integrations.filter((integration: { analytics?: boolean }) =>
+      Boolean(integration.analytics)
+    );
+  }, [fetch]);
 
   const { data, isLoading, error, mutate } = useSWR('analytics-list', load, {
     revalidateOnFocus: false,
@@ -125,20 +138,33 @@ export const PlatformAnalytics = () => {
         inBetweenSteps?: boolean;
         changeProfilePicture?: boolean;
         changeNickName?: boolean;
+        analytics?: boolean;
+        analyticsIntervals?: readonly number[];
+        postAnalytics?: boolean;
       }
     >;
   }, [data]);
 
-  // Auto-select first analytics channel when none (or stale id) is selected.
+  // Auto-select All channels when there is more than one reporting channel.
   useEffect(() => {
     if (!sortedIntegrations.length) return;
+    if (selected === ALL_CHANNELS && sortedIntegrations.length > 1) {
+      return;
+    }
     const stillThere = sortedIntegrations.some((i) => i.id === selected);
     if (!selected || !stillThere) {
-      setSelected(sortedIntegrations[0].id);
+      setSelected(
+        sortedIntegrations.length > 1
+          ? ALL_CHANNELS
+          : sortedIntegrations[0].id
+      );
     }
   }, [sortedIntegrations, selected]);
 
   const currentIntegration = useMemo(() => {
+    if (selected === ALL_CHANNELS) {
+      return undefined;
+    }
     return (
       sortedIntegrations.find((i) => i.id === selected) ||
       sortedIntegrations[0]
@@ -180,8 +206,13 @@ export const PlatformAnalytics = () => {
     (shouldReload: boolean) => {
       void mutate().then((fresh) => {
         if (!shouldReload || !fresh) return;
-        if (!fresh.some((d: { id: string }) => d.id === selected)) {
-          setSelected(fresh[0]?.id || '');
+        if (
+          selected !== ALL_CHANNELS &&
+          !fresh.some((d: { id: string }) => d.id === selected)
+        ) {
+          setSelected(
+            fresh.length > 1 ? ALL_CHANNELS : fresh[0]?.id || ''
+          );
         }
       });
     },
@@ -189,72 +220,33 @@ export const PlatformAnalytics = () => {
   );
 
   const options = useMemo(() => {
+    if (selected === ALL_CHANNELS) {
+      return [
+        { key: 7, value: t('7_days', '7 Days') },
+        { key: 30, value: t('30_days', '30 Days') },
+        { key: 90, value: t('90_days', '90 Days') },
+      ];
+    }
     if (!currentIntegration) {
       return [];
     }
-    const arr = [];
-    if (
-      [
-        'facebook',
-        'instagram',
-        'instagram-standalone',
-        'linkedin-page',
-        'pinterest',
-        'youtube',
-        'threads',
-        'gmb',
-        'x',
-        'tiktok',
-        'tiktok-business',
-      ].indexOf(currentIntegration.identifier) !== -1
-    ) {
-      arr.push({
-        key: 7,
-        value: t('7_days', '7 Days'),
-      });
-    }
-    if (
-      [
-        'facebook',
-        'instagram',
-        'instagram-standalone',
-        'linkedin-page',
-        'pinterest',
-        'youtube',
-        'threads',
-        'gmb',
-        'x',
-        'tiktok',
-        'tiktok-business',
-      ].indexOf(currentIntegration.identifier) !== -1
-    ) {
-      arr.push({
-        key: 30,
-        value: t('30_days', '30 Days'),
-      });
-    }
-    if (
-      ['facebook', 'linkedin-page', 'pinterest', 'youtube', 'x', 'gmb'].indexOf(
-        currentIntegration.identifier
-      ) !== -1
-    ) {
-      arr.push({
-        key: 90,
-        value: t('90_days', '90 Days'),
-      });
-    }
-    return arr;
-  }, [currentIntegration, t]);
+    return (currentIntegration.analyticsIntervals || []).map((interval) => ({
+      key: interval,
+      value:
+        interval === 7
+          ? t('7_days', '7 Days')
+          : interval === 30
+            ? t('30_days', '30 Days')
+            : t('90_days', '90 Days'),
+    }));
+  }, [currentIntegration, selected, t]);
 
   const keys = useMemo(() => {
-    if (!currentIntegration) {
-      return 7;
-    }
     if (options.find((p) => p.key === key)) {
       return key;
     }
-    return options[0]?.key;
-  }, [key, currentIntegration, options]);
+    return options[0]?.key || 7;
+  }, [key, options]);
 
   if (isLoading) {
     return <PageContentSkeleton detail={<AnalyticsCardsGhost />} />;
@@ -314,6 +306,208 @@ export const PlatformAnalytics = () => {
             </button>
           }
         />
+      </div>
+    );
+  }
+
+  const datePills = !!options.length && (
+    <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+      {options.map((option) => {
+        const active = keys === option.key;
+        const short =
+          option.key === 7
+            ? t('range_7d', '7d')
+            : option.key === 30
+            ? t('range_30d', '30d')
+            : t('range_90d', '90d');
+        return (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => setKey(option.key)}
+            className={clsx(
+              'rounded-[8px] px-[15px] text-[13.5px] transition-colors',
+              mobile ? 'h-[44px] min-h-[44px] flex-1' : 'h-[32px]',
+              active
+                ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
+                : 'font-[500] text-pqMuted hover:text-pqText'
+            )}
+          >
+            {short}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const analyticsBody = (
+    <>
+      {selected === ALL_CHANNELS && !!keys && (
+        <WorkspaceAnalytics date={keys} />
+      )}
+      {selected !== ALL_CHANNELS && !!currentIntegration && !!keys && (
+        <>
+          <RenderAnalytics integration={currentIntegration} date={keys} />
+          {currentIntegration.postAnalytics && (
+            <WorkspaceAnalytics
+              date={keys}
+              integrationIds={currentIntegration.id}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+
+  if (mobile) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col bg-pqInner">
+        <div className="flex shrink-0 flex-col gap-[10px] border-b border-pqLine px-[14px] py-[12px]">
+          <button
+            type="button"
+            onClick={() => setChannelSheetOpen(true)}
+            className="flex min-h-[44px] items-center gap-[10px] rounded-pqSm bg-pqSettings px-[10px] text-start"
+          >
+            {selected === ALL_CHANNELS ? (
+              <AllChannelsMosaic integrations={sortedIntegrations} />
+            ) : (
+              <span className="relative h-[32px] w-[32px] shrink-0">
+                <ImageWithFallback
+                  fallbackSrc={`/icons/platforms/${currentIntegration?.identifier}.png`}
+                  src={currentIntegration?.picture || '/no-picture.jpg'}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+                {currentIntegration && (
+                  <img
+                    src={`/icons/platforms/${currentIntegration.identifier}.png`}
+                    alt=""
+                    className="absolute -bottom-[2px] -end-[2px] h-[15px] w-[15px] rounded-full border border-pqInner"
+                  />
+                )}
+              </span>
+            )}
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-[600] text-pqText">
+                {selected === ALL_CHANNELS
+                  ? t('all_channels', 'All channels')
+                  : currentIntegration?.name || t('analytics', 'Analytics')}
+              </span>
+              <span className="block truncate text-[12px] text-pqMuted">
+                {t('choose_channel', 'Choose channel')}
+              </span>
+            </span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" className="shrink-0 text-pqSoft">
+              <path
+                d="M6 9l6 6 6-6"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          {datePills}
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto px-[14px] py-[16px] pb-[48px]">
+          {analyticsBody}
+        </div>
+        <MobileSheet
+          open={channelSheetOpen}
+          onClose={() => setChannelSheetOpen(false)}
+          title={t('channels', 'Channels')}
+        >
+          <div className="flex flex-col gap-[6px] pb-[8px]">
+            <button
+              type="button"
+              onClick={openAddChannel}
+              className="flex h-[44px] items-center justify-center gap-[7px] rounded-[9px] bg-pqSettings text-[12.5px] font-[600] text-pqText"
+            >
+              {t('add_channel', 'Add Channel')}
+            </button>
+            {sortedIntegrations.length > 1 && (
+              <button
+                type="button"
+                onClick={() => selectChannel(ALL_CHANNELS)}
+                className={clsx(
+                  'flex min-h-[44px] items-center gap-[10px] rounded-pqSm px-[9px] py-[10px] text-start',
+                  selected === ALL_CHANNELS ? 'bg-pqNavActive' : 'hover:bg-pqHover'
+                )}
+              >
+                <AllChannelsMosaic integrations={sortedIntegrations} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px]">
+                    {t('all_channels', 'All channels')}
+                  </span>
+                  <span className="block truncate text-[12px] text-pqMuted">
+                    {t('n_channels', '{count} channels').replace(
+                      '{count}',
+                      String(sortedIntegrations.length)
+                    )}
+                  </span>
+                </span>
+              </button>
+            )}
+            {sortedIntegrations.map((integration) => {
+              const isSelected = currentIntegration?.id === integration.id;
+              const needsRefresh =
+                !!integration.refreshNeeded || !!integration.inBetweenSteps;
+              return (
+                <button
+                  key={integration.id}
+                  type="button"
+                  onClick={() => {
+                    if (integration.refreshNeeded) {
+                      toaster.show(
+                        'Please refresh the integration from the calendar',
+                        'warning'
+                      );
+                      return;
+                    }
+                    selectChannel(integration.id);
+                  }}
+                  className={clsx(
+                    'flex items-center gap-[10px] rounded-pqSm px-[9px] py-[10px] text-start',
+                    isSelected ? 'bg-pqNavActive' : 'hover:bg-pqHover'
+                  )}
+                >
+                  <span className="relative h-[32px] w-[32px] shrink-0">
+                    <ImageWithFallback
+                      fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+                      src={integration.picture || '/no-picture.jpg'}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                    <img
+                      src={`/icons/platforms/${integration.identifier}.png`}
+                      alt=""
+                      className="absolute -bottom-[2px] -end-[2px] h-[15px] w-[15px] rounded-full border border-pqInner"
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14px]">
+                      {integration.name}
+                    </span>
+                    <span
+                      className={clsx(
+                        'block truncate text-[12px]',
+                        needsRefresh ? 'text-pqWarn' : 'text-pqMuted'
+                      )}
+                    >
+                      {needsRefresh
+                        ? t('needs_reconnect', 'Needs reconnect')
+                        : channelListSubtitle(integration)}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </MobileSheet>
       </div>
     );
   }
@@ -433,6 +627,33 @@ export const PlatformAnalytics = () => {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-[2px] overflow-y-auto overflow-x-hidden px-[8px] pb-[12px]">
+            {sortedIntegrations.length > 1 && (
+              <div
+                onClick={() => {
+                  selectChannel(ALL_CHANNELS);
+                }}
+                className={clsx(
+                  'relative flex min-h-[44px] cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:min-h-0 group-[.sidebar]:justify-center group-[.sidebar]:px-0',
+                  selected === ALL_CHANNELS ? 'bg-pqNavActive' : 'hover:bg-pqHover'
+                )}
+              >
+                <AllChannelsMosaic integrations={sortedIntegrations} />
+                <span
+                  data-crl="1"
+                  className="min-w-0 flex-1 group-[.sidebar]:hidden"
+                >
+                  <span className="block truncate text-[14px]">
+                    {t('all_channels', 'All channels')}
+                  </span>
+                  <span className="block truncate text-[12px] text-pqMuted">
+                    {t('n_channels', '{count} channels').replace(
+                      '{count}',
+                      String(sortedIntegrations.length)
+                    )}
+                  </span>
+                </span>
+              </div>
+            )}
             {sortedIntegrations.map((integration) => {
               const isSelected = currentIntegration?.id === integration.id;
               const needsRefresh =
@@ -451,6 +672,7 @@ export const PlatformAnalytics = () => {
                     }
                     setSelected(integration.id);
                     setDetailOpen(true);
+                    setChannelSheetOpen(false);
                   }}
                   className={clsx(
                     'relative flex cursor-pointer items-center gap-[10px] rounded-pqSm py-[7px] ps-[9px] pe-[6px] text-start transition-colors group-[.sidebar]:justify-center group-[.sidebar]:px-0',
@@ -528,11 +750,62 @@ export const PlatformAnalytics = () => {
       <TwoColumnDetailDrawer
         open={detailOpen}
         onClose={closeDetail}
-        label={currentIntegration?.name || t('analytics', 'Analytics')}
+        label={
+          selected === ALL_CHANNELS
+            ? t('all_channels', 'All channels')
+            : currentIntegration?.name || t('analytics', 'Analytics')
+        }
         anchorRef={rowRef}
         className="gap-[18px] bg-pqInner px-[26px] pb-[48px] pt-[22px]"
       >
-        {!!currentIntegration && !!options.length && (
+        {selected === ALL_CHANNELS && !!options.length && (
+          <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-[18px]">
+            <div className="flex flex-wrap items-center gap-[12px]">
+              <div className="min-w-0">
+                <div className="truncate font-display text-[20px] font-[600] -tracking-[0.02em] text-pqText">
+                  {t('all_channels', 'All channels')}
+                </div>
+                <div className="mt-[3px] text-[14px] text-pqMuted">
+                  {t(
+                    'analytics_lifetime_totals_hint',
+                    'Posts published in this period · current totals'
+                  )}
+                </div>
+              </div>
+              <div className="min-w-0 flex-1" />
+              <div className="flex shrink-0 items-center gap-[3px] rounded-pqSm bg-pqSettings p-[3px]">
+                {options.map((option) => {
+                  const active = keys === option.key;
+                  const short =
+                    option.key === 7
+                      ? t('range_7d', '7d')
+                      : option.key === 30
+                      ? t('range_30d', '30d')
+                      : t('range_90d', '90d');
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => setKey(option.key)}
+                      className={clsx(
+                        'h-[32px] rounded-[8px] px-[15px] text-[13.5px] transition-colors',
+                        active
+                          ? 'bg-pqInner font-[600] text-pqText shadow-[inset_0_0_0_1px_var(--border)]'
+                          : 'font-[500] text-pqMuted hover:text-pqText'
+                      )}
+                    >
+                      {short}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {!!keys && (
+              <WorkspaceAnalytics date={keys} />
+            )}
+          </div>
+        )}
+        {selected !== ALL_CHANNELS && !!currentIntegration && !!options.length && (
           <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-[18px]">
             <div className="flex flex-wrap items-center gap-[12px]">
               <span className="relative size-[44px] shrink-0">
@@ -597,7 +870,15 @@ export const PlatformAnalytics = () => {
                 subscription, forced a refetch of warm keys, and guaranteed the
                 ghost painted — it caused the flash it looked like it avoided. */}
             {!!keys && (
-              <RenderAnalytics integration={currentIntegration} date={keys} />
+              <>
+                <RenderAnalytics integration={currentIntegration} date={keys} />
+                {currentIntegration.postAnalytics && (
+                  <WorkspaceAnalytics
+                    date={keys}
+                    integrationIds={currentIntegration.id}
+                  />
+                )}
+              </>
             )}
           </div>
         )}

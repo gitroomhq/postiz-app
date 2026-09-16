@@ -36,6 +36,17 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
       } catch (err) {
         // Already running, as above.
       }
+
+      try {
+        await this._temporalService.client
+          ?.getRawClient()
+          ?.workflow?.start('analyticsSyncWorkflowV1', {
+            workflowId: 'analytics-sync-workflow-v1',
+            taskQueue: 'main',
+          });
+      } catch (err) {
+        // Already running, as above.
+      }
     }
   }
 }

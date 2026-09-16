@@ -57,6 +57,7 @@ model Organization {
   plugs               Plugs[]
   post                Post[]               @relation("organization")
   submittedPost       Post[]               @relation("submittedForOrg")
+  postMetricSnapshots PostMetricSnapshot[]
   sets                Sets[]
   signatures          Signatures[]
   subscription        Subscription?
@@ -423,6 +424,7 @@ model Integration {
   orderItems            OrderItems[]
   plugs                 Plugs[]
   posts                 Post[]
+  postMetricSnapshots   PostMetricSnapshot[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
@@ -513,6 +515,7 @@ model Post {
   submittedForOrder          Orders?                   @relation(fields: [submittedForOrderId], references: [id])
   submittedForOrganization   Organization?             @relation("submittedForOrg", fields: [submittedForOrganizationId], references: [id])
   tags                       TagsPosts[]
+  postMetricSnapshots        PostMetricSnapshot[]
 
   @@index([group])
   @@index([deletedAt])
@@ -530,6 +533,33 @@ model Post {
   @@index([releaseURL])
   @@index([releaseId])
   @@index([integrationId])
+}
+
+/// Latest lifetime totals for a published post, captured once per UTC day.
+/// Request-path analytics reads this; workers write it. Null metric columns
+/// mean that provider does not fetch the field — never treat them as zero.
+model PostMetricSnapshot {
+  id             String   @id @default(cuid())
+  organizationId String
+  postId         String
+  integrationId  String
+  capturedAt     DateTime @default(now())
+  capturedDay    DateTime @db.Date
+  impressions    Int?
+  reactions      Int?
+  comments       Int?
+  shares         Int?
+  raw            Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  post           Post         @relation(fields: [postId], references: [id])
+  integration    Integration  @relation(fields: [integrationId], references: [id])
+
+  @@unique([postId, capturedDay])
+  @@index([organizationId, capturedAt])
+  @@index([integrationId])
+  @@index([postId])
 }
 
 model Notifications {

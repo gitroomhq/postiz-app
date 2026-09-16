@@ -25,12 +25,13 @@ describe('Media library thumbnails', () => {
     assert.match(source, /className="h-full w-full object-cover"/);
   });
 
-  it('lets the composer picker fill the phone sheet instead of a 264px cap', () => {
-    assert.match(source, /touch && 'h-full min-h-0'/);
-    assert.match(
-      source,
-      /touch\s*\?\s*'min-h-0 flex-1 overflow-y-auto scrollbar scrollbar-thumb-pqBorder scrollbar-track-pqInner'/,
-    );
-    assert.match(source, /max-h-\[min\(264px,28vh\)\]/);
+  it('lets the composer picker fill two full square rows instead of a 264px cap', () => {
+    assert.match(source, /MEDIA_LIBRARY_PICKER_HEIGHT = 'min\(760px, 86vh\)'/);
+    assert.match(source, /MEDIA_LIBRARY_TWO_ROW_MIN = 'min\(348px,42vh\)'/);
+    assert.match(source, /minHeight: MEDIA_LIBRARY_TWO_ROW_MIN/);
+    assert.match(source, /flex h-full min-h-0 w-full flex-col/);
+    assert.doesNotMatch(source, /max-h-\[min\(380px,48vh\)\]/);
+    assert.doesNotMatch(source, /max-h-\[min\(264px,28vh\)\]/);
+    assert.doesNotMatch(source, /visibleMedia\.length > 8/);
   });
 });

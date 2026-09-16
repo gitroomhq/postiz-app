@@ -45,12 +45,56 @@ describe('phone calendar and composer', () => {
 
   it('splits composer into Edit and Preview panes on phone and tablet', () => {
     assert.match(manage, /composerPane/);
-    assert.match(manage, /setComposerPane\('preview'\)/);
-    assert.match(manage, /touch \? 'flex-col' : 'flex-row'/);
+    assert.match(manage, /setComposerPane/);
+    assert.match(manage, /COMPOSER_SPLIT_MIN/);
+    assert.match(manage, /compactChrome \? 'flex-col' : 'flex-row gap-\[12px\] p-\[12px\]'/);
     assert.match(manage, /flex min-h-0 flex-1/);
-    assert.match(manage, /!touch &&/);
+    assert.match(manage, /pb-\[min\(34vh,260px\)\]/);
+    assert.match(manage, /snap-y snap-proximity/);
     assert.match(manage, /<ComposeAiAssistant \/>/);
     assert.doesNotMatch(manage, /max-h-\[340px\]/);
+  });
+
+  it('keeps when-to-post beside Add to calendar, not on the far left', () => {
+    assert.match(manage, /gap-\[12px\] p-\[12px\]/);
+    const dateIdx = manage.indexOf('<DatePicker');
+    const scheduleIdx = manage.lastIndexOf("schedule('schedule')");
+    assert.ok(dateIdx > 0 && scheduleIdx > dateIdx);
+    assert.match(manage, /shrink-0 pe-\[20px\]/);
+  });
+
+  it('lets desktop maximize the composer to the viewport', () => {
+    assert.match(manage, /ExpandIcon/);
+    assert.match(manage, /CollapseIcon/);
+    assert.match(manage, /t\('full_screen', 'Full screen'\)/);
+    assert.match(manage, /fixed inset-0 z-\[401\]/);
+  });
+
+  it('uses a three-step Write / Preview / Post flow on phone', () => {
+    assert.match(manage, /'schedule'/);
+    assert.match(manage, /phoneFlow/);
+    assert.match(manage, /t\('write', 'Write'\)/);
+    assert.match(manage, /t\('schedule', 'Schedule'\)/);
+    assert.match(manage, /data-pq="composer"/);
+  });
+
+  it('leaves the Schedule pane when the viewport is no longer a phone', () => {
+    assert.match(manage, /!phoneFlow && composerPane === 'schedule'/);
+    assert.match(manage, /setComposerPane\('edit'\)/);
+  });
+
+  it('returns to Write when schedule validation fails', () => {
+    assert.match(manage, /revealWriteForIssue/);
+    assert.match(manage, /focus\(item\.id, 'fix'\)/);
+    assert.match(manage, /revealWriteForIssue\('settings'\)/);
+    assert.match(manage, /revealWriteForIssue\('content'\)/);
+    assert.doesNotMatch(manage, /focus\(item\.id, 'preview'\)/);
+  });
+
+  it('does not mount two AI assistants on the phone Write step', () => {
+    assert.match(manage, /composerPane === 'schedule' && <ComposeAiAssistant \/>/);
+    const assistantCount = manage.match(/<ComposeAiAssistant \/>/g) || [];
+    assert.equal(assistantCount.length, 3);
   });
 
   it('keeps X/general preview photos inside a feed aspect frame', () => {
@@ -70,12 +114,13 @@ describe('phone calendar and composer', () => {
       'utf8',
     );
     assert.match(hop, /postHasPreview\(value\?\.\[0\]\)/);
+    assert.match(hop, /fix: revealChannel/);
+    assert.match(hop, /preview: revealChannel/);
   });
 
   it('keeps the composer footer from overlapping on phone and tablet', () => {
     assert.match(manage, /grid w-full grid-cols-2/);
     assert.match(manage, /t\('select_channels', 'Select channels'\)/);
-    assert.match(manage, /max-\[1179px\]:!ml-0 max-\[1179px\]:w-full max-\[1179px\]:!flex-none/);
     const tags = readFileSync(
       fileURLToPath(new URL('./tags.component.tsx', import.meta.url)),
       'utf8',
@@ -91,6 +136,7 @@ describe('phone calendar and composer', () => {
       'utf8',
     );
     assert.match(tags, /touch \? t\('tags', 'Tags'\)/);
+    assert.match(tags, /tagsToPostPayload/);
     assert.match(repeat, /touch \? \(\s*repeat \?/);
     assert.match(repeat, /aria-label=\{triggerLabel\}/);
     assert.match(editor, /flex min-w-0 flex-col gap-\[10px\] overflow-hidden border-t border-pqLine/);

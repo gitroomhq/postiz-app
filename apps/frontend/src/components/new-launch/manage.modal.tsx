@@ -37,23 +37,127 @@ import {
   SettingsIcon,
   ChevronDownIcon,
   CloseIcon,
+  ExpandIcon,
+  CollapseIcon,
   TrashIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
-import { useViewport } from '@gitroom/frontend/components/layout/use.viewport';
+import {
+  PQ_COMPOSER_SPLIT_MIN,
+  useViewport,
+} from '@gitroom/frontend/components/layout/use.viewport';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useClickOutside } from '@mantine/hooks';
 import { useAnchoredPopover } from '@gitroom/frontend/components/layout/use.anchored.popover';
 import { Spinner } from '@gitroom/react/ui/spinner';
 
+/** Side-by-side editor + preview once the viewport can hold a 420px preview. */
+export const COMPOSER_SPLIT_MIN = PQ_COMPOSER_SPLIT_MIN;
+
+export type ComposerPane = 'edit' | 'preview' | 'schedule';
+
+const hideChatbaseWhileComposerOpen = () => {
+  const mark = 'data-pq-cbh';
+  const hideEl = (el: HTMLElement) => {
+    if (el.getAttribute(mark) !== '1') {
+      el.setAttribute(mark, '1');
+    }
+    el.style.setProperty('display', 'none', 'important');
+    el.style.setProperty('visibility', 'hidden', 'important');
+    el.style.setProperty('pointer-events', 'none', 'important');
+    el.style.setProperty('opacity', '0', 'important');
+  };
+  const selector =
+    '#chatbase-bubble-button, #chatbase-bubble-window, [id^="chatbase-bubble"], [id*="chatbase"], iframe[src*="chatbase"]';
+  const hide = () => {
+    document.documentElement.setAttribute('data-pq-sheet', '1');
+    document.querySelectorAll<HTMLElement>(selector).forEach(hideEl);
+    document.querySelectorAll('iframe').forEach((el) => {
+      const style = window.getComputedStyle(el);
+      const src = el.getAttribute('src') || '';
+      if (
+        style.position === 'fixed' ||
+        src.includes('chatbase') ||
+        el.id.includes('chatbase')
+      ) {
+        hideEl(el);
+      }
+    });
+  };
+  hide();
+  const id = window.setInterval(hide, 1000);
+  return () => {
+    window.clearInterval(id);
+    document.documentElement.removeAttribute('data-pq-sheet');
+    document.querySelectorAll<HTMLElement>(`[${mark}]`).forEach((el) => {
+      el.removeAttribute(mark);
+      el.style.removeProperty('display');
+      el.style.removeProperty('visibility');
+      el.style.removeProperty('pointer-events');
+      el.style.removeProperty('opacity');
+    });
+  };
+};
+
+const ComposerStepTabs: FC<{
+  pane: ComposerPane;
+  phone: boolean;
+  onPane: (pane: ComposerPane) => void;
+}> = ({ pane, phone, onPane }) => {
+  const t = useT();
+  const steps = (
+    phone
+      ? [
+          ['edit', t('write', 'Write')],
+          ['preview', t('preview', 'Preview')],
+          ['schedule', t('schedule', 'Schedule')],
+        ]
+      : [
+          ['edit', t('edit', 'Edit')],
+          ['preview', t('preview', 'Preview')],
+        ]
+  ) as ReadonlyArray<readonly [ComposerPane, string]>;
+
+  return (
+    <div
+      role="tablist"
+      aria-label={t('create_post_title', 'Create Post')}
+      className={clsx(
+        'flex rounded-pqSm bg-pqSettings p-[2px]',
+        phone && 'w-full'
+      )}
+    >
+      {steps.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={pane === id}
+          onClick={() => onPane(id)}
+          className={clsx(
+            'h-[44px] min-w-[44px] flex-1 rounded-[6px] px-[10px] text-[12.5px] font-[600]',
+            pane === id ? 'bg-pqInner text-pqText shadow-pqE1' : 'text-pqSoft'
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
   const fetch = useFetch();
-  const { touch } = useViewport();
-  const [composerPane, setComposerPane] = useState<'edit' | 'preview'>('edit');
+  const { mobile, touch, splitComposer } = useViewport();
+  const compactChrome = !splitComposer;
+  const compactFooter = touch;
+  const phoneFlow = mobile;
+  const [composerPane, setComposerPane] = useState<ComposerPane>('edit');
+  const [maximized, setMaximized] = useState(false);
   const ref = useRef(null);
   const existingData = useExistingData();
   const [loading, setLoading] = useState(false);
@@ -117,6 +221,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       setHide(false);
     }
   }, [hide]);
+
+  useEffect(() => hideChatbaseWhileComposerOpen(), []);
+
+  // Schedule is a phone-only column. Leaving the mobile bucket while that
+  // pane is selected would hide both Edit and Preview with nothing to show.
+  useEffect(() => {
+    if (!phoneFlow && composerPane === 'schedule') {
+      setComposerPane('edit');
+    }
+  }, [phoneFlow, composerPane]);
 
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
@@ -314,7 +428,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       // Pull the local values to build the payload, but rely on the server
       // (`/posts/valid`) for the actual validation — checkValidity now lives
       // server-side so it can't be bypassed.
-      const allValues = await ref.current.getAllValues();
+      const allValues = await ref.current?.getAllValues?.();
+      if (!allValues) {
+        setLoading(false);
+        toaster.show(
+          t('something_went_wrong', 'Something went wrong'),
+          'warning'
+        );
+        return;
+      }
 
       const integrationById = (id: string) =>
         selectedIntegrations.find((p) => p.integration.id === id);
@@ -382,6 +504,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           integrationById(id)?.ref?.current?.[where]?.();
         };
 
+        // Phone submit lives on Schedule; tablet submit can be on Preview.
+        // Bounce back to Write so the toast has a visible surface to fix.
+        // Content errors must not call preview()/setCurrent — that switches
+        // off global editing and locks the editor behind "Edit content".
+        const revealWriteForIssue = (kind: 'settings' | 'content') => {
+          setComposerPane('edit');
+          setShowSettings(kind === 'settings');
+        };
+
         const notEnoughChars = checkAllValid.filter((p: any) => p.emptyContent);
 
         for (const item of notEnoughChars) {
@@ -394,7 +525,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             'warning'
           );
           setLoading(false);
-          focus(item.id, 'preview');
+          revealWriteForIssue('content');
           return;
         }
 
@@ -410,7 +541,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               );
               focus(item.id, 'fix');
               setLoading(false);
-              setShowSettings(true);
+              revealWriteForIssue('settings');
               return;
             }
 
@@ -419,9 +550,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 `${channelToastLabel(item)}: ${item.errors}`,
                 'warning'
               );
-              focus(item.id, 'preview');
               setLoading(false);
-              setShowSettings(false);
+              revealWriteForIssue('content');
               return;
             }
 
@@ -433,8 +563,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 )}`,
                 'warning'
               );
-              focus(item.id, 'preview');
               setLoading(false);
+              revealWriteForIssue('content');
               return;
             }
           }
@@ -618,69 +748,87 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className={clsx(
-      'relative flex h-full w-full flex-1',
-      touch ? 'p-0' : 'p-[40px]'
-    )}>
-      <div className="flex flex-1 flex-col overflow-hidden rounded-[20px] bg-pqInner shadow-pq mobile:rounded-none">
+    <div
+      id="add-edit-modal"
+      data-pq="composer"
+      data-pq-composer-max={maximized ? '1' : '0'}
+      className={clsx(
+        'relative flex h-full min-h-0 w-full flex-1',
+        maximized && !touch && 'fixed inset-0 z-[401] h-dvh w-screen'
+      )}
+    >
+      <div
+        className={clsx(
+          'flex min-h-0 flex-1 flex-col overflow-hidden shadow-pq',
+          touch
+            ? 'rounded-none bg-pqInner'
+            : maximized
+            ? 'rounded-none bg-pqBg'
+            : 'rounded-[20px] bg-pqBg'
+        )}
+      >
         <div
           className={clsx(
             'flex min-h-0 flex-1',
-            // Phone/tablet: Edit | Preview tabs. Preview fills leftover height.
-            touch ? 'flex-col' : 'flex-row'
+            compactChrome ? 'flex-col' : 'flex-row gap-[12px] p-[12px]'
           )}
         >
           <div
             className={clsx(
-              'flex min-h-0 flex-1 flex-col',
-              !touch && 'border-e border-pqBorder',
-              touch && composerPane !== 'edit' && 'hidden'
+              'flex min-h-0 flex-1 flex-col overflow-hidden',
+              !compactChrome &&
+                'rounded-[16px] bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]',
+              compactChrome && composerPane !== 'edit' && 'hidden'
             )}
           >
-            <div className="flex h-[65px] items-center gap-[12px] rounded-ss-[20px] border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none">
-              {existingData?.integration
-                ? t('edit_post_title', 'Edit Post')
-                : t('create_post_title', 'Create Post')}
-              <CreationMethodBadge
-                creationMethod={existingData?.posts?.[0]?.creationMethod}
-                size="sm"
-              />
-              {touch && (
-                <div className="ms-auto flex items-center gap-[8px]">
-                  <div className="flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
-                    <button
-                      type="button"
-                      onClick={() => setComposerPane('edit')}
-                      className={clsx(
-                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
-                        composerPane === 'edit'
-                          ? 'bg-pqInner text-pqText shadow-pqE1'
-                          : 'text-pqSoft'
-                      )}
-                    >
-                      {t('edit', 'Edit')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setComposerPane('preview')}
-                      className={clsx(
-                        'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
-                        composerPane === 'preview'
-                          ? 'bg-pqInner text-pqText shadow-pqE1'
-                          : 'text-pqSoft'
-                      )}
-                    >
-                      {t('preview', 'Preview')}
-                    </button>
-                  </div>
+            <div
+              className={clsx(
+                'flex shrink-0 flex-col border-b border-pqLine bg-pqInner text-pqText',
+                !compactChrome && 'rounded-ss-[16px]'
+              )}
+            >
+              <div
+                className={clsx(
+                  'flex items-center gap-[12px] px-[16px] font-display font-[600] -tracking-[0.015em]',
+                  phoneFlow ? 'h-[52px]' : 'h-[65px] px-[20px] text-[20px]'
+                )}
+              >
+                <div className="min-w-0 flex-1 truncate text-[17px] min-[1024px]:text-[20px]">
+                  {existingData?.integration
+                    ? t('edit_post_title', 'Edit Post')
+                    : t('create_post_title', 'Create Post')}
+                  <span className="ms-[8px] inline-flex align-middle">
+                    <CreationMethodBadge
+                      creationMethod={existingData?.posts?.[0]?.creationMethod}
+                      size="sm"
+                    />
+                  </span>
+                </div>
+                {compactChrome && !phoneFlow && (
+                  <ComposerStepTabs
+                    pane={composerPane === 'schedule' ? 'preview' : composerPane}
+                    phone={false}
+                    onPane={setComposerPane}
+                  />
+                )}
+                {compactChrome && (
                   <button
                     type="button"
                     onClick={askClose}
                     aria-label={t('close', 'Close')}
-                    className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                    className="grid size-[44px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
                   >
                     <CloseIcon size={16} />
                   </button>
+                )}
+              </div>
+              {phoneFlow && (
+                <div className="px-[12px] pb-[8px]">
+                  <ComposerStepTabs
+                    pane={composerPane}
+                    phone
+                    onPane={setComposerPane}
+                  />
                 </div>
               )}
             </div>
@@ -694,7 +842,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 >
                   <div className={clsx(
                     'flex w-full items-start gap-[16px]',
-                    touch && 'flex-col'
+                    compactChrome && 'flex-col'
                   )}>
                     <div className="flex min-w-0 flex-1 flex-col gap-[12px]">
                       <div className="flex items-center gap-[8px]">
@@ -786,89 +934,193 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
           <div
             className={clsx(
-              'flex flex-col',
-              touch
+              'flex min-h-0 flex-col overflow-hidden',
+              compactChrome
                 ? clsx(
-                    'w-full min-h-0 flex-1',
+                    'w-full flex-1',
                     composerPane !== 'preview' && 'hidden'
                   )
-                : 'w-[580px]'
+                : clsx(
+                    'rounded-[16px] bg-pqInner shadow-[inset_0_0_0_1px_var(--border)]',
+                    maximized ? 'w-[min(580px,42vw)]' : 'w-[580px]'
+                  )
             )}
           >
             <div
               className={clsx(
-                'flex h-[65px] items-center border-b border-pqLine bg-pqBg px-[20px] font-display text-[20px] font-[600] -tracking-[0.015em] text-pqText mobile:rounded-none',
-                !touch && 'rounded-se-[20px]'
+                'flex shrink-0 flex-col border-b border-pqLine bg-pqInner text-pqText',
+                !compactChrome && !maximized && 'rounded-se-[16px]'
               )}
             >
-              <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
-              {touch && (
-                <div className="me-[8px] flex gap-[4px] rounded-pqSm bg-pqSettings p-[2px]">
+              <div
+                className={clsx(
+                  'flex items-center gap-[8px] px-[16px] font-display font-[600] -tracking-[0.015em] min-[1024px]:px-[20px]',
+                  phoneFlow ? 'h-[52px] text-[17px]' : 'h-[65px] text-[20px]'
+                )}
+              >
+                <div className="min-w-0 flex-1 truncate">
+                  {t('post_preview', 'Post Preview')}
+                </div>
+                {compactChrome && !phoneFlow && (
+                  <ComposerStepTabs
+                    pane={composerPane === 'schedule' ? 'preview' : composerPane}
+                    phone={false}
+                    onPane={setComposerPane}
+                  />
+                )}
+                {!touch && (
                   <button
                     type="button"
-                    onClick={() => setComposerPane('edit')}
-                    className={clsx(
-                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
-                      composerPane === 'edit'
-                        ? 'bg-pqInner text-pqText shadow-pqE1'
-                        : 'text-pqSoft'
-                    )}
+                    onClick={() => setMaximized((v) => !v)}
+                    aria-label={
+                      maximized
+                        ? t('restore', 'Restore')
+                        : t('full_screen', 'Full screen')
+                    }
+                    className="grid size-[44px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
                   >
-                    {t('edit', 'Edit')}
+                    {maximized ? <CollapseIcon size={16} /> : <ExpandIcon size={16} />}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setComposerPane('preview')}
-                    className={clsx(
-                      'h-[44px] min-w-[44px] rounded-[6px] px-[12px] text-[12.5px] font-[600]',
-                      composerPane === 'preview'
-                        ? 'bg-pqInner text-pqText shadow-pqE1'
-                        : 'text-pqSoft'
-                    )}
-                  >
-                    {t('preview', 'Preview')}
-                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={askClose}
+                  aria-label={t('close', 'Close')}
+                  className="grid size-[44px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              </div>
+              {phoneFlow && (
+                <div className="px-[12px] pb-[8px]">
+                  <ComposerStepTabs
+                    pane={composerPane}
+                    phone
+                    onPane={setComposerPane}
+                  />
                 </div>
               )}
-              <button
-                type="button"
-                onClick={askClose}
-                aria-label={t('close', 'Close')}
-                className="grid size-[44px] place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
-              >
-                <CloseIcon size={16} />
-              </button>
             </div>
             <div className="relative min-h-0 flex-1">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
+                className="absolute top-0 p-[20px] pe-[8px] pb-[min(34vh,260px)] left-0 w-full h-full overflow-x-hidden overflow-y-scroll snap-y snap-proximity scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
             </div>
           </div>
+          {phoneFlow && (
+            <div
+              className={clsx(
+                'flex min-h-0 w-full flex-1 flex-col',
+                composerPane !== 'schedule' && 'hidden'
+              )}
+            >
+              <div className="flex h-[52px] shrink-0 items-center gap-[8px] border-b border-pqLine bg-pqBg px-[16px] font-display text-[17px] font-[600] text-pqText">
+                <div className="min-w-0 flex-1 truncate">
+                  {t('schedule', 'Schedule')}
+                </div>
+                <button
+                  type="button"
+                  onClick={askClose}
+                  aria-label={t('close', 'Close')}
+                  className="grid size-[44px] shrink-0 place-items-center rounded-[8px] text-pqSoft transition-colors hover:bg-pqHover hover:text-pqText"
+                >
+                  <CloseIcon size={16} />
+                </button>
+              </div>
+              <div className="px-[12px] pb-[8px]">
+                <ComposerStepTabs
+                  pane={composerPane}
+                  phone
+                  onPane={setComposerPane}
+                />
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col gap-[12px] overflow-y-auto px-[16px] py-[12px] scrollbar scrollbar-thumb-pqColColor scrollbar-track-pqInner">
+                <DatePicker onChange={setDate} date={date} className="!ml-0 w-full !flex-none" />
+                {!dummy && (
+                  <div className="w-full [&>*]:w-full">
+                    <TagsComponent
+                      name="tags"
+                      label={t('tags', 'Tags')}
+                      initial={tags}
+                      onChange={(e) => {
+                        setTags(e.target.value);
+                      }}
+                    />
+                  </div>
+                )}
+                {!dummy && (
+                  <div className="w-full [&>*]:w-full">
+                    <RepeatComponent repeat={repeater} onChange={setRepeater} />
+                  </div>
+                )}
+                {composerPane === 'schedule' && <ComposeAiAssistant />}
+                {existingData?.integration && (
+                  <button
+                    onClick={deletePost}
+                    className="flex cursor-pointer items-center gap-[8px] text-[15px] font-[600] text-pqWarn"
+                  >
+                    <TrashIcon />
+                    <div>{t('delete_post', 'Delete Post')}</div>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+        {phoneFlow && composerPane !== 'schedule' && (
+          <div className="flex min-w-0 shrink-0 gap-[8px] border-t border-pqBorder px-[16px] py-[12px] pb-[max(12px,env(safe-area-inset-bottom))]">
+            {composerPane === 'preview' && (
+              <button
+                type="button"
+                onClick={() => setComposerPane('edit')}
+                className="flex h-[44px] min-w-0 flex-1 items-center justify-center rounded-[10px] bg-btnSimple text-[14px] font-[600]"
+              >
+                {t('back', 'Back')}
+              </button>
+            )}
+            {composerPane === 'edit' && (
+              <div className="min-w-0 flex-1 [&>*]:w-full">
+                <ComposeAiAssistant />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() =>
+                setComposerPane(
+                  composerPane === 'edit' ? 'preview' : 'schedule'
+                )
+              }
+              className="btnSub flex h-[44px] min-w-0 flex-1 items-center justify-center rounded-[10px] bg-pqBrand px-[12px] text-[14px] font-[600] text-white"
+            >
+              {composerPane === 'edit'
+                ? t('preview', 'Preview')
+                : t('next', 'Next')}
+            </button>
+          </div>
+        )}
         <div
           className={clsx(
-            'flex min-w-0 select-none border-t border-pqBorder pb-[max(12px,env(safe-area-inset-bottom))]',
-            'max-[1179px]:flex-col max-[1179px]:gap-[10px] max-[1179px]:overflow-x-hidden max-[1179px]:px-[16px] max-[1179px]:py-[12px]',
-            touch
+            'flex min-w-0 select-none border-t border-pqBorder bg-pqInner pb-[max(12px,env(safe-area-inset-bottom))]',
+            phoneFlow && composerPane !== 'schedule' && 'hidden',
+            compactFooter
               ? 'flex-col gap-[10px] overflow-x-hidden px-[16px] py-[12px]'
               : 'min-h-[84px] items-center overflow-x-auto overflow-y-hidden py-[20px] scrollbar scrollbar-thumb-pqBorder scrollbar-track-transparent min-[1180px]:flex-row'
           )}
         >
+          {!phoneFlow && (
           <div
             className={clsx(
               'min-w-0 gap-[8px]',
-              'max-[1179px]:grid max-[1179px]:w-full max-[1179px]:grid-cols-2',
-              touch
+              compactFooter
                 ? 'grid w-full grid-cols-2'
-                : 'flex flex-1 items-center ps-[20px] min-[1180px]:flex'
+                : 'flex flex-1 items-center ps-[20px]'
             )}
           >
             {!dummy && (
-              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+              <div className={clsx('min-w-0', compactFooter && 'w-full [&>*]:w-full')}>
                 <TagsComponent
                   name="tags"
                   label={t('tags', 'Tags')}
@@ -881,20 +1133,21 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
 
             {!dummy && (
-              <div className={clsx('min-w-0', touch && 'w-full [&>*]:w-full')}>
+              <div className={clsx('min-w-0', compactFooter && 'w-full [&>*]:w-full')}>
                 <RepeatComponent repeat={repeater} onChange={setRepeater} />
               </div>
             )}
           </div>
+          )}
           <div
             className={clsx(
               'flex min-w-0 items-center justify-end gap-[8px]',
-              'max-[1179px]:w-full max-[1179px]:flex-col',
-              touch ? 'w-full flex-col' : 'shrink-0 pe-[20px]'
+              compactFooter ? 'w-full flex-col' : 'shrink-0 pe-[20px]',
+              phoneFlow && 'flex-row'
             )}
           >
-            <ComposeAiAssistant />
-            {existingData?.integration && (
+            {!phoneFlow && <ComposeAiAssistant />}
+            {!phoneFlow && existingData?.integration && (
               <button
                 onClick={deletePost}
                 className="cursor-pointer flex text-pqWarn gap-[8px] items-center text-[15px] font-[600]"
@@ -905,16 +1158,18 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                 <div>{t('delete_post', 'Delete Post')}</div>
               </button>
             )}
+            {!phoneFlow && (
             <DatePicker
               onChange={setDate}
               date={date}
               className="max-[1179px]:!ml-0 max-[1179px]:w-full max-[1179px]:!flex-none"
             />
+            )}
             <div
               className={clsx(
                 'flex min-w-0 items-center justify-end gap-[8px]',
-                'max-[1179px]:w-full',
-                touch && 'w-full'
+                compactFooter && 'w-full',
+                phoneFlow && 'min-w-0 flex-1'
               )}
             >
             {!addEditSets && (
@@ -994,6 +1249,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         ? t('select_channels', 'Select channels')
                         : dummy
                         ? t('create_output', 'Create output')
+                        : phoneFlow
+                        ? t('schedule', 'Schedule')
                         : !existingData?.integration
                         ? t('add_to_calendar', 'Add to calendar')
                         : existingData?.posts?.[0]?.state === 'DRAFT'

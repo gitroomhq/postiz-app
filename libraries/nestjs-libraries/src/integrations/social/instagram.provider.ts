@@ -1,16 +1,20 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapInstagramMediaInsights } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -29,6 +33,7 @@ export class InstagramProvider
   implements SocialProvider
 {
   identifier = 'instagram';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'Instagram\n(Facebook Business)';
   isBetweenSteps = true;
@@ -1267,5 +1272,39 @@ export class InstagramProvider
       console.error('Error fetching Instagram post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    token: string,
+    platformPostIds: string[],
+    type = 'graph.facebook.com'
+  ): Promise<NormalizedPostMetrics[]> {
+    const [accessToken] = token.split('___');
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const response = await this.fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${postId}/insights?metric=views,reach,saved,likes,comments,shares&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
+        const { data } = await (
+          response
+        ).json();
+        if (!data || data.length === 0) {
+          continue;
+        }
+        rows.push(mapInstagramMediaInsights(postId, data));
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching Instagram posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 }

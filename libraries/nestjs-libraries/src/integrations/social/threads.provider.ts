@@ -1,16 +1,20 @@
 import {
   AnalyticsData,
   AuthTokenDetails,
+  NormalizedPostMetrics,
   PendingCheckResponse,
   PostDetails,
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
+import { mapThreadsInsights } from '@gitroom/nestjs-libraries/integrations/social/post-metrics.map';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
+  RefreshToken,
   SocialAbstract,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { capitalize, chunk } from 'lodash';
@@ -21,6 +25,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
+  analyticsIntervals = [7, 30] as const;
   category = 'social' as const;
   name = 'Threads';
   isBetweenSteps = false;
@@ -876,6 +881,38 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       console.error('Error fetching Threads post analytics:', err);
       return [];
     }
+  }
+
+  async postsAnalytics(
+    integrationId: string,
+    accessToken: string,
+    platformPostIds: string[]
+  ): Promise<NormalizedPostMetrics[]> {
+    const rows: NormalizedPostMetrics[] = [];
+
+    for (const postId of platformPostIds) {
+      try {
+        const response = await this.fetch(
+          `https://graph.threads.net/v1.0/${postId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`,
+          {},
+          this.identifier
+        );
+        const { data } = await (
+          response
+        ).json();
+        if (!data || data.length === 0) {
+          continue;
+        }
+        rows.push(mapThreadsInsights(postId, data));
+      } catch (err) {
+        if (err instanceof RefreshToken || err instanceof Disconnect) {
+          throw err;
+        }
+        console.error('Error fetching Threads posts analytics:', err);
+      }
+    }
+
+    return rows;
   }
 
   // override async mention(

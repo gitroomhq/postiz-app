@@ -5,7 +5,7 @@ import {
   useLaunchStore,
 } from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import { ChannelAvatar } from '@gitroom/frontend/components/new-launch/channel.avatar';
 import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -164,7 +164,7 @@ export const SelectCurrent: FC = () => {
         <div
           ref={contentRef}
           className={clsx(
-            'flex w-full gap-[12px] overflow-x-auto ps-[6px] pe-[6px] pt-[6px] pb-[6px] -ms-[6px] -me-[6px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
+            'flex w-full gap-[16px] overflow-x-auto ps-[8px] pe-[10px] pt-[10px] pb-[8px] -ms-[8px] -me-[8px] scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             locked && 'pointer-events-none opacity-50'
           )}
         >
@@ -222,7 +222,7 @@ export const SelectCurrent: FC = () => {
                       e.stopPropagation();
                       void removeChannel(integration);
                     }}
-                    className="absolute -end-[5px] -top-[5px] z-[3] grid h-[18px] w-[18px] place-items-center rounded-full bg-pqPop text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqDanger hover:text-white hover:shadow-none"
+                    className="absolute -end-[7px] -top-[7px] z-[3] grid h-[18px] w-[18px] place-items-center rounded-full bg-pqPop text-pqMuted shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-pqDanger hover:text-white hover:shadow-none"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -246,33 +246,12 @@ export const SelectCurrent: FC = () => {
                     !isActive && 'grayscale opacity-70 group-hover:opacity-100'
                   )}
                 >
-                  <SafeImage
-                    src={integration.picture || '/no-picture.jpg'}
-                    className="min-h-[40px] min-w-[40px] rounded-[8px]"
-                    alt={integration.identifier}
-                    width={40}
-                    height={40}
-                    onError={(e) => {
-                      e.currentTarget.src = '/no-picture.jpg';
-                      e.currentTarget.srcset = '/no-picture.jpg';
-                    }}
+                  <ChannelAvatar
+                    integration={integration}
+                    size={40}
+                    rounded="lg"
+                    className="min-h-[40px] min-w-[40px]"
                   />
-                  {integration.identifier === 'youtube' ? (
-                    <img
-                      src="/icons/platforms/youtube.svg"
-                      className="absolute bottom-[2px] end-[2px] z-10 min-w-[14px]"
-                      width={14}
-                      alt=""
-                    />
-                  ) : (
-                    <SafeImage
-                      src={`/icons/platforms/${integration.identifier}.png`}
-                      className="absolute bottom-[2px] end-[2px] z-10 min-h-[14px] min-w-[14px] rounded-[3px]"
-                      alt={integration.identifier}
-                      width={14}
-                      height={14}
-                    />
-                  )}
                 </div>
               </div>
             );
@@ -283,11 +262,11 @@ export const SelectCurrent: FC = () => {
         className={clsx(
           hasScroll
             ? showHint
-              ? 'h-[86px]'
-              : 'h-[62px]'
+              ? 'h-[94px]'
+              : 'h-[70px]'
             : showHint
-            ? 'h-[78px]'
-            : 'h-[54px]'
+            ? 'h-[86px]'
+            : 'h-[62px]'
         )}
       />
     </>

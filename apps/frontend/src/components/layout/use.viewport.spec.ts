@@ -13,7 +13,8 @@ describe('ViewportProvider', () => {
     assert.match(source, /export const measureViewport/);
     assert.match(source, /matchMedia/);
     assert.match(source, /sameBucket/);
-    assert.match(source, /mobileMq\.addEventListener\('change'/);
+    assert.match(source, /splitComposer/);
+    assert.match(source, /PQ_COMPOSER_SPLIT_MIN/);
     assert.doesNotMatch(source, /addEventListener\('resize'/);
     assert.doesNotMatch(source, /setWidth\(window\.innerWidth\)/);
   });

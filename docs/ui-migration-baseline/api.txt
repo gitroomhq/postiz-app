@@ -1,6 +1,8 @@
 /analytics-${integration
 /analytics/${integration.id}
 /analytics/post/${postId}
+/analytics/posts
+/analytics/summary
 /announcements
 /announcements/${id}
 /api/teams
