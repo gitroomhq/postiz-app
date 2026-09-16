@@ -84,13 +84,15 @@ export const startMcp = async (app: INestApplication) => {
   const backendUrl = process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Two RFC 8414 path-based issuers backed by the same endpoints and code.
-  // /mcp-oauth is what the ChatGPT app submission points at: it does not
-  // advertise a registration_endpoint, so the OpenAI builder defaults to the
-  // pre-defined client credentials instead of DCR. /mcp-oauth-dynamic keeps
-  // DCR for Claude, Cursor and every other self-registering client
+  // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
+  // not advertise a registration_endpoint, so the OpenAI builder defaults to
+  // the pre-defined client credentials instead of DCR (a fresh path, because
+  // OpenAI kept serving its cached copy of the old /mcp-oauth metadata).
+  // /mcp-oauth-dynamic keeps DCR for Claude, Cursor and every other
+  // self-registering client
   const authorizationServers: Record<string, { issuer: string; registration: boolean }> = {
-    '/mcp-oauth': {
-      issuer: new URL('/mcp-oauth', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+    '/mcp-oauth-chatgpt': {
+      issuer: new URL('/mcp-oauth-chatgpt', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
       registration: false,
     },
     '/mcp-oauth-dynamic': {
@@ -144,7 +146,9 @@ export const startMcp = async (app: INestApplication) => {
     { middleware: ReturnType<typeof createOAuthMiddleware>; mcpServer: MCPServer }
   > = {
     // ChatGPT app submission (pre-defined client credentials, no DCR)
-    '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth', '/mcp-oauth'), mcpServer: oauthServer },
+    '/mcp-oauth-chatgpt': { middleware: createResourceMiddleware('/mcp-oauth-chatgpt', '/mcp-oauth-chatgpt'), mcpServer: oauthServer },
+    // Former ChatGPT path, kept for connectors that were created against it
+    '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth', '/mcp-oauth-dynamic'), mcpServer: oauthServer },
     // Claude connector directory submission
     '/mcp-oauth-claude': { middleware: createResourceMiddleware('/mcp-oauth-claude', '/mcp-oauth-dynamic'), mcpServer: claudeOauthServer },
     // Clients that register themselves through DCR (/oauth/register) - not
