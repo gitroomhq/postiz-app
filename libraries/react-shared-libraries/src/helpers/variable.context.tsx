@@ -29,6 +29,7 @@ interface VariableContextInterface {
   language: string;
   dub: boolean;
   transloadit: string[];
+  mediaProcessing: boolean;
   sentryDsn: string;
   extensionId: string;
   googleAdsId?: string;
@@ -64,6 +65,7 @@ const VariableContext = createContext({
   language: '',
   dub: false,
   transloadit: [],
+  mediaProcessing: false,
   sentryDsn: '',
   extensionId: '',
   recaptchaSiteKey: '',

@@ -88,6 +88,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           googleAdsTrialTracking={process.env.NEXT_PUBLIC_TRACKING_TRIAL}
           language={language}
           recaptchaSiteKey={process.env.RECAPTCHA_SITE_KEY || ''}
+          mediaProcessing={
+            process.env.STORAGE_PROVIDER === 'cloudflare' &&
+            !!process.env.RUNPOD_API_KEY &&
+            !!process.env.RUNPOD_ENDPOINT_ID
+          }
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
               ? [

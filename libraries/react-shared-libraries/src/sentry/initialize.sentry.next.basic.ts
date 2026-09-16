@@ -49,7 +49,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       sendDefaultPii: true,
       ...extension,
       debug: environment === 'development',
-      tracesSampleRate: 1.0,
+      tracesSampleRate: 0.2,
 
       beforeSend(event, hint) {
         if (isWalletExtensionRejection(hint?.originalException)) {

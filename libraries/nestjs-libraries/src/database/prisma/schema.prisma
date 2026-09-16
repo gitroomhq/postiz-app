@@ -224,6 +224,8 @@ model Media {
   thumbnail          String?
   alt                String?
   thumbnailTimestamp Int?
+  status             String              @default("ready")
+  processingError    String?
   organization       Organization        @relation(fields: [organizationId], references: [id])
   agencies           SocialMediaAgency[]
   userPicture        User[]

@@ -128,9 +128,6 @@ importers:
       '@neynar/nodejs-sdk':
         specifier: ^3.112.0
         version: 3.137.0(@nestjs/microservices@11.1.21)(@nestjs/platform-express@11.1.21)(bufferutil@4.1.0)(class-transformer@0.5.1)(class-validator@0.14.4)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@neynar/react':
-        specifier: ^1.2.22
-        version: 1.2.22(@farcaster/miniapp-sdk@0.2.3(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(swr@2.4.1(react@19.2.4))(typescript@5.5.4)
       '@pigment-css/react':
         specifier: ^0.0.30
         version: 0.0.30(@types/react@19.1.8)(react@19.2.4)(typescript@5.5.4)
@@ -497,6 +494,9 @@ importers:
       posthog-js:
         specifier: ^1.178.0
         version: 1.359.1
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -708,6 +708,9 @@ importers:
       '@types/node-telegram-bot-api':
         specifier: ^0.64.7
         version: 0.64.14
+      '@types/qrcode':
+        specifier: ^1.5.5
+        version: 1.5.5
       '@types/react':
         specifier: 19.1.8
         version: 19.1.8
@@ -2671,17 +2674,6 @@ packages:
   '@expo/sudo-prompt@9.3.2':
     resolution: {integrity: sha512-HHQigo3rQWKMDzYDLkubN5WQOYXJJE2eNqIQC2axC2iO3mHdwnIR7FgZVvHWtBwAdzBgAP0ECp8KqS8TiMKvgw==}
 
-  '@farcaster/miniapp-core@0.5.1':
-    resolution: {integrity: sha512-5QFn9zTV8GHUqZF31X9iwq9tNlnoOgP/o0UXb+QmdNeJsWXrhUFBKYl+C7KQOhVw2xqWKhBSDgYIHOkSRua3vg==}
-
-  '@farcaster/miniapp-sdk@0.2.3':
-    resolution: {integrity: sha512-FwxqGcYCXw3HyGfDuchFUmQN9Gd49jTJs585zzQv6l1Oba6A/vVVCYohEG6QxRT6b/UrdemImpNMGTnqAZ3hKw==}
-
-  '@farcaster/quick-auth@0.0.6':
-    resolution: {integrity: sha512-tiZndhpfDtEhaKlkmS5cVDuS+A/tafqZT3y9I44rC69m3beJok6e8dIH2JhxVy3EvOWTyTBnrmNn6GOOh+qK6A==}
-    peerDependencies:
-      typescript: 5.8.3
-
   '@fastify/busboy@3.2.0':
     resolution: {integrity: sha512-m9FVDXU3GT2ITSe0UaMA5rU3QkfC/UXtCU8y0gSN/GugTqtVldOBWIB5V6V3sbmenVZUIpU6f+mPEO2+m5iTaA==}
 
@@ -3538,6 +3530,7 @@ packages:
   '@langchain/community@0.3.59':
     resolution: {integrity: sha512-lYoVFC9wArWMXaixDgIadTE22jk4ZYAvSHHmwaMRagkGr5f4kyqMeJ83UUeW76XPx2cBy2fRSO+acSgqSuWE6A==}
     engines: {node: '>=18'}
+    deprecated: This package has been deprecated. See https://github.com/langchain-ai/langchainjs-community/issues/61 for more info
     peerDependencies:
       '@arcjet/redact': ^v1.0.0-alpha.23
       '@aws-crypto/sha256-js': ^5.0.0
@@ -3918,6 +3911,7 @@ packages:
   '@langchain/community@1.1.27':
     resolution: {integrity: sha512-s2U3w7QV7QpkFtY1eZMni4poz+nKLFclpDi3a7hUbZ67ttsGaU9WkZ2BiLuzLIs+IFaUvON/KcGkE8EqAl9aPA==}
     engines: {node: '>=20'}
+    deprecated: This package has been deprecated. See https://github.com/langchain-ai/langchainjs-community/issues/61 for more info
     peerDependencies:
       '@arcjet/redact': ^v1.2.0
       '@aws-crypto/sha256-js': ^5.0.0
@@ -5064,14 +5058,6 @@ packages:
   '@neynar/nodejs-sdk@3.137.0':
     resolution: {integrity: sha512-VAqVg3O5An3E2izz3CYxh7gIz1t9PN3DP9CtDpu4uv8hpO2pjIDMIS55Z5Ef7dV1VwINCcubsQUcmv4un6bpfQ==}
     engines: {node: '>=19.9.0'}
-
-  '@neynar/react@1.2.22':
-    resolution: {integrity: sha512-HZWN1CvHQ8Hjg42hKZSM6JlnHG49f6UfAyCjTd2qGieAKvmrVOkQXJb48s48T1TmAi2ujMLvVadgst03VTkH7g==}
-    peerDependencies:
-      '@farcaster/miniapp-sdk': '>=0.1.6 <1.0.0'
-      react: 19.2.4
-      react-dom: 19.2.4
-      swr: ^2.3.2
 
   '@ngraveio/bc-ur@1.1.13':
     resolution: {integrity: sha512-j73akJMV4+vLR2yQ4AphPIT5HZmxVjn/LxpL7YHoINnXoH6ccc90Zzck6/n6a3bCXOVZwBxq+YHwbAKRV+P8Zg==}
@@ -8675,6 +8661,9 @@ packages:
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
+  '@types/qrcode@1.5.5':
+    resolution: {integrity: sha512-CdfBi/e3Qk+3Z/fXYShipBT13OJ2fDO2Q2w5CIP5anLTLIndQG9z6P1cnm+8zCWSpm5dnxMFd/uREtb0EXuQzg==}
+
   '@types/qs@6.15.0':
     resolution: {integrity: sha512-JawvT8iBVWpzTrz3EGw9BTQFg3BQNmwERdKE22vlTxawwtbyUSlMppvZYKLZzB5zgACXdXxbD3m1bXaMqP/9ow==}
 
@@ -8963,6 +8952,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
     resolution: {integrity: sha512-ppLRUgHVaGRWUx0R0Ut06Mjo9gBaBkg3v/8AxusGLhsIotbBLuRk51rAzqLC8gq6NyyAojEXglNjzf6R948DNw==}
@@ -9985,6 +9975,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   bcp-47-match@2.0.3:
     resolution: {integrity: sha512-JtTezzbAibu8G0R9op9zb3vcWZd9JF6M0xOYGPn0fNCd7wOpRB1mU2mH9T8gaBGbAAyIIVgB2G7xG0GP98zMAQ==}
@@ -10477,9 +10468,6 @@ packages:
   combined-stream@1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
     engines: {node: '>= 0.8'}
-
-  comlink@4.4.2:
-    resolution: {integrity: sha512-OxGdvBmJuNKSCMO4NTl1L47VRp6xn2wG4F/2hYzB6tiCb709otOxtEYCSvK80PtjODfXXZu8ds+Nw5kVCjqd2g==}
 
   comma-separated-tokens@1.0.8:
     resolution: {integrity: sha512-GHuDRO12Sypu2cV70d1dkA2EUmXHgntrzbpvOB+Qy+49ypNfGgFQIC2fhhXbnyrJRynDCAARsT7Ou0M6hirpfw==}
@@ -12407,9 +12395,6 @@ packages:
 
   highlightjs-vue@1.0.0:
     resolution: {integrity: sha512-PDEfEF102G23vHmPhLyPboFCD+BkMGu+GuJe2d9/eH4FsCwvgBpnc9n0pGE+ffKdph38s6foEZiEjdgHdzp+IA==}
-
-  hls.js@1.6.15:
-    resolution: {integrity: sha512-E3a5VwgXimGHwpRGV+WxRTKeSp2DW5DI5MWv34ulL3t5UNmyJWCQ1KmLEHbYzcfThfXG8amBL+fCYPneGHC4VA==}
 
   hmac-drbg@1.0.1:
     resolution: {integrity: sha512-Tti3gMqLdZfhOQY1Mzf/AanLiqh1WTiJgEj26ZuYQ9fbkLomzGchCws4FyrSd4VkpBfiNhaE1On+lOz894jvXg==}
@@ -14415,14 +14400,6 @@ packages:
     resolution: {integrity: sha512-bAxsR8BVfj60DWXHE3u30oHzfl4G7khkSuPW+qvpd7jFRHm7dLxOjUk1EHACJ/hxLY8phGJ0YhYHZo7jil7Qdg==}
     engines: {node: '>= 8'}
 
-  mipd@0.0.7:
-    resolution: {integrity: sha512-aAPZPNDQ3uMTdKbuO2YmAw2TxLHO0moa4YKAyETM/DTj5FloZo+a+8tU+iv4GmW+sOxKLSRwcSFuczk+Cpt6fg==}
-    peerDependencies:
-      typescript: '>=5.0.4'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   mixwith@0.1.1:
     resolution: {integrity: sha512-DQsf/liljH/9e+94jR+xfK8vlKceeKdOM9H9UEXLwGuvEEpO6debNtJ9yt1ZKzPKPrwqGxzMdu0BR1fnQb6i4A==}
 
@@ -14933,14 +14910,6 @@ packages:
 
   ox@0.14.0:
     resolution: {integrity: sha512-WLOB7IKnmI3Ol6RAqY7CJdZKl8QaI44LN91OGF1061YIeN6bL5IsFcdp7+oQShRyamE/8fW/CBRWhJAOzI35Dw==}
-    peerDependencies:
-      typescript: '>=5.4.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
-  ox@0.4.4:
-    resolution: {integrity: sha512-oJPEeCDs9iNiPs6J0rTx+Y0KGeCGyCAA3zo94yZhm8G5WpOxrwUtn2Ie/Y8IyARSqqY/j9JTKA3Fc1xs1DvFnw==}
     peerDependencies:
       typescript: '>=5.4.0'
     peerDependenciesMeta:
@@ -17363,6 +17332,7 @@ packages:
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
     engines: {node: ^18 || >=20}
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0
@@ -21151,37 +21121,6 @@ snapshots:
 
   '@expo/sudo-prompt@9.3.2': {}
 
-  '@farcaster/miniapp-core@0.5.1(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)':
-    dependencies:
-      '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      ox: 0.4.4(typescript@5.5.4)(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
-
-  '@farcaster/miniapp-sdk@0.2.3(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76)':
-    dependencies:
-      '@farcaster/miniapp-core': 0.5.1(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)
-      '@farcaster/quick-auth': 0.0.6(typescript@5.5.4)
-      comlink: 4.4.2
-      eventemitter3: 5.0.4
-      ox: 0.4.4(typescript@5.5.4)(zod@3.25.76)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@farcaster/quick-auth@0.0.6(typescript@5.5.4)':
-    dependencies:
-      jose: 5.10.0
-      typescript: 5.5.4
-      zod: 3.25.76
-
   '@fastify/busboy@3.2.0': {}
 
   '@fastify/otel@0.17.1(@opentelemetry/api@1.9.0)':
@@ -23284,17 +23223,6 @@ snapshots:
       - typescript
       - utf-8-validate
       - zod
-
-  '@neynar/react@1.2.22(@farcaster/miniapp-sdk@0.2.3(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(swr@2.4.1(react@19.2.4))(typescript@5.5.4)':
-    dependencies:
-      '@farcaster/miniapp-sdk': 0.2.3(bufferutil@4.1.0)(typescript@5.5.4)(utf-8-validate@5.0.10)(zod@3.25.76)
-      hls.js: 1.6.15
-      mipd: 0.0.7(typescript@5.5.4)
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
-      swr: 2.4.1(react@19.2.4)
-    transitivePeerDependencies:
-      - typescript
 
   '@ngraveio/bc-ur@1.1.13':
     dependencies:
@@ -27867,6 +27795,10 @@ snapshots:
 
   '@types/prop-types@15.7.15': {}
 
+  '@types/qrcode@1.5.5':
+    dependencies:
+      '@types/node': 18.16.9
+
   '@types/qs@6.15.0': {}
 
   '@types/range-parser@1.2.7': {}
@@ -30442,8 +30374,6 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
-  comlink@4.4.2: {}
-
   comma-separated-tokens@1.0.8: {}
 
   comma-separated-tokens@2.0.3: {}
@@ -32992,8 +32922,6 @@ snapshots:
   highlight.js@10.7.3: {}
 
   highlightjs-vue@1.0.0: {}
-
-  hls.js@1.6.15: {}
 
   hmac-drbg@1.0.1:
     dependencies:
@@ -35596,10 +35524,6 @@ snapshots:
       minipass: 3.3.6
       yallist: 4.0.0
 
-  mipd@0.0.7(typescript@5.5.4):
-    optionalDependencies:
-      typescript: 5.5.4
-
   mixwith@0.1.1: {}
 
   mkdirp@1.0.4: {}
@@ -36125,20 +36049,6 @@ snapshots:
       '@adraffy/ens-normalize': 1.11.1
       '@noble/ciphers': 1.3.0
       '@noble/curves': 1.9.1
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.5.4)(zod@3.25.76)
-      eventemitter3: 5.0.1
-    optionalDependencies:
-      typescript: 5.5.4
-    transitivePeerDependencies:
-      - zod
-
-  ox@0.4.4(typescript@5.5.4)(zod@3.25.76):
-    dependencies:
-      '@adraffy/ens-normalize': 1.11.1
-      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0

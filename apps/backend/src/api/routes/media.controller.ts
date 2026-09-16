@@ -159,7 +159,8 @@ export class MediaController {
     @Param('endpoint') endpoint: string
   ) {
     const upload = await handleR2Upload(endpoint, req, res);
-    if (endpoint !== 'complete-multipart-upload') {
+    // a rejected or failed completion has already answered with its own status
+    if (endpoint !== 'complete-multipart-upload' || res.headersSent) {
       return upload;
     }
 
@@ -167,7 +168,7 @@ export class MediaController {
     const name = upload.Location.split('/').pop();
     const originalName = req.body?.file?.name;
 
-    const saveFile = await this._mediaService.saveFile(
+    const saveFile = await this._mediaService.saveUploadedFile(
       org.id,
       name,
       // @ts-ignore
@@ -176,6 +177,14 @@ export class MediaController {
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
+  }
+
+  @Get('/:id/status')
+  getMediaStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._mediaService.getMediaStatus(org.id, id);
   }
 
   @Get('/')
