@@ -557,7 +557,14 @@ describe('IntegrationService.saveProviderPage', () => {
     inBetweenSteps: true,
     token: 'user-token',
   };
-
+  // A token refresh used to clear inBetweenSteps on a channel that never
+  // finished the picker; the account id left in internalId still tells.
+  const flipped = {
+    ...inBetween,
+    inBetweenSteps: false,
+    internalId: 'account-1',
+    rootInternalId: 'account-1',
+  };
   it('refuses a channel that does not exist', async () => {
     const { service, integrationRepository } = build();
     integrationRepository.getIntegrationById.mockResolvedValue(null);
@@ -572,6 +579,57 @@ describe('IntegrationService.saveProviderPage', () => {
     integrationRepository.getIntegrationById.mockResolvedValue({
       ...inBetween,
       inBetweenSteps: false,
+    } as never);
+
+    await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow('Invalid request');
+  });
+
+  it('still accepts a channel whose internalId is the account id', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(flipped as never);
+    integrationRepository.updateIntegration.mockResolvedValue({} as never);
+    integrationRepository.checkForDeletedOnceAndUpdate = vi.fn() as never;
+    integrationManager.getSocialIntegration.mockReturnValue({
+      isBetweenSteps: true,
+      fetchPageInformation: async () => ({
+        id: 'page-1',
+        name: 'The Page',
+        picture: 'https://pic.test',
+        access_token: 'page-token',
+        username: 'thepage',
+      }),
+    } as never);
+
+    await expect(service.saveProviderPage('org', 'i1', { page: 'page-1' })).resolves.toEqual({
+      success: true,
+    });
+    expect(integrationRepository.updateIntegration).toHaveBeenCalledWith(
+      'i1',
+      expect.objectContaining({ internalId: 'page-1', inBetweenSteps: false })
+    );
+  });
+
+  it('refuses that channel when the provider lets a page keep the account id', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue(flipped as never);
+    integrationManager.getSocialIntegration.mockReturnValue({
+      isBetweenSteps: true,
+      pageIdMayEqualRootId: true,
+      fetchPageInformation: async () => ({}),
+    } as never);
+
+    await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow('Invalid request');
+  });
+
+  it('refuses that channel when no account id was recorded', async () => {
+    const { service, integrationRepository, integrationManager } = build();
+    integrationRepository.getIntegrationById.mockResolvedValue({
+      ...flipped,
+      rootInternalId: null,
+    } as never);
+    integrationManager.getSocialIntegration.mockReturnValue({
+      isBetweenSteps: true,
+      fetchPageInformation: async () => ({}),
     } as never);
 
     await expect(service.saveProviderPage('org', 'i1', {})).rejects.toThrow('Invalid request');

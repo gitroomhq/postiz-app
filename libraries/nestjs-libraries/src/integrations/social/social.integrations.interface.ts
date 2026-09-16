@@ -206,6 +206,7 @@ export interface SocialProvider
   toolTip?: string;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
+  pageIdMayEqualRootId?: boolean;
   scopes: string[];
   externalUrl?: (
     url: string
