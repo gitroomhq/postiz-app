@@ -47,6 +47,9 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
+import dayjs from 'dayjs';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -58,7 +61,8 @@ export class PublicIntegrationsController {
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _adminStatsService: AdminStatsService
   ) {}
 
   @Post('/upload')
@@ -315,6 +319,44 @@ export class PublicIntegrationsController {
   ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._usersService.getImpersonateUser(name);
+  }
+
+  @Get('/debug/posts/:id')
+  async getPostTimeline(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const timeline = await this._postsService.getPostTimeline(id, org.id);
+
+    if (!timeline) {
+      throw new HttpException({ msg: 'Post not found' }, 404);
+    }
+
+    return timeline;
+  }
+
+  @Get('/debug/channels')
+  async getChannelHealth(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._integrationService.getChannelHealth(org.id);
+  }
+
+  @Get('/debug/activity')
+  async getOrgActivity(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetOrgActivityDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+
+    const from = query.from ? dayjs(query.from) : dayjs().subtract(30, 'day');
+    const to = query.to ? dayjs(query.to) : dayjs();
+
+    return this._adminStatsService.getOrgActivity({
+      organizationId: org.id,
+      from: from.startOf('day').toDate(),
+      to: to.endOf('day').toDate(),
+    });
   }
 
   @Get('/notifications')
