@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
@@ -152,6 +153,26 @@ class CloudflareStorage implements IUploadProvider {
       console.error('Error uploading file to Cloudflare R2:', err);
       throw err;
     }
+  }
+
+  async signDownloadUrl(fileName: string) {
+    return getSignedUrl(
+      this._client,
+      new GetObjectCommand({ Bucket: this._bucketName, Key: fileName }),
+      { expiresIn: 3 * 3600 }
+    );
+  }
+
+  async signUploadUrl(fileName: string, contentType: string) {
+    return getSignedUrl(
+      this._client,
+      new PutObjectCommand({
+        Bucket: this._bucketName,
+        Key: fileName,
+        ContentType: contentType,
+      }),
+      { expiresIn: 3 * 3600 }
+    );
   }
 
   // Implement the removeFile method from IUploadProvider

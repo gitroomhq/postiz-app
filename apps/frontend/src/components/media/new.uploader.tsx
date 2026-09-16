@@ -3,7 +3,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Uppy, { BasePlugin, UploadResult, UppyFile } from '@uppy/core';
 // @ts-ignore
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { getUppyUploadPlugin } from '@gitroom/react/helpers/uppy.upload';
+import {
+  getUppyUploadPlugin,
+  WaitForMediaProcessing,
+} from '@gitroom/react/helpers/uppy.upload';
 import { Dashboard, FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
@@ -44,8 +47,14 @@ export function useUppyUploader(props: {
 }) {
   const setLocked = useLaunchStore((state) => state.setLocked);
   const toast = useToaster();
-  const { storageProvider, backendUrl, disableImageCompression, transloadit } =
-    useVariables();
+  const t = useT();
+  const {
+    storageProvider,
+    backendUrl,
+    disableImageCompression,
+    transloadit,
+    mediaProcessing,
+  } = useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
   return useMemo(() => {
@@ -83,6 +92,10 @@ export function useUppyUploader(props: {
           }
           if (type === 'video/*') {
             return ['video/mp4', 'video/mpeg', 'video/quicktime'];
+          }
+          // the normalizer turns QuickTime into mp4, nothing else is accepted by the bucket
+          if (type === 'video/mp4' && mediaProcessing) {
+            return ['video/mp4', 'video/quicktime'];
           }
           if (type === 'video/mp4' && transloadit && transloadit.length > 0) {
             return ['video/mp4', 'video/mpeg', 'video/quicktime'];
@@ -167,15 +180,31 @@ export function useUppyUploader(props: {
       });
     });
 
+    // The normalizer takes precedence over Transloadit, so both can stay
+    // configured and turning the normalizer off falls back to Transloadit
+    const useTransloadit = !mediaProcessing && transloadit.length > 0;
     const { plugin, options } = getUppyUploadPlugin(
-      transloadit.length > 0 ? 'transloadit' : storageProvider,
+      useTransloadit ? 'transloadit' : storageProvider,
       fetch,
       backendUrl,
       transloadit
     );
 
     uppy2.use(plugin, options);
-    if (!disableImageCompression) {
+    // installed whenever the record can come back "processing", so the backend
+    // decides; it passes files through untouched when the row is already ready
+    if (storageProvider === 'cloudflare' && !useTransloadit) {
+      uppy2.use(WaitForMediaProcessing, {
+        fetch,
+        processingMessage: t('processing', 'Processing...'),
+        fallbackMessage: t(
+          'could_not_optimize_file',
+          'Could not optimize the file, the original will be used'
+        ),
+      });
+    }
+    // the normalizer resizes on the server, shrinking first would only make it upscale a blurry copy
+    if (!disableImageCompression && !mediaProcessing) {
       uppy2.use(CompressionWrapper, {
         convertTypes: ['image/jpeg', 'image/png', 'image/webp'],
         maxWidth: 1000,
@@ -222,7 +251,7 @@ export function useUppyUploader(props: {
         return;
       }
 
-      if (transloadit.length > 0) {
+      if (useTransloadit) {
         // @ts-ignore
         const allRes = result.transloadit[0].results;
         const toSave = uniqBy<{ name: string; originalName: string; order: number }>(

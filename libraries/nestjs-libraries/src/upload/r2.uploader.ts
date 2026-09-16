@@ -14,6 +14,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import path from 'path';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fileTypeFromBuffer } = require('file-type');
 
@@ -30,9 +31,18 @@ const ALLOWED_EXT_TO_MIME: Record<string, string> = {
   '.mp4': 'video/mp4',
 };
 
+// Multipart uploads go through the normalizer, so they may also carry
+// QuickTime, which it turns into an mp4; simple uploads never do
+function multipartExtToMime(): Record<string, string> {
+  return {
+    ...ALLOWED_EXT_TO_MIME,
+    ...(UploadFactory.processorEnabled() ? { '.mov': 'video/quicktime' } : {}),
+  };
+}
+
 function normalizeExtension(filename: string): string | null {
   const ext = path.extname(filename || '').toLowerCase();
-  return ALLOWED_EXT_TO_MIME[ext] ? ext : null;
+  return multipartExtToMime()[ext] ? ext : null;
 }
 
 const {
@@ -111,7 +121,7 @@ export async function createMultipartUpload(req: Request, res: Response) {
   if (!safeExt) {
     return res.status(400).json({ message: 'Unsupported file type.' });
   }
-  const safeContentType = ALLOWED_EXT_TO_MIME[safeExt];
+  const safeContentType = multipartExtToMime()[safeExt];
   const randomFilename = generateRandomString() + safeExt;
 
   try {
@@ -205,7 +215,7 @@ export async function completeMultipartUpload(req: Request, res: Response) {
       );
       return res.status(400).json({ message: 'Unsupported file type.' });
     }
-    const expectedMime = ALLOWED_EXT_TO_MIME[safeExt];
+    const expectedMime = multipartExtToMime()[safeExt];
 
     const head = await R2.send(
       new GetObjectCommand({
@@ -222,7 +232,10 @@ export async function completeMultipartUpload(req: Request, res: Response) {
     const prefix = Buffer.concat(chunks);
     const detected = await fileTypeFromBuffer(prefix);
 
-    if (!detected || detected.mime !== expectedMime) {
+    // a .mov with an ISO brand sniffs as video/mp4; the normalizer reads both
+    const acceptedMimes =
+      safeExt === '.mov' ? ['video/quicktime', 'video/mp4'] : [expectedMime];
+    if (!detected || !acceptedMimes.includes(detected.mime)) {
       await R2.send(
         new DeleteObjectCommand({ Bucket: CLOUDFLARE_BUCKETNAME, Key: key })
       );

@@ -167,7 +167,7 @@ export class MediaController {
     const name = upload.Location.split('/').pop();
     const originalName = req.body?.file?.name;
 
-    const saveFile = await this._mediaService.saveFile(
+    const saveFile = await this._mediaService.saveUploadedFile(
       org.id,
       name,
       // @ts-ignore
@@ -176,6 +176,14 @@ export class MediaController {
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
+  }
+
+  @Get('/:id/status')
+  getMediaStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._mediaService.getMediaStatus(org.id, id);
   }
 
   @Get('/')
