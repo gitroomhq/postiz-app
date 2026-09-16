@@ -67,7 +67,14 @@ export const initializeSentry = (appName: string) => {
           recordOutputs: true,
         }),
       ],
-      tracesSampleRate: 1.0,
+      tracesSampler: ({ name, attributes, normalizedRequest, inheritOrSampleWith }) => {
+        const path = String(
+          normalizedRequest?.url || attributes?.['http.target'] || attributes?.['url.path'] || name || ''
+        );
+        return inheritOrSampleWith(
+          path.includes('/public/v1/analytics/') ? 0.01 : 0.2
+        );
+      },
       enableLogs: true,
       beforeSendLog: (log: any) => {
         log.attributes = redactLogAttributes({

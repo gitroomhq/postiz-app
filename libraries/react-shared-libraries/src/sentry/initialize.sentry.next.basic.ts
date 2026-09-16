@@ -55,7 +55,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       enableLogs: true,
       ...restExtension,
       debug: environment === 'development',
-      tracesSampleRate: 1.0,
+      tracesSampleRate: 0.2,
 
       beforeSend(event: any, hint: any) {
         event.tags = { ...(event.tags || {}), service: 'frontend', component: 'nextjs' };
