@@ -186,6 +186,13 @@ export class OAuthService {
       .catch(() => {});
 
     const isPublicClient = dto.token_endpoint_auth_method === 'none';
+    // The token endpoint accepts the secret from either place; the stored
+    // method only mirrors back what the client asked for
+    const tokenEndpointAuthMethod = isPublicClient
+      ? 'none'
+      : dto.token_endpoint_auth_method === 'client_secret_basic'
+      ? 'client_secret_basic'
+      : 'client_secret_post';
     const clientId = 'pcd_' + makeId(32);
     const clientSecret = isPublicClient ? undefined : 'pcs_' + makeId(48);
 
@@ -195,7 +202,7 @@ export class OAuthService {
       redirectUris: JSON.stringify(redirectUris),
       clientId,
       clientSecret: clientSecret && AuthService.fixedEncryption(clientSecret),
-      tokenEndpointAuthMethod: isPublicClient ? 'none' : 'client_secret_post',
+      tokenEndpointAuthMethod,
     });
 
     return {
@@ -204,7 +211,7 @@ export class OAuthService {
       client_id_issued_at: Math.floor(app.createdAt.getTime() / 1000),
       client_name: app.name,
       redirect_uris: redirectUris,
-      token_endpoint_auth_method: isPublicClient ? 'none' : 'client_secret_post',
+      token_endpoint_auth_method: tokenEndpointAuthMethod,
       grant_types: ['authorization_code'],
       response_types: ['code'],
       scope: 'mcp:read mcp:write',
