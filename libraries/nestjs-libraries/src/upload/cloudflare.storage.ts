@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -175,14 +180,19 @@ class CloudflareStorage implements IUploadProvider {
     );
   }
 
-  // Implement the removeFile method from IUploadProvider
+  // Accepts either the public URL or the bare key
   async removeFile(filePath: string): Promise<void> {
-    // const fileName = filePath.split('/').pop(); // Extract the filename from the path
-    // const command = new DeleteObjectCommand({
-    //   Bucket: this._bucketName,
-    //   Key: fileName,
-    // });
-    // await this._client.send(command);
+    const fileName = filePath.split('/').pop();
+    if (!fileName) {
+      return;
+    }
+
+    await this._client.send(
+      new DeleteObjectCommand({
+        Bucket: this._bucketName,
+        Key: fileName,
+      })
+    );
   }
 }
 

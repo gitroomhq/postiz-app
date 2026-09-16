@@ -170,11 +170,12 @@ export class MediaService {
     return media;
   }
 
-  // The normalized file sits next to the original under a derived key, so the
-  // polling side needs nothing but the media record to know where it landed
+  // The normalized file overwrites the original in place; only a container
+  // change (mov -> mp4, jpeg -> jpg) lands under a new key. Either way the
+  // polling side needs nothing but the media record to know where it is
   private normalizedName(name: string) {
     const ext = extname(name).toLowerCase();
-    return `${name.slice(0, -ext.length)}-n.${PROCESSABLE[ext].ext}`;
+    return `${name.slice(0, -ext.length)}.${PROCESSABLE[ext].ext}`;
   }
 
   // Returns the processor job id; when this process has nothing to run the
@@ -278,6 +279,16 @@ export class MediaService {
       path: media.path.slice(0, media.path.lastIndexOf('/') + 1) + outputName,
       fileSize: result.output?.bytes,
     });
+
+    // a same-key output already replaced the original; a stray object after a
+    // container change is harmless, so a failed delete never fails the media
+    if (outputName !== media.name) {
+      try {
+        await this.storage.removeFile(media.name);
+      } catch (err) {
+        console.error(`Could not remove original media ${media.name}:`, err);
+      }
+    }
     return true;
   }
 
