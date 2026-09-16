@@ -165,7 +165,7 @@ export const startMcp = async (app: INestApplication) => {
       }),
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
-      token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+      token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post', 'none'],
       code_challenge_methods_supported: ['S256'],
       scopes_supported: oauthScopes,
     });
@@ -195,7 +195,7 @@ export const startMcp = async (app: INestApplication) => {
       userinfo_endpoint: `${process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/userinfo`,
       response_types_supported: ['code'],
       grant_types_supported: ['authorization_code'],
-      token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
+      token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post', 'none'],
       code_challenge_methods_supported: ['S256'],
       scopes_supported: oauthScopes,
       subject_types_supported: ['public'],
