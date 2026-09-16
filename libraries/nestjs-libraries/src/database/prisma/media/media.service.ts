@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { generationError } from '@gitroom/nestjs-libraries/openai/generation.error';
@@ -19,6 +19,11 @@ import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.sear
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { MediaProcessorJob } from '@gitroom/nestjs-libraries/upload/media.processor.interface';
 import { extname } from 'path';
+import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import {
+  getMaxSize,
+  uploadStreamToStorage,
+} from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
 
 // What every upload is normalized to before a provider ever sees it. The
 // service applies exactly these, so a platform-specific need belongs in the
@@ -53,7 +58,10 @@ const LIMITS: MediaProcessorJob['limits'] = {
 };
 // Extension of the normalized file and the content type the presigned PUT is
 // minted for; anything else (gif, avif, ...) is stored as uploaded
-const PROCESSABLE: Record<string, { type: 'video' | 'image'; ext: string; contentType: string }> = {
+const PROCESSABLE: Record<
+  string,
+  { type: 'video' | 'image'; ext: string; contentType: string }
+> = {
   '.mp4': { type: 'video', ext: 'mp4', contentType: 'video/mp4' },
   '.mov': { type: 'video', ext: 'mp4', contentType: 'video/mp4' },
   '.jpg': { type: 'image', ext: 'jpg', contentType: 'image/jpeg' },
@@ -62,7 +70,14 @@ const PROCESSABLE: Record<string, { type: 'video' | 'image'; ext: string; conten
   '.webp': { type: 'image', ext: 'webp', contentType: 'image/webp' },
 };
 // Formats a post can carry without normalization; anything else only exists to be converted
-const USABLE_AS_IS = new Set(['.mp4', '.jpg', '.jpeg', '.png', '.webp', '.gif']);
+const USABLE_AS_IS = new Set([
+  '.mp4',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.gif',
+]);
 
 @Injectable()
 export class MediaService {
@@ -109,8 +124,55 @@ export class MediaService {
     }
   }
 
-  saveFile(org: string, fileName: string, filePath: string, originalName?: string) {
-    return this._mediaRepository.saveFile(org, fileName, filePath, originalName);
+  // Streams the remote body straight into storage: only the sniffing prefix
+  // and a few upload parts are ever in memory, so a 1 GB video does not cost
+  // 1 GB of heap
+  async uploadFromUrl(org: string, url: string) {
+    let response: globalThis.Response;
+    try {
+      response = await fetch(url, {
+        // @ts-ignore — undici option, not in lib.dom fetch types
+        dispatcher: ssrfSafeDispatcher,
+      });
+    } catch (err) {
+      // Network-level failure (DNS, connection refused, SSRF block, etc.) —
+      // fetch rejects rather than returning a non-ok response. Keep the real
+      // reason reachable for callers that want to surface it
+      throw new BadRequestException('Failed to fetch URL', { cause: err });
+    }
+    if (!response.ok || !response.body) {
+      throw new BadRequestException('Failed to fetch URL');
+    }
+
+    // Cheap early exit when the server declares the size; Content-Length may
+    // be absent or wrong, so the stream cap below is what really enforces it.
+    // The type isn't known yet (sniffed below), so this uses the largest cap
+    const declaredSize = Number(response.headers.get('content-length'));
+    if (declaredSize && declaredSize > getMaxSize('video/mp4')) {
+      await response.body.cancel();
+      throw new BadRequestException('File is too large.');
+    }
+
+    const uploaded = await uploadStreamToStorage(
+      this.storage,
+      response.body,
+      declaredSize
+    );
+    return this.saveFile(org, uploaded.originalname, uploaded.path);
+  }
+
+  saveFile(
+    org: string,
+    fileName: string,
+    filePath: string,
+    originalName?: string
+  ) {
+    return this._mediaRepository.saveFile(
+      org,
+      fileName,
+      filePath,
+      originalName
+    );
   }
 
   // Saves an upload and, when a normalizer is configured, hands it to the
@@ -123,7 +185,11 @@ export class MediaService {
   ) {
     const media = await this.saveFile(org, fileName, filePath, originalName);
     const client = this._temporalService.client.getRawClient();
-    if (!this.processor || !PROCESSABLE[extname(fileName).toLowerCase()] || !client) {
+    if (
+      !this.processor ||
+      !PROCESSABLE[extname(fileName).toLowerCase()] ||
+      !client
+    ) {
       return media;
     }
 
@@ -205,7 +271,10 @@ export class MediaService {
       reference: media.id,
       source: { url: await this.storage.signDownloadUrl(media.name) },
       output: {
-        url: await this.storage.signUploadUrl(outputName, processable.contentType),
+        url: await this.storage.signUploadUrl(
+          outputName,
+          processable.contentType
+        ),
         content_type: processable.contentType,
       },
       rules: processable.type === 'video' ? VIDEO_RULES : IMAGE_RULES,
@@ -247,9 +316,15 @@ export class MediaService {
     }
 
     const { result } = job;
-    if (!result || !['completed', 'unchanged', 'failed'].includes(result.status)) {
+    if (
+      !result ||
+      !['completed', 'unchanged', 'failed'].includes(result.status)
+    ) {
       await this._mediaRepository.finishProcessing(org, mediaId, {
-        error: `Unexpected processor result: ${JSON.stringify(result).slice(0, 500)}`,
+        error: `Unexpected processor result: ${JSON.stringify(result).slice(
+          0,
+          500
+        )}`,
       });
       return true;
     }
@@ -258,7 +333,9 @@ export class MediaService {
       // the stderr tail is the only way to know what ffmpeg objected to
       await this._mediaRepository.finishProcessing(org, mediaId, {
         error: [
-          `${result.failure?.code || 'FAILED'}: ${result.failure?.message || ''}`,
+          `${result.failure?.code || 'FAILED'}: ${
+            result.failure?.message || ''
+          }`,
           result.failure?.stderr_tail,
         ]
           .filter(Boolean)
@@ -298,9 +375,13 @@ export class MediaService {
       return;
     }
 
-    return this._mediaRepository.finishProcessing(media.organizationId, mediaId, {
-      error,
-    });
+    return this._mediaRepository.finishProcessing(
+      media.organizationId,
+      mediaId,
+      {
+        error,
+      }
+    );
   }
 
   getMedia(org: string, page: number, search?: string) {
