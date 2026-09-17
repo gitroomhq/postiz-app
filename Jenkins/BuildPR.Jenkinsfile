@@ -20,7 +20,7 @@ pipeline {
             }
         }
 
-        // Stage 2: Setup Node.js v20, install pnpm, and install required tools (curl, unzip)
+        // Stage 2: Setup Node.js v22, install pnpm, and install required tools (curl, unzip)
         stage('Setup Environment and Tools') {
             steps {
                 sh '''
@@ -28,13 +28,13 @@ pipeline {
                     sudo apt-get update
                     sudo apt-get install -y curl unzip nodejs
                     
-                    # 1. Install Node.js v20 (closest matching the specified version '20.17.0')
-                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                    # 1. Install the Node.js version required by package.json
+                    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
                     sudo apt-get install -y nodejs
                     echo "Node.js version: \$(node -v)"
                     
-                    # 2. Install pnpm globally (version 8)
-                    npm install -g pnpm@8
+                    # 2. Install the package manager version required by package.json
+                    npm install -g pnpm@10.6.1
                     echo "pnpm version: \$(pnpm -v)"
                 '''
             }
