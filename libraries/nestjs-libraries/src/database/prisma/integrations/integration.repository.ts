@@ -2,7 +2,7 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, Prisma } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -557,6 +557,136 @@ export class IntegrationRepository {
       include: {
         customer: true,
       },
+    });
+  }
+
+  private async latestPostsFor(
+    org: string,
+    state: 'PUBLISHED' | 'ERROR',
+    field: 'publishDate' | 'updatedAt',
+    groups: { integrationId: string; date: Date | null }[]
+  ) {
+    const matches = groups.filter((group) => group.date);
+
+    if (!matches.length) {
+      return [];
+    }
+
+    return this._posts.model.post.findMany({
+      where: {
+        organizationId: org,
+        state,
+        deletedAt: null,
+        OR: matches.map(
+          (group) =>
+            ({
+              integrationId: group.integrationId,
+              [field]: group.date,
+            } as Prisma.PostWhereInput)
+        ),
+      },
+      select: {
+        id: true,
+        integrationId: true,
+        publishDate: true,
+        updatedAt: true,
+        releaseURL: true,
+        error: true,
+      },
+    });
+  }
+
+  async getChannelHealth(org: string) {
+    const [integrations, lastPublished, lastErrored] = await Promise.all([
+      this._integration.model.integration.findMany({
+        where: {
+          organizationId: org,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          id: true,
+          internalId: true,
+          name: true,
+          providerIdentifier: true,
+          type: true,
+          disabled: true,
+          refreshNeeded: true,
+          inBetweenSteps: true,
+          tokenExpiration: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'PUBLISHED',
+          deletedAt: null,
+        },
+        _max: { publishDate: true },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'ERROR',
+          deletedAt: null,
+        },
+        _max: { updatedAt: true },
+      }),
+    ]);
+
+    const [publishedPosts, erroredPosts] = await Promise.all([
+      this.latestPostsFor(
+        org,
+        'PUBLISHED',
+        'publishDate',
+        lastPublished.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.publishDate,
+        }))
+      ),
+      this.latestPostsFor(
+        org,
+        'ERROR',
+        'updatedAt',
+        lastErrored.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.updatedAt,
+        }))
+      ),
+    ]);
+
+    const publishedByIntegration = new Map(
+      publishedPosts.map((post) => [post.integrationId, post])
+    );
+    const erroredByIntegration = new Map(
+      erroredPosts.map((post) => [post.integrationId, post])
+    );
+
+    return integrations.map((integration) => {
+      const published = publishedByIntegration.get(integration.id);
+      const errored = erroredByIntegration.get(integration.id);
+
+      return {
+        ...integration,
+        lastPublishedAt: published?.publishDate || null,
+        lastPublishedPostId: published?.id || null,
+        lastPublishedUrl: published?.releaseURL || null,
+        lastErrorAt: errored?.updatedAt || null,
+        lastErrorPostId: errored?.id || null,
+        lastError: errored?.error || null,
+      };
     });
   }
 

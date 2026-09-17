@@ -750,6 +750,59 @@ export class PostsRepository {
     });
   }
 
+  private get postTimelineSelect() {
+    return {
+      id: true,
+      state: true,
+      publishDate: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      releaseId: true,
+      releaseURL: true,
+      error: true,
+      creationMethod: true,
+      group: true,
+      parentPostId: true,
+    } as const;
+  }
+
+  getPostTimeline(id: string, org: string) {
+    return this._post.model.post.findFirst({
+      where: {
+        id,
+        organizationId: org,
+      },
+      select: {
+        ...this.postTimelineSelect,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            disabled: true,
+            refreshNeeded: true,
+            deletedAt: true,
+          },
+        },
+        childrenPost: {
+          select: this.postTimelineSelect,
+          orderBy: { publishDate: 'asc' as const },
+        },
+        errors: {
+          select: {
+            id: true,
+            platform: true,
+            message: true,
+            body: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+      },
+    });
+  }
+
   findAllExistingCategories() {
     return this._popularPosts.model.popularPosts.findMany({
       select: {
