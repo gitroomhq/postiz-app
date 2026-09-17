@@ -68,7 +68,7 @@ export class PublicAuthMiddleware implements NestMiddleware {
       if (overrideOrgId) {
         if (
           isOAuthApp ||
-          !(await this._organizationService.hasSuperAdminUser(org.id))
+          !(await this._organizationService.canUseSuperAdminApi(org.id))
         ) {
           res.status(HttpStatus.FORBIDDEN).json({ msg: 'Unauthorized' });
           return;
