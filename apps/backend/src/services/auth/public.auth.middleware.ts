@@ -29,8 +29,12 @@ export class PublicAuthMiddleware implements NestMiddleware {
     }
     try {
       let org: Organization & { subscription?: unknown };
+      const isOAuthApp = auth.startsWith('pos_');
 
-      if (auth.startsWith('pos_')) {
+      // @ts-ignore
+      req.isOAuthApp = isOAuthApp;
+
+      if (isOAuthApp) {
         const authorization = await this._oauthService.getOrgByOAuthToken(auth);
         if (!authorization) {
           res
@@ -62,7 +66,10 @@ export class PublicAuthMiddleware implements NestMiddleware {
       const overrideOrgId = (req.headers['x-postiz-org'] as string)?.trim();
 
       if (overrideOrgId) {
-        if (!(await this._organizationService.hasSuperAdminUser(org.id))) {
+        if (
+          isOAuthApp ||
+          !(await this._organizationService.hasSuperAdminUser(org.id))
+        ) {
           res.status(HttpStatus.FORBIDDEN).json({ msg: 'Unauthorized' });
           return;
         }
