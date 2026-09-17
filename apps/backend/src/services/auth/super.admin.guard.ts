@@ -22,7 +22,7 @@ export class SuperAdminGuard implements CanActivate {
     if (
       !org ||
       isOAuthApp ||
-      !(await this._organizationService.hasSuperAdminUser(org.id))
+      !(await this._organizationService.canUseSuperAdminApi(org.id))
     ) {
       throw new HttpException({ msg: 'Unauthorized' }, 403);
     }

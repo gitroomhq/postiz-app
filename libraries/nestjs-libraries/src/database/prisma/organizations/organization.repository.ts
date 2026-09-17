@@ -87,6 +87,22 @@ export class OrganizationRepository {
     });
   }
 
+  getPrivilegedNonSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        role: {
+          in: [Role.SUPERADMIN, Role.ADMIN],
+        },
+        user: {
+          isSuperAdmin: false,
+          deletedAt: null,
+        },
+      },
+    });
+  }
+
   getUserOrg(id: string) {
     return this._userOrg.model.userOrganization.findFirst({
       where: {
