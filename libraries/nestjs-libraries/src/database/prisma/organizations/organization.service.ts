@@ -55,6 +55,10 @@ export class OrganizationService {
     return this._organizationRepository.getOrgByIdWithSubscription(id);
   }
 
+  getAccountOverview(orgId: string) {
+    return this._organizationRepository.getAccountOverview(orgId);
+  }
+
   getOrgByApiKey(api: string) {
     return this._organizationRepository.getOrgByApiKey(api);
   }

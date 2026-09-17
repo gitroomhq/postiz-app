@@ -48,6 +48,7 @@ import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guar
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
 import dayjs from 'dayjs';
 
@@ -62,7 +63,8 @@ export class PublicIntegrationsController {
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
     private _usersService: UsersService,
-    private _adminStatsService: AdminStatsService
+    private _adminStatsService: AdminStatsService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Post('/upload')
@@ -335,6 +337,19 @@ export class PublicIntegrationsController {
     }
 
     return timeline;
+  }
+
+  @Get('/debug/account')
+  @UseGuards(SuperAdminGuard)
+  async getAccountOverview(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count('public_api-request', 1);
+    const account = await this._organizationService.getAccountOverview(org.id);
+
+    if (!account) {
+      throw new HttpException({ msg: 'Organization not found' }, 404);
+    }
+
+    return account;
   }
 
   @Get('/debug/channels')

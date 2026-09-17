@@ -287,6 +287,98 @@ export class OrganizationRepository {
     });
   }
 
+  async getAccountOverview(orgId: string) {
+    const [organization, members] = await Promise.all([
+      this._organization.model.organization.findUnique({
+        where: {
+          id: orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          deletedAt: true,
+          allowTrial: true,
+          isTrailing: true,
+          subscription: {
+            select: {
+              subscriptionTier: true,
+              period: true,
+              identifier: true,
+              totalChannels: true,
+              isLifetime: true,
+              cancelAt: true,
+              createdAt: true,
+              updatedAt: true,
+              deletedAt: true,
+            },
+          },
+        },
+      }),
+      this._userOrg.model.userOrganization.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          role: true,
+          disabled: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              activated: true,
+              providerName: true,
+              lastOnline: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!organization) {
+      return null;
+    }
+
+    const owner = members.find((member) => member.role === Role.SUPERADMIN);
+    const lastOnlineMax = members.reduce<Date | null>(
+      (latest, member) =>
+        !latest || member.user.lastOnline > latest
+          ? member.user.lastOnline
+          : latest,
+      null
+    );
+
+    return {
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        createdAt: organization.createdAt,
+        deletedAt: organization.deletedAt,
+        allowTrial: organization.allowTrial,
+        isTrailing: organization.isTrailing,
+      },
+      subscription: organization.subscription || null,
+      owner: owner
+        ? {
+            ...owner.user,
+            role: owner.role,
+            memberSince: owner.createdAt,
+          }
+        : null,
+      users: {
+        total: members.length,
+        activated: members.filter((member) => member.user.activated).length,
+        disabled: members.filter((member) => member.disabled).length,
+        lastOnlineMax,
+      },
+    };
+  }
+
   getUsersByEmail(email: string) {
     return this._user.model.user.findMany({
       where: {
