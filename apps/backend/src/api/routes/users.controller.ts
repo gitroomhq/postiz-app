@@ -148,13 +148,18 @@ export class UsersController {
   @Get('/impersonate')
   async getImpersonate(
     @GetUserFromRequest() user: User,
-    @Query('name') name: string
+    @Query('name') name: string,
+    @Req() req: Request
   ) {
     if (!user.isSuperAdmin) {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._userService.getImpersonateUser(name, user.id);
+    // `user` is the impersonated account while impersonating, so the admin id comes from the token.
+    return this._userService.getImpersonateUser(
+      name,
+      this.getRequestUserId(req) || user.id
+    );
   }
 
   @Post('/impersonate')
