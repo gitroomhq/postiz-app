@@ -7,7 +7,10 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -22,7 +25,9 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import * as Sentry from '@sentry/nestjs';
+import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
 
 @ApiTags('Auth')
 @Controller('/auth')
@@ -213,8 +218,25 @@ export class AuthController {
   }
 
   @Get('/oauth/:provider')
-  async oauthLink(@Param('provider') provider: string, @Query() query: any) {
-    return this._authService.oauthLink(provider, query);
+  async oauthLink(
+    @Param('provider') provider: string,
+    @Query() query: any,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const state = `login-${makeId(16)}`;
+    response.cookie('oauth_state', state, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 10),
+    });
+
+    return this._authService.oauthLink(provider, { ...query, state });
   }
 
   @Post('/activate')
@@ -267,17 +289,71 @@ export class AuthController {
     }
   }
 
+  // public and creates a signer at Neynar per call, so cap it per client
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Post('/farcaster/signer')
+  async farcasterSigner() {
+    try {
+      return await new FarcasterProvider().createSigner();
+    } catch (err: any) {
+      return { error: err.message || 'Failed to create signer' };
+    }
+  }
+
+  // the modal polls every 2s for up to 10 minutes, so leave room for that
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 1000, ttl: 3600000 } })
+  @Get('/farcaster/signer')
+  async farcasterSignerStatus(@Query('signerUuid') signerUuid: string) {
+    try {
+      return await new FarcasterProvider().signerStatus(signerUuid);
+    } catch (err: any) {
+      return { error: err.message || 'Failed to check signer' };
+    }
+  }
+
+  @Post('/oauth/:provider/redirect')
+  oauthRedirect(
+    @Param('provider') provider: string,
+    @Body('code') code: string,
+    @Body('state') state: string,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    if (!code) {
+      return response.redirect(303, `${process.env.FRONTEND_URL}/auth/login`);
+    }
+
+    const params = new URLSearchParams();
+    params.set('code', code);
+    if (state) params.set('state', state);
+    params.set('provider', provider.toUpperCase());
+    return response.redirect(
+      303,
+      `${process.env.FRONTEND_URL}/auth?${params.toString()}`
+    );
+  }
+
   @Post('/oauth/:provider/exists')
   async oauthExists(
+    @Req() req: Request,
     @Body('code') code: string,
     @Body('redirect_uri') redirect_uri: string,
+    @Body('state') state: string,
     @Param('provider') provider: string,
     @Res({ passthrough: false }) response: Response
   ) {
+    // a cross-site form post can spoof any body field, a json body cannot
+    if (!req.headers['content-type']?.includes('application/json')) {
+      return response.status(400).send('Invalid request');
+    }
+
     const { jwt, token } = await this._authService.checkExists(
       provider,
       code,
-      redirect_uri
+      redirect_uri,
+      state,
+      req?.cookies?.oauth_state
     );
 
     if (token) {

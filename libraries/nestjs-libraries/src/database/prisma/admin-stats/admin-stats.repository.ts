@@ -23,6 +23,11 @@ export interface StatsResponse {
   errors: { total: number; perSocial: PerSocial[] };
   posts: { total: number; perSocial: PerSocial[] };
   connected: { total: number; perSocial: PerSocial[] };
+  publishingAccounts: { total: number; perSocial: PerSocial[] };
+  scheduledAccounts: { total: number; perSocial: PerSocial[] };
+  publishingChannels: { total: number; perSocial: PerSocial[] };
+  scheduledChannels: { total: number; perSocial: PerSocial[] };
+  activeOrgsBySource: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -113,6 +118,138 @@ export class AdminStatsRepository {
     };
   }
 
+  // Distinct organizations with at least one top-level post in the range,
+  // per provider and overall: "publishing" = already PUBLISHED, "scheduled" =
+  // QUEUE or PUBLISHED (a published post was scheduled for that day too).
+  // The totals are distinct across all providers combined, not a summation.
+  private async accountStats(params: StatsParams) {
+    const whereBase: Prisma.PostWhereInput = {
+      parentPostId: null,
+      deletedAt: null,
+      publishDate: { gte: params.from, lte: params.to },
+    };
+
+    const [publishedGroups, scheduledGroups] = await Promise.all([
+      this._post.model.post.groupBy({
+        by: ['organizationId', 'integrationId'],
+        where: { ...whereBase, state: 'PUBLISHED' },
+      }),
+      this._post.model.post.groupBy({
+        by: ['organizationId', 'integrationId'],
+        where: { ...whereBase, state: { in: ['QUEUE', 'PUBLISHED'] } },
+      }),
+    ]);
+
+    const integrationIds = [
+      ...new Set(
+        [...publishedGroups, ...scheduledGroups].map((g) => g.integrationId)
+      ),
+    ];
+    const integrations = integrationIds.length
+      ? await this._integration.model.integration.findMany({
+          where: { id: { in: integrationIds } },
+          select: { id: true, providerIdentifier: true },
+        })
+      : [];
+    const providerById = new Map(
+      integrations.map((i) => [i.id, i.providerIdentifier])
+    );
+
+    const distinctOrgs = (
+      groups: { organizationId: string; integrationId: string }[]
+    ) => {
+      const allOrgs = new Set<string>();
+      const orgsByProvider = new Map<string, Set<string>>();
+      for (const g of groups) {
+        const provider = providerById.get(g.integrationId) || 'unknown';
+        if (!orgsByProvider.has(provider)) {
+          orgsByProvider.set(provider, new Set());
+        }
+        orgsByProvider.get(provider)!.add(g.organizationId);
+        allOrgs.add(g.organizationId);
+      }
+      return {
+        total: allOrgs.size,
+        perSocial: sortDesc(
+          [...orgsByProvider.entries()].map(([provider, orgs]) => ({
+            provider,
+            count: orgs.size,
+          }))
+        ),
+      };
+    };
+
+    // Same idea per channel: distinct integrations regardless of which
+    // organization owns them (a user with two TikTok channels counts twice).
+    const distinctChannels = (
+      groups: { organizationId: string; integrationId: string }[]
+    ) => {
+      const allChannels = new Set<string>();
+      const channelsByProvider = new Map<string, Set<string>>();
+      for (const g of groups) {
+        const provider = providerById.get(g.integrationId) || 'unknown';
+        if (!channelsByProvider.has(provider)) {
+          channelsByProvider.set(provider, new Set());
+        }
+        channelsByProvider.get(provider)!.add(g.integrationId);
+        allChannels.add(g.integrationId);
+      }
+      return {
+        total: allChannels.size,
+        perSocial: sortDesc(
+          [...channelsByProvider.entries()].map(([provider, channels]) => ({
+            provider,
+            count: channels.size,
+          }))
+        ),
+      };
+    };
+
+    return {
+      publishingAccounts: distinctOrgs(publishedGroups),
+      scheduledAccounts: distinctOrgs(scheduledGroups),
+      publishingChannels: distinctChannels(publishedGroups),
+      scheduledChannels: distinctChannels(scheduledGroups),
+    };
+  }
+
+  // Distinct organizations with at least one top-level scheduled, published
+  // or failed post in the range, per creation source (web, API, MCP, ...).
+  // The total is distinct across all sources combined, not a summation.
+  private async sourceStats(params: StatsParams) {
+    const where: Prisma.PostWhereInput = {
+      parentPostId: null,
+      deletedAt: null,
+      publishDate: { gte: params.from, lte: params.to },
+      state: { in: ['QUEUE', 'PUBLISHED', 'ERROR'] },
+    };
+
+    const groups = await this._post.model.post.groupBy({
+      by: ['organizationId', 'creationMethod'],
+      where,
+    });
+
+    const allOrgs = new Set<string>();
+    const orgsBySource = new Map<string, Set<string>>();
+    for (const g of groups) {
+      if (!orgsBySource.has(g.creationMethod)) {
+        orgsBySource.set(g.creationMethod, new Set());
+      }
+      orgsBySource.get(g.creationMethod)!.add(g.organizationId);
+      allOrgs.add(g.organizationId);
+    }
+
+    return {
+      total: allOrgs.size,
+      perSocial: sortDesc(
+        [...orgsBySource.entries()].map(([provider, orgs]) => ({
+          provider,
+          count: orgs.size,
+        }))
+      ),
+    };
+  }
+
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
       deletedAt: null,
@@ -140,11 +277,14 @@ export class AdminStatsRepository {
   }
 
   async getStats(params: StatsParams): Promise<StatsResponse> {
-    const [errors, posts, connected] = await Promise.all([
-      this.errorStats(params),
-      this.postStats(params),
-      this.connectedStats(params),
-    ]);
+    const [errors, posts, accounts, connected, activeOrgsBySource] =
+      await Promise.all([
+        this.errorStats(params),
+        this.postStats(params),
+        this.accountStats(params),
+        this.connectedStats(params),
+        this.sourceStats(params),
+      ]);
 
     return {
       from: params.from.toISOString(),
@@ -152,6 +292,11 @@ export class AdminStatsRepository {
       errors,
       posts,
       connected,
+      publishingAccounts: accounts.publishingAccounts,
+      scheduledAccounts: accounts.scheduledAccounts,
+      publishingChannels: accounts.publishingChannels,
+      scheduledChannels: accounts.scheduledChannels,
+      activeOrgsBySource,
     };
   }
 }

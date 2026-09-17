@@ -5,12 +5,16 @@ import { Injectable } from '@nestjs/common';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
 @Injectable()
 export class GenerateImageTool implements AgentToolInterface {
   private storage = UploadFactory.createStorage();
 
-  constructor(private _mediaService: MediaService) {}
+  constructor(
+    private _mediaService: MediaService,
+    private _subscriptionService: SubscriptionService
+  ) {}
   name = 'generateImageTool';
 
   run() {
@@ -32,23 +36,47 @@ export class GenerateImageTool implements AgentToolInterface {
       inputSchema: z.object({
         prompt: z.string(),
       }),
+      // Mastra validates the return against this schema, so it must also
+      // allow the graceful { error } shape (same as uploadFromUrlTool)
       outputSchema: z.object({
-        id: z.string(),
-        path: z.string(),
+        id: z.string().optional(),
+        path: z.string().optional(),
+        error: z.string().optional(),
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
         const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
-        const image = await this._mediaService.generateImage(
-          inputData.prompt,
-          org
-        );
+        try {
+          // Same credit gate as the dashboard's /media/generate-image route -
+          // only enforced when billing is enabled (cloud), self-hosted is free
+          const total = await this._subscriptionService.checkCredits(org);
+          if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
+            return {
+              error: 'No AI image credits are available on this account.',
+            };
+          }
 
-        const file = await this.storage.uploadSimple(
-          'data:image/png;base64,' + image
-        );
+          const image = await this._mediaService.generateImage(
+            inputData.prompt,
+            org
+          );
 
-        return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+          const file = await this.storage.uploadSimple(
+            'data:image/png;base64,' + image
+          );
+
+          return await this._mediaService.saveFile(
+            org.id,
+            file.split('/').pop(),
+            file
+          );
+        } catch (err) {
+          return {
+            error: `Image generation failed: ${
+              err instanceof Error ? err.message : String(err)
+            }. The user's image credit was not used.`,
+          };
+        }
       },
     });
   }
