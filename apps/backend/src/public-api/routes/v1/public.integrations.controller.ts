@@ -325,6 +325,7 @@ export class PublicIntegrationsController {
   }
 
   @Get('/debug/posts/:id')
+  @UseGuards(SuperAdminGuard)
   async getPostTimeline(
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string
@@ -340,12 +341,14 @@ export class PublicIntegrationsController {
   }
 
   @Get('/debug/channels')
+  @UseGuards(SuperAdminGuard)
   async getChannelHealth(@GetOrgFromRequest() org: Organization) {
     Sentry.metrics.count('public_api-request', 1);
     return this._integrationService.getChannelHealth(org.id);
   }
 
   @Get('/debug/activity')
+  @UseGuards(SuperAdminGuard)
   async getOrgActivity(
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetOrgActivityDto
