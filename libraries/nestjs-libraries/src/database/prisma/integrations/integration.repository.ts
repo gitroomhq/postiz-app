@@ -2,7 +2,7 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, Prisma } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -560,6 +560,42 @@ export class IntegrationRepository {
     });
   }
 
+  private async latestPostsFor(
+    org: string,
+    state: 'PUBLISHED' | 'ERROR',
+    field: 'publishDate' | 'updatedAt',
+    groups: { integrationId: string; date: Date | null }[]
+  ) {
+    const matches = groups.filter((group) => group.date);
+
+    if (!matches.length) {
+      return [];
+    }
+
+    return this._posts.model.post.findMany({
+      where: {
+        organizationId: org,
+        state,
+        deletedAt: null,
+        OR: matches.map(
+          (group) =>
+            ({
+              integrationId: group.integrationId,
+              [field]: group.date,
+            } as Prisma.PostWhereInput)
+        ),
+      },
+      select: {
+        id: true,
+        integrationId: true,
+        publishDate: true,
+        updatedAt: true,
+        releaseURL: true,
+        error: true,
+      },
+    });
+  }
+
   async getChannelHealth(org: string) {
     const [integrations, lastPublished, lastErrored] = await Promise.all([
       this._integration.model.integration.findMany({
@@ -590,43 +626,52 @@ export class IntegrationRepository {
           },
         },
       }),
-      this._posts.model.post.findMany({
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
         where: {
           organizationId: org,
           state: 'PUBLISHED',
           deletedAt: null,
         },
-        orderBy: [{ integrationId: 'asc' }, { publishDate: 'desc' }],
-        distinct: ['integrationId'],
-        select: {
-          id: true,
-          integrationId: true,
-          publishDate: true,
-          releaseURL: true,
-        },
+        _max: { publishDate: true },
       }),
-      this._posts.model.post.findMany({
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
         where: {
           organizationId: org,
           state: 'ERROR',
           deletedAt: null,
         },
-        orderBy: [{ integrationId: 'asc' }, { updatedAt: 'desc' }],
-        distinct: ['integrationId'],
-        select: {
-          id: true,
-          integrationId: true,
-          updatedAt: true,
-          error: true,
-        },
+        _max: { updatedAt: true },
       }),
     ]);
 
+    const [publishedPosts, erroredPosts] = await Promise.all([
+      this.latestPostsFor(
+        org,
+        'PUBLISHED',
+        'publishDate',
+        lastPublished.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.publishDate,
+        }))
+      ),
+      this.latestPostsFor(
+        org,
+        'ERROR',
+        'updatedAt',
+        lastErrored.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.updatedAt,
+        }))
+      ),
+    ]);
+
     const publishedByIntegration = new Map(
-      lastPublished.map((post) => [post.integrationId, post])
+      publishedPosts.map((post) => [post.integrationId, post])
     );
     const erroredByIntegration = new Map(
-      lastErrored.map((post) => [post.integrationId, post])
+      erroredPosts.map((post) => [post.integrationId, post])
     );
 
     return integrations.map((integration) => {
