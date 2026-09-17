@@ -35,7 +35,8 @@ export interface OrgActivityResponse {
   organizationId: string;
   errors: { total: number; perSocial: PerSocial[] };
   posts: { total: number; perSocial: PerSocial[] };
-  connected: { total: number; perSocial: PerSocial[] };
+  connectedInRange: { total: number; perSocial: PerSocial[] };
+  channels: { total: number; perSocial: PerSocial[] };
   postsByState: PerState[];
   firstActivityAt: string | null;
   lastActivityAt: string | null;
@@ -326,6 +327,32 @@ export class AdminStatsRepository {
       .sort((a, b) => b.count - a.count || a.state.localeCompare(b.state));
   }
 
+  private async currentChannelStats(organizationId: string) {
+    const where: Prisma.IntegrationWhereInput = {
+      organizationId,
+      deletedAt: null,
+    };
+
+    const [total, grouped] = await Promise.all([
+      this._integration.model.integration.count({ where }),
+      this._integration.model.integration.groupBy({
+        by: ['providerIdentifier'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    return {
+      total,
+      perSocial: sortDesc(
+        grouped.map((g) => ({
+          provider: g.providerIdentifier,
+          count: g._count._all,
+        }))
+      ),
+    };
+  }
+
   private async activityRange(organizationId: string) {
     const { _min, _max } = await this._post.model.post.aggregate({
       where: { organizationId, state: 'PUBLISHED', deletedAt: null },
@@ -342,11 +369,12 @@ export class AdminStatsRepository {
   async getOrgActivity(
     params: OrgActivityParams
   ): Promise<OrgActivityResponse> {
-    const [errors, posts, connected, postsByState, activity] =
+    const [errors, posts, connectedInRange, channels, postsByState, activity] =
       await Promise.all([
         this.errorStats(params),
         this.postStats(params),
         this.connectedStats(params),
+        this.currentChannelStats(params.organizationId),
         this.postStateStats(params),
         this.activityRange(params.organizationId),
       ]);
@@ -357,7 +385,8 @@ export class AdminStatsRepository {
       organizationId: params.organizationId,
       errors,
       posts,
-      connected,
+      connectedInRange,
+      channels,
       postsByState,
       ...activity,
     };
