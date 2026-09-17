@@ -564,6 +564,7 @@ export class IntegrationRepository {
     org: string,
     state: 'PUBLISHED' | 'ERROR',
     field: 'publishDate' | 'updatedAt',
+    topLevelOnly: boolean,
     groups: { integrationId: string; date: Date | null }[]
   ) {
     const matches = groups.filter((group) => group.date);
@@ -577,6 +578,7 @@ export class IntegrationRepository {
         organizationId: org,
         state,
         deletedAt: null,
+        ...(topLevelOnly ? { parentPostId: null } : {}),
         OR: matches.map(
           (group) =>
             ({
@@ -584,6 +586,9 @@ export class IntegrationRepository {
               [field]: group.date,
             } as Prisma.PostWhereInput)
         ),
+      },
+      orderBy: {
+        id: 'asc',
       },
       select: {
         id: true,
@@ -594,6 +599,18 @@ export class IntegrationRepository {
         error: true,
       },
     });
+  }
+
+  private firstPerIntegration<T extends { integrationId: string }>(posts: T[]) {
+    const byIntegration = new Map<string, T>();
+
+    for (const post of posts) {
+      if (!byIntegration.has(post.integrationId)) {
+        byIntegration.set(post.integrationId, post);
+      }
+    }
+
+    return byIntegration;
   }
 
   async getChannelHealth(org: string) {
@@ -632,6 +649,7 @@ export class IntegrationRepository {
           organizationId: org,
           state: 'PUBLISHED',
           deletedAt: null,
+          parentPostId: null,
         },
         _max: { publishDate: true },
       }),
@@ -651,6 +669,7 @@ export class IntegrationRepository {
         org,
         'PUBLISHED',
         'publishDate',
+        true,
         lastPublished.map((group) => ({
           integrationId: group.integrationId,
           date: group._max.publishDate,
@@ -660,6 +679,7 @@ export class IntegrationRepository {
         org,
         'ERROR',
         'updatedAt',
+        false,
         lastErrored.map((group) => ({
           integrationId: group.integrationId,
           date: group._max.updatedAt,
@@ -667,12 +687,8 @@ export class IntegrationRepository {
       ),
     ]);
 
-    const publishedByIntegration = new Map(
-      publishedPosts.map((post) => [post.integrationId, post])
-    );
-    const erroredByIntegration = new Map(
-      erroredPosts.map((post) => [post.integrationId, post])
-    );
+    const publishedByIntegration = this.firstPerIntegration(publishedPosts);
+    const erroredByIntegration = this.firstPerIntegration(erroredPosts);
 
     return integrations.map((integration) => {
       const published = publishedByIntegration.get(integration.id);
