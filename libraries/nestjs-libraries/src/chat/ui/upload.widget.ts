@@ -26,13 +26,20 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   #drop.disabled { opacity: 0.5; pointer-events: none; }
   #drop small { display: block; color: var(--muted); margin-top: 4px; }
   input[type=file] { display: none; }
-  ul { list-style: none; padding: 0; margin: 0; }
-  li { padding: 6px 0; display: flex; gap: 8px; align-items: baseline; }
-  li:first-child { margin-top: 12px; }
-  li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  li .state { color: var(--muted); }
-  li.ok .state { color: var(--ok); }
-  li.bad .state { color: var(--bad); white-space: normal; }
+  #files { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; margin-top: 12px; }
+  #files:empty { display: none; }
+  .tile { min-width: 0; }
+  .box { position: relative; aspect-ratio: 1 / 1; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(127, 127, 127, 0.12); color: var(--muted); font-size: 12px; font-weight: 600; }
+  .box canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .tile:not(.ok):not(.bad) canvas { opacity: 0.5; }
+  .state { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 4px; font-size: 11px; font-weight: 400; text-align: center; color: #ffffff; background: rgba(0, 0, 0, 0.6); }
+  .state:empty { display: none; }
+  .tile.ok .state, .tile.bad .state { left: auto; right: 6px; bottom: 6px; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 20px; background: var(--ok); }
+  .tile.bad .state { background: var(--bad); }
+  .tile.bad .box { border-color: var(--bad); }
+  .name { margin-top: 4px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note { font-size: 11px; color: var(--bad); }
+  .note:empty { display: none; }
   #error { color: var(--bad); margin-top: 12px; }
   #error:empty { display: none; }
 </style>
@@ -43,7 +50,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     <small>Images up to ${megabytes('image/png')} MB and videos up to ${megabytes('video/mp4')} MB</small>
     <input id="file" type="file" accept="image/*,video/mp4" multiple />
   </label>
-  <ul id="files"></ul>
+  <div id="files"></div>
   <div id="error"></div>
 <script>
 (function () {
@@ -140,25 +147,56 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
       });
   }
 
+  // The sandbox CSP blocks blob: urls and the uploads domain, so the preview is
+  // decoded from the picked file and drawn on a canvas - no image url involved.
+  // Anything that can't be decoded that way (videos) keeps the extension label
+  function preview(file, box, label) {
+    if (file.type.indexOf('image/') !== 0 || !window.createImageBitmap) return;
+    window.createImageBitmap(file).then(function (bitmap) {
+      var canvas = document.createElement('canvas');
+      var side = Math.min(bitmap.width, bitmap.height);
+      canvas.width = canvas.height = 192;
+      canvas.getContext('2d').drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 192, 192);
+      if (bitmap.close) bitmap.close();
+      box.replaceChild(canvas, label);
+    }).catch(function () {});
+  }
+
   function row(file) {
-    var li = document.createElement('li');
-    var name = document.createElement('span');
+    var tile = document.createElement('div');
+    var box = document.createElement('div');
+    var label = document.createElement('span');
     var state = document.createElement('span');
-    name.className = 'name';
-    name.textContent = file.name;
+    var name = document.createElement('div');
+    var note = document.createElement('div');
+    tile.className = 'tile';
+    box.className = 'box';
     state.className = 'state';
-    li.appendChild(name);
-    li.appendChild(state);
-    list.appendChild(li);
+    name.className = 'name';
+    note.className = 'note';
+    label.textContent = (file.name.split('.').pop() || 'file').slice(0, 5).toUpperCase();
+    name.textContent = file.name;
+    name.title = file.name;
+    box.appendChild(label);
+    box.appendChild(state);
+    tile.appendChild(box);
+    tile.appendChild(name);
+    tile.appendChild(note);
+    list.appendChild(tile);
+    preview(file, box, label);
     return function (kind, text) {
-      li.className = kind;
-      state.textContent = text;
+      tile.className = 'tile ' + kind;
+      state.textContent = kind === 'ok' ? '✓' : kind === 'bad' ? '✕' : text;
+      state.title = text;
+      note.textContent = kind === 'bad' ? text : '';
       resize();
     };
   }
 
-  function report(done) {
-    var summary = done.map(function (p) { return p.name + ' (id: ' + p.id + ', path: ' + p.path + ')'; }).join(', ');
+  // Always the full list of this widget, not only the last batch: the model acts
+  // on the latest message, so a later upload must not drop the earlier ones
+  function report() {
+    var summary = uploaded.map(function (p) { return p.name + ' (id: ' + p.id + ', path: ' + p.path + ')'; }).join(', ');
     // Silent context first, so the model has the ids even if the host defers the message.
     // A host that never answers it must not hold the message back
     return Promise.race([
@@ -172,7 +210,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
       .then(function () {
         return request('ui/message', {
           role: 'user',
-          content: [{ type: 'text', text: 'I uploaded ' + summary + ' with the upload widget.' }],
+          content: [{ type: 'text', text: 'Schedule ' + summary + ' to:' }],
         });
       })
       .catch(function () {});
@@ -210,7 +248,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
       .then(function () {
         busy = false;
         drop.className = '';
-        if (done.length) report(done);
+        if (done.length) report();
       });
   }
 
