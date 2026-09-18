@@ -12,7 +12,6 @@ import {
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { TumblrDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tumblr.dto';
 import { Integration } from '@prisma/client';
-import axios from 'axios';
 import FormDataUpload from 'form-data';
 import { lookup } from 'mime-types';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -533,7 +532,7 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
         });
       }
 
-      const { data: response } = await axios.post(
+      const { data: response } = await this.getSsrfSafeAxios().post(
         `${TUMBLR_API_URL}/blog/${encodeURIComponent(blogName)}/posts`,
         formData,
         {

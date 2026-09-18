@@ -9,7 +9,6 @@ import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.ab
 import { Integration } from '@prisma/client';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
-import axios from 'axios';
 import FormDataUpload from 'form-data';
 
 export class DiscordProvider extends SocialAbstract implements SocialProvider {
@@ -173,7 +172,7 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
         index++;
       }
 
-      const { data } = await axios.post(
+      const { data } = await this.getSsrfSafeAxios().post(
         `https://discord.com/api/channels/${channel}/messages`,
         form,
         {

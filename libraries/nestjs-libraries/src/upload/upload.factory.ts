@@ -1,6 +1,8 @@
 import { CloudflareStorage } from './cloudflare.storage';
 import { IUploadProvider } from './upload.interface';
 import { LocalStorage } from './local.storage';
+import { IMediaProcessor } from './media.processor.interface';
+import { RunPodMediaProcessor } from './runpod.media.processor';
 
 export class UploadFactory {
   static createStorage(): IUploadProvider {
@@ -21,5 +23,25 @@ export class UploadFactory {
       default:
         throw new Error(`Invalid storage type ${storageProvider}`);
     }
+  }
+
+  // Normalization needs presigned URLs, so it is only available on cloud storage
+  static processorEnabled() {
+    return (
+      process.env.STORAGE_PROVIDER === 'cloudflare' &&
+      !!process.env.RUNPOD_API_KEY &&
+      !!process.env.RUNPOD_ENDPOINT_ID
+    );
+  }
+
+  static createProcessor(): IMediaProcessor | null {
+    if (!UploadFactory.processorEnabled()) {
+      return null;
+    }
+
+    return new RunPodMediaProcessor(
+      process.env.RUNPOD_API_KEY!,
+      process.env.RUNPOD_ENDPOINT_ID!
+    );
   }
 }

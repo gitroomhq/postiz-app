@@ -10,18 +10,19 @@ import { Integration } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import axios from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  stripQuery,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
@@ -97,8 +98,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('invalidTags')) {
       return {
         type: 'bad-body',
-        value:
-          'The maximum allowed is 500 characters in total.',
+        value: 'The maximum allowed is 500 characters in total.',
       };
     }
 
@@ -431,9 +431,13 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   private async youtubeMediaSize(path: string): Promise<number> {
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
-      // this.fetch applies to every other outbound request
+      // this.fetch applies to every other outbound request. identity encoding
+      // so content-length matches the bytes a later GET actually streams
+      // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`youtube: media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
+        headers: { 'accept-encoding': 'identity' },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
       const length = head.headers.get('content-length');
@@ -456,8 +460,17 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   // read stream for local files.
   private async youtubeChunkStream(path: string, start: number, end: number) {
     if (path.indexOf('http') === 0) {
+      // identity encoding so the store keeps content-length and can answer
+      // with the requested range: a transformed (compressed) response loses
+      // its length, and a length-less object is answered with the full body.
+      setHeartbeatDetails(
+        `youtube: read media ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
-        headers: { Range: `bytes=${start}-${end}` },
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'accept-encoding': 'identity',
+        },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
 
@@ -487,6 +500,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     uploadUri: string,
     videoSize: number
   ): Promise<{ videoId: string } | { uploadedBytes: number }> {
+    setHeartbeatDetails('youtube: probe resumable session');
     const probe = await fetch(uploadUri, {
       method: 'PUT',
       headers: {
@@ -703,6 +717,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             end
           );
 
+          setHeartbeatDetails('youtube: upload chunk to google');
           const upload = await fetch(pendingData.uploadUri, {
             method: 'PUT',
             headers: {
@@ -785,7 +800,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           videoId,
           media: {
             body: (
-              await axios({
+              await this.getSsrfSafeAxios()({
                 url: pendingData.thumbnail,
                 method: 'GET',
                 responseType: 'stream',

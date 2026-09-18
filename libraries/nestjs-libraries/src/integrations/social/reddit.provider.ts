@@ -15,7 +15,6 @@ import {
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { lookup } from 'mime-types';
-import axios from 'axios';
 import FormDataUpload from 'form-data';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { Integration } from '@prisma/client';
@@ -227,7 +226,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       knownLength: fileSize,
     });
 
-    const d = await axios.post('https:' + action, upload, {
+    const d = await this.getSsrfSafeAxios().post('https:' + action, upload, {
       headers: upload.getHeaders(),
     });
 
@@ -280,9 +279,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     // an earlier schedule, a template repost - must never be mistaken for
     // this one. Fall back to a one-hour window for pendingData that predates
     // the armedAt field.
-    const cutoff = armedAt
-      ? armedAt - 60 * 1000
-      : Date.now() - 60 * 60 * 1000;
+    const cutoff = armedAt ? armedAt - 60 * 1000 : Date.now() - 60 * 60 * 1000;
 
     const found = (data?.children || []).find(
       (c: any) =>
@@ -308,8 +305,14 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   ): PendingCheckResponse {
     return {
       status: 'completed',
-      postId: results.map((p) => p.postId).filter(Boolean).join(','),
-      releaseURL: results.map((p) => p.releaseURL).filter(Boolean).join(','),
+      postId: results
+        .map((p) => p.postId)
+        .filter(Boolean)
+        .join(','),
+      releaseURL: results
+        .map((p) => p.releaseURL)
+        .filter(Boolean)
+        .join(','),
     };
   }
 
@@ -440,7 +443,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     // finds the armed marker and asks Reddit instead of resubmitting blindly.
     const value = data.subreddits[data.cursor].value;
     data.armed = {
-      sr: value.subreddit.replace('/r/', '').toLowerCase(),
+      sr: value.subreddit.replace(/^\/?r\//, '').replace(/^\/+|\/+$/g, '').toLowerCase(),
       title: value.title || '',
       armedAt: Date.now(),
       media: value.type === 'media',
@@ -499,7 +502,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
           }
         : {}),
       text: data.message,
-      sr: value.subreddit.replace('/r/', '').toLowerCase(),
+      sr: value.subreddit.replace(/^\/?r\//, '').replace(/^\/+|\/+$/g, '').toLowerCase(),
     };
 
     const all = await (
