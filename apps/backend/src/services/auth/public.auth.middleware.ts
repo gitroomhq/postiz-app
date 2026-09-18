@@ -63,11 +63,12 @@ export class PublicAuthMiddleware implements NestMiddleware {
       }
 
       this.setOrg(req, org);
+      const includeDeleted =
+        (req.headers['x-postiz-include-deleted'] as string)?.trim() === 'true';
       // @ts-ignore
       req.authOrgId = org.id;
       // @ts-ignore
-      req.includeDeleted =
-        (req.headers['x-postiz-include-deleted'] as string)?.trim() === 'true';
+      req.includeDeleted = includeDeleted;
 
       const overrideOrgId = (req.headers['x-postiz-org'] as string)?.trim();
 
@@ -85,7 +86,7 @@ export class PublicAuthMiddleware implements NestMiddleware {
             overrideOrgId
           );
 
-        if (!overrideOrg || overrideOrg.deletedAt) {
+        if (!overrideOrg || (overrideOrg.deletedAt && !includeDeleted)) {
           res
             .status(HttpStatus.NOT_FOUND)
             .json({ msg: 'Organization not found' });

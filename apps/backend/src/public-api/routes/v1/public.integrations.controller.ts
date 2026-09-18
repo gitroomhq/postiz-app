@@ -324,7 +324,13 @@ export class PublicIntegrationsController {
     @Query('name') name: string
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._usersService.getImpersonateUser(name);
+    const term = name?.trim();
+
+    if (!term) {
+      throw new HttpException({ msg: 'A search term is required' }, 400);
+    }
+
+    return this._usersService.getImpersonateUser(term);
   }
 
   @Get('/debug/posts/:id')
