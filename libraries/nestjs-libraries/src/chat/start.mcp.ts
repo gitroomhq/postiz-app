@@ -1,11 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
+import { LoadToolsService } from '@gitroom/nestjs-libraries/chat/load.tools.service';
 import { MCPServer } from '@mastra/mcp';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
 import { createOAuthMiddleware } from './oauth-middleware';
+import { UPLOAD_WIDGET_URI, uploadWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/upload.widget';
 const fixAcceptHeader = (req: Request) => {
   const value = 'application/json, text/event-stream';
   req.headers.accept = value;
@@ -29,6 +31,7 @@ export const startMcp = async (app: INestApplication) => {
   const mastraService = app.get(MastraService, { strict: false });
   const organizationService = app.get(OrganizationService, { strict: false });
   const oauthService = app.get(OAuthService, { strict: false });
+  const loadToolsService = app.get(LoadToolsService, { strict: false });
 
   const resolveAuth = async (token: string) => {
     if (token.startsWith('pos_')) {
@@ -41,7 +44,11 @@ export const startMcp = async (app: INestApplication) => {
 
   const mastra = await mastraService.mastra();
   const agent = mastra.getAgent('postiz');
-  const tools = await agent.listTools();
+  const tools = {
+    ...(await agent.listTools()),
+    // tools that only make sense inside an MCP host (ui:// widgets)
+    ...(await loadToolsService.loadTools(true)),
+  };
 
   // The Claude connector directory does not accept AI media generation tools,
   // so the directory-facing endpoint hides them. Direct connections
@@ -57,11 +64,30 @@ export const startMcp = async (app: INestApplication) => {
     Object.entries(tools).filter(([name]) => !claudeHiddenTools.includes(name))
   ) as typeof tools;
 
+  const backendUrl = process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  // MCP Apps widgets (ui:// resources). They run in the host's sandboxed iframe,
+  // which can only reach the domains listed in the csp
+  const appResources = {
+    [UPLOAD_WIDGET_URI]: {
+      name: 'Upload Media',
+      description: 'Upload an image or video from the device to the media library',
+      html: uploadWidgetHtml(backendUrl!),
+      meta: {
+        csp: { connectDomains: [new URL(backendUrl!).origin] },
+        // the "Copy link" button of the uploaded media
+        permissions: { clipboardWrite: {} },
+        prefersBorder: true,
+      },
+    },
+  };
+
   const serverConfig = {
     name: 'Postiz MCP',
     version: '1.0.0',
     tools,
     agents: { postiz: agent },
+    appResources,
   };
 
   const server = new MCPServer(serverConfig);
@@ -73,15 +99,15 @@ export const startMcp = async (app: INestApplication) => {
     name: 'Postiz MCP',
     version: '1.0.0',
     tools,
+    appResources,
   });
 
   const claudeOauthServer = new MCPServer({
     name: 'Postiz MCP',
     version: '1.0.0',
     tools: claudeTools,
+    appResources,
   });
-
-  const backendUrl = process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Two RFC 8414 path-based issuers backed by the same endpoints and code.
   // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
