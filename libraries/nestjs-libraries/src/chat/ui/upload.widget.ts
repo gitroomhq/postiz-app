@@ -37,6 +37,9 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   .tile.ok .state, .tile.bad .state { left: auto; right: 6px; bottom: 6px; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 20px; background: var(--ok); }
   .tile.bad .state { background: var(--bad); }
   .tile.bad .box { border-color: var(--bad); }
+  .copy { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; color: #ffffff; background: rgba(0, 0, 0, 0.6); }
+  .tile.ok .box:hover .copy, .tile.ok .copy:focus-visible { display: block; }
+  @media (hover: none) { .tile.ok .copy { display: block; top: auto; bottom: 0; height: auto; padding: 3px 4px; font-size: 11px; font-weight: 400; } .tile.ok .state { bottom: auto; top: 6px; } }
   .name { margin-top: 4px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .note { font-size: 11px; color: var(--bad); }
   .note:empty { display: none; }
@@ -162,6 +165,24 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     }).catch(function () {});
   }
 
+  // navigator.clipboard needs the host to grant clipboard-write to the iframe (requested
+  // in the resource permissions); execCommand still works on a click where it doesn't
+  function copyText(text) {
+    var legacy = function () {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(area);
+      return ok ? Promise.resolve() : Promise.reject(new Error('copy'));
+    };
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return legacy();
+    return navigator.clipboard.writeText(text).catch(legacy);
+  }
+
   function row(file) {
     var tile = document.createElement('div');
     var box = document.createElement('div');
@@ -184,7 +205,20 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     tile.appendChild(note);
     list.appendChild(tile);
     preview(file, box, label);
-    return function (kind, text) {
+    return function (kind, text, path) {
+      if (path) {
+        var copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'copy';
+        copy.textContent = 'Copy link';
+        copy.addEventListener('click', function () {
+          copyText(path).then(
+            function () { copy.textContent = 'Copied'; },
+            function () { copy.textContent = 'Copy failed'; }
+          ).then(function () { setTimeout(function () { copy.textContent = 'Copy link'; }, 1500); });
+        });
+        box.appendChild(copy);
+      }
       tile.className = 'tile ' + kind;
       state.textContent = kind === 'ok' ? '✓' : kind === 'bad' ? '✕' : text;
       state.title = text;
@@ -238,7 +272,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
                 var item = { id: media.id, path: media.path, name: media.originalName || file.name };
                 uploaded.push(item);
                 done.push(item);
-                set('ok', 'Uploaded');
+                set('ok', 'Uploaded', media.path);
               })
               .catch(function (err) { set('bad', err.message || 'Upload failed'); });
           });
