@@ -6,6 +6,7 @@ import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
 import { toolList } from '@gitroom/nestjs-libraries/chat/tools/tool.list';
+import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import dayjs from 'dayjs';
 
 export const AgentState = object({
@@ -21,11 +22,15 @@ const renderArray = (list: string[], show: boolean) => {
 export class LoadToolsService {
   constructor(private _moduleRef: ModuleRef) {}
 
-  async loadTools() {
+  async loadTools(mcpOnly = false) {
     return (
       await Promise.all<{ name: string; tool: any }>(
         toolList
-          .map((p) => this._moduleRef.get(p, { strict: false }))
+          .map(
+            (p) =>
+              this._moduleRef.get(p, { strict: false }) as AgentToolInterface
+          )
+          .filter((p) => !!p.mcpOnly === mcpOnly)
           .map(async (p) => ({
             name: p.name as string,
             tool: await p.run(),
