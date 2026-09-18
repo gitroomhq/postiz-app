@@ -65,6 +65,9 @@ export class PublicAuthMiddleware implements NestMiddleware {
       this.setOrg(req, org);
       // @ts-ignore
       req.authOrgId = org.id;
+      // @ts-ignore
+      req.includeDeleted =
+        (req.headers['x-postiz-include-deleted'] as string)?.trim() === 'true';
 
       const overrideOrgId = (req.headers['x-postiz-org'] as string)?.trim();
 

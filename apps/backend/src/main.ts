@@ -33,6 +33,7 @@ async function start() {
         'showorg',
         'impersonate',
         'x-postiz-org',
+        'x-postiz-include-deleted',
         'x-copilotkit-runtime-client-gql-version',
       ],
       exposedHeaders: [
