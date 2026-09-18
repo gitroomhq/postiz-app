@@ -7,12 +7,14 @@ export interface StatsParams {
   to: Date;
   unknownOnly?: boolean;
   organizationId?: string;
+  includeDeleted?: boolean;
 }
 
 export interface OrgActivityParams {
   from: Date;
   to: Date;
   organizationId: string;
+  includeDeleted?: boolean;
 }
 
 // Unknown errors are stored as the serialized error payload, e.g.
@@ -103,7 +105,7 @@ export class AdminStatsRepository {
     const where: Prisma.PostWhereInput = {
       state: 'PUBLISHED',
       parentPostId: null,
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       publishDate: { gte: params.from, lte: params.to },
       ...(params.organizationId
         ? { organizationId: params.organizationId }
@@ -283,7 +285,7 @@ export class AdminStatsRepository {
 
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       createdAt: { gte: params.from, lte: params.to },
       ...(params.organizationId
         ? { organizationId: params.organizationId }
@@ -316,7 +318,7 @@ export class AdminStatsRepository {
       where: {
         organizationId: params.organizationId,
         parentPostId: null,
-        deletedAt: null,
+        ...(params.includeDeleted ? {} : { deletedAt: null }),
         publishDate: { gte: params.from, lte: params.to },
       },
       _count: { _all: true },
@@ -327,10 +329,13 @@ export class AdminStatsRepository {
       .sort((a, b) => b.count - a.count || a.state.localeCompare(b.state));
   }
 
-  private async currentChannelStats(organizationId: string) {
+  private async currentChannelStats(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
     const where: Prisma.IntegrationWhereInput = {
       organizationId,
-      deletedAt: null,
+      ...(includeDeleted ? {} : { deletedAt: null }),
     };
 
     const [total, grouped] = await Promise.all([
@@ -353,9 +358,16 @@ export class AdminStatsRepository {
     };
   }
 
-  private async activityRange(organizationId: string) {
+  private async activityRange(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
     const { _min, _max } = await this._post.model.post.aggregate({
-      where: { organizationId, state: 'PUBLISHED', deletedAt: null },
+      where: {
+        organizationId,
+        state: 'PUBLISHED',
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
       _min: { publishDate: true },
       _max: { publishDate: true },
     });
@@ -374,9 +386,9 @@ export class AdminStatsRepository {
         this.errorStats(params),
         this.postStats(params),
         this.connectedStats(params),
-        this.currentChannelStats(params.organizationId),
+        this.currentChannelStats(params.organizationId, params.includeDeleted),
         this.postStateStats(params),
-        this.activityRange(params.organizationId),
+        this.activityRange(params.organizationId, params.includeDeleted),
       ]);
 
     return {

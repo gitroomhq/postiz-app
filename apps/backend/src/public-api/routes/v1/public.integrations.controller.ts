@@ -16,6 +16,7 @@ import {
 import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.stream.engine';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetIncludeDeletedFromRequest } from '@gitroom/nestjs-libraries/user/include.deleted.from.request';
 import { Organization } from '@prisma/client';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -354,15 +355,19 @@ export class PublicIntegrationsController {
 
   @Get('/debug/channels')
   @UseGuards(SuperAdminGuard)
-  async getChannelHealth(@GetOrgFromRequest() org: Organization) {
+  async getChannelHealth(
+    @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean
+  ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._integrationService.getChannelHealth(org.id);
+    return this._integrationService.getChannelHealth(org.id, includeDeleted);
   }
 
   @Get('/debug/activity')
   @UseGuards(SuperAdminGuard)
   async getOrgActivity(
     @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean,
     @Query() query: GetOrgActivityDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
@@ -374,6 +379,7 @@ export class PublicIntegrationsController {
       organizationId: org.id,
       from: from.startOf('day').toDate(),
       to: to.endOf('day').toDate(),
+      includeDeleted,
     });
   }
 
