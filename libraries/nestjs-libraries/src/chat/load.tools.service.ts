@@ -31,6 +31,7 @@ export class LoadToolsService {
               this._moduleRef.get(p, { strict: false }) as AgentToolInterface
           )
           .filter((p) => !!p.mcpOnly === mcpOnly)
+          .filter((p) => !p.available || p.available())
           .map(async (p) => ({
             name: p.name as string,
             tool: await p.run(),
@@ -50,7 +51,8 @@ export class LoadToolsService {
     return new Agent({
       id: 'postiz',
       name: 'postiz',
-      description: 'Agent that helps schedule and list social media posts for users',
+      description:
+        'Agent that helps schedule and list social media posts for users',
       instructions: ({ requestContext }) => {
         const ui: string = requestContext.get('ui' as never);
         return `

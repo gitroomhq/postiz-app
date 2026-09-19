@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "고급 사진 편집기",
   "billing_ai_images_per_month": "월별 AI 이미지",
   "billing_ai_videos_per_month": "월별 AI 비디오",
+  "billing_clipping_minutes_per_month": "분의 AI 비디오 클리핑(월별)",
   "billing_billing_address": "청구 주소",
   "billing_payment": "결제",
   "billing_powered_by_stripe": "안전한 결제는 Stripe에서 처리됩니다",

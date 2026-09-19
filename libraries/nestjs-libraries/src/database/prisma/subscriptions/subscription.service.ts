@@ -294,6 +294,27 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscriptionByIdentifier(identifier);
   }
 
+  // For work that is metered (minutes) and outlives a single call, so it can't
+  // be wrapped in useCredit: the caller picks the id, charging twice is one
+  // row, and the same id refunds it on failure
+  chargeCredits(
+    id: string,
+    organizationId: string,
+    type: string,
+    credits: number
+  ) {
+    return this._subscriptionRepository.chargeCredits(
+      id,
+      organizationId,
+      type,
+      credits
+    );
+  }
+
+  refundCredits(organizationId: string, id: string) {
+    return this._subscriptionRepository.refundCredits(organizationId, id);
+  }
+
   async getSubscription(organizationId: string) {
     return this._subscriptionRepository.getSubscription(organizationId);
   }
@@ -316,6 +337,8 @@ export class SubscriptionService {
     const imageGenerationCount =
       checkType === 'ai_images'
         ? pricing[type].image_generation_count
+        : checkType === 'clipping_minutes'
+        ? pricing[type].clipping_minutes
         : pricing[type].generate_videos;
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(
