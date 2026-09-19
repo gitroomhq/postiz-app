@@ -495,13 +495,13 @@ describe('PinterestProvider.analytics', () => {
 });
 
 describe('PinterestProvider.postAnalytics', () => {
-  it('reports each lifetime metric it understands', async () => {
+  it('reports each period metric it understands', async () => {
     stubFetch([
       [
         '/analytics',
         () => ({
           all: {
-            lifetime_metrics: {
+            summary_metrics: {
               IMPRESSION: 500,
               PIN_CLICK: 40,
               OUTBOUND_CLICK: 12,
@@ -525,7 +525,7 @@ describe('PinterestProvider.postAnalytics', () => {
 
   it('skips a metric Pinterest did not return', async () => {
     stubFetch([
-      ['/analytics', () => ({ all: { lifetime_metrics: { IMPRESSION: 1 } } })],
+      ['/analytics', () => ({ all: { summary_metrics: { IMPRESSION: 1 } } })],
     ]);
 
     const result = await provider.postAnalytics('id', 'token', 'pin-1', 7);
@@ -535,7 +535,7 @@ describe('PinterestProvider.postAnalytics', () => {
 
   it('reports a zero metric rather than dropping it', async () => {
     stubFetch([
-      ['/analytics', () => ({ all: { lifetime_metrics: { IMPRESSION: 0 } } })],
+      ['/analytics', () => ({ all: { summary_metrics: { IMPRESSION: 0 } } })],
     ]);
 
     const result = await provider.postAnalytics('id', 'token', 'pin-1', 7);

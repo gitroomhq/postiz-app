@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { INestApplication } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
 
@@ -41,7 +42,13 @@ describe('AuthController (integration)', () => {
 
   beforeAll(async () => {
     ({ app } = await createTestApp({
-      imports: [DatabaseModule],
+      imports: [
+        DatabaseModule,
+        // The farcaster signer routes carry ThrottlerRealIpGuard, which cannot be
+        // built without the module. Same window as the app, counted in memory
+        // instead of in Redis.
+        ThrottlerModule.forRoot({ throttlers: [{ ttl: 3600000, limit: 90 }] }),
+      ],
       controllers: [AuthController],
       policies: false,
       providers: [

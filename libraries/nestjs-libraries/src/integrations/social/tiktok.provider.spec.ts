@@ -28,6 +28,12 @@ const stubUpload = () =>
   vi.spyOn<any, any>(provider as any, 'uploadTikTokVideoBytes').mockResolvedValue(undefined);
 const stubSize = (size = 1024) =>
   vi.spyOn<any, any>(provider as any, 'mediaSize').mockResolvedValue(size);
+/** Photos are measured before posting; stand in for reading the real files. */
+const stubDimensions = (...sizes: { width: number; height: number }[]) => {
+  const spy = vi.spyOn<any, any>(provider as any, 'getImageDimensions');
+  sizes.forEach((size) => spy.mockResolvedValueOnce(size));
+  return spy;
+};
 
 describe('TiktokProvider.checkValidity', () => {
   it('requires at least one media', async () => {
@@ -45,9 +51,31 @@ describe('TiktokProvider.checkValidity', () => {
   });
 
   it('accepts a photo carousel', async () => {
+    stubDimensions({ width: 1080, height: 1920 }, { width: 1920, height: 1080 });
+
     await expect(
       provider.checkValidity([[{ path: '/a.jpg' }, { path: '/b.jpg' }]])
     ).resolves.toBe(true);
+  });
+
+  it('names the photo that is over 1080px on its shorter side', async () => {
+    // TikTok fails the whole post with `picture_size_check_failed` and never
+    // says which picture, so this is the only place the customer can learn it.
+    stubDimensions({ width: 1080, height: 1350 }, { width: 2000, height: 1500 });
+
+    await expect(
+      provider.checkValidity([[{ path: '/a.jpg' }, { path: '/b.jpg' }]])
+    ).resolves.toBe(
+      'Image 2 is 2000x1500, TikTok allows a maximum of 1080px on the shorter side'
+    );
+  });
+
+  it('does not measure a video', async () => {
+    const dimensions = stubDimensions();
+
+    await provider.checkValidity([[{ path: '/clip.mp4' }]]);
+
+    expect(dimensions).not.toHaveBeenCalled();
   });
 });
 
@@ -387,7 +415,10 @@ describe('TiktokProvider.handleErrors full classification', () => {
     ['invalid_file_upload', 'Invalid file format or specifications not met'],
     ['invalid_params', 'Invalid request parameters, please check content format'],
     ['internal', 'There is a problem with TikTok servers, please try again later'],
-    ['picture_size_check_failed', 'Video must be at least 720p, Picture must no exceed 1080p'],
+    [
+      'picture_size_check_failed',
+      'Media size not supported by TikTok: images up to 1080px on the shorter side, videos at least 360px on both sides',
+    ],
     ['TikTok API error', 'TikTok API error, please try again'],
   ])('maps %j to its own message', (body, value) => {
     expect(provider.handleErrors(body)?.value).toBe(value);

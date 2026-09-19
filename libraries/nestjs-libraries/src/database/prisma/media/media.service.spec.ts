@@ -7,10 +7,14 @@ const { uploadSimple } = vi.hoisted(() => ({
   uploadSimple: vi.fn(async (_path: string) => 'https://cdn/out/a.mp4'),
 }));
 
-// MediaService resolves its storage at construction, so the factory is the
-// only seam that can stand in for a real bucket.
+// MediaService resolves its storage and its media processor at construction,
+// so the factory is the only seam that can stand in for a real bucket. No
+// processor is configured here, which is what an install without RunPod gets.
 vi.mock('@gitroom/nestjs-libraries/upload/upload.factory', () => ({
-  UploadFactory: { createStorage: () => ({ uploadSimple }) },
+  UploadFactory: {
+    createStorage: () => ({ uploadSimple }),
+    createProcessor: () => null,
+  },
 }));
 
 type Mocks = ReturnType<typeof mocks>;

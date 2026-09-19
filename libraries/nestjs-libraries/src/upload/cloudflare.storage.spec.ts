@@ -25,6 +25,9 @@ vi.mock('@aws-sdk/client-s3', () => ({
   PutObjectCommand: class {
     constructor(public input: Record<string, unknown>) {}
   },
+  DeleteObjectCommand: class {
+    constructor(public input: Record<string, unknown>) {}
+  },
 }));
 
 import { CloudflareStorage } from './cloudflare.storage';
@@ -193,8 +196,29 @@ describe('CloudflareStorage.uploadFile', () => {
 });
 
 describe('CloudflareStorage.removeFile', () => {
-  it('is a no-op, because objects are kept after a post is deleted', async () => {
-    await expect(storage.removeFile('anything')).resolves.toBeUndefined();
+  beforeEach(() => {
+    // the shared client stand-in keeps the rejection an earlier test gave it
+    s3.send.mockResolvedValue({});
+  });
+
+  it('deletes the object from the bucket', async () => {
+    await storage.removeFile('abc123.mp4');
+
+    expect(sent()).toEqual({ Bucket: 'my-bucket', Key: 'abc123.mp4' });
+  });
+
+  it('keys on the file name alone, whatever url or folder came in front of it', async () => {
+    // Objects sit at the root of the bucket, while callers hold the public url.
+    await storage.removeFile(`${UPLOAD_URL}/abc123.mp4`);
+
+    expect(sent().Key).toBe('abc123.mp4');
+  });
+
+  it.each([
+    ['an empty path', ''],
+    ['a path ending in a slash', `${UPLOAD_URL}/`],
+  ])('sends nothing for %s, rather than a delete without a key', async (_label, path) => {
+    await expect(storage.removeFile(path)).resolves.toBeUndefined();
     expect(s3.send).not.toHaveBeenCalled();
   });
 });

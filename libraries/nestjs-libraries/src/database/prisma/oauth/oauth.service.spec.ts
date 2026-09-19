@@ -747,13 +747,22 @@ describe('OAuthService.exchangeCodeForToken', () => {
   it('adds the openid and email scopes only for the openai client', async () => {
     const { service, oauthRepository } = build();
     vi.stubEnv('OPENAI_OAUTH_CLIENT_ID', 'pca_openai');
-    oauthRepository.getAppByClientId.mockResolvedValue(confidential());
+    // The scope is decided from the app that was looked up, so the fixture
+    // carries the client id the way the stored record does.
+    oauthRepository.getAppByClientId.mockResolvedValue({
+      ...confidential(),
+      clientId: 'pca_openai',
+    });
     oauthRepository.findByCode.mockResolvedValue(authFor());
 
     await expect(
       service.exchangeCodeForToken('code', 'pca_openai', 'pcs_right')
     ).resolves.toMatchObject({ scope: 'openid email mcp:read mcp:write' });
 
+    oauthRepository.getAppByClientId.mockResolvedValue({
+      ...confidential(),
+      clientId: 'pca_other',
+    });
     oauthRepository.findByCode.mockResolvedValue(authFor());
     await expect(
       service.exchangeCodeForToken('code', 'pca_other', 'pcs_right')

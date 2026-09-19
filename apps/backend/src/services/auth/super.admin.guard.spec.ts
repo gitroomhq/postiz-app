@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SuperAdminGuard } from './super.admin.guard';
 
-const organizations = { hasSuperAdminUser: vi.fn() };
+const organizations = { canUseSuperAdminApi: vi.fn() };
 
 const guard = () => new SuperAdminGuard(organizations as never);
 
@@ -9,7 +9,7 @@ const context = (request: unknown) =>
   ({ switchToHttp: () => ({ getRequest: () => request }) } as never);
 
 beforeEach(() => {
-  organizations.hasSuperAdminUser.mockResolvedValue(false);
+  organizations.canUseSuperAdminApi.mockResolvedValue(false);
 });
 
 /**
@@ -17,16 +17,16 @@ beforeEach(() => {
  * here hands one organization the ability to act as any user.
  */
 describe('SuperAdminGuard', () => {
-  it('admits an organization that has a super admin', async () => {
-    organizations.hasSuperAdminUser.mockResolvedValue(true);
+  it('admits an organization that may use the super admin api', async () => {
+    organizations.canUseSuperAdminApi.mockResolvedValue(true);
 
     await expect(
       guard().canActivate(context({ org: { id: 'org-1' } }))
     ).resolves.toBe(true);
-    expect(organizations.hasSuperAdminUser).toHaveBeenCalledWith('org-1');
+    expect(organizations.canUseSuperAdminApi).toHaveBeenCalledWith('org-1');
   });
 
-  it('rejects an organization without one', async () => {
+  it('rejects an organization that may not', async () => {
     await expect(
       guard().canActivate(context({ org: { id: 'org-1' } }))
     ).rejects.toMatchObject({ status: 403 });
@@ -40,7 +40,7 @@ describe('SuperAdminGuard', () => {
     await expect(guard().canActivate(context(request))).rejects.toMatchObject({
       status: 403,
     });
-    expect(organizations.hasSuperAdminUser).not.toHaveBeenCalled();
+    expect(organizations.canUseSuperAdminApi).not.toHaveBeenCalled();
   });
 
   it('answers with a bare "Unauthorized", leaking nothing about the org', async () => {
@@ -59,18 +59,41 @@ describe('SuperAdminGuard', () => {
 
   it('denies when the lookup itself fails, rather than admitting', async () => {
     // Fail closed: a database blip must not become an open door.
-    organizations.hasSuperAdminUser.mockRejectedValue(new Error('db down'));
+    organizations.canUseSuperAdminApi.mockRejectedValue(new Error('db down'));
 
     await expect(
       guard().canActivate(context({ org: { id: 'org-1' } }))
     ).rejects.toThrow();
   });
 
+  it('refuses an OAuth app, even one acting for an organization that qualifies', async () => {
+    // A third party app holds a token for the org, not the trust placed in its
+    // super admins.
+    organizations.canUseSuperAdminApi.mockResolvedValue(true);
+
+    await expect(
+      guard().canActivate(context({ org: { id: 'org-1' }, isOAuthApp: true }))
+    ).rejects.toMatchObject({ status: 403, response: { msg: 'Unauthorized' } });
+    expect(organizations.canUseSuperAdminApi).not.toHaveBeenCalled();
+  });
+
+  it('judges the organization that authenticated, not the one being acted on', async () => {
+    // The x-postiz-org header swaps `org` for the organization being acted on;
+    // it is the caller's own organization that has to be trusted.
+    organizations.canUseSuperAdminApi.mockResolvedValue(true);
+
+    await guard().canActivate(
+      context({ org: { id: 'target-org' }, authOrgId: 'calling-org' })
+    );
+
+    expect(organizations.canUseSuperAdminApi).toHaveBeenCalledWith('calling-org');
+  });
+
   it('reads the org off the request, not off any parameter', async () => {
-    organizations.hasSuperAdminUser.mockResolvedValue(true);
+    organizations.canUseSuperAdminApi.mockResolvedValue(true);
 
     await guard().canActivate(context({ org: { id: 'org-42' }, params: { id: 'org-1' } }));
 
-    expect(organizations.hasSuperAdminUser).toHaveBeenCalledWith('org-42');
+    expect(organizations.canUseSuperAdminApi).toHaveBeenCalledWith('org-42');
   });
 });

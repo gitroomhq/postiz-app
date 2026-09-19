@@ -15,6 +15,7 @@ const mocks = () => ({
     getOrgByIdWithSubscription: vi.fn(),
     getOrgByApiKey: vi.fn(),
     getSuperAdminUser: vi.fn(),
+    getPrivilegedNonSuperAdminUser: vi.fn(),
     getUserOrg: vi.fn(),
     getOrgsByUserId: vi.fn(async () => [] as any[]),
     getUserOrgByOrganization: vi.fn(),
@@ -91,15 +92,29 @@ describe('OrganizationService repository delegation', () => {
     expect((organizationRepository as any)[method]).toHaveBeenCalledWith(...args);
   });
 
-  it('reduces the super admin lookup to a boolean', async () => {
-    const { service, organizationRepository } = build();
+  it.each([
+    ['a super admin and no other privileged member', { id: 'u1' }, null, true],
+    ['no super admin', null, null, false],
+    // One admin who is not a superuser could otherwise ride on a colleague's
+    // flag, so their presence closes the api for the whole organization.
+    ['a super admin next to a privileged member who is not one', { id: 'u1' }, { id: 'u2' }, false],
+    ['only a privileged member who is not a super admin', null, { id: 'u2' }, false],
+  ])(
+    'opens the super admin api for an org with %s: %s',
+    async (_label, superAdmin, privilegedOther, allowed) => {
+      const { service, organizationRepository } = build();
+      organizationRepository.getSuperAdminUser.mockResolvedValue(superAdmin);
+      organizationRepository.getPrivilegedNonSuperAdminUser.mockResolvedValue(
+        privilegedOther
+      );
 
-    organizationRepository.getSuperAdminUser.mockResolvedValue({ id: 'u1' });
-    await expect(service.hasSuperAdminUser('org')).resolves.toBe(true);
-
-    organizationRepository.getSuperAdminUser.mockResolvedValue(null);
-    await expect(service.hasSuperAdminUser('org')).resolves.toBe(false);
-  });
+      await expect(service.canUseSuperAdminApi('org')).resolves.toBe(allowed);
+      expect(organizationRepository.getSuperAdminUser).toHaveBeenCalledWith('org');
+      expect(
+        organizationRepository.getPrivilegedNonSuperAdminUser
+      ).toHaveBeenCalledWith('org');
+    }
+  );
 });
 
 describe('OrganizationService.inviteTeamMember', () => {

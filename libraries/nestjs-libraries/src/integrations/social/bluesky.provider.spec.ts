@@ -232,11 +232,25 @@ describe('BlueskyProvider.getAgent', () => {
   it('turns a rejected login into a refresh-token failure, not a prep retry', async () => {
     // finalizePost rethrows RefreshToken explicitly so the workflow runs the
     // reconnect flow instead of burning its retry budget.
-    login.mockRejectedValue(new Error('Invalid identifier or password'));
+    login.mockRejectedValue(httpError(401));
 
     await expect(
       provider.finalizePost('token', armed(), integration)
     ).rejects.toBeInstanceOf(RefreshToken);
+  });
+
+  it.each([
+    ['a 5xx from Bluesky', httpError(502)],
+    ['a rate limit', httpError(429)],
+    ['a network error without a status', new Error('socket hang up')],
+  ])('does not ask for a reconnect on %s', async (_label, error) => {
+    // Bluesky being unavailable says nothing about the credentials: marking
+    // the channel disconnected would fail every following post for no reason.
+    login.mockRejectedValue(error);
+
+    await expect(
+      provider.finalizePost('token', armed(), integration)
+    ).resolves.toMatchObject({ status: 'pending' });
   });
 
   it('logs in with the credentials stored encrypted on the channel', async () => {
