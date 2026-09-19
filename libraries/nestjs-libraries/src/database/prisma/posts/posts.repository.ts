@@ -398,6 +398,20 @@ export class PostsRepository {
     });
   }
 
+  // the post is live but stays in ERROR (a follow-up mutation failed): keep
+  // the platform id / URL so the user can reach it instead of re-publishing
+  setReleaseDetails(id: string, postId: string, releaseURL: string) {
+    return this._post.model.post.update({
+      where: {
+        id,
+      },
+      data: {
+        releaseURL,
+        releaseId: postId,
+      },
+    });
+  }
+
   updateReleaseId(id: string, orgId: string, releaseId: string) {
     return this._post.model.post.update({
       where: {
