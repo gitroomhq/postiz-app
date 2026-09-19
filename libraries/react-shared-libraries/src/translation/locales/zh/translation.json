@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "高级图片编辑器",
   "billing_ai_images_per_month": "每月AI图片生成数",
   "billing_ai_videos_per_month": "每月AI视频数",
+  "billing_clipping_minutes_per_month": "分钟AI视频剪辑（每月）",
   "billing_billing_address": "账单地址",
   "billing_payment": "付款",
   "billing_powered_by_stripe": "安全支付由 Stripe 处理",

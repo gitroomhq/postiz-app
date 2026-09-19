@@ -374,6 +374,13 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
         prefix: currentPricing?.generate_videos,
       });
     }
+    if (currentPricing?.clipping_minutes) {
+      list.push({
+        key: 'billing_clipping_minutes_per_month',
+        defaultValue: 'minutes of AI video clipping per month',
+        prefix: currentPricing?.clipping_minutes,
+      });
+    }
     return list;
   }, [tier]);
 

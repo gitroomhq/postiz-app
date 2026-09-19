@@ -16,8 +16,11 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
+import { ClippingController } from '@gitroom/backend/api/routes/clipping.controller';
 import { MediaWidgetController } from '@gitroom/backend/api/routes/media.widget.controller';
 import { UploadWidgetAuthMiddleware } from '@gitroom/backend/services/auth/upload.widget.auth.middleware';
+import { ClippingWidgetController } from '@gitroom/backend/api/routes/clipping.widget.controller';
+import { ClippingWidgetAuthMiddleware } from '@gitroom/backend/services/auth/clipping.widget.auth.middleware';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
@@ -61,6 +64,7 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
+  ClippingController,
   BillingController,
   NotificationsController,
   CopilotController,
@@ -78,7 +82,12 @@ const authenticatedController = [
 @Module({
   imports: [UploadModule],
   controllers: process.env.MCP_ONLY
-    ? [RootController, OAuthController, MediaWidgetController]
+    ? [
+        RootController,
+        OAuthController,
+        MediaWidgetController,
+        ClippingWidgetController,
+      ]
     : [
         RootController,
         PaymentController,
@@ -90,6 +99,7 @@ const authenticatedController = [
         NoAuthIntegrationsController,
         OAuthController,
         MediaWidgetController,
+        ClippingWidgetController,
         ...authenticatedController,
       ],
   providers: [
@@ -124,5 +134,8 @@ export class ApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware).forRoutes(...authenticatedController);
     consumer.apply(UploadWidgetAuthMiddleware).forRoutes(MediaWidgetController);
+    consumer
+      .apply(ClippingWidgetAuthMiddleware)
+      .forRoutes(ClippingWidgetController);
   }
 }

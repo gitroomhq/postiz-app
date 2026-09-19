@@ -24,6 +24,7 @@ model Organization {
   autoPost            AutoPost[]
   Comments            Comments[]
   credits             Credits[]
+  clippings           Clipping[]
   customers           Customer[]
   errors              Errors[]
   github              GitHub[]
@@ -284,6 +285,50 @@ model Credits {
 
   @@index([organizationId])
   @@index([createdAt])
+}
+
+model Clipping {
+  id             String         @id @default(uuid())
+  organizationId String
+  url            String
+  status         String         @default("analysing")
+  error          String?
+  title          String?
+  thumbnail      String?
+  duration       Int?
+  maxClips       Int            @default(5)
+  fit            String         @default("blur")
+  integrations   String
+  creditsId      String?
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  clips          ClippingClip[]
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model ClippingClip {
+  id         String    @id @default(uuid())
+  clippingId String
+  title      String
+  content    String
+  start      Float
+  end        Float
+  trimStart  Int?
+  status     String    @default("pending")
+  error      String?
+  mediaId    String?
+  path       String?
+  thumbnail  String?
+  draftedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  clipping   Clipping  @relation(fields: [clippingId], references: [id])
+
+  @@index([clippingId])
 }
 
 model Subscription {
