@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "שינוי מגמה חזוי ב-GitHub",
   "duplicate_post": "פוסט כפול",
   "preview_post": "תצוגה מקדימה של הפוסט",
+  "open_post": "פתח פוסט",
   "post_statistics": "סטטיסטיקות פוסט",
   "draft": "טיוטה",
   "week_number": "שבוע {{number}}",
