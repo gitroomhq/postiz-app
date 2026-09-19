@@ -939,54 +939,64 @@ export class ClippingService {
         continue;
       }
 
-      // claimed before the draft exists: a retry, or an attempt that timed out
-      // and is still running, skips the clip instead of drafting it a second time
+      const nextTime = await this._postsService.findFreeDateTime(
+        clipping.organizationId
+      );
+
+      // Claimed before any draft exists and never given back: a retry, or an
+      // attempt that timed out and is still running, skips the clip. Giving the
+      // claim back after a failure would draft again the channels that already
+      // got theirs, and a missing draft costs less than a double one: the clip
+      // is in the media library either way
       if (!(await this._clippingRepository.claimClipDraft(clip.id))) {
         continue;
       }
 
-      try {
-        const nextTime = await this._postsService.findFreeDateTime(
-          clipping.organizationId
-        );
-
-        await this._postsService.createPost(
-          clipping.organizationId,
-          {
-            date: nextTime + 'Z',
-            order: makeId(10),
-            shortLink: false,
-            type: 'draft',
-            tags: [],
-            posts: integrations.map((integration) => ({
-              settings: {
-                __type: integration!.providerIdentifier as any,
-              },
-              group: makeId(10),
-              integration: { id: integration!.id },
-              value: [
+      // one channel at a time, so a channel that fails does not take the rest along
+      for (const integration of integrations) {
+        try {
+          await this._postsService.createPost(
+            clipping.organizationId,
+            {
+              date: nextTime + 'Z',
+              order: makeId(10),
+              shortLink: false,
+              type: 'draft',
+              tags: [],
+              posts: [
                 {
-                  id: makeId(10),
-                  delay: 0,
-                  content: clip.content,
-                  image: [
+                  settings: {
+                    __type: integration!.providerIdentifier as any,
+                  },
+                  group: makeId(10),
+                  integration: { id: integration!.id },
+                  value: [
                     {
-                      id: clip.mediaId || makeId(10),
-                      path: clip.path!,
-                      ...(clip.thumbnail ? { thumbnail: clip.thumbnail } : {}),
+                      id: makeId(10),
+                      delay: 0,
+                      content: clip.content,
+                      image: [
+                        {
+                          id: clip.mediaId || makeId(10),
+                          path: clip.path!,
+                          ...(clip.thumbnail
+                            ? { thumbnail: clip.thumbnail }
+                            : {}),
+                        },
+                      ],
                     },
                   ],
                 },
               ],
-            })),
-          },
-          'UNKNOWN'
-        );
-      } catch (err) {
-        await this._clippingRepository.updateClip(clip.id, {
-          draftedAt: null,
-        });
-        throw err;
+            },
+            'UNKNOWN'
+          );
+        } catch (err) {
+          console.error(
+            `Could not draft clip ${clip.id} on channel ${integration!.id}:`,
+            err
+          );
+        }
       }
     }
   }

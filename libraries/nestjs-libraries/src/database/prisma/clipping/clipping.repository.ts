@@ -288,7 +288,7 @@ export class ClippingRepository {
       mediaId?: string;
       path?: string;
       thumbnail?: string;
-      draftedAt?: Date | null;
+      draftedAt?: Date;
     }
   ) {
     return this._clippingClip.model.clippingClip.update({
