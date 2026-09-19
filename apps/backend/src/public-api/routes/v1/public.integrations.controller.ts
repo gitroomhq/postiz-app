@@ -16,6 +16,7 @@ import {
 import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.stream.engine';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetIncludeDeletedFromRequest } from '@gitroom/nestjs-libraries/user/include.deleted.from.request';
 import { Organization } from '@prisma/client';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -47,6 +48,10 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
+import dayjs from 'dayjs';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
@@ -58,7 +63,9 @@ export class PublicIntegrationsController {
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _adminStatsService: AdminStatsService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Post('/upload')
@@ -314,7 +321,72 @@ export class PublicIntegrationsController {
     @Query('name') name: string
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._usersService.getImpersonateUser(name);
+    const term = name?.trim();
+
+    if (!term) {
+      throw new HttpException({ msg: 'A search term is required' }, 400);
+    }
+
+    return this._usersService.getImpersonateUser(term);
+  }
+
+  @Get('/debug/posts/:id')
+  @UseGuards(SuperAdminGuard)
+  async getPostTimeline(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const timeline = await this._postsService.getPostTimeline(id, org.id);
+
+    if (!timeline) {
+      throw new HttpException({ msg: 'Post not found' }, 404);
+    }
+
+    return timeline;
+  }
+
+  @Get('/debug/account')
+  @UseGuards(SuperAdminGuard)
+  async getAccountOverview(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count('public_api-request', 1);
+    const account = await this._organizationService.getAccountOverview(org.id);
+
+    if (!account) {
+      throw new HttpException({ msg: 'Organization not found' }, 404);
+    }
+
+    return account;
+  }
+
+  @Get('/debug/channels')
+  @UseGuards(SuperAdminGuard)
+  async getChannelHealth(
+    @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._integrationService.getChannelHealth(org.id, includeDeleted);
+  }
+
+  @Get('/debug/activity')
+  @UseGuards(SuperAdminGuard)
+  async getOrgActivity(
+    @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean,
+    @Query() query: GetOrgActivityDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+
+    const from = query.from ? dayjs(query.from) : dayjs().subtract(30, 'day');
+    const to = query.to ? dayjs(query.to) : dayjs();
+
+    return this._adminStatsService.getOrgActivity({
+      organizationId: org.id,
+      from: from.startOf('day').toDate(),
+      to: to.endOf('day').toDate(),
+      includeDeleted,
+    });
   }
 
   @Get('/notifications')
