@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "Éditeur d'images avancé",
   "billing_ai_images_per_month": "Images IA par mois",
   "billing_ai_videos_per_month": "Vidéos IA par mois",
+  "billing_clipping_minutes_per_month": "minutes de découpage vidéo IA par mois",
   "billing_billing_address": "Adresse de facturation",
   "billing_payment": "Paiement",
   "billing_powered_by_stripe": "Paiements sécurisés traités par",

@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "Erweiterter Bildeditor",
   "billing_ai_images_per_month": "KI-Bilder pro Monat",
   "billing_ai_videos_per_month": "KI-Videos pro Monat",
+  "billing_clipping_minutes_per_month": "Minuten KI-Videoclipping pro Monat",
   "billing_billing_address": "Rechnungsadresse",
   "billing_payment": "Zahlung",
   "billing_powered_by_stripe": "Sichere Zahlungen abgewickelt von",
