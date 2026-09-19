@@ -768,5 +768,21 @@
   "republish_the_post": "إعادة نشر المنشور",
   "post_already_published_republish_warning": "تم نشر هذا المنشور بالفعل. إعادة النشر ستقوم بنشره مرة أخرى على",
   "republish_at": "في",
-  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن."
+  "republish_recurring_note": "هذا منشور متكرر: ستنطبق تغييراتك على جميع التكرارات المستقبلية بدءًا من الآن.",
+  "comment": "تعليق",
+  "reply": "رد",
+  "add_a_comment": "إضافة تعليق",
+  "add_a_comment_placeholder": "أضف تعليقًا...",
+  "write_a_reply": "اكتب ردًا...",
+  "reviewer": "مراجع",
+  "resolve": "حل",
+  "reopen": "إعادة فتح",
+  "resolved": "تم الحل",
+  "collapse": "طي",
+  "preview_comment_name_required": "يمكننا فقط نشر تعليقك إذا قدمت اسمك.",
+  "preview_comment_your_name": "اسمك",
+  "preview_comment_failed": "تعذر نشر التعليق",
+  "preview_comment_detach_hint": "التعليقات على النص المحدد تفقد تمييزها إذا تم تعديل النص لاحقًا.",
+  "preview_comment_text_changed": "تم تغيير النص",
+  "preview_no_comments_yet": "لا توجد تعليقات بعد. حدد بعض النص في المنشور للتعليق عليه، أو أضف تعليقًا عامًا."
 }
