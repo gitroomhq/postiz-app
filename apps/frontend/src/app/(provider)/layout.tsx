@@ -33,11 +33,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           }
           stripeClient=""
           environment={process.env.NODE_ENV!}
-          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL!}
+          backendUrl={process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, '')!}
           plontoKey={process.env.NEXT_PUBLIC_POLOTNO!}
           billingEnabled={!!process.env.STRIPE_PUBLISHABLE_KEY}
           discordUrl={process.env.NEXT_PUBLIC_DISCORD_SUPPORT!}
-          frontEndUrl={process.env.FRONTEND_URL!}
+          frontEndUrl={process.env.FRONTEND_URL?.replace(/\/+$/, '')!}
           isGeneral={!!process.env.IS_GENERAL}
           genericOauth={!!process.env.POSTIZ_GENERIC_OAUTH}
           oauthLogoUrl={process.env.NEXT_PUBLIC_POSTIZ_OAUTH_LOGO_URL!}
