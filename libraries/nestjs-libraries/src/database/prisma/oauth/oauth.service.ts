@@ -38,6 +38,16 @@ const browserSchemes = [
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
+  // RFC 8414 path-based issuer the client discovered, the same values
+  // start.mcp.ts advertises: dynamically registered clients come through the
+  // DCR issuer, pre-defined clients (the ChatGPT app) through the ChatGPT one
+  issuer(app: Pick<OAuthApp, 'dynamic'>) {
+    return new URL(
+      app.dynamic ? '/mcp-oauth-dynamic' : '/mcp-oauth-chatgpt',
+      process.env.NEXT_PUBLIC_BACKEND_URL!
+    ).toString();
+  }
+
   async getApp(orgId: string) {
     const app = await this._oauthRepository.getAppByOrgId(orgId);
     if (!app) return false;
