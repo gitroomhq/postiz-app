@@ -114,6 +114,21 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      if (
+        !isDuplicate &&
+        data?.integration &&
+        !integrations.some((integration) => integration.id === data.integration)
+      ) {
+        toaster.show(
+          t(
+            'post_channel_no_longer_available',
+            'This post belongs to a channel that is no longer available and cannot be edited.'
+          ),
+          'warning'
+        );
+        return;
+      }
+
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
@@ -170,7 +185,7 @@ const usePostActions = (onMutate?: () => void) => {
         title: ``,
       });
     },
-    [integrations, fetch, modal, mutate]
+    [integrations, fetch, modal, mutate, toaster, t]
   );
 
   const copyDebugJson = useCallback(
