@@ -500,6 +500,8 @@ checksums:
     30_days: dc291027d89cb0c4f1def991fb734a48
     90_days: ad330616525f6c49ca3daad321beb93f
     start_7_days_free_trial: e9c42510c2cc750fabe704ebc0a9e768
+    video_paid_plans_only: 630d1fd8d340aae6e17a5dcd076e1c6e
+    ai_videos_paid_only_note: 4de001129736f53da94305882b7446a4
     change_language: c798f65b78e23b2cf8fc29a1a24a182f
     that_a_wrap: 0ecf5b5a1fbac9c2653f2642baf5d4a5
     post_as_images_carousel: 2f82f0f6adbf03abfeec3389800d7232
