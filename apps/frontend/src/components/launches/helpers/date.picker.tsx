@@ -1,4 +1,5 @@
 import { FC, useCallback, useState } from 'react';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { Calendar, TimeInput } from '@mantine/dates';
 import { useClickOutside } from '@mantine/hooks';
@@ -10,14 +11,18 @@ import { CalendarIcon } from '@gitroom/frontend/components/ui/icons';
 export const DatePicker: FC<{
   date: dayjs.Dayjs;
   onChange: (day: dayjs.Dayjs) => void;
+  disabled?: boolean;
 }> = (props) => {
-  const { date, onChange } = props;
+  const { date, onChange, disabled } = props;
   const [open, setOpen] = useState(false);
   const t = useT();
 
   const changeShow = useCallback(() => {
+    if (disabled) {
+      return;
+    }
     setOpen((prev) => !prev);
-  }, []);
+  }, [disabled]);
   const ref = useClickOutside<HTMLDivElement>(() => {
     setOpen(false);
   });
@@ -35,14 +40,17 @@ export const DatePicker: FC<{
   );
   return (
     <div
-      className="px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] ml-[7px] select-none flex-1"
+      className={clsx(
+        'px-[16px] border border-newTextColor/10 rounded-[8px] justify-center flex gap-[8px] items-center relative h-[44px] text-[15px] font-[600] select-none flex-1',
+        disabled && 'opacity-50'
+      )}
       onClick={changeShow}
       ref={ref}
     >
-      <div className="cursor-pointer">
+      <div className={disabled ? 'cursor-not-allowed' : 'cursor-pointer'}>
         <CalendarIcon />
       </div>
-      <div className="cursor-pointer">
+      <div className={disabled ? 'cursor-not-allowed' : 'cursor-pointer'}>
         {date.format(isUSCitizen() ? 'MM/DD/YYYY hh:mm A' : 'DD/MM/YYYY HH:mm')}
       </div>
       {open && (

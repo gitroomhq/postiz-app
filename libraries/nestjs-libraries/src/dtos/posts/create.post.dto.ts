@@ -68,6 +68,10 @@ export class Post {
   @IsString()
   group: string;
 
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
   @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {
