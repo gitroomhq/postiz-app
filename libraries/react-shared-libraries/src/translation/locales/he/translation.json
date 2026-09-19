@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "הפוסט צריך להיות באורך של לפחות 6 תווים",
   "are_you_sure_you_want_to_delete_post": "האם אתה בטוח שברצונך למחוק את הפוסט הזה?",
   "post_deleted_successfully": "הפוסט נמחק בהצלחה",
+  "post_no_longer_exists": "הפוסט הזה כבר לא קיים",
   "delete_post": "מחק פוסט",
   "save_as_draft": "שמור כטיוטה",
   "post_now": "פרסם עכשיו",

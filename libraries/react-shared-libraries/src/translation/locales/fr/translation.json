@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "Le post doit contenir au moins 6 caractères",
   "are_you_sure_you_want_to_delete_post": "Êtes-vous sûr de vouloir supprimer cette publication ?",
   "post_deleted_successfully": "Publication supprimée avec succès",
+  "post_no_longer_exists": "Cette publication n'existe plus",
   "delete_post": "Supprimer le post",
   "save_as_draft": "Enregistrer comme brouillon",
   "post_now": "Publier maintenant",
