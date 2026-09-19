@@ -411,6 +411,24 @@ export class PostsRepository {
     });
   }
 
+  updateResolvedRelease(
+    id: string,
+    orgId: string,
+    releaseId: string,
+    releaseURL: string
+  ) {
+    return this._post.model.post.update({
+      where: {
+        id,
+        organizationId: orgId,
+      },
+      data: {
+        releaseId,
+        releaseURL,
+      },
+    });
+  }
+
   async changeState(id: string, state: State, err?: any, body?: any) {
     const update = await this._post.model.post.update({
       where: {
