@@ -6,7 +6,10 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 //@ts-ignore
 import mime from 'mime';
 import TelegramBot from 'node-telegram-bot-api';
@@ -169,6 +172,40 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   }
 
   private async sendMessage(
+    accessToken: string,
+    message: PostDetails,
+    replyToMessageId?: number
+  ): Promise<number | null> {
+    try {
+      return await this.sendMessageInternal(
+        accessToken,
+        message,
+        replyToMessageId
+      );
+    } catch (error: any) {
+      // A Telegram 400 is a permanent rejection of this request (caption too
+      // long, media Telegram could not download, ...): retrying it can never
+      // succeed, so surface it to the user instead.
+      const body = error?.response?.body;
+      if (error?.code === 'ETELEGRAM' && body?.error_code === 400) {
+        const description = (body.description || '').replace(
+          'Bad Request: ',
+          ''
+        );
+        throw new BadBody(
+          'telegram-error',
+          JSON.stringify(body),
+          Buffer.from(JSON.stringify(body)),
+          description === 'failed to get HTTP URL content'
+            ? 'Telegram could not download your media file, please check the file and try again'
+            : `Telegram rejected the post: ${description}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async sendMessageInternal(
     accessToken: string,
     message: PostDetails,
     replyToMessageId?: number
