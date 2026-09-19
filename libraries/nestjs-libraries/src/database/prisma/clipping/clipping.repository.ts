@@ -208,13 +208,21 @@ export class ClippingRepository {
     });
   }
 
-  // In one transaction with a look at what is there: an attempt that timed out
-  // can still be running when its retry gets here, and only one may store clips
+  // An attempt that timed out can still be running when its retry gets here, and
+  // only one may store clips. The look at what is there is not enough on its own
+  // (both can see nothing), so the update takes the row of the clipping first:
+  // the second attempt waits on it until the first commits and then finds its clips
   createClips(
     clippingId: string,
     clips: { title: string; content: string; start: number; end: number }[]
   ) {
     return this._transaction.model.$transaction(async (tx) => {
+      await tx.clipping.update({
+        where: { id: clippingId },
+        data: { updatedAt: new Date() },
+        select: { id: true },
+      });
+
       const select = { where: { clippingId }, select: { id: true } };
       const existing = await tx.clippingClip.findMany(select);
       if (existing.length) {
@@ -245,6 +253,21 @@ export class ClippingRepository {
     });
   }
 
+  // Only the attempt that moves draftedAt off null may create the draft
+  async claimClipDraft(id: string) {
+    const { count } = await this._clippingClip.model.clippingClip.updateMany({
+      where: {
+        id,
+        draftedAt: null,
+      },
+      data: {
+        draftedAt: new Date(),
+      },
+    });
+
+    return count === 1;
+  }
+
   getClipById(id: string) {
     return this._clippingClip.model.clippingClip.findUnique({
       where: {
@@ -265,7 +288,7 @@ export class ClippingRepository {
       mediaId?: string;
       path?: string;
       thumbnail?: string;
-      draftedAt?: Date;
+      draftedAt?: Date | null;
     }
   ) {
     return this._clippingClip.model.clippingClip.update({

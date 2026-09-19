@@ -127,8 +127,12 @@ export class ClippingService {
       case 'UNSUPPORTED_INPUT':
         return 'This link is not a video that can be clipped. Live streams are not supported.';
       default:
-        // the message and the stderr tail can carry presigned urls
-        console.error('Clipping job failed:', JSON.stringify(failure));
+        // the message and the stderr tail can carry presigned urls, which are
+        // as good as a key to the file for as long as they live
+        console.error(
+          'Clipping job failed:',
+          JSON.stringify(failure)?.replace(/https?:\/\/[^\s"'\\]+/g, '[url]')
+        );
         return `The video could not be processed (${
           failure?.code || 'FAILED'
         }).`;
@@ -935,46 +939,55 @@ export class ClippingService {
         continue;
       }
 
-      const nextTime = await this._postsService.findFreeDateTime(
-        clipping.organizationId
-      );
+      // claimed before the draft exists: a retry, or an attempt that timed out
+      // and is still running, skips the clip instead of drafting it a second time
+      if (!(await this._clippingRepository.claimClipDraft(clip.id))) {
+        continue;
+      }
 
-      await this._postsService.createPost(
-        clipping.organizationId,
-        {
-          date: nextTime + 'Z',
-          order: makeId(10),
-          shortLink: false,
-          type: 'draft',
-          tags: [],
-          posts: integrations.map((integration) => ({
-            settings: {
-              __type: integration!.providerIdentifier as any,
-            },
-            group: makeId(10),
-            integration: { id: integration!.id },
-            value: [
-              {
-                id: makeId(10),
-                delay: 0,
-                content: clip.content,
-                image: [
-                  {
-                    id: clip.mediaId || makeId(10),
-                    path: clip.path!,
-                    ...(clip.thumbnail ? { thumbnail: clip.thumbnail } : {}),
-                  },
-                ],
+      try {
+        const nextTime = await this._postsService.findFreeDateTime(
+          clipping.organizationId
+        );
+
+        await this._postsService.createPost(
+          clipping.organizationId,
+          {
+            date: nextTime + 'Z',
+            order: makeId(10),
+            shortLink: false,
+            type: 'draft',
+            tags: [],
+            posts: integrations.map((integration) => ({
+              settings: {
+                __type: integration!.providerIdentifier as any,
               },
-            ],
-          })),
-        },
-        'UNKNOWN'
-      );
-
-      await this._clippingRepository.updateClip(clip.id, {
-        draftedAt: new Date(),
-      });
+              group: makeId(10),
+              integration: { id: integration!.id },
+              value: [
+                {
+                  id: makeId(10),
+                  delay: 0,
+                  content: clip.content,
+                  image: [
+                    {
+                      id: clip.mediaId || makeId(10),
+                      path: clip.path!,
+                      ...(clip.thumbnail ? { thumbnail: clip.thumbnail } : {}),
+                    },
+                  ],
+                },
+              ],
+            })),
+          },
+          'UNKNOWN'
+        );
+      } catch (err) {
+        await this._clippingRepository.updateClip(clip.id, {
+          draftedAt: null,
+        });
+        throw err;
+      }
     }
   }
 
