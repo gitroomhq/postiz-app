@@ -768,5 +768,7 @@
   "republish_the_post": "Gönderiyi tekrar yayımla",
   "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
   "republish_at": "tarihinde/saatinde",
+  "past_publish_date_warning": "Yayın tarihi geçmişte, lütfen gelecekte bir tarih seçin.",
+  "could_not_save_post": "Gönderi kaydedilemedi.",
   "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
 }

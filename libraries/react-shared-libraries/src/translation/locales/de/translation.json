@@ -768,5 +768,7 @@
   "republish_the_post": "Beitrag erneut veröffentlichen",
   "post_already_published_republish_warning": "Dieser Beitrag wurde bereits veröffentlicht. Durch erneutes Veröffentlichen wird er erneut veröffentlicht auf",
   "republish_at": "um",
+  "past_publish_date_warning": "Das Veröffentlichungsdatum liegt in der Vergangenheit, bitte wähle ein zukünftiges Datum.",
+  "could_not_save_post": "Beitrag konnte nicht gespeichert werden.",
   "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen."
 }
