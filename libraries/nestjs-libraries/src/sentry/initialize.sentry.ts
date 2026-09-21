@@ -60,7 +60,7 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           normalizedRequest?.url || attributes?.['http.target'] || attributes?.['url.path'] || name || ''
         );
         return inheritOrSampleWith(
-          path.includes('/public/v1/analytics/') ? 0.01 : 0.2
+          path.includes('/public/v1/analytics/') ? 0.01 : 0.1
         );
       },
       enableLogs: true,
