@@ -59,6 +59,13 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         const path = String(
           normalizedRequest?.url || attributes?.['http.target'] || attributes?.['url.path'] || name || ''
         );
+        const method = String(
+          normalizedRequest?.method || attributes?.['http.request.method'] || attributes?.['http.method'] || ''
+        );
+        // MCP stream GETs are declined with 405; never trace them
+        if (method === 'GET' && /^(https?:\/\/[^/]+)?\/mcp(\/|-oauth|\?|$)/.test(path)) {
+          return 0;
+        }
         return inheritOrSampleWith(
           path.includes('/public/v1/analytics/') ? 0.01 : 0.1
         );
