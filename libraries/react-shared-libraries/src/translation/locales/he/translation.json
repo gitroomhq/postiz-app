@@ -768,5 +768,9 @@
   "republish_the_post": "לפרסם מחדש את הפוסט",
   "post_already_published_republish_warning": "הפוסט הזה כבר פורסם. פרסום מחדש יפרסם אותו שוב ב",
   "republish_at": "בשעה",
-  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו."
+  "republish_recurring_note": "זהו פוסט חוזר: השינויים שלך יחולו על כל ההופעות העתידיות החל מעכשיו.",
+  "finish_trial": "סיום תקופת הניסיון",
+  "finish_trial_confirmation": "סיום תקופת הניסיון יחייב את התוכנית שלך באופן מיידי, האם אתה בטוח?",
+  "finish_trial_charge_me_now": "סיים את תקופת הניסיון וחייב אותי עכשיו",
+  "trial": "תקופת ניסיון"
 }

@@ -768,5 +768,9 @@
   "republish_the_post": "Republier la publication",
   "post_already_published_republish_warning": "Cette publication a déjà été publiée. La republier la publiera à nouveau sur",
   "republish_at": "à",
-  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant."
+  "republish_recurring_note": "Il s'agit d'une publication récurrente : vos modifications s'appliquent à toutes les récurrences futures à partir de maintenant.",
+  "finish_trial": "Terminer l'essai",
+  "finish_trial_confirmation": "Terminer l'essai facturera immédiatement votre abonnement, êtes-vous sûr ?",
+  "finish_trial_charge_me_now": "Terminer l'essai, facturez-moi maintenant",
+  "trial": "Essai"
 }

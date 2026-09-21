@@ -768,5 +768,9 @@
   "republish_the_post": "Gönderiyi tekrar yayımla",
   "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
   "republish_at": "tarihinde/saatinde",
-  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır.",
+  "finish_trial": "Denemeyi bitir",
+  "finish_trial_confirmation": "Denemeyi bitirmek planınızı hemen ücretlendirecek, emin misiniz?",
+  "finish_trial_charge_me_now": "Denemeyi bitir, şimdi ücretlendir",
+  "trial": "Deneme"
 }

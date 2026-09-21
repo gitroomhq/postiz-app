@@ -534,6 +534,7 @@ checksums:
     billing_advanced_picture_editor: 329a6c2e8b2685f81609859a4de07b0f
     billing_ai_images_per_month: 5073aa90b32654abe6200d426a97f03e
     billing_ai_videos_per_month: c786199d8dc9bded54fab8f92c350b19
+    billing_clipping_minutes_per_month: e8337650fb3b1836ba1194e5e7730fd6
     billing_billing_address: 48980a775bfc7292b0c4f9b74b4d352e
     billing_payment: 95142d3fd8b6a6f551aba771842e9c11
     billing_powered_by_stripe: f2767a22c2cd93d4e8fe5c5d6ee05ad1
@@ -772,3 +773,7 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    finish_trial: 1d20d4471820f251c64a436b63db678f
+    finish_trial_confirmation: 5e7b2ea52e07fffa3c401a43eb7c94d4
+    finish_trial_charge_me_now: 13a748bb479d826430c8d5102e0d7705
+    trial: 4fd32760caf3bd7169935b0a6d2b5b67

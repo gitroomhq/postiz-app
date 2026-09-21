@@ -768,5 +768,9 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "finish_trial": "Kết thúc dùng thử",
+  "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ khiến gói của bạn bị tính phí ngay lập tức, bạn có chắc chắn không?",
+  "finish_trial_charge_me_now": "Kết thúc dùng thử, tính phí ngay",
+  "trial": "Dùng thử"
 }
