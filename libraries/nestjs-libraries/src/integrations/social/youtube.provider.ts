@@ -442,10 +442,12 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         headers: { 'accept-encoding': 'identity' },
         dispatcher: getSsrfSafeDispatcher(),
       } as any);
-      const length = head.headers.get('content-length');
-      // Same transient store behaviour as the ranged reads below: retry before
+      const length = Number(head.headers.get('content-length'));
+      // A failed HEAD can still carry a content-length (of the error body),
+      // and a zero/NaN size would poison the chunk math downstream. Same
+      // transient store behaviour as the ranged reads below: retry before
       // failing the post, nothing irreversible has happened at this point.
-      if (!length) {
+      if (!head.ok || !Number.isFinite(length) || length <= 0) {
         if (totalRetries <= 2) {
           await timer(5000);
           return this.youtubeMediaSize(path, totalRetries + 1);
@@ -458,7 +460,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           'Could not determine the video size for the YouTube upload'
         );
       }
-      return Number(length);
+      return length;
     }
 
     return statSync(path).size;
