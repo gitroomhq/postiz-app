@@ -44,7 +44,7 @@ We consider an issue a vulnerability when it is a weakness in an in-scope, suppo
 
 ## Contacting Us
 
-All security correspondence goes through [GAdvisory](https://postiz.gadvisory.org/request), our security advisory platform. The form routes four types of request:
+All security reports and related correspondence must be submitted through [GAdvisory](https://postiz.gadvisory.org/request), our security advisory platform. The form routes four types of request:
 
 - **Report a vulnerability.** See [Reporting Security Vulnerabilities](#reporting-security-vulnerabilities).
 - **Dispute a CVE or Advisory.** Challenge the validity of a record we published. Disputes and their resolution are public and permanent. Our CVE Record Dispute Policy is linked from this flow.
@@ -64,7 +64,7 @@ If you discover a security vulnerability in the Postiz app, report it through [G
 - Steps to reproduce the vulnerability
 - Any relevant code or configuration files
 
-If the report has immediate urgency, please also contact one (or more) of the maintainers via email:
+Email the maintainers only when the report requires immediate, time-critical attention. Email does not replace submitting the report through GAdvisory.
 
 - @egelhaus ([E-Mail](mailto:egelhaus@ennogelhaus.de))
 
