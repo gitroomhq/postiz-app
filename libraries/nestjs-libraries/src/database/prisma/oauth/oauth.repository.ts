@@ -236,6 +236,8 @@ export class OAuthRepository {
         oauthApp: {
           select: {
             clientId: true,
+            dynamic: true,
+            redirectUris: true,
           },
         },
         organization: {

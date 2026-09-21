@@ -37,3 +37,15 @@ export const textSlicer = (
 export const weightedLength = (text: string): number => {
   return twitter.parseTweet(text).weightedLength;
 };
+
+export const countLength = (integrationType: string, text: string): number => {
+  if (integrationType === 'x') {
+    return weightedLength(text);
+  }
+
+  if (integrationType === 'threads') {
+    return new TextEncoder().encode(text).length;
+  }
+
+  return text.length;
+};

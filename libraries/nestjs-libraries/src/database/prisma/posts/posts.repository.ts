@@ -734,6 +734,59 @@ export class PostsRepository {
     });
   }
 
+  private get postTimelineSelect() {
+    return {
+      id: true,
+      state: true,
+      publishDate: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      releaseId: true,
+      releaseURL: true,
+      error: true,
+      creationMethod: true,
+      group: true,
+      parentPostId: true,
+    } as const;
+  }
+
+  getPostTimeline(id: string, org: string) {
+    return this._post.model.post.findFirst({
+      where: {
+        id,
+        organizationId: org,
+      },
+      select: {
+        ...this.postTimelineSelect,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            disabled: true,
+            refreshNeeded: true,
+            deletedAt: true,
+          },
+        },
+        childrenPost: {
+          select: this.postTimelineSelect,
+          orderBy: { publishDate: 'asc' as const },
+        },
+        errors: {
+          select: {
+            id: true,
+            platform: true,
+            message: true,
+            body: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+      },
+    });
+  }
+
   findAllExistingCategories() {
     return this._popularPosts.model.popularPosts.findMany({
       select: {
@@ -884,29 +937,51 @@ export class PostsRepository {
     });
   }
 
-  async getPostByForWebhookId(postId: string) {
-    return this._post.model.post.findMany({
+  async getPostByForWebhookId(postId: string, integrationId: string) {
+    const select = {
+      id: true,
+      content: true,
+      publishDate: true,
+      releaseURL: true,
+      state: true,
+      integration: {
+        select: {
+          id: true,
+          name: true,
+          providerIdentifier: true,
+          picture: true,
+          type: true,
+        },
+      },
+    };
+
+    const posts = await this._post.model.post.findMany({
       where: {
         id: postId,
         deletedAt: null,
         parentPostId: null,
       },
-      select: {
-        id: true,
-        content: true,
-        publishDate: true,
-        releaseURL: true,
-        state: true,
-        integration: {
-          select: {
-            id: true,
-            name: true,
-            providerIdentifier: true,
-            picture: true,
-            type: true,
-          },
-        },
+      select,
+    });
+
+    if (posts.length) {
+      return posts;
+    }
+
+    // The running workflows pass the platform's post id, which updatePost
+    // already stored on the row as releaseId before the webhook is sent.
+    return this._post.model.post.findMany({
+      where: {
+        releaseId: postId,
+        integrationId,
+        deletedAt: null,
+        parentPostId: null,
       },
+      orderBy: {
+        updatedAt: 'desc' as const,
+      },
+      take: 1,
+      select,
     });
   }
 

@@ -286,6 +286,39 @@ export class SubscriptionRepository {
     }
   }
 
+  // The caller picks the id, so charging the same work twice is one row
+  chargeCredits(
+    id: string,
+    organizationId: string,
+    type: string,
+    credits: number
+  ) {
+    return this._credits.model.credits.upsert({
+      where: {
+        id,
+      },
+      create: {
+        id,
+        organizationId,
+        credits,
+        type,
+      },
+      update: {},
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  refundCredits(organizationId: string, id: string) {
+    return this._credits.model.credits.deleteMany({
+      where: {
+        id,
+        organizationId,
+      },
+    });
+  }
+
   setCustomerId(orgId: string, customerId: string) {
     return this._organization.model.organization.update({
       where: {

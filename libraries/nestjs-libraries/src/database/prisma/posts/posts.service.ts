@@ -53,7 +53,7 @@ import { stripLinks } from '@gitroom/helpers/utils/strip.links';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { countLength } from '@gitroom/helpers/utils/count.length';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -144,6 +144,10 @@ export class PostsService {
 
   async getPostById(postId: string, orgId: string) {
     return this._postRepository.getPostById(postId, orgId);
+  }
+
+  async getPostTimeline(postId: string, orgId: string) {
+    return this._postRepository.getPostTimeline(postId, orgId);
   }
 
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
@@ -349,9 +353,21 @@ export class PostsService {
         (
           await Promise.all(
             (imagesList || []).map(async (p: any) => {
-              if (!p.path && p.id) {
+              if (!p.id) {
+                return p;
+              }
+
+              if (!p.path) {
                 imageUpdateNeeded = true;
                 return this._mediaService.getMediaById(p.id);
+              }
+
+              // the normalizer may have replaced the file after the post was
+              // composed; a record still processing publishes the original
+              const fresh = await this._mediaService.getMediaById(p.id);
+              if (fresh?.status === 'ready' && fresh.path !== p.path) {
+                imageUpdateNeeded = true;
+                return { ...p, name: fresh.name, path: fresh.path };
               }
 
               return p;
@@ -688,8 +704,8 @@ export class PostsService {
     return this._postRepository.countPostsFromDay(orgId, date);
   }
 
-  getPostByForWebhookId(id: string) {
-    return this._postRepository.getPostByForWebhookId(id);
+  getPostByForWebhookId(id: string, integrationId: string) {
+    return this._postRepository.getPostByForWebhookId(id, integrationId);
   }
 
   async startWorkflow(
@@ -827,20 +843,17 @@ export class PostsService {
         }
 
         const maximumCharacters = provider.maxLength(additionalSettings, settings);
-        const isX = integration.providerIdentifier === 'x';
 
         const emptyContent = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
-          const length = isX ? weightedLength(strip) : strip.length;
+          const length = countLength(integration.providerIdentifier, strip);
           return length === 0 && (a.image || []).length === 0;
         });
 
         const tooLong = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
-          const weighted = isX ? weightedLength(strip) : strip.length;
-          const totalCharacters =
-            weighted > strip.length ? weighted : strip.length;
-          return totalCharacters > (maximumCharacters || 1000000);
+          const counted = countLength(integration.providerIdentifier, strip);
+          return counted > (maximumCharacters || 1000000);
         });
 
         return {
