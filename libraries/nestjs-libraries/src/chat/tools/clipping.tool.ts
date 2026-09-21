@@ -38,6 +38,9 @@ export class ClippingTool implements AgentToolInterface {
       description: `Turn a long YouTube video into short vertical clips with burned-in captions.
                     The best parts of the video are picked automatically, every clip is saved to the media library,
                     and when channels are passed a draft post is created for every clip on every channel (nothing is scheduled or published).
+                    Before calling this tool, always ask the user how the horizontal video should fill the vertical clip, and wait for the answer:
+                    "blur" keeps the whole picture over a blurred copy of itself, "crop" fills the clip with the middle of the picture and cuts the sides away.
+                    Never pick one for the user, unless they already said which one they want in this conversation.
                     It uses the clipping minutes of the subscription: one minute for every minute of the source video.
                     Clipping takes several minutes, so this only starts it and returns a clippingId: tell the user it is running.
                     Some apps show a widget with the progress and report the finished clips in the conversation by themselves.
@@ -61,9 +64,8 @@ export class ClippingTool implements AgentToolInterface {
           .describe('Maximum number of clips, 5 by default'),
         fit: z
           .enum(['crop', 'blur'])
-          .optional()
           .describe(
-            'How the horizontal video fills the vertical clip. "blur" (default) keeps the whole picture over a blurred copy of itself and is always safe. "crop" fills the clip with the middle of the picture and cuts the sides away: there is no face tracking, so a speaker who is not in the centre is cut out of the clip. Leave this empty unless the user explicitly asks for a cropped clip, and when they do, tell them that anything outside the centre of the picture will be lost.'
+            'How the horizontal video fills the vertical clip, as answered by the user: ask them before calling this tool and never guess it. "blur" keeps the whole picture over a blurred copy of itself and is always safe. "crop" fills the clip with the middle of the picture and cuts the sides away: there is no face tracking, so a speaker who is not in the centre is cut out of the clip. When asking, tell the user that with "crop" anything outside the centre of the picture will be lost.'
           ),
       }),
       outputSchema: z.object({
