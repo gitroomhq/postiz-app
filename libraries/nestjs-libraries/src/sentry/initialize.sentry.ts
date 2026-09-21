@@ -55,11 +55,25 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           recordOutputs: true,
         }),
       ],
-      tracesSampleRate: 1.0,
+      tracesSampler: ({ name, attributes, normalizedRequest, inheritOrSampleWith }) => {
+        const path = String(
+          normalizedRequest?.url || attributes?.['http.target'] || attributes?.['url.path'] || name || ''
+        );
+        const method = String(
+          normalizedRequest?.method || attributes?.['http.request.method'] || attributes?.['http.method'] || ''
+        );
+        // MCP stream GETs are declined with 405; never trace them
+        if (method === 'GET' && /^(https?:\/\/[^/]+)?\/mcp(\/|-oauth|\?|$)/.test(path)) {
+          return 0;
+        }
+        return inheritOrSampleWith(
+          path.includes('/public/v1/analytics/') ? 0.01 : 0.1
+        );
+      },
       enableLogs: true,
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.3,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.2,
       profileLifecycle: 'trace',
     });
   } catch (err) {

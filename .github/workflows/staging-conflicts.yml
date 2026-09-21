@@ -90,6 +90,23 @@ jobs:
           xargs -0 git checkout --theirs -- < /tmp/ci_paths
           xargs -0 git add -- < /tmp/ci_paths
 
+      # The lockfile is generated, never hand-merged: a textual merge of it can
+      # look clean and still be broken (a dropped entry fails `pnpm install`
+      # with ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY). Main's copy is staged here
+      # only to clear the conflict; it is rewritten from scratch further down,
+      # once package.json is final.
+      - name: Defer the lockfile
+        if: steps.probe.outputs.conflicted == 'true'
+        run: |
+          if ! git diff --name-only --diff-filter=U -- pnpm-lock.yaml | grep -q .; then
+            echo "pnpm-lock.yaml is not conflicted"
+            exit 0
+          fi
+
+          echo "taking main's lockfile as a placeholder, to be regenerated"
+          git checkout --theirs -- pnpm-lock.yaml
+          git add -- pnpm-lock.yaml
+
       - name: Resolve with Claude
         if: steps.probe.outputs.conflicted == 'true'
         uses: anthropics/claude-code-action@v1
@@ -114,11 +131,49 @@ jobs:
             - Never modify anything under `.github/`. Conflicts there are
               already resolved and staged for you; leave them exactly as they
               are and resolve only the remaining paths.
+            - Never modify `pnpm-lock.yaml`. It is generated, it is already
+              staged for you, and it is regenerated from `package.json` after
+              you finish. Resolve `package.json` itself normally.
             - If a conflict is ambiguous enough that you would be guessing at
               the correct resolution, stop without committing and explain why.
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Read,Glob,Grep,Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),Bash(git add:*),Bash(git commit:*)"
+
+      - name: Set up Node
+        if: steps.probe.outputs.conflicted == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+
+      - name: Install pnpm
+        if: steps.probe.outputs.conflicted == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      # Rewrites the lockfile from the merged package.json and folds it into the
+      # merge commit, so the resolution never carries a hand-merged lockfile.
+      - name: Rewrite the lockfile
+        if: steps.probe.outputs.conflicted == 'true'
+        run: |
+          # If Claude bailed out, the merge is still open. Amending here would
+          # rewrite staging's tip instead, so leave it for Verify to fail on.
+          if git rev-parse -q --verify MERGE_HEAD >/dev/null || git ls-files -u | grep -q .; then
+            echo "merge was not committed, skipping the rewrite"
+            exit 0
+          fi
+
+          pnpm install --lockfile-only --no-frozen-lockfile --ignore-scripts
+
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "regenerated lockfile matches the committed one"
+            exit 0
+          fi
+
+          git add -- pnpm-lock.yaml
+          git commit --amend --no-edit
+          echo "lockfile regenerated and folded into the merge commit"
 
       - name: Verify resolution
         if: steps.probe.outputs.conflicted == 'true'
@@ -160,6 +215,13 @@ jobs:
               exit 1
             fi
           done
+
+          # The failure this guards against is a lockfile that merges cleanly
+          # but no longer resolves, which only surfaces on the next install.
+          if ! pnpm install --frozen-lockfile --ignore-scripts; then
+            echo "::error::pnpm-lock.yaml does not install, refusing to push"
+            exit 1
+          fi
 
           echo "Resolution commit:"
           git log -1 --stat

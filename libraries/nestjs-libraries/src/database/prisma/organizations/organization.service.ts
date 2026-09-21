@@ -55,12 +55,21 @@ export class OrganizationService {
     return this._organizationRepository.getOrgByIdWithSubscription(id);
   }
 
+  getAccountOverview(orgId: string) {
+    return this._organizationRepository.getAccountOverview(orgId);
+  }
+
   getOrgByApiKey(api: string) {
     return this._organizationRepository.getOrgByApiKey(api);
   }
 
-  async hasSuperAdminUser(orgId: string) {
-    return !!(await this._organizationRepository.getSuperAdminUser(orgId));
+  async canUseSuperAdminApi(orgId: string) {
+    const [superAdmin, privilegedOther] = await Promise.all([
+      this._organizationRepository.getSuperAdminUser(orgId),
+      this._organizationRepository.getPrivilegedNonSuperAdminUser(orgId),
+    ]);
+
+    return !!superAdmin && !privilegedOther;
   }
 
   getUserOrg(id: string) {

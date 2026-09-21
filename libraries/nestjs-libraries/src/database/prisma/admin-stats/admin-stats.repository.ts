@@ -6,6 +6,15 @@ export interface StatsParams {
   from: Date;
   to: Date;
   unknownOnly?: boolean;
+  organizationId?: string;
+  includeDeleted?: boolean;
+}
+
+export interface OrgActivityParams {
+  from: Date;
+  to: Date;
+  organizationId: string;
+  includeDeleted?: boolean;
 }
 
 // Unknown errors are stored as the serialized error payload, e.g.
@@ -15,6 +24,24 @@ const UNKNOWN_ERROR_TOKEN = '"message":"Unknown Error"';
 interface PerSocial {
   provider: string;
   count: number;
+}
+
+interface PerState {
+  state: string;
+  count: number;
+}
+
+export interface OrgActivityResponse {
+  from: string;
+  to: string;
+  organizationId: string;
+  errors: { total: number; perSocial: PerSocial[] };
+  posts: { total: number; perSocial: PerSocial[] };
+  connectedInRange: { total: number; perSocial: PerSocial[] };
+  channels: { total: number; perSocial: PerSocial[] };
+  postsByState: PerState[];
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
 }
 
 export interface StatsResponse {
@@ -27,6 +54,7 @@ export interface StatsResponse {
   scheduledAccounts: { total: number; perSocial: PerSocial[] };
   publishingChannels: { total: number; perSocial: PerSocial[] };
   scheduledChannels: { total: number; perSocial: PerSocial[] };
+  activeOrgsBySource: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -45,6 +73,9 @@ export class AdminStatsRepository {
       createdAt: { gte: params.from, lte: params.to },
       ...(params.unknownOnly
         ? { message: { contains: UNKNOWN_ERROR_TOKEN } }
+        : {}),
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
         : {}),
     };
 
@@ -74,8 +105,11 @@ export class AdminStatsRepository {
     const where: Prisma.PostWhereInput = {
       state: 'PUBLISHED',
       parentPostId: null,
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       publishDate: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -212,10 +246,50 @@ export class AdminStatsRepository {
     };
   }
 
+  // Distinct organizations with at least one top-level scheduled, published
+  // or failed post in the range, per creation source (web, API, MCP, ...).
+  // The total is distinct across all sources combined, not a summation.
+  private async sourceStats(params: StatsParams) {
+    const where: Prisma.PostWhereInput = {
+      parentPostId: null,
+      deletedAt: null,
+      publishDate: { gte: params.from, lte: params.to },
+      state: { in: ['QUEUE', 'PUBLISHED', 'ERROR'] },
+    };
+
+    const groups = await this._post.model.post.groupBy({
+      by: ['organizationId', 'creationMethod'],
+      where,
+    });
+
+    const allOrgs = new Set<string>();
+    const orgsBySource = new Map<string, Set<string>>();
+    for (const g of groups) {
+      if (!orgsBySource.has(g.creationMethod)) {
+        orgsBySource.set(g.creationMethod, new Set());
+      }
+      orgsBySource.get(g.creationMethod)!.add(g.organizationId);
+      allOrgs.add(g.organizationId);
+    }
+
+    return {
+      total: allOrgs.size,
+      perSocial: sortDesc(
+        [...orgsBySource.entries()].map(([provider, orgs]) => ({
+          provider,
+          count: orgs.size,
+        }))
+      ),
+    };
+  }
+
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       createdAt: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -238,13 +312,107 @@ export class AdminStatsRepository {
     };
   }
 
-  async getStats(params: StatsParams): Promise<StatsResponse> {
-    const [errors, posts, accounts, connected] = await Promise.all([
-      this.errorStats(params),
-      this.postStats(params),
-      this.accountStats(params),
-      this.connectedStats(params),
+  private async postStateStats(params: OrgActivityParams) {
+    const grouped = await this._post.model.post.groupBy({
+      by: ['state'],
+      where: {
+        organizationId: params.organizationId,
+        parentPostId: null,
+        ...(params.includeDeleted ? {} : { deletedAt: null }),
+        publishDate: { gte: params.from, lte: params.to },
+      },
+      _count: { _all: true },
+    });
+
+    return grouped
+      .map((g) => ({ state: g.state as string, count: g._count._all }))
+      .sort((a, b) => b.count - a.count || a.state.localeCompare(b.state));
+  }
+
+  private async currentChannelStats(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
+    const where: Prisma.IntegrationWhereInput = {
+      organizationId,
+      ...(includeDeleted ? {} : { deletedAt: null }),
+    };
+
+    const [total, grouped] = await Promise.all([
+      this._integration.model.integration.count({ where }),
+      this._integration.model.integration.groupBy({
+        by: ['providerIdentifier'],
+        where,
+        _count: { _all: true },
+      }),
     ]);
+
+    return {
+      total,
+      perSocial: sortDesc(
+        grouped.map((g) => ({
+          provider: g.providerIdentifier,
+          count: g._count._all,
+        }))
+      ),
+    };
+  }
+
+  private async activityRange(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
+    const { _min, _max } = await this._post.model.post.aggregate({
+      where: {
+        organizationId,
+        state: 'PUBLISHED',
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
+      _min: { publishDate: true },
+      _max: { publishDate: true },
+    });
+
+    return {
+      firstActivityAt: _min.publishDate?.toISOString() || null,
+      lastActivityAt: _max.publishDate?.toISOString() || null,
+    };
+  }
+
+  async getOrgActivity(
+    params: OrgActivityParams
+  ): Promise<OrgActivityResponse> {
+    const [errors, posts, connectedInRange, channels, postsByState, activity] =
+      await Promise.all([
+        this.errorStats(params),
+        this.postStats(params),
+        this.connectedStats(params),
+        this.currentChannelStats(params.organizationId, params.includeDeleted),
+        this.postStateStats(params),
+        this.activityRange(params.organizationId, params.includeDeleted),
+      ]);
+
+    return {
+      from: params.from.toISOString(),
+      to: params.to.toISOString(),
+      organizationId: params.organizationId,
+      errors,
+      posts,
+      connectedInRange,
+      channels,
+      postsByState,
+      ...activity,
+    };
+  }
+
+  async getStats(params: StatsParams): Promise<StatsResponse> {
+    const [errors, posts, accounts, connected, activeOrgsBySource] =
+      await Promise.all([
+        this.errorStats(params),
+        this.postStats(params),
+        this.accountStats(params),
+        this.connectedStats(params),
+        this.sourceStats(params),
+      ]);
 
     return {
       from: params.from.toISOString(),
@@ -256,6 +424,7 @@ export class AdminStatsRepository {
       scheduledAccounts: accounts.scheduledAccounts,
       publishingChannels: accounts.publishingChannels,
       scheduledChannels: accounts.scheduledChannels,
+      activeOrgsBySource,
     };
   }
 }

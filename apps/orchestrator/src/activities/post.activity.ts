@@ -117,7 +117,7 @@ export class PostActivity {
     for (const post of list) {
       await this._temporalService.client
         .getRawClient()
-        .workflow.signalWithStart('postWorkflowV111', {
+        .workflow.signalWithStart('postWorkflowV112', {
           workflowId: `post_${post.id}`,
           taskQueue: 'main',
           signal: 'poke',
@@ -498,7 +498,10 @@ export class PostActivity {
         return;
       }
 
-      const post = await this._postService.getPostByForWebhookId(postId);
+      const post = await this._postService.getPostByForWebhookId(
+        postId,
+        integrationId
+      );
       await Promise.all(
         webhooks.map(async (webhook) => {
           try {

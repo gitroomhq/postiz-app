@@ -163,6 +163,42 @@
         "open_world_justification": "Reads from a public URL and stores the resulting media through external storage.",
         "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
       }
+    },
+    "uploadWidgetTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with.",
+        "open_world_justification": "Only creates an upload session inside the user's Postiz workspace; nothing is published or sent to a third party.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "uploadWidgetTicketTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived upload ticket for the upload widget; it is only callable by the widget, not by the model.",
+        "open_world_justification": "The ticket only allows uploads into the user's own Postiz media library; no public or third-party state changes.",
+        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
+      }
+    },
+    "uploadWidgetStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the media uploaded in an upload widget session.",
+        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
+        "destructive_justification": "Read-only; it cannot change or delete anything."
+      }
     }
   },
   "test_cases": [

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -11,20 +12,16 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
-import {
-  CustomFileValidationPipe,
-  getMaxSize,
-} from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.stream.engine';
 import { ApiTags } from '@nestjs/swagger';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
+import { GetIncludeDeletedFromRequest } from '@gitroom/nestjs-libraries/user/include.deleted.from.request';
 import { Organization } from '@prisma/client';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { ChangePostStatusDto } from '@gitroom/nestjs-libraries/dtos/posts/change.post.status.dto';
@@ -38,21 +35,6 @@ import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.fu
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notifications/get.notifications.dto';
-import { Readable } from 'stream';
-import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { fileTypeFromBuffer } = require('file-type');
-
-const PUBLIC_API_ALLOWED_MIME = new Set<string>([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/avif',
-  'image/bmp',
-  'image/tiff',
-  'video/mp4',
-]);
 import * as Sentry from '@sentry/nestjs';
 import {
   socialIntegrationList,
@@ -66,12 +48,14 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
+import dayjs from 'dayjs';
 
 @ApiTags('Public API')
 @Controller('/public/v1')
 export class PublicIntegrationsController {
-  private storage = UploadFactory.createStorage();
-
   constructor(
     private _integrationService: IntegrationService,
     private _postsService: PostsService,
@@ -79,12 +63,13 @@ export class PublicIntegrationsController {
     private _notificationService: NotificationService,
     private _integrationManager: IntegrationManager,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _usersService: UsersService
+    private _usersService: UsersService,
+    private _adminStatsService: AdminStatsService,
+    private _organizationService: OrganizationService
   ) {}
 
   @Post('/upload')
-  @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new CustomFileValidationPipe())
+  @UseInterceptors(FileInterceptor('file', streamUploadOptions()))
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File
@@ -94,12 +79,7 @@ export class PublicIntegrationsController {
       throw new HttpException({ msg: 'No file provided' }, 400);
     }
 
-    const getFile = await this.storage.uploadFile(file);
-    return this._mediaService.saveFile(
-      org.id,
-      getFile.originalname,
-      getFile.path
-    );
+    return this._mediaService.saveFile(org.id, file.filename, file.path);
   }
 
   @Post('/upload-from-url')
@@ -108,62 +88,15 @@ export class PublicIntegrationsController {
     @Body() body: UploadDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    let response: globalThis.Response;
     try {
-      response = await fetch(body.url, {
-        // @ts-ignore — undici option, not in lib.dom fetch types
-        dispatcher: ssrfSafeDispatcher,
-      });
-    } catch {
-      // Network-level failure (DNS, connection refused, SSRF block, etc.) —
-      // fetch rejects rather than returning a non-ok response.
-      throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
+      return await this._mediaService.uploadFromUrl(org.id, body.url);
+    } catch (err) {
+      // Validation failures keep this route's { msg } error shape
+      if (err instanceof BadRequestException) {
+        throw new HttpException({ msg: err.message }, 400);
+      }
+      throw err;
     }
-    if (!response.ok) {
-      throw new HttpException({ msg: 'Failed to fetch URL' }, 400);
-    }
-
-    // Guard against OOM: bail out before buffering the whole body into memory.
-    // Content-Length may be absent or wrong, so we re-check the real size after
-    // download too. The type isn't known yet (sniffed below), so the pre-check
-    // uses the largest allowed cap (video).
-    const maxDownloadSize = getMaxSize('video/mp4');
-    const declaredSize = Number(response.headers.get('content-length'));
-    if (declaredSize && declaredSize > maxDownloadSize) {
-      throw new HttpException({ msg: 'File is too large.' }, 400);
-    }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const detected = await fileTypeFromBuffer(buffer);
-    if (!detected || !PUBLIC_API_ALLOWED_MIME.has(detected.mime)) {
-      throw new HttpException({ msg: 'Unsupported file type.' }, 400);
-    }
-
-    if (buffer.length > getMaxSize(detected.mime)) {
-      throw new HttpException({ msg: 'File is too large.' }, 400);
-    }
-
-    const mimetype = detected.mime;
-    const ext = detected.ext;
-
-    const getFile = await this.storage.uploadFile({
-      buffer,
-      mimetype,
-      size: buffer.length,
-      path: '',
-      fieldname: '',
-      destination: '',
-      stream: new Readable(),
-      filename: '',
-      originalname: `upload.${ext}`,
-      encoding: '',
-    });
-
-    return this._mediaService.saveFile(
-      org.id,
-      getFile.originalname,
-      getFile.path
-    );
   }
 
   @Get('/find-slot/:id')
@@ -388,7 +321,72 @@ export class PublicIntegrationsController {
     @Query('name') name: string
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._usersService.getImpersonateUser(name);
+    const term = name?.trim();
+
+    if (!term) {
+      throw new HttpException({ msg: 'A search term is required' }, 400);
+    }
+
+    return this._usersService.getImpersonateUser(term);
+  }
+
+  @Get('/debug/posts/:id')
+  @UseGuards(SuperAdminGuard)
+  async getPostTimeline(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const timeline = await this._postsService.getPostTimeline(id, org.id);
+
+    if (!timeline) {
+      throw new HttpException({ msg: 'Post not found' }, 404);
+    }
+
+    return timeline;
+  }
+
+  @Get('/debug/account')
+  @UseGuards(SuperAdminGuard)
+  async getAccountOverview(@GetOrgFromRequest() org: Organization) {
+    Sentry.metrics.count('public_api-request', 1);
+    const account = await this._organizationService.getAccountOverview(org.id);
+
+    if (!account) {
+      throw new HttpException({ msg: 'Organization not found' }, 404);
+    }
+
+    return account;
+  }
+
+  @Get('/debug/channels')
+  @UseGuards(SuperAdminGuard)
+  async getChannelHealth(
+    @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._integrationService.getChannelHealth(org.id, includeDeleted);
+  }
+
+  @Get('/debug/activity')
+  @UseGuards(SuperAdminGuard)
+  async getOrgActivity(
+    @GetOrgFromRequest() org: Organization,
+    @GetIncludeDeletedFromRequest() includeDeleted: boolean,
+    @Query() query: GetOrgActivityDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+
+    const from = query.from ? dayjs(query.from) : dayjs().subtract(30, 'day');
+    const to = query.to ? dayjs(query.to) : dayjs();
+
+    return this._adminStatsService.getOrgActivity({
+      organizationId: org.id,
+      from: from.startOf('day').toDate(),
+      to: to.endOf('day').toDate(),
+      includeDeleted,
+    });
   }
 
   @Get('/notifications')
