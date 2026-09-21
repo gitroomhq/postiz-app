@@ -4,7 +4,10 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { tags } from '@gitroom/nestjs-libraries/integrations/social/hashnode.tags';
 import { jsonToGraphQLQuery } from 'json-to-graphql-query';
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
@@ -69,7 +72,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
           me: { name, id, profilePicture, username },
         },
       } = await (
-        await fetch('https://gql.hashnode.com', {
+        await fetch('https://gql-beta.hashnode.com', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -122,7 +125,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
         },
       },
     } = await (
-      await fetch('https://gql.hashnode.com', {
+      await fetch('https://gql-beta.hashnode.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,17 +177,17 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
                   ? { originalArticleURL: settings.canonical }
                   : {}),
                 contentMarkdown: postDetails?.[0].message,
-                tags: settings.tags.map((tag: any) => ({ id: tag.value })),
+                tags: settings.tags.map((tag: any) => ({
+                  slug: tags.find((t) => t.objectID === tag.value)?.slug,
+                })),
                 ...(settings.subtitle ? { subtitle: settings.subtitle } : {}),
                 ...(settings.main_image
                   ? {
-                      coverImageOptions: {
-                        coverImageURL: `${
-                          settings?.main_image?.path?.indexOf('http') === -1
-                            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
-                            : ``
-                        }${settings?.main_image?.path}`,
-                      },
+                      coverImage: `${
+                        settings?.main_image?.path?.indexOf('http') === -1
+                          ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/${process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY}`
+                          : ``
+                      }${settings?.main_image?.path}`,
                     }
                   : {}),
               },
@@ -199,14 +202,8 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
       { pretty: true }
     );
 
-    const {
-      data: {
-        publishPost: {
-          post: { id: postId, url },
-        },
-      },
-    } = await (
-      await this.fetch('https://gql.hashnode.com', {
+    const { data, errors } = await (
+      await this.fetch('https://gql-beta.hashnode.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,6 +214,21 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+
+    if (errors?.length) {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(errors),
+        '{}',
+        errors[0]?.message || 'Hashnode could not publish the post'
+      );
+    }
+
+    const {
+      publishPost: {
+        post: { id: postId, url },
+      },
+    } = data;
 
     return [
       {
