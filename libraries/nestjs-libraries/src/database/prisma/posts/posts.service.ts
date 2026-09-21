@@ -917,6 +917,22 @@ export class PostsService {
     keepGroup = false
   ): Promise<any[]> {
     const postList = [];
+    // The public API documents posts[].group ("Group ID for related posts"):
+    // when every post in one request carries the same non-empty group and none
+    // targets an existing row, keep it so a multi-channel post stays a single
+    // group. Anything else keeps the legacy per-post groups, and edits carrying
+    // value ids keep the dashboard rotate-and-sweep.
+    const sharedGroup =
+      !keepGroup &&
+      body.posts.length > 0 &&
+      body.posts.every((p) => p.group && p.group === body.posts[0].group) &&
+      body.posts.every((p) => !(p.value || []).some((v) => v.id))
+        ? body.posts[0].group
+        : undefined;
+    const preserveGroup = keepGroup || !!sharedGroup;
+    // Rows written earlier in this request already carry the shared group, so
+    // keep them out of each call's stale-group sweep.
+    const sweepExcludeIds: string[] = [];
     for (const post of body.posts) {
       if (
         (body.type === 'schedule' || body.type === 'now') &&
@@ -956,12 +972,15 @@ export class PostsService {
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        preserveGroup,
+        sweepExcludeIds
       );
 
       if (!posts?.length) {
         return [] as any[];
       }
+
+      sweepExcludeIds.push(...posts.map((p) => p.id));
 
       if (body.type !== 'update') {
         this.startWorkflow(

@@ -516,7 +516,10 @@ export class PostsRepository {
     // Keep the existing group instead of rotating it, so open clients
     // (calendar) holding the group stay valid. Used by out-of-band updates
     // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
-    keepGroup = false
+    keepGroup = false,
+    // Ids already written by the current multi-post request: they carry the
+    // shared group too, so the stale-group sweep below must leave them alone.
+    sweepExcludeIds: string[] = []
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
@@ -660,7 +663,7 @@ export class PostsRepository {
           group: body.group,
           deletedAt: null,
           id: {
-            notIn: posts.map((p) => p.id),
+            notIn: [...posts.map((p) => p.id), ...sweepExcludeIds],
           },
         },
         data: {
