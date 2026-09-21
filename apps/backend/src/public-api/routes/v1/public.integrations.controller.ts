@@ -33,6 +33,8 @@ import {
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 import { UploadDto } from '@gitroom/nestjs-libraries/dtos/media/upload.dto';
+import { ClippingDto } from '@gitroom/nestjs-libraries/dtos/clipping/clipping.dto';
+import { ClippingService } from '@gitroom/nestjs-libraries/database/prisma/clipping/clipping.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { GetNotificationsDto } from '@gitroom/nestjs-libraries/dtos/notifications/get.notifications.dto';
 import * as Sentry from '@sentry/nestjs';
@@ -65,7 +67,8 @@ export class PublicIntegrationsController {
     private _refreshIntegrationService: RefreshIntegrationService,
     private _usersService: UsersService,
     private _adminStatsService: AdminStatsService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _clippingService: ClippingService
   ) {}
 
   @Post('/upload')
@@ -418,6 +421,30 @@ export class PublicIntegrationsController {
       body.functionName,
       body.params
     );
+  }
+
+  @Post('/clipping')
+  startClipping(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: ClippingDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._clippingService.startClipping(org, body);
+  }
+
+  @Get('/clipping')
+  getClippings(
+    @GetOrgFromRequest() org: Organization,
+    @Query('page') page: number
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._clippingService.getClippings(org.id, page);
+  }
+
+  @Get('/clipping/:id')
+  getClipping(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._clippingService.getClipping(org.id, id);
   }
 
   @Delete('/integrations/:id')
