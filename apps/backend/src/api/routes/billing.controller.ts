@@ -169,14 +169,18 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await (await this.provider(org)).setToCancel(org.id);
 
-    return (await this.provider(org)).setToCancel(org.id);
+    if (result.cancel_at) {
+      await this._notificationService.sendEmail(
+        process.env.EMAIL_FROM_ADDRESS,
+        'Subscription Cancelled',
+        `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
+        user.email
+      );
+    }
+
+    return result;
   }
 
   @Post('/prorate')
