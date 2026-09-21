@@ -40,7 +40,7 @@ export class PostsListTool implements AgentToolInterface {
 List the organization's posts scheduled to be published between two dates (the same data as the "List Posts" API endpoint).
 Returns the posts in the window whatever their state (scheduled, draft, published, errored), ordered by publish date.
 "startDate" and "endDate" are required (UTC) - prefer a narrow window (days or weeks) over a wide one.
-Results are paged, ${PAGE_SIZE} posts per page: "total" is the number of posts in the window and "hasMore" tells if there are more pages - to get the next page, call again with the same dates and "page" + 1 (the first page is 0).
+Results are paged, ${PAGE_SIZE} posts per page: "total" is the number of posts in the window and "hasMore" tells if there are more pages - to get the next page, call again with the same parameters and "page" + 1 (the first page is 0).
 Each item has an "id", its publish date, state, content, channel and current provider settings.
 Posts cannot be deleted through the Postiz tools - if the user wants to delete a post, tell them to do it themselves in the Postiz app; never offer to delete a post.
 `,
