@@ -215,12 +215,12 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
       })
     ).json();
 
-    if (errors?.length) {
+    if (errors?.length || !data?.publishPost?.post) {
       throw new BadBody(
         this.identifier,
-        JSON.stringify(errors),
+        JSON.stringify(errors || data || {}),
         '{}',
-        errors[0]?.message || 'Hashnode could not publish the post'
+        errors?.[0]?.message || 'Hashnode could not publish the post'
       );
     }
 
