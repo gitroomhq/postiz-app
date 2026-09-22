@@ -15,12 +15,12 @@ import {
   AnyMcpClient,
   CopyButton,
   getMcpConfig,
-  getMcpOauthUrl,
   isChatOnlyMcpClient,
   localCliSteps,
   McpAuth,
   McpClient,
   mcpClients,
+  mcpConnectorUrls,
 } from '@gitroom/frontend/components/public-api/public.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 
@@ -276,24 +276,6 @@ type OnboardingTab = OnboardingAgent | typeof otherTab | typeof apiTab;
 
 const cliCommands = localCliSteps.map((step) => step.code);
 
-// Cursor one-click install: https://cursor.com/docs/mcp/install-links
-const getCursorInstallUrl = (
-  auth: McpAuth,
-  mcpBase: string,
-  apiKey: string
-) => {
-  const server =
-    auth === 'oauth'
-      ? { url: getMcpOauthUrl(mcpBase) }
-      : {
-          url: `${mcpBase}/mcp`,
-          headers: { Authorization: `Bearer ${apiKey}` },
-        };
-  return `cursor://anysphere.cursor-deeplink/mcp/install?name=postiz&config=${btoa(
-    JSON.stringify(server)
-  )}`;
-};
-
 const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   onBack,
   onNext,
@@ -328,13 +310,23 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   const connector =
     agent === 'Claude' && billingEnabled
       ? {
-          href: 'https://claude.ai/directory/postiz',
+          href: mcpConnectorUrls.Claude,
           label: t('add_to_claude', 'Add to Claude'),
         }
-      : agent === 'Cursor'
+      : agent === 'ChatGPT' && billingEnabled
       ? {
-          href: getCursorInstallUrl(auth, mcpBase, apiKey),
+          href: mcpConnectorUrls.ChatGPT,
+          label: t('add_to_chatgpt', 'Add to ChatGPT'),
+        }
+      : agent === 'Cursor' && billingEnabled
+      ? {
+          href: mcpConnectorUrls.Cursor,
           label: t('add_to_cursor', 'Add to Cursor'),
+        }
+      : agent === 'Grok Bot' && billingEnabled
+      ? {
+          href: mcpConnectorUrls['Grok Bot'],
+          label: t('add_to_grok_bot', 'Add to Grok Bot'),
         }
       : null;
 
@@ -610,7 +602,10 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           {agent === apiTab ? (
             apiSection
           ) : isChatOnlyMcpClient(agent) ? (
-            chatSection
+            <>
+              {connectorSection}
+              {chatSection}
+            </>
           ) : (
             <>
               {connectorSection}
