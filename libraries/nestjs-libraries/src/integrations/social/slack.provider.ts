@@ -5,7 +5,10 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
@@ -26,6 +29,20 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     'chat:write.customize',
   ];
   dto = SlackDto;
+
+  // Media goes out as Block Kit image blocks, which Slack only accepts for
+  // png / jpg / gif; an mp4 makes chat.postMessage reject the whole message.
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const hasVideo = posts?.some((post) =>
+      post?.some((item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1)
+    );
+    if (hasVideo) {
+      return 'No video support for Slack, only images';
+    }
+    return true;
+  }
 
   maxLength() {
     return 400000;
