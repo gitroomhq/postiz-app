@@ -5,7 +5,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/reddit.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
@@ -125,8 +125,8 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
-    const codeVerifier = makeId(30);
+    const state = makeSecureId(6);
+    const codeVerifier = makeSecureId(30);
     const url = `https://www.reddit.com/api/v1/authorize?client_id=${
       process.env.REDDIT_CLIENT_ID
     }&response_type=code&state=${state}&redirect_uri=${encodeURIComponent(
