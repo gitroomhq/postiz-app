@@ -985,11 +985,17 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
     // require Graph API v23.0+:
     //   - page_total_media_view_unique: total unique views on the page's media (reach)
     //   - page_media_view: total media views, broken down between paid and organic
-    const { data } = await (
+    const { data, error } = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${id}/insights?metric=page_total_media_view_unique,page_media_view,page_post_engagements,page_daily_follows&access_token=${accessToken}&period=day&since=${since}&until=${until}`
       )
     ).json();
+
+    // Throw so checkAnalytics doesn't cache the empty result for an hour.
+    if (error) {
+      console.warn('Facebook page insights returned an error:', { id, error });
+      throw new Error(error.message);
+    }
 
     // page_media_view returns paid/organic breakdowns as an object; sum them to
     // keep the single-total UI working.
@@ -1129,11 +1135,17 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       //   - total_video_impressions: times the video was shown
       //   - total_video_views: 3s+ (or full, if shorter) plays
       //   - total_video_reactions_by_type_total: reactions object, keyed by type
+      // Reels never return the total_video_* metrics (the edge answers with an
+      // empty data array), only the reels ones, so both sets are requested at
+      // once and Graph simply omits the metrics that don't apply:
+      //   - fb_reels_total_plays: plays including replays
+      //   - post_video_likes_by_reaction_type: reactions object, keyed by type
+      //   - post_video_social_actions: comments/shares object, keyed by type
       // Use plain fetch (not this.fetch) so a `(#100) nonexisting field` / story
       // response doesn't throw an ApplicationFailure — we want a quiet `[]` instead.
       const { data, error } = await (
         await fetch(
-          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total&access_token=${accessToken}`
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total,fb_reels_total_plays,post_video_likes_by_reaction_type,post_video_social_actions&access_token=${accessToken}`
         )
       ).json();
 
@@ -1171,7 +1183,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             label = 'Views';
             total = String(value);
             break;
+          case 'fb_reels_total_plays':
+            label = 'Plays';
+            total = String(value);
+            break;
           case 'total_video_reactions_by_type_total':
+          case 'post_video_likes_by_reaction_type':
             // This returns an object with reaction types
             if (typeof value === 'object') {
               const totalReactions = Object.values(
@@ -1179,6 +1196,16 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
               ).reduce((sum: number, v: number) => sum + v, 0);
               label = 'Reactions';
               total = String(totalReactions);
+            }
+            break;
+          case 'post_video_social_actions':
+            // This returns an object with action types (comments, shares)
+            if (typeof value === 'object') {
+              const totalActions = Object.values(
+                value as Record<string, number>
+              ).reduce((sum: number, v: number) => sum + v, 0);
+              label = 'Engagement';
+              total = String(totalActions);
             }
             break;
         }
