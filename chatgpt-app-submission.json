@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "Postiz",
-    "subtitle": "Schedule social posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT. Users can list connected channels and groups, inspect platform requirements, upload or generate media, turn long YouTube videos into short clips, create drafts or scheduled posts, update provider settings, and review upcoming posts.",
+    "subtitle": "Schedule Social Media Posts",
+    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
