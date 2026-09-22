@@ -15,11 +15,34 @@
 
 <div align="center">
   <strong>
-  <h2>Your ultimate AI social media scheduling tool</h2><br />
-  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, etc...<br /><br />
+   <a href="https://postiz.com">Postiz</a> offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
   </strong>
-  Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
 </div>
+
+<p align="center">
+  <br />
+  <a href="https://docs.postiz.com" rel="dofollow"><strong>Explore the docs »</strong></a>
+  <br />
+
+  <br />
+  <a href="https://youtube.com/@postizofficial" rel="dofollow"><strong>Watch the YouTube Tutorials»</strong></a>
+  <br />
+</p>
+
+<p align="center">
+  <a href="https://platform.postiz.com">Register</a>
+  ·
+  <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
+  ·
+  <a href="https://docs.postiz.com/public-api">Public API</a><br />
+</p>
+<p align="center">
+  <a href="https://www.npmjs.com/package/@postiz/node">NodeJS SDK</a>
+  ·
+  <a href="https://www.npmjs.com/package/n8n-nodes-postiz">N8N custom node</a>
+  ·
+  <a href="https://apps.make.com/postiz">Make.com integration</a>
+</p>
 
 <p align="center"><strong>Schedule posts to:</strong></p>
 <div class="flex" align="center">
@@ -58,32 +81,7 @@
   <a href="https://postiz.com/agent" title="AI Agents CLI"><img alt="AI Agents CLI" src=".github/agents/ai-agents-cli.svg" width="32"></a>
 </div>
 
-<p align="center">
-  <br />
-  <a href="https://docs.postiz.com" rel="dofollow"><strong>Explore the docs »</strong></a>
-  <br />
-
-  <br />
-  <a href="https://youtube.com/@postizofficial" rel="dofollow"><strong>Watch the YouTube Tutorials»</strong></a>
-  <br />
-</p>
-
-<p align="center">
-  <a href="https://platform.postiz.com">Register</a>
-  ·
-  <a href="https://discord.postiz.com">Join Our Discord (devs only)</a>
-  ·
-  <a href="https://docs.postiz.com/public-api">Public API</a><br />
-</p>
-<p align="center">
-  <a href="https://www.npmjs.com/package/@postiz/node">NodeJS SDK</a>
-  ·
-  <a href="https://www.npmjs.com/package/n8n-nodes-postiz">N8N custom node</a>
-  ·
-  <a href="https://apps.make.com/postiz">Make.com integration</a>
-</p>
-
-<br /><br />
+<br />
 
 ## 🔌 See the leading Postiz features
 
