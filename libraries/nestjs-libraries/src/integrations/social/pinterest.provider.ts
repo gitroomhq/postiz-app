@@ -7,7 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -212,7 +212,7 @@ export class PinterestProvider
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: `https://www.pinterest.com/oauth/?client_id=${
         process.env.PINTEREST_CLIENT_ID
@@ -221,7 +221,7 @@ export class PinterestProvider
       )}&response_type=code&scope=${encodeURIComponent(
         'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
       )}&state=${state}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
