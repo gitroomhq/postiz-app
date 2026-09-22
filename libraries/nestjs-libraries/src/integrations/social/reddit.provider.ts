@@ -756,7 +756,11 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       return [];
     }
 
-    if (about?.kind !== 't5' || about.data.submission_type === 'image') {
+    if (
+      about?.kind !== 't5' ||
+      about.data.subreddit_type !== 'public' ||
+      about.data.submission_type === 'image'
+    ) {
       return [];
     }
 
