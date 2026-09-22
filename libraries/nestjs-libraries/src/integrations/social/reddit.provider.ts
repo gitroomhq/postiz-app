@@ -10,6 +10,7 @@ import { RedditSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/provider
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
+  Disconnect,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -699,11 +700,19 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     ],
   })
   async subreddits(accessToken: string, data: any) {
+    // A pasted "r/name" or reddit.com/r/name URL: search by the name alone (the
+    // full URL matches nothing) and put that exact subreddit first if it exists.
+    const named = String(data.word || '').match(/(?:^|\/)r\/([A-Za-z0-9_]+)/);
+    const word = named ? named[1] : data.word;
+    const exact = named
+      ? await this.subredditByName(accessToken, named[1])
+      : [];
+
     const {
       data: { children },
     } = await (
       await this.fetch(
-        `https://oauth.reddit.com/subreddits/search?show=public&q=${data.word}&sort=activity&show_users=false&limit=10`,
+        `https://oauth.reddit.com/subreddits/search?show=public&q=${word}&sort=activity&show_users=false&limit=10`,
         {
           method: 'GET',
           headers: {
@@ -717,16 +726,59 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    return children
-      .filter(
-        ({ data }: { data: any }) =>
-          data.subreddit_type === 'public' && data.submission_type !== 'image'
-      )
-      .map(({ data: { title, url, id } }: any) => ({
-        title,
-        name: url,
-        id,
-      }));
+    return [
+      ...exact,
+      ...children
+        .filter(
+          ({ data }: { data: any }) =>
+            data.subreddit_type === 'public' &&
+            data.submission_type !== 'image' &&
+            !exact.some((e) => e.id === data.id)
+        )
+        .map(({ data: { title, url, id } }: any) => ({
+          title,
+          name: url,
+          id,
+        })),
+    ];
+  }
+
+  private async subredditByName(accessToken: string, name: string) {
+    let about: any;
+    try {
+      about = await (
+        await this.fetch(
+          `https://oauth.reddit.com/r/${name}/about`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          },
+          'reddit',
+          0,
+          false
+        )
+      ).json();
+    } catch (err) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
+      return [];
+    }
+
+    if (
+      about?.kind !== 't5' ||
+      about.data.subreddit_type !== 'public' ||
+      about.data.submission_type === 'image'
+    ) {
+      return [];
+    }
+
+    return [
+      { title: about.data.title, name: about.data.url, id: about.data.id },
+    ];
   }
 
   private getPermissions(submissionType: string, allow_images: string) {

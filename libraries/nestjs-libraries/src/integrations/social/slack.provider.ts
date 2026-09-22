@@ -5,7 +5,11 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
@@ -131,6 +135,32 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     }));
   }
 
+  // Slack answers HTTP 200 with { ok: false, error } on failures, so the post
+  // used to be marked completed with no message in the channel.
+  private checkApiError(all: any) {
+    if (all?.ok !== false) {
+      return;
+    }
+    const json = JSON.stringify(all);
+    const message =
+      [all.error, ...(all.errors || [])].filter(Boolean).join(': ') ||
+      'Slack rejected the request';
+    if (
+      [
+        'invalid_auth',
+        'token_revoked',
+        'token_expired',
+        'account_inactive',
+      ].includes(all.error)
+    ) {
+      throw new RefreshToken(this.identifier, json, Buffer.from('{}'), message);
+    }
+    if (all.error === 'ratelimited') {
+      throw new Error(message);
+    }
+    throw new BadBody(this.identifier, json, Buffer.from('{}'), message);
+  }
+
   async post(
     id: string,
     accessToken: string,
@@ -153,7 +183,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     });
 
     // Post the main message
-    const { ts, channel: responseChannel } = await (
+    const posted = await (
       await fetch(`https://slack.com/api/chat.postMessage`, {
         method: 'POST',
         headers: {
@@ -183,6 +213,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+    this.checkApiError(posted);
+    const { ts, channel: responseChannel } = posted;
 
     // Get permalink for the message
     const { permalink } = await (
@@ -220,7 +252,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     const threadTs = lastCommentId || postId;
 
     // Post the threaded reply
-    const { ts, channel: responseChannel } = await (
+    const posted = await (
       await fetch(`https://slack.com/api/chat.postMessage`, {
         method: 'POST',
         headers: {
@@ -251,6 +283,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+    this.checkApiError(posted);
+    const { ts, channel: responseChannel } = posted;
 
     // Get permalink for the comment
     const { permalink } = await (
