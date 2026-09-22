@@ -277,14 +277,6 @@
       "tools_triggered": "generateImageTool",
       "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
       "expected_output_url": null
-    },
-    {
-      "description": "Clip a YouTube video into short vertical clips and save them to the media library (nothing is published).",
-      "user_prompt": "Turn this YouTube video into short vertical clips in Postiz and save them to my media library, don't create any posts: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "file_attachment_urls": null,
-      "tools_triggered": "clippingTool, clippingStatusTool",
-      "expected_output": "First asks the user whether the horizontal video should fill the vertical clip with \"blur\" or \"crop\" and waits for the answer. Then calls clippingTool with the URL and the chosen fit, tells the user clipping is running, and calls clippingStatusTool with the returned clippingId until the status is \"completed\", then lists each clip's title and hosted video URL. If the account has no clipping minutes left, the tool returns a clear error message that is relayed to the user. No post is created.",
-      "expected_output_url": null
     }
   ],
   "negative_test_cases": [
