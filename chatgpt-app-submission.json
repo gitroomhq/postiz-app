@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Postiz",
     "subtitle": "Schedule social posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT. Users can list connected channels and groups, inspect platform requirements, upload or generate media, create drafts or scheduled posts, update provider settings, and review upcoming posts.",
+    "description": "Postiz helps users manage social media publishing from ChatGPT. Users can list connected channels and groups, inspect platform requirements, upload or generate media, turn long YouTube videos into short clips, create drafts or scheduled posts, update provider settings, and review upcoming posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -199,6 +199,42 @@
         "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
         "destructive_justification": "Read-only; it cannot change or delete anything."
       }
+    },
+    "clippingTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background clipping job that downloads a public YouTube video, renders short vertical clips with captions, consumes the user's clipping minutes, and saves every clip to the media library; when channels are passed it also creates draft posts.",
+        "open_world_justification": "Reads a public YouTube URL and calls external rendering and storage services to create media for the user's workspace.",
+        "destructive_justification": "Does not delete or overwrite existing media or posts, revoke access, or publish content; any posts it creates are drafts only."
+      }
+    },
+    "clippingStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the status of a clipping job the user started and returns the hosted clip URLs once it is done.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "clippingWidgetTicketTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived ticket for the clipping widget to read the progress of a clipping job; it is only callable by the widget, not by the model.",
+        "open_world_justification": "The ticket only allows reading the user's own clipping job inside Postiz; no public or third-party state changes.",
+        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
+      }
     }
   },
   "test_cases": [
@@ -240,6 +276,14 @@
       "file_attachment_urls": null,
       "tools_triggered": "generateImageTool",
       "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Clip a YouTube video into short vertical clips and save them to the media library (nothing is published).",
+      "user_prompt": "Turn this YouTube video into short vertical clips in Postiz and save them to my media library, don't create any posts: https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "file_attachment_urls": null,
+      "tools_triggered": "clippingTool, clippingStatusTool",
+      "expected_output": "First asks the user whether the horizontal video should fill the vertical clip with \"blur\" or \"crop\" and waits for the answer. Then calls clippingTool with the URL and the chosen fit, tells the user clipping is running, and calls clippingStatusTool with the returned clippingId until the status is \"completed\", then lists each clip's title and hosted video URL. If the account has no clipping minutes left, the tool returns a clear error message that is relayed to the user. No post is created.",
       "expected_output_url": null
     }
   ],
