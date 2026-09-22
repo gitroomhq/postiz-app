@@ -13,31 +13,10 @@
 </a>
 </p>
 
-<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
-  <h2>Your ultimate AI social media scheduling tool</h2><br />
-  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, etc...<br /><br />
+   <a href="https://postiz.com">Postiz</a> offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
   </strong>
-  Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
-</div>
-
-<div class="flex" align="center">
-  <br />
-  <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
-  <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
-  <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
-  <img alt="Linkedin" src="https://postiz.com/svgs/socials/Linkedin.svg" width="32">
-  <img alt="Reddit" src="https://postiz.com/svgs/socials/Reddit.svg" width="32">
-  <img alt="TikTok" src="https://postiz.com/svgs/socials/TikTok.svg" width="32">
-  <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
-  <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
-  <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
-  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
-  <img alt="Slack" src="https://postiz.com/svgs/socials/Slack.svg" width="32">
-  <img alt="Discord" src="https://postiz.com/svgs/socials/Discord.svg" width="32">
-  <img alt="Mastodon" src="https://postiz.com/svgs/socials/Mastodon.svg" width="32">
-  <img alt="Bluesky" src="https://postiz.com/svgs/socials/Bluesky.svg" width="32">
 </div>
 
 <p align="center">
@@ -65,7 +44,46 @@
   <a href="https://apps.make.com/postiz">Make.com integration</a>
 </p>
 
-<br /><br />
+<br />
+
+<p align="center"><strong>Schedule posts to:</strong></p>
+<div class="flex" align="center">
+  <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
+  <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
+  <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
+  <img alt="Linkedin" src="https://postiz.com/svgs/socials/Linkedin.svg" width="32">
+  <img alt="Reddit" src="https://postiz.com/svgs/socials/Reddit.svg" width="32">
+  <img alt="TikTok" src="https://postiz.com/svgs/socials/TikTok.svg" width="32">
+  <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
+  <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
+  <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
+  <img alt="Slack" src="https://postiz.com/svgs/socials/Slack.svg" width="32">
+  <img alt="Discord" src="https://postiz.com/svgs/socials/Discord.svg" width="32">
+  <img alt="Mastodon" src="https://postiz.com/svgs/socials/Mastodon.svg" width="32">
+  <img alt="Bluesky" src="https://postiz.com/svgs/socials/Bluesky.svg" width="32">
+</div>
+
+<p align="center"><strong>With your favorite AI agent:</strong></p>
+<div class="flex" align="center">
+  <a href="https://postiz.com/chatgpt" title="ChatGPT"><img alt="ChatGPT" src=".github/agents/chatgpt.svg" width="32"></a>
+  <a href="https://postiz.com/claude" title="Claude"><img alt="Claude" src=".github/agents/claude.svg" width="32"></a>
+  <a href="https://postiz.com/claude-code" title="Claude Code"><img alt="Claude Code" src=".github/agents/claude-code.svg" width="32"></a>
+  <a href="https://postiz.com/codex" title="Codex"><img alt="Codex" src=".github/agents/codex.svg" width="32"></a>
+  <a href="https://postiz.com/cursor" title="Cursor"><img alt="Cursor" src=".github/agents/cursor.svg" width="32"></a>
+  <a href="https://postiz.com/openclaw" title="OpenClaw"><img alt="OpenClaw" src=".github/agents/openclaw.svg" width="32"></a>
+  <a href="https://postiz.com/hermes" title="Hermes Agent"><img alt="Hermes Agent" src=".github/agents/hermes-agent.svg" width="32"></a>
+  <a href="https://postiz.com/grok-bot" title="Grok Bot"><img alt="Grok Bot" src=".github/agents/grok-bot.svg" width="32"></a>
+  <a href="https://postiz.com/grok-build" title="Grok Build"><img alt="Grok Build" src=".github/agents/grok-build.svg" width="32"></a>
+  <a href="https://postiz.com/muse" title="Muse"><img alt="Muse" src=".github/agents/muse.svg" width="32"></a>
+  <a href="https://postiz.com/perplexity-computer" title="Perplexity Computer"><img alt="Perplexity Computer" src=".github/agents/perplexity-computer.svg" width="32"></a>
+  <a href="https://postiz.com/nanoclaw" title="nanoclaw"><img alt="nanoclaw" src=".github/agents/nanoclaw.svg" width="32"></a>
+  <a href="https://postiz.com/paperclip" title="Paperclip"><img alt="Paperclip" src=".github/agents/paperclip.svg" width="32"></a>
+  <a href="https://postiz.com/mcp" title="MCP Server"><img alt="MCP Server" src=".github/agents/mcp-server.svg" width="32"></a>
+  <a href="https://postiz.com/agent" title="AI Agents CLI"><img alt="AI Agents CLI" src=".github/agents/ai-agents-cli.svg" width="32"></a>
+</div>
+
+<br />
 
 ## 🔌 See the leading Postiz features
 
