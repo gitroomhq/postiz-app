@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import {
   SocialAbstract,
   ValidityMedia,
@@ -60,7 +60,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
 
     return {
       url: `https://slack.com/oauth/v2/authorize?client_id=${
@@ -72,7 +72,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
             : ''
         }${process?.env?.FRONTEND_URL}/integrations/social/slack`
       )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
