@@ -44,6 +44,8 @@
   <a href="https://apps.make.com/postiz">Make.com integration</a>
 </p>
 
+<br />
+
 <p align="center"><strong>Schedule posts to:</strong></p>
 <div class="flex" align="center">
   <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
