@@ -17,12 +17,21 @@ export class RefreshIntegrationService {
     private _integrationService: IntegrationService,
     private _temporalService: TemporalService
   ) {}
-  async refresh(integration: Integration, cause = ''): Promise<false | AuthTokenDetails> {
+  async refresh(
+    integration: Integration,
+    cause = '',
+    tolerateUnknownErrors = false
+  ): Promise<false | AuthTokenDetails> {
     const socialProvider = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
 
-    const refresh = await this.refreshProcess(integration, socialProvider, cause);
+    const refresh = await this.refreshProcess(
+      integration,
+      socialProvider,
+      cause,
+      tolerateUnknownErrors
+    );
 
     if (!refresh) {
       return false as const;
@@ -72,7 +81,8 @@ export class RefreshIntegrationService {
   private async refreshProcess(
     integration: Integration,
     socialProvider: SocialProvider,
-    cause = ''
+    cause = '',
+    tolerateUnknownErrors = false
   ): Promise<AuthTokenDetails | false> {
     let refreshError: any = null;
     const refresh: false | AuthTokenDetails = await socialProvider
@@ -88,14 +98,17 @@ export class RefreshIntegrationService {
         refreshError || 'no access token returned'
       );
 
-      if (refreshError) {
+      // the scheduled refresh has no proof the token is dead, so transient /
+      // unrecognized errors should not disconnect the channel there, only
+      // errors the provider recognizes as an invalid refresh token. Every
+      // other caller refreshes because the platform already rejected the
+      // token, so they keep disconnecting.
+      if (refreshError && tolerateUnknownErrors) {
         const handle = socialProvider.handleErrors?.(
           `${refreshError?.message || ''} ${safeStringify(refreshError)}`,
           refreshError?.status || refreshError?.response?.status || 0
         );
 
-        // transient / unrecognized errors should not disconnect the channel,
-        // only errors the provider recognizes as an invalid refresh token
         if (handle?.type !== 'refresh-token') {
           return false;
         }
