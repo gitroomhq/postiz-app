@@ -534,6 +534,14 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
         throw new Error(message);
       }
 
+      // A rate limit is a refusal, nothing was submitted: disarm the marker so
+      // the next check re-arms this subreddit and submits it again once the
+      // window has passed, instead of failing the whole post.
+      if (all.json.errors.every((e: any[]) => e?.[0] === 'RATELIMIT')) {
+        data.armed = undefined;
+        return { status: 'pending', pendingData: data };
+      }
+
       throw new BadBody(
         this.identifier,
         JSON.stringify(all),
