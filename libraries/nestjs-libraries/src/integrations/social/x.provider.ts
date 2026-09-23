@@ -283,6 +283,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           'One of the posts in this thread has no text or media, please add some text or remove it',
       };
     }
+    if (body.includes('"title":"Unauthorized"')) {
+      return {
+        type: 'refresh-token',
+        value: 'X rejected the connected account, please reconnect your account',
+      };
+    }
     return undefined;
   }
 
