@@ -133,15 +133,53 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 
 ## Sponsor Postiz
 
-We now give a few options to Sponsor Postiz:
+We now offer a few options to sponsor Postiz:
 - Just a donation: You like what we are building, and want to buy us some coffee so we can build faster.
 - Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has over 7M downloads and 20k views per month.
 
 Link: https://opencollective.com/postiz
 
+ <br />
+  <br />
+
+## Postiz Cloud vs. Open-source
+
+[Postiz Cloud](https://postiz.com/) and Postiz self-hosted are identical.
+
+We do not "gate" features or limit the license.
+
+The main difference is the infrastructure you need to own, approval from social media providers, and deployment that might be hard at times (let your LLM deploy it)
+
+| Area | Postiz Cloud | Postiz Open-source (self-hosted) |
+|---|---|---|
+| **Cost** | Subscription per plan, 7-day free trial | Free forever (AGPL-3.0); you pay only for your own infra |
+| **Setup time** | Sign up and connect channels in minutes | Deploy with Docker / Coolify / Railway / any VPS; you configure Postgres, Redis, storage and env vars |
+| **Hosting & data** | Hosted by Postiz; data stored in our infrastructure | Runs on your own server; data never leaves your environment |
+| **Social platform apps** | Pre-approved apps for every channel, ready to use | You create your own developer apps on each platform and go through their approval (Meta, YouTube, TikTok can take weeks) |
+| **Channels** | Limited by plan tier | Unlimited, every supported provider |
+| **Posts per month** | Limited by plan tier | Unlimited |
+| **Team members** | Limited by plan tier | Unlimited |
+| **Scheduling, calendar views, cross-posting, repeated posts, post comments & delays, sets, signatures** | Included | Included |
+| **Internal & Global Plugs, RSS auto-post, customer groups** | Included per plan | Included |
+| **Analytics** | Included per plan | Included (requires your own app credentials with analytics scopes) |
+| **AI Copilot, AI images, AI videos** | Included with monthly quotas per plan; keys managed by Postiz | Available if you bring your own OpenAI (and other provider) API keys; no quota, you pay the provider |
+| **AI video clipping** | Included with monthly clipping minutes per plan | Requires your own provider keys and extra configuration |
+| **Smart Agent** | Included per plan | Available with your own LLM key |
+| **Public API & webhooks** | Included per plan | Included |
+| **Agentic surfaces (MCP, CLI, Claude / ChatGPT / Codex / OpenClaw / Cursor connectors)** | Included, hosted MCP endpoint | Included, you point the MCP / CLI at your own instance |
+| **Custom integrations** | Included per plan | Included; you can also modify the code and add providers |
+| **Updates & maintenance** | Automatic, zero downtime for you | You pull new images and run migrations yourself |
+| **Uptime, backups, security patches** | Managed by Postiz | Your responsibility |
+| **Support** | Priority support via Discord / email per plan | Community support on Discord and GitHub |
+| **Source access & customization** | No (SaaS) | Full source code, fork and modify freely under AGPL |
+| **Compliance / data residency** | Postiz-controlled regions | Any region or air-gapped environment you choose |
+
+<br />
+<br />
+  
 ## Postiz Compliance
 
-- Postiz is an open-source, self-hosted social media scheduling tool that supports platforms like X (formerly Twitter), Bluesky, Mastodon, Discord, and others.
+- Postiz on GitHub is an open-source, self-hosted social media scheduling tool that supports platforms like X (formerly Twitter), Bluesky, Mastodon, Discord, and others.
 - Postiz hosted service uses official, platform-approved OAuth flows.
 - Postiz does not automate or scrape content from social media platforms.
 - Postiz does not collect, store, or proxy API keys or access tokens from users.
