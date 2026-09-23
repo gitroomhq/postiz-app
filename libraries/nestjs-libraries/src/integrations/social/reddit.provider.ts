@@ -520,6 +520,14 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
     // Reddit rejects submissions with a 200 and an errors array: surface the
     // real reason instead of failing later with an unknown outcome.
     if (all?.json?.errors?.length) {
+      // A rate limit is a refusal, nothing was submitted: disarm the marker so
+      // the next check re-arms this subreddit and submits it again once the
+      // window has passed, instead of failing the whole post.
+      if (all.json.errors.every((e: any[]) => e?.[0] === 'RATELIMIT')) {
+        data.armed = undefined;
+        return { status: 'pending', pendingData: data };
+      }
+
       throw new BadBody(
         this.identifier,
         JSON.stringify(all),
