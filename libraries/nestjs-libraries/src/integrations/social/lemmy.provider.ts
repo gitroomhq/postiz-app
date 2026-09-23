@@ -382,7 +382,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
     const { jwt, service } = await this.getJwtAndService(integration);
 
     const { communities } = await (
-      await fetch(
+      await this.fetch(
         service + `/api/v3/search?type_=Communities&sort=Active&q=${data.word}`,
         {
           // @ts-ignore - undici-only option; blocks SSRF to internal IPs
