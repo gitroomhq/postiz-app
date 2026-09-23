@@ -93,9 +93,19 @@ export class RefreshIntegrationService {
       });
 
     if (!refresh || !refresh.accessToken) {
+      // log a summary, not the raw error: a failed token request can carry the
+      // request body (client secret, refresh token) on the error object
       console.error(
         `Refresh failed for ${integration.providerIdentifier} (${integration.id}):`,
-        refreshError || 'no access token returned'
+        refreshError
+          ? `message=${refreshError?.message || ''} status=${
+              refreshError?.status || refreshError?.response?.status || 0
+            } response=${safeStringify(
+              refreshError?.details?.[0]?.json ??
+                refreshError?.response?.data ??
+                ''
+            )}`
+          : 'no access token returned'
       );
 
       // the scheduled refresh has no proof the token is dead, so transient /
