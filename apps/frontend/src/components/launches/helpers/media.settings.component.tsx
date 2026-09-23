@@ -7,6 +7,8 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { MediaBox } from '@gitroom/frontend/components/media/media.component';
 const postUrlEmitter = new EventEmitter();
 
 export const MediaSettingsLayout = () => {
@@ -311,6 +313,7 @@ export const MediaComponentInner: FC<{
   const { onClose, onSelect, media } = props;
   const setActivateExitButton = useLaunchStore((e) => e.setActivateExitButton);
   const newFetch = useFetch();
+  const modals = useModals();
   const [newThumbnail, setNewThumbnail] = useState<string | null>(null);
   const [isEditingThumbnail, setIsEditingThumbnail] = useState(false);
   const [altText, setAltText] = useState<string>(media?.alt || '');
@@ -382,30 +385,55 @@ export const MediaComponentInner: FC<{
           <div>
             {!isEditingThumbnail ? (
               <div className="flex flex-col">
-                {/* Show existing thumbnail if it exists */}
-                {(newThumbnail || thumbnail) && (
-                  <div className="flex flex-col space-y-2">
-                    <span className="text-sm text-textColor">
-                      Current Thumbnail:
-                    </span>
+                <div className="flex flex-col space-y-2">
+                  <span className="text-sm text-textColor">Thumbnail:</span>
+                  {(newThumbnail || thumbnail) && (
                     <img
                       src={newThumbnail || thumbnail}
                       alt="Current thumbnail"
                       className="max-w-full max-h-[500px] object-contain rounded-lg border border-tableBorder"
                     />
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Action Buttons */}
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 mt-[12px]">
                   <button
                     disabled={loading}
                     onClick={() => setIsEditingThumbnail(true)}
-                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder"
+                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder whitespace-nowrap"
                   >
-                    {media.thumbnail || newThumbnail
-                      ? 'Edit Thumbnail'
-                      : 'Create Thumbnail'}
+                    Select Frame
+                  </button>
+                  <button
+                    disabled={loading}
+                    onClick={() =>
+                      modals.openModal({
+                        title: 'Media Library',
+                        askClose: false,
+                        closeOnEscape: true,
+                        fullScreen: true,
+                        size: 'calc(100% - 80px)',
+                        height: 'calc(100% - 80px)',
+                        children: (close) => (
+                          <MediaBox
+                            type="image-static"
+                            closeModal={close}
+                            setMedia={(m) => {
+                              const [first] = m || [];
+                              if (first) {
+                                setNewThumbnail(null);
+                                setThumbnail(first.path);
+                                setThumbnailTimestamp(null);
+                              }
+                            }}
+                          />
+                        ),
+                      })
+                    }
+                    className="bg-third text-textColor px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-tableBorder whitespace-nowrap"
+                  >
+                    From Gallery
                   </button>
                   {(thumbnail || newThumbnail) && (
                     <button
@@ -414,9 +442,9 @@ export const MediaComponentInner: FC<{
                         setNewThumbnail(null);
                         setThumbnail(null);
                       }}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700"
+                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all flex-1 border border-red-700 whitespace-nowrap"
                     >
-                      Clear Thumbnail
+                      Clear
                     </button>
                   )}
                 </div>
