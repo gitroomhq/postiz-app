@@ -341,30 +341,25 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     client.setCredentials({ access_token: accessToken });
     const youtubeClient = youtube(client);
 
-    try {
-      // Get all channels the user has access to
-      const response = await youtubeClient.channels.list({
-        part: ['snippet', 'contentDetails', 'statistics'],
-        mine: true,
-      });
+    // Get all channels the user has access to
+    const response = await youtubeClient.channels.list({
+      part: ['snippet', 'contentDetails', 'statistics'],
+      mine: true,
+    });
 
-      const channels = response.data.items || [];
+    const channels = response.data.items || [];
 
-      return channels.map((channel) => ({
-        id: channel.id!,
-        name: channel.snippet?.title || 'Unnamed Channel',
-        picture: {
-          data: {
-            url: channel.snippet?.thumbnails?.default?.url || '',
-          },
+    return channels.map((channel) => ({
+      id: channel.id!,
+      name: channel.snippet?.title || 'Unnamed Channel',
+      picture: {
+        data: {
+          url: channel.snippet?.thumbnails?.default?.url || '',
         },
-        username: channel.snippet?.customUrl || '',
-        subscriberCount: channel.statistics?.subscriberCount || '0',
-      }));
-    } catch (error) {
-      console.error('Failed to fetch YouTube channels:', error);
-      return [];
-    }
+      },
+      username: channel.snippet?.customUrl || '',
+      subscriberCount: channel.statistics?.subscriberCount || '0',
+    }));
   }
 
   async fetchPageInformation(accessToken: string, data: { id: string }) {
