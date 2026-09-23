@@ -26,8 +26,8 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   isWeb3 = true;
   scopes = [] as string[];
   editor = 'html' as const;
-  maxLength() {
-    return 4096;
+  maxLength(additionalSettings?: any, settings?: any, hasMedia?: boolean) {
+    return hasMedia ? 1024 : 4096;
   }
 
   async refreshToken(refresh_token: string): Promise<AuthTokenDetails> {

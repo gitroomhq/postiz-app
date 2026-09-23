@@ -10,5 +10,5 @@ export default withProvider({
   SettingsComponent: null,
   CustomPreviewComponent: undefined,
   dto: undefined,
-  maximumCharacters: 4096,
+  maximumCharacters: (settings, hasMedia) => (hasMedia ? 1024 : 4096),
 });
