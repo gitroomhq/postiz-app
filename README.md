@@ -15,7 +15,9 @@
 
 <div align="center">
   <strong>
-   <a href="https://postiz.com">Postiz</a> offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
+    <a href="https://postiz.com">Postiz</a> is a social media management platform for scheduling, automating, and analyzing your content.
+    
+  Use Postiz Cloud for a fully managed experience, or deploy the open-source edition on your own infrastructure.
   </strong>
 </div>
 
@@ -115,7 +117,6 @@
 - Measure your work with analytics.
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
-- At the moment, there is no difference between the hosted version and the self-hosted version
 - Perfect for automation (API) with platforms like N8N, Make.com, Zapier, etc.
 
 ## Tech Stack
@@ -144,7 +145,7 @@ Link: https://opencollective.com/postiz
 
 ## Postiz Cloud vs. Open-source
 
-[Postiz Cloud](https://postiz.com/) and Postiz self-hosted are identical.
+Choose [Postiz Cloud](https://postiz.com/) for a fully managed experience, or deploy Postiz Open-source on your own infrastructure. Both provide the same core Postiz product and features.
 
 We do not "gate" features or limit the license.
 
@@ -179,7 +180,7 @@ The main difference is the infrastructure you need to own, approval from social 
   
 ## Postiz Compliance
 
-- Postiz on GitHub is an open-source, self-hosted social media scheduling tool that supports platforms like X (formerly Twitter), Bluesky, Mastodon, Discord, and others.
+- This GitHub repository contains the open-source, self-hosted edition of Postiz. Postiz is also available as Postiz Cloud, a fully managed service at postiz.com.
 - Postiz hosted service uses official, platform-approved OAuth flows.
 - Postiz does not automate or scrape content from social media platforms.
 - Postiz does not collect, store, or proxy API keys or access tokens from users.
