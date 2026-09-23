@@ -190,6 +190,7 @@
   "the_post_should_be_at_least_6_characters_long": "A publicação deve ter pelo menos 6 caracteres",
   "are_you_sure_you_want_to_delete_post": "Tem certeza de que deseja excluir esta postagem?",
   "post_deleted_successfully": "Postagem excluída com sucesso",
+  "post_no_longer_exists": "Esta publicação não existe mais",
   "delete_post": "Excluir publicação",
   "save_as_draft": "Salvar como rascunho",
   "post_now": "Publicar agora",
