@@ -161,6 +161,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: 'X is currently unavailable, please try again later',
       };
     }
+    if (body.includes('Too Many Requests')) {
+      return {
+        type: 'retry',
+        value: 'X rate limit reached, please try again later',
+      };
+    }
     if (body.includes('maximum of one cashtag')) {
       return {
         type: 'bad-body',
@@ -230,6 +236,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
+      };
+    }
+    if (body.includes('"title":"Unauthorized"')) {
+      return {
+        type: 'refresh-token',
+        value: 'X rejected the connected account, please reconnect your account',
       };
     }
     return undefined;
