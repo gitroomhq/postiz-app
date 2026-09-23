@@ -768,5 +768,9 @@
   "republish_the_post": "Volver a publicar la publicación",
   "post_already_published_republish_warning": "Esta publicación ya fue publicada. Volver a publicarla la publicará nuevamente en",
   "republish_at": "a las",
-  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora.",
+  "finish_trial": "Finalizar prueba",
+  "finish_trial_confirmation": "Finalizar la prueba cobrará tu plan inmediatamente, ¿estás seguro?",
+  "finish_trial_charge_me_now": "Finalizar la prueba, cobrarme ahora",
+  "trial": "Prueba"
 }

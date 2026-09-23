@@ -768,5 +768,9 @@
   "republish_the_post": "게시물 다시 게시하기",
   "post_already_published_republish_warning": "이 게시물은 이미 게시되었습니다. 다시 게시하면 다음에 다시 게시됩니다:",
   "republish_at": "다음 시간에",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "finish_trial": "체험 종료",
+  "finish_trial_confirmation": "체험을 종료하면 요금제가 즉시 청구됩니다. 계속하시겠습니까?",
+  "finish_trial_charge_me_now": "체험 종료, 지금 결제하기",
+  "trial": "체험"
 }

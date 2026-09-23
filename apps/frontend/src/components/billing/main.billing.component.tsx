@@ -237,6 +237,21 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
+  const finishTrialNow = useCallback(async () => {
+    if (
+      await deleteDialog(
+        t(
+          'finish_trial_confirmation',
+          'Finishing the trial will charge your plan immediately, are you sure?'
+        ),
+        t('finish_trial_charge_me_now', 'Finish the trial, charge me now'),
+        t('trial', 'Trial')
+      )
+    ) {
+      setFinishTrial(true);
+    }
+  }, []);
+
   const [subscription, setSubscription] = useState<SubscriptionWithPlatform | undefined>(
     sub
   );
@@ -495,7 +510,14 @@ export const MainBillingComponent: FC<{
         </div>
       </div>
 
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+      {finishTrial && (
+        <FinishTrial
+          close={() => {
+            setFinishTrial(false);
+            mutate('/user/self');
+          }}
+        />
+      )}
       <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
         {Object.entries(pricing)
           .filter((f) => !isGeneral || f[0] !== 'FREE')
@@ -590,6 +612,11 @@ export const MainBillingComponent: FC<{
               'Update Payment Method / Invoices History'
             )}
           </Button>
+          {user?.isTrailing && (
+            <Button onClick={finishTrialNow}>
+              {t('finish_trial', 'Finish trial')}
+            </Button>
+          )}
           {isGeneral && !subscription?.cancelAt && (
             <Button
               className="bg-red-500"

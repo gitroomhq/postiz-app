@@ -770,5 +770,9 @@
   "republish_the_post": "Republish the post",
   "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
   "republish_at": "at",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "finish_trial": "Finish trial",
+  "finish_trial_confirmation": "Finishing the trial will charge your plan immediately, are you sure?",
+  "finish_trial_charge_me_now": "Finish the trial, charge me now",
+  "trial": "Trial"
 }
