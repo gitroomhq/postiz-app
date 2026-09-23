@@ -60,6 +60,7 @@ A single LinkedIn post with one comment
 - postsAndComments array length will be one
 
 Do not use this to update or delete existing posts.
+Attachments must be the exact "path" values returned by uploadFromUrlTool or generateImageTool (or an existing media-library item). Call those tools first and wait for their result before calling this tool; file names are random and cannot be predicted or reused from earlier uploads. A post referencing a file that was never uploaded is rejected.
 If validation fails, the result contains output.errors describing what to fix; the call can be retried with corrected parameters.
 `,
       inputSchema: z.object({
@@ -95,7 +96,9 @@ If validation fails, the result contains output.errors describing what to fix; t
                       ),
                     attachments: z
                       .array(attachmentUrl)
-                      .describe('The image of the post (URLS)'),
+                      .describe(
+                        'Attachment URLs: exact "path" values returned by uploadFromUrlTool / generateImageTool (never guessed)'
+                      ),
                   })
                 )
                 .describe(
