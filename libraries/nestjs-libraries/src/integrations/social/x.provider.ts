@@ -161,6 +161,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: 'X is currently unavailable, please try again later',
       };
     }
+    if (body.includes('Too Many Requests')) {
+      return {
+        type: 'retry',
+        value: 'X rate limit reached, please try again later',
+      };
+    }
     if (body.includes('maximum of one cashtag')) {
       return {
         type: 'bad-body',
