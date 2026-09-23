@@ -52,6 +52,13 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
     setIsCreateSet(!!props.addEditSets);
   }, []);
 
+  useEffect(() => {
+    document.querySelector('body')?.classList.add('hideChatbase');
+    return () => {
+      document.querySelector('body')?.classList.remove('hideChatbase');
+    };
+  }, []);
+
   if (!integrations.length) {
     return null;
   }

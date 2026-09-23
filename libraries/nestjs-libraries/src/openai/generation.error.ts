@@ -11,7 +11,7 @@ const SAFETY_MESSAGE_REGEX =
 
 /**
  * Normalizes errors thrown by AI generation providers (OpenAI image/chat,
- * LangChain DALL-E, Fal, Veo3, HeyGen, ElevenLabs, ...) into a clean
+ * LangChain DALL-E, Fal, Seedance, HeyGen, ElevenLabs, ...) into a clean
  * HttpException so a provider rejection (most notably an OpenAI safety
  * violation) returns a proper response instead of crashing the backend.
  *
@@ -38,5 +38,7 @@ export function generationError(err: any): HttpException {
 
   // Not a recognized safety rejection (e.g. an invalid-parameter 400) — return
   // a generic message rather than mislabeling it as a content-safety issue.
+  // The real reason (a quota, a bad key, ...) is only useful to the operator, so log it
+  console.error('AI generation failed:', message);
   return new HttpException('AI generation failed, please try again later.', 500);
 }

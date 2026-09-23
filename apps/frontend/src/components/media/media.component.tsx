@@ -170,28 +170,30 @@ export const Pagination: FC<{
   );
 };
 export const ShowMediaBoxModal: FC = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [callBack, setCallBack] =
-    useState<(params: { id: string; path: string }[]) => void | undefined>();
-  const closeModal = useCallback(() => {
-    setShowModal(false);
-    setCallBack(undefined);
-  }, []);
+  const modals = useModals();
+  const t = useT();
   useEffect(() => {
     showModalEmitter.on('show-modal', (cCallback) => {
-      setShowModal(true);
-      setCallBack(() => cCallback);
+      modals.openModal({
+        title: t('media_library', 'Media Library'),
+        askClose: false,
+        closeOnEscape: true,
+        fullScreen: true,
+        size: 'calc(100% - 80px)',
+        height: 'calc(100% - 80px)',
+        children: (close) => (
+          <MediaBox
+            setMedia={(media) => cCallback(media[0])}
+            closeModal={close}
+          />
+        ),
+      });
     });
     return () => {
       showModalEmitter.removeAllListeners('show-modal');
     };
   }, []);
-  if (!showModal) return null;
-  return (
-    <div className="text-textColor">
-      <MediaBox setMedia={callBack!} closeModal={closeModal} />
-    </div>
-  );
+  return null;
 };
 export const showMediaBox = (
   callback: (params: { id: string; path: string }) => void

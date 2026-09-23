@@ -1,7 +1,8 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'crypto';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, Prisma } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -69,9 +70,14 @@ export class IntegrationRepository {
   }
 
   async checkPreviousConnections(org: string, id: string) {
+    // Deleted accounts keep their integrations with an md5 hashed
+    // rootInternalId, so match both the raw id and its hash to still catch
+    // channels that were connected by a deleted account.
     const findIt = await this._integration.model.integration.findMany({
       where: {
-        rootInternalId: id,
+        rootInternalId: {
+          in: [id, createHash('md5').update(id).digest('hex')],
+        },
       },
       select: {
         organizationId: true,
@@ -201,6 +207,65 @@ export class IntegrationRepository {
       },
       data: {
         refreshNeeded: true,
+      },
+    });
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integration.model.integration.findFirst({
+      where: {
+        organizationId: org,
+        internalId,
+        deletedAt: null,
+      },
+    });
+  }
+
+  // Moves a channel to another provider in place (MIGRATE_PROVIDERS): only the
+  // provider and the app-scoped ids change, so the integration id - and with it
+  // scheduled posts, settings and customers - survives the migration. The
+  // follow-up createOrUpdateIntegration upsert matches the new internalId and
+  // stores the fresh tokens.
+  async migrateIntegration(
+    org: string,
+    id: string,
+    internalId: string,
+    providerIdentifier: string,
+    rootInternalId: string
+  ) {
+    // A soft-deleted channel can still hold the target internalId
+    // (deleteChannel keeps it): rename it out of the way like updateIntegration
+    // does, otherwise the organizationId_internalId unique constraint rejects
+    // the migration. Live channels are rejected by the service before this.
+    const existing = await this._integration.model.integration.findUnique({
+      where: {
+        organizationId_internalId: {
+          organizationId: org,
+          internalId,
+        },
+      },
+    });
+
+    if (existing && existing.deletedAt) {
+      await this._integration.model.integration.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          internalId: `deleted_${internalId}_${makeId(10)}`,
+        },
+      });
+    }
+
+    return this._integration.model.integration.update({
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        internalId,
+        providerIdentifier,
+        rootInternalId,
       },
     });
   }
@@ -495,6 +560,152 @@ export class IntegrationRepository {
     });
   }
 
+  private async latestPostsFor(
+    org: string,
+    state: 'PUBLISHED' | 'ERROR',
+    field: 'publishDate' | 'updatedAt',
+    options: { topLevelOnly: boolean; includeDeleted: boolean },
+    groups: { integrationId: string; date: Date | null }[]
+  ) {
+    const matches = groups.filter((group) => group.date);
+
+    if (!matches.length) {
+      return [];
+    }
+
+    return this._posts.model.post.findMany({
+      where: {
+        organizationId: org,
+        state,
+        ...(options.includeDeleted ? {} : { deletedAt: null }),
+        ...(options.topLevelOnly ? { parentPostId: null } : {}),
+        OR: matches.map(
+          (group) =>
+            ({
+              integrationId: group.integrationId,
+              [field]: group.date,
+            } as Prisma.PostWhereInput)
+        ),
+      },
+      orderBy: {
+        id: 'asc',
+      },
+      select: {
+        id: true,
+        integrationId: true,
+        publishDate: true,
+        updatedAt: true,
+        releaseURL: true,
+        error: true,
+      },
+    });
+  }
+
+  private firstPerIntegration<T extends { integrationId: string }>(posts: T[]) {
+    const byIntegration = new Map<string, T>();
+
+    for (const post of posts) {
+      if (!byIntegration.has(post.integrationId)) {
+        byIntegration.set(post.integrationId, post);
+      }
+    }
+
+    return byIntegration;
+  }
+
+  async getChannelHealth(org: string, includeDeleted = false) {
+    const [integrations, lastPublished, lastErrored] = await Promise.all([
+      this._integration.model.integration.findMany({
+        where: {
+          organizationId: org,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          id: true,
+          internalId: true,
+          name: true,
+          providerIdentifier: true,
+          type: true,
+          disabled: true,
+          refreshNeeded: true,
+          inBetweenSteps: true,
+          tokenExpiration: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'PUBLISHED',
+          ...(includeDeleted ? {} : { deletedAt: null }),
+          parentPostId: null,
+        },
+        _max: { publishDate: true },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'ERROR',
+          ...(includeDeleted ? {} : { deletedAt: null }),
+        },
+        _max: { updatedAt: true },
+      }),
+    ]);
+
+    const [publishedPosts, erroredPosts] = await Promise.all([
+      this.latestPostsFor(
+        org,
+        'PUBLISHED',
+        'publishDate',
+        { topLevelOnly: true, includeDeleted },
+        lastPublished.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.publishDate,
+        }))
+      ),
+      this.latestPostsFor(
+        org,
+        'ERROR',
+        'updatedAt',
+        { topLevelOnly: false, includeDeleted },
+        lastErrored.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.updatedAt,
+        }))
+      ),
+    ]);
+
+    const publishedByIntegration = this.firstPerIntegration(publishedPosts);
+    const erroredByIntegration = this.firstPerIntegration(erroredPosts);
+
+    return integrations.map((integration) => {
+      const published = publishedByIntegration.get(integration.id);
+      const errored = erroredByIntegration.get(integration.id);
+
+      return {
+        ...integration,
+        lastPublishedAt: published?.publishDate || null,
+        lastPublishedPostId: published?.id || null,
+        lastPublishedUrl: published?.releaseURL || null,
+        lastErrorAt: errored?.updatedAt || null,
+        lastErrorPostId: errored?.id || null,
+        lastError: errored?.error || null,
+      };
+    });
+  }
+
   async disableChannel(org: string, id: string) {
     await this._integration.model.integration.update({
       where: {
@@ -540,6 +751,55 @@ export class IntegrationRepository {
         deletedAt: new Date(),
       },
     });
+  }
+
+  async deleteIntegrationsForAccount(org: string) {
+    const hash = (value: string) =>
+      createHash('md5').update(value).digest('hex');
+
+    await this._posts.model.post.updateMany({
+      where: {
+        organizationId: org,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+
+    const integrations = await this._integration.model.integration.findMany({
+      where: {
+        organizationId: org,
+      },
+    });
+
+    // md5 is deterministic, so a hashed rootInternalId can still be matched
+    // by checkPreviousConnections when the same channel is connected again
+    // from a new account.
+    for (const integration of integrations) {
+      await this._integration.model.integration.update({
+        where: {
+          id: integration.id,
+        },
+        data: {
+          name: hash(integration.name),
+          internalId: hash(integration.internalId),
+          rootInternalId: integration.rootInternalId
+            ? hash(integration.rootInternalId)
+            : null,
+          token: hash(integration.token),
+          refreshToken: integration.refreshToken
+            ? hash(integration.refreshToken)
+            : null,
+          profile: integration.profile ? hash(integration.profile) : null,
+          customInstanceDetails: integration.customInstanceDetails
+            ? hash(integration.customInstanceDetails)
+            : null,
+          picture: null,
+          deletedAt: integration.deletedAt || new Date(),
+        },
+      });
+    }
   }
 
   async checkForDeletedOnceAndUpdate(org: string, page: string) {
