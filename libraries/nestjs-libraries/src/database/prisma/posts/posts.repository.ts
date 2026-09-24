@@ -888,13 +888,79 @@ export class PostsRepository {
     );
   }
 
-  async getComments(postId: string) {
+  getCommentsForPosts(postIds: string[]) {
     return this._comments.model.comments.findMany({
       where: {
-        postId,
+        postId: {
+          in: postIds,
+        },
+        deletedAt: null,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            lastName: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
+      },
+    });
+  }
+
+  getCommentById(id: string) {
+    return this._comments.model.comments.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
+      include: {
+        post: {
+          select: {
+            id: true,
+            organizationId: true,
+          },
+        },
+      },
+    });
+  }
+
+  setCommentResolved(id: string, resolvedAt: Date | null) {
+    return this._comments.model.comments.update({
+      where: {
+        id,
+      },
+      data: {
+        resolvedAt,
+      },
+    });
+  }
+
+  getAnchoredCommentsForPost(postId: string) {
+    return this._comments.model.comments.findMany({
+      where: {
+        postId,
+        deletedAt: null,
+        anchorStart: {
+          not: null,
+        },
+      },
+    });
+  }
+
+  detachAnchorsForPost(postId: string, ids: string[]) {
+    return this._comments.model.comments.updateMany({
+      where: {
+        postId,
+        id: {
+          in: ids,
+        },
+      },
+      data: {
+        anchorStart: null,
+        anchorEnd: null,
       },
     });
   }
@@ -952,9 +1018,16 @@ export class PostsRepository {
 
   createComment(
     orgId: string,
-    userId: string,
+    userId: string | null,
     postId: string,
-    content: string
+    content: string,
+    extra: {
+      displayName?: string;
+      parentId?: string;
+      anchorStart?: number;
+      anchorEnd?: number;
+      anchorQuote?: string;
+    } = {}
   ) {
     return this._comments.model.comments.create({
       data: {
@@ -962,6 +1035,11 @@ export class PostsRepository {
         userId,
         postId,
         content,
+        displayName: extra.displayName ?? null,
+        parentId: extra.parentId ?? null,
+        anchorStart: extra.anchorStart ?? null,
+        anchorEnd: extra.anchorEnd ?? null,
+        anchorQuote: extra.anchorQuote ?? null,
       },
     });
   }

@@ -770,5 +770,21 @@
   "republish_the_post": "Republish the post",
   "post_already_published_republish_warning": "This post was already published. Republishing will publish it again to",
   "republish_at": "at",
-  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now."
+  "republish_recurring_note": "This is a recurring post: your changes apply to all future recurrences starting now.",
+  "comment": "Comment",
+  "reply": "Reply",
+  "add_a_comment": "Add a comment",
+  "add_a_comment_placeholder": "Add a comment...",
+  "write_a_reply": "Write a reply...",
+  "reviewer": "Reviewer",
+  "resolve": "Resolve",
+  "reopen": "Reopen",
+  "resolved": "Resolved",
+  "collapse": "Collapse",
+  "preview_comment_name_required": "We can only post your comment if you provide your name.",
+  "preview_comment_your_name": "Your name",
+  "preview_comment_failed": "Could not post the comment",
+  "preview_comment_detach_hint": "Comments on selected text lose their highlight if the text is edited later.",
+  "preview_comment_text_changed": "Text changed",
+  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment."
 }

@@ -768,5 +768,21 @@
   "republish_the_post": "Volver a publicar la publicación",
   "post_already_published_republish_warning": "Esta publicación ya fue publicada. Volver a publicarla la publicará nuevamente en",
   "republish_at": "a las",
-  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora."
+  "republish_recurring_note": "Esta es una publicación recurrente: tus cambios se aplican a todas las recurrencias futuras a partir de ahora.",
+  "comment": "Comentario",
+  "reply": "Responder",
+  "add_a_comment": "Agregar un comentario",
+  "add_a_comment_placeholder": "Agregar un comentario...",
+  "write_a_reply": "Escribe una respuesta...",
+  "reviewer": "Revisor",
+  "resolve": "Resolver",
+  "reopen": "Reabrir",
+  "resolved": "Resuelto",
+  "collapse": "Colapsar",
+  "preview_comment_name_required": "Solo podemos publicar tu comentario si proporcionas tu nombre.",
+  "preview_comment_your_name": "Tu nombre",
+  "preview_comment_failed": "No se pudo publicar el comentario",
+  "preview_comment_detach_hint": "Los comentarios sobre texto seleccionado pierden su resalte si el texto se edita más tarde.",
+  "preview_comment_text_changed": "Texto modificado",
+  "preview_no_comments_yet": "Aún no hay comentarios. Selecciona texto en la publicación para comentarlo o agrega un comentario general."
 }

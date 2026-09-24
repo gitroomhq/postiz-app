@@ -768,5 +768,21 @@
   "republish_the_post": "Gönderiyi tekrar yayımla",
   "post_already_published_republish_warning": "Bu gönderi zaten yayımlanmış. Tekrar yayımlamak, gönderiyi yeniden yayımlar",
   "republish_at": "tarihinde/saatinde",
-  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır."
+  "republish_recurring_note": "Bu tekrar eden bir gönderi: yaptığınız değişiklikler bundan sonraki tüm tekrarlar için geçerli olacaktır.",
+  "comment": "Yorum",
+  "reply": "Yanıtla",
+  "add_a_comment": "Yorum ekle",
+  "add_a_comment_placeholder": "Bir yorum ekleyin...",
+  "write_a_reply": "Bir yanıt yazın...",
+  "reviewer": "İnceleyen",
+  "resolve": "Çöz",
+  "reopen": "Yeniden Aç",
+  "resolved": "Çözüldü",
+  "collapse": "Daralt",
+  "preview_comment_name_required": "Yorumunuzu yalnızca adınızı girerseniz paylaşabiliriz.",
+  "preview_comment_your_name": "Adınız",
+  "preview_comment_failed": "Yorum paylaşılırken bir hata oluştu",
+  "preview_comment_detach_hint": "Seçili metindeki yorumlar, metin daha sonra değiştirilirse vurgusunu kaybeder.",
+  "preview_comment_text_changed": "Metin değişti",
+  "preview_no_comments_yet": "Henüz yorum yok. Yorum yapmak için gönderide bir metin seçin veya genel bir yorum ekleyin."
 }
