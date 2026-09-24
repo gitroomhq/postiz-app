@@ -244,7 +244,10 @@ services:
       - POSTGRES_PWD=temporal
       - DBNAME=temporal
       - POSTGRES_SEEDS=temporal-postgresql
-      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/production-sql.yaml
+      # No DYNAMIC_CONFIG_FILE_PATH / bind mount on purpose: relative bind
+      # mounts resolve from the compose project directory, which differs
+      # between Coolify (--project-directory = repo root) and local runs,
+      # and Temporal defaults are fine for this workload.
       - ENABLE_ES=true
       - ES_SEEDS=temporal-elasticsearch
       - ES_VERSION=v7
@@ -253,8 +256,6 @@ services:
       - temporal-network
     expose:
       - '7233'
-    volumes:
-      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
     healthcheck:
       # TCP probe of the gRPC port (bash is available in the auto-setup image)
       test: ['CMD-SHELL', 'bash -c "exec 3<>/dev/tcp/127.0.0.1/7233"']
