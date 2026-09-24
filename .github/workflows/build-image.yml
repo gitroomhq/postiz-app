@@ -1,0 +1,82 @@
+# postmonster: production image build -> GHCR.
+# NOTE: kept separate from upstream build.yml (CI type/build) and
+# build-containers.yml (upstream multi-arch release) on purpose.
+name: Build and Push Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Lowercase image name: ghcr.io/<owner>/postmonster
+  IMAGE_NAME: ${{ github.repository_owner }}/postmonster
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata (tags)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.dev
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Layer cache between runs (build steps of the monorepo are slow).
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: false
+          # NEXT_PUBLIC_* variables are inlined into the Next.js bundle at
+          # build time (Next.js inline-static-env), so production URLs must be
+          # baked here - runtime env cannot change them. To deploy on another
+          # domain, change these values (image is domain-specific) or rebuild.
+          # No application secrets are needed at build time.
+          build-args: |
+            NEXT_PUBLIC_VERSION=${{ github.ref_name }}
+            NEXT_PUBLIC_BACKEND_URL=https://app.postmonster.xyz/api
+            NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY=uploads
+            STORAGE_PROVIDER=local
+
+      - name: Summary
+        run: |
+          {
+            echo "### Image published"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

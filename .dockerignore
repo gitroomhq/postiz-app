@@ -21,3 +21,7 @@ dist
 .git
 .github
 reports
+# postmonster: never ship local env files inside the image
+.env
+.env.*
+!.env.example

@@ -1,0 +1,306 @@
+# postmonster: production stack for Coolify (single server).
+# Based on upstream docker-compose.yaml (Postiz v2.24.0) with these changes:
+#   - app runs the image built by CI (GHCR), no build on the server
+#   - no public ports: Postgres/Redis/Temporal/Temporal UI stay internal;
+#     Temporal UI is bound to 127.0.0.1 only (access via SSH tunnel)
+#   - named volumes: pg-data, redis-data, uploads, temporal-*
+#   - healthchecks + restart policies + memory limits
+#   - production Temporal dynamic config (see deploy/temporal/dynamicconfig/)
+# Default values below are placeholders - real values live in Coolify
+# environment (see deploy/.env.production.example).
+services:
+  app:
+    image: ghcr.io/fiveppm/postmonster:${POSTMONSTER_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      # === Required URLs (no trailing slash)
+      MAIN_URL: ${MAIN_URL:-https://app.postmonster.xyz}
+      FRONTEND_URL: ${FRONTEND_URL:-https://app.postmonster.xyz}
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-https://app.postmonster.xyz/api}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://localhost:3000}
+      # === Secrets
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate a long random string}
+      # === Databases
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postiz-user:postiz-password@postgres:5432/postiz-db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-temporal:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      # === App behaviour
+      IS_GENERAL: ${IS_GENERAL:-true}
+      DISABLE_REGISTRATION: ${DISABLE_REGISTRATION:-true}
+      API_LIMIT: ${API_LIMIT:-30}
+      # NEVER set NOT_SECURED in production (it relaxes cookie security).
+      # === Storage (local persistent volume, served by nginx from /uploads)
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      UPLOAD_DIRECTORY: ${UPLOAD_DIRECTORY:-/uploads}
+      NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY: ${NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY:-uploads}
+      # === Email (see deploy/.env.production.example for SMTP alternative)
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-}
+      EMAIL_SECURE: ${EMAIL_SECURE:-}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      # === Social networks (optional - empty means "not configured")
+      X_URL: ${X_URL:-}
+      X_API_KEY: ${X_API_KEY:-}
+      X_API_SECRET: ${X_API_SECRET:-}
+      LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
+      LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID:-}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      BEEHIIVE_API_KEY: ${BEEHIIVE_API_KEY:-}
+      BEEHIIVE_PUBLICATION_ID: ${BEEHIIVE_PUBLICATION_ID:-}
+      LISTMONK_DOMAIN: ${LISTMONK_DOMAIN:-}
+      LISTMONK_USER: ${LISTMONK_USER:-}
+      LISTMONK_API_KEY: ${LISTMONK_API_KEY:-}
+      LISTMONK_LIST_ID: ${LISTMONK_LIST_ID:-}
+      THREADS_APP_ID: ${THREADS_APP_ID:-}
+      THREADS_APP_SECRET: ${THREADS_APP_SECRET:-}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+      YOUTUBE_CLIENT_ID: ${YOUTUBE_CLIENT_ID:-}
+      YOUTUBE_CLIENT_SECRET: ${YOUTUBE_CLIENT_SECRET:-}
+      TIKTOK_CLIENT_ID: ${TIKTOK_CLIENT_ID:-}
+      TIKTOK_CLIENT_SECRET: ${TIKTOK_CLIENT_SECRET:-}
+      TIKTOK_BUSINESS_CLIENT_ID: ${TIKTOK_BUSINESS_CLIENT_ID:-}
+      TIKTOK_BUSINESS_CLIENT_SECRET: ${TIKTOK_BUSINESS_CLIENT_SECRET:-}
+      PINTEREST_CLIENT_ID: ${PINTEREST_CLIENT_ID:-}
+      PINTEREST_CLIENT_SECRET: ${PINTEREST_CLIENT_SECRET:-}
+      DRIBBBLE_CLIENT_ID: ${DRIBBBLE_CLIENT_ID:-}
+      DRIBBBLE_CLIENT_SECRET: ${DRIBBBLE_CLIENT_SECRET:-}
+      TUMBLR_CLIENT_ID: ${TUMBLR_CLIENT_ID:-}
+      TUMBLR_CLIENT_SECRET: ${TUMBLR_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_BOT_TOKEN_ID: ${DISCORD_BOT_TOKEN_ID:-}
+      SLACK_ID: ${SLACK_ID:-}
+      SLACK_SECRET: ${SLACK_SECRET:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      MASTODON_URL: ${MASTODON_URL:-https://mastodon.social}
+      MASTODON_CLIENT_ID: ${MASTODON_CLIENT_ID:-}
+      MASTODON_CLIENT_SECRET: ${MASTODON_CLIENT_SECRET:-}
+      NEYNAR_CLIENT_ID: ${NEYNAR_CLIENT_ID:-}
+      NEYNAR_SECRET_KEY: ${NEYNAR_SECRET_KEY:-}
+      NEYNAR_APP_FID: ${NEYNAR_APP_FID:-}
+      NEYNAR_APP_MNEMONIC: ${NEYNAR_APP_MNEMONIC:-}
+      NEYNAR_SPONSOR_SIGNERS: ${NEYNAR_SPONSOR_SIGNERS:-false}
+      EXTENSION_ID: ${EXTENSION_ID:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - app-config:/config/
+      - uploads:/uploads/
+    expose:
+      - '5000'
+    networks:
+      - postmonster-network
+      - temporal-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+    healthcheck:
+      # nginx (:5000) proxies /api/ to the backend (:3000); 200 = backend is up
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://127.0.0.1:5000/api/',(r)=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      # first boot runs `prisma db push` before pm2 starts - give it time
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postiz-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postiz-password}
+      POSTGRES_DB: ${POSTGRES_DB:-postiz-db}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - postmonster-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+  redis:
+    image: redis:7.2
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - postmonster-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  # -----------------------
+  # Temporal stack (internal only)
+  # -----------------------
+  temporal-elasticsearch:
+    image: elasticsearch:7.17.27
+    restart: unless-stopped
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    networks:
+      - temporal-network
+    expose:
+      - '9200'
+    volumes:
+      - temporal-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:9200/_cluster/health >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+  temporal-postgresql:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TEMPORAL_POSTGRES_USER:-temporal}
+      POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:-temporal}
+    networks:
+      - temporal-network
+    expose:
+      - '5432'
+    volumes:
+      - temporal-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER"']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    restart: unless-stopped
+    depends_on:
+      temporal-postgresql:
+        condition: service_healthy
+      temporal-elasticsearch:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=${TEMPORAL_POSTGRES_USER:-temporal}
+      - POSTGRES_PWD=${TEMPORAL_POSTGRES_PASSWORD:-temporal}
+      - POSTGRES_SEEDS=temporal-postgresql
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/production-sql.yaml
+      - ENABLE_ES=true
+      - ES_SEEDS=temporal-elasticsearch
+      - ES_VERSION=v7
+      - TEMPORAL_NAMESPACE=default
+    networks:
+      - temporal-network
+    expose:
+      - '7233'
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    healthcheck:
+      # TCP probe of the gRPC port (bash is available in the auto-setup image)
+      test: ['CMD-SHELL', 'bash -c "exec 3<>/dev/tcp/127.0.0.1/7233"']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  # Optional: tctl/CLI for ops (no ports, run via `docker compose exec`).
+  # temporal-admin-tools:
+  #   image: temporalio/admin-tools:1.28.1-tctl-1.18.4-cli-1.4.1
+  #   restart: unless-stopped
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #     - TEMPORAL_CLI_ADDRESS=temporal:7233
+  #   networks:
+  #     - temporal-network
+  #   stdin_open: true
+  #   tty: true
+  #   depends_on:
+  #     - temporal
+
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://127.0.0.1:${TEMPORAL_UI_HOST_PORT:-8080}
+    networks:
+      - temporal-network
+    ports:
+      # Loopback only - NOT public. Reachable via SSH tunnel
+      # (ssh -L 8080:127.0.0.1:8080 user@server). See docs/deploy.md.
+      # Host port is overridable for local testing (Windows may block 8080).
+      - '127.0.0.1:${TEMPORAL_UI_HOST_PORT:-8080}:8080'
+    depends_on:
+      temporal:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+volumes:
+  pg-data:
+  redis-data:
+  uploads:
+  app-config:
+  temporal-pg-data:
+  temporal-es-data:
+
+networks:
+  postmonster-network:
+  temporal-network:

@@ -1,0 +1,6 @@
+# Temporal dynamic config for production (SQL/ES visibility).
+# Unlike upstream development-sql.yaml this intentionally does NOT enable
+# system.forceSearchAttributesCacheRefreshOnRead (dev-only flag).
+limit.maxIDLength:
+  - value: 255
+    constraints: {}

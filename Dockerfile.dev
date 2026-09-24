@@ -1,6 +1,16 @@
 FROM node:22.20-bookworm-slim
 ARG NEXT_PUBLIC_VERSION
 ENV NEXT_PUBLIC_VERSION=$NEXT_PUBLIC_VERSION
+# postmonster: NEXT_PUBLIC_* are inlined into the Next.js bundle at build time,
+# so production URLs are passed as build args (see .github/workflows/build-image.yml).
+# These are public URLs only - no secrets belong here.
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+ARG NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
+ENV NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY=$NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY
+# postmonster: evaluated by next.config.js redirects/rewrites at build time.
+ARG STORAGE_PROVIDER=local
+ENV STORAGE_PROVIDER=$STORAGE_PROVIDER
 RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     make \
