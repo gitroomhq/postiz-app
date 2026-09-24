@@ -104,6 +104,9 @@ services:
     networks:
       - postmonster-network
       - temporal-network
+      # Coolify's shared proxy network (Traefik). Without this the proxy
+      # cannot reach the container and answers 504 Gateway Timeout.
+      - coolify
     depends_on:
       postgres:
         condition: service_healthy
@@ -314,3 +317,7 @@ volumes:
 networks:
   postmonster-network:
   temporal-network:
+  # Created and owned by Coolify; needed for the Traefik proxy to reach `app`.
+  # For local runs create it once: docker network create coolify
+  coolify:
+    external: true
