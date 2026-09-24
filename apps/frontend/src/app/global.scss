@@ -822,3 +822,8 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+/* Preview page: text that can be selected to leave an inline comment */
+.preview-comment-cursor {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%2228%22 height%3D%2228%22 viewBox%3D%220 0 28 28%22%3E%3Cg fill%3D%22none%22 stroke-linecap%3D%22round%22 stroke-linejoin%3D%22round%22%3E%3Cpath d%3D%22M3 4h6M3 24h6M6 4v20%22 stroke%3D%22%23fff%22 stroke-width%3D%224%22%2F%3E%3Cpath d%3D%22M3 4h6M3 24h6M6 4v20%22 stroke%3D%22%23000%22 stroke-width%3D%221.6%22%2F%3E%3Cpath d%3D%22M14 4h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-6l-4 3v-3a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z%22 fill%3D%22%23612bd3%22 stroke%3D%22%23fff%22 stroke-width%3D%221.5%22%2F%3E%3Cpath d%3D%22M17 8h6M17 11h4%22 stroke%3D%22%23fff%22 stroke-width%3D%221.5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 6 14, text;
+}

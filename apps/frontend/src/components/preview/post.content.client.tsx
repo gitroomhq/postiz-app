@@ -150,6 +150,13 @@ export const PostContentClient: FC<{ postId: string; html: string }> = ({
   const [selection, setSelection] = useState<
     (PendingAnchor & { top: number; left: number }) | null
   >(null);
+  // Follows the mouse over the text so nobody has to guess that selecting
+  // it opens a comment.
+  const [hint, setHint] = useState<{
+    top: number;
+    left: number;
+    onMark: boolean;
+  } | null>(null);
 
   const ranges = useMemo<HighlightRange[]>(
     () =>
@@ -279,12 +286,32 @@ export const PostContentClient: FC<{ postId: string; html: string }> = ({
       .closest<HTMLElement>('mark[data-thread-ids]')
       ?.dataset.threadIds?.split(',')[0] || null;
 
+  const onMouseMove = useCallback((e: MouseEvent<HTMLDivElement>) => {
+    const root = ref.current;
+    // While dragging a selection the "Comment" button takes over afterwards.
+    if (!root || e.buttons) {
+      setHint(null);
+      return;
+    }
+    const rootRect = root.getBoundingClientRect();
+    setHint({
+      top: e.clientY - rootRect.top + 22,
+      left: Math.max(
+        0,
+        Math.min(e.clientX - rootRect.left + 14, rootRect.width - 190)
+      ),
+      onMark: !!threadOf(e),
+    });
+  }, []);
+
   return (
     <div className="relative">
       <div
         ref={ref}
-        className="text-[14px] whitespace-pre-wrap leading-[22px]"
+        className="text-[14px] whitespace-pre-wrap leading-[22px] preview-comment-cursor"
         onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
+        onMouseLeave={() => setHint(null)}
         onMouseOver={(e) => setHoveredThread(threadOf(e))}
         onMouseOut={() => setHoveredThread(null)}
         onClick={(e) => {
@@ -295,6 +322,30 @@ export const PostContentClient: FC<{ postId: string; html: string }> = ({
         }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
+      {!!hint && !selection && !ownPending && (
+        <div
+          style={{ top: hint.top, left: hint.left }}
+          className="absolute z-[10] pointer-events-none bg-newBgColorInner border border-newTableBorder text-newTextColor text-[12px] rounded-[6px] px-[8px] h-[24px] flex items-center gap-[6px] shadow-lg whitespace-nowrap"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={12}
+            height={12}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-btnPrimary"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {hint.onMark
+            ? t('preview_click_to_open_comment', 'Click to open the comment')
+            : t('preview_select_text_to_comment', 'Select text to comment')}
+        </div>
+      )}
       {!!selection && (
         <button
           type="button"
