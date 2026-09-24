@@ -770,5 +770,21 @@
   "republish_at": "公開日時：",
   "past_publish_date_warning": "公開日は過去の日付です。未来の日付を選択してください。",
   "could_not_save_post": "投稿を保存できませんでした。",
-  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。"
+  "republish_recurring_note": "これは定期投稿です：今後すべての繰り返しに対して変更が適用されます。",
+  "comment": "コメント",
+  "reply": "返信",
+  "add_a_comment": "コメントを追加",
+  "add_a_comment_placeholder": "コメントを追加...",
+  "write_a_reply": "返信を書く...",
+  "reviewer": "レビュアー",
+  "resolve": "解決",
+  "reopen": "再オープン",
+  "resolved": "解決済み",
+  "collapse": "折りたたむ",
+  "preview_comment_name_required": "お名前を入力いただかないとコメントを投稿できません。",
+  "preview_comment_your_name": "あなたの名前",
+  "preview_comment_failed": "コメントの投稿に失敗しました",
+  "preview_comment_detach_hint": "選択テキストへのコメントは、テキストが後から編集されるとハイライトが失われます。",
+  "preview_comment_text_changed": "テキストが変更されました",
+  "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。"
 }

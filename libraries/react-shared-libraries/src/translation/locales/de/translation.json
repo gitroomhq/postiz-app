@@ -770,5 +770,21 @@
   "republish_at": "um",
   "past_publish_date_warning": "Das Veröffentlichungsdatum liegt in der Vergangenheit, bitte wähle ein zukünftiges Datum.",
   "could_not_save_post": "Beitrag konnte nicht gespeichert werden.",
-  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen."
+  "republish_recurring_note": "Dies ist ein wiederkehrender Beitrag: Ihre Änderungen gelten ab jetzt für alle zukünftigen Wiederholungen.",
+  "comment": "Kommentar",
+  "reply": "Antworten",
+  "add_a_comment": "Einen Kommentar hinzufügen",
+  "add_a_comment_placeholder": "Kommentar hinzufügen...",
+  "write_a_reply": "Antwort schreiben...",
+  "reviewer": "Reviewer",
+  "resolve": "Lösen",
+  "reopen": "Wieder öffnen",
+  "resolved": "Gelöst",
+  "collapse": "Einklappen",
+  "preview_comment_name_required": "Wir können Ihren Kommentar nur veröffentlichen, wenn Sie Ihren Namen angeben.",
+  "preview_comment_your_name": "Ihr Name",
+  "preview_comment_failed": "Kommentar konnte nicht veröffentlicht werden",
+  "preview_comment_detach_hint": "Kommentare zu ausgewähltem Text verlieren ihre Markierung, wenn der Text später bearbeitet wird.",
+  "preview_comment_text_changed": "Text geändert",
+  "preview_no_comments_yet": "Noch keine Kommentare. Wählen Sie einen Text im Beitrag aus, um ihn zu kommentieren, oder fügen Sie einen allgemeinen Kommentar hinzu."
 }

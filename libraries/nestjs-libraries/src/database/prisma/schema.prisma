@@ -427,18 +427,28 @@ model Comments {
   content        String
   organizationId String
   postId         String
-  userId         String
+  userId         String?
+  displayName    String?
+  parentId       String?
+  anchorStart    Int?
+  anchorEnd      Int?
+  anchorQuote    String?
+  resolvedAt     DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
   organization   Organization @relation(fields: [organizationId], references: [id])
   post           Post         @relation(fields: [postId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+  parent         Comments?    @relation("CommentReplies", fields: [parentId], references: [id])
+  replies        Comments[]   @relation("CommentReplies")
 
   @@index([createdAt])
   @@index([organizationId])
   @@index([userId])
   @@index([postId])
+  @@index([parentId])
+  @@index([resolvedAt])
   @@index([deletedAt])
 }
 

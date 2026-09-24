@@ -770,5 +770,21 @@
   "republish_at": "다음 시간에",
   "past_publish_date_warning": "게시 날짜가 과거입니다. 미래 날짜를 선택하세요.",
   "could_not_save_post": "게시물을 저장할 수 없습니다.",
-  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다."
+  "republish_recurring_note": "이 게시물은 반복 게시물입니다. 변경사항은 지금부터 시작하는 모든 향후 반복에 적용됩니다.",
+  "comment": "댓글",
+  "reply": "답글",
+  "add_a_comment": "댓글 추가",
+  "add_a_comment_placeholder": "댓글을 입력하세요...",
+  "write_a_reply": "답글을 작성하세요...",
+  "reviewer": "검토자",
+  "resolve": "해결",
+  "reopen": "다시 열기",
+  "resolved": "해결됨",
+  "collapse": "접기",
+  "preview_comment_name_required": "이름을 입력하셔야 댓글을 남길 수 있습니다.",
+  "preview_comment_your_name": "이름",
+  "preview_comment_failed": "댓글을 게시할 수 없습니다.",
+  "preview_comment_detach_hint": "선택한 텍스트에 단 댓글은, 텍스트가 나중에 수정되면 강조가 사라집니다.",
+  "preview_comment_text_changed": "텍스트가 변경됨",
+  "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요."
 }
