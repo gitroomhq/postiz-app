@@ -134,9 +134,11 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postiz-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postiz-password}
-      POSTGRES_DB: ${POSTGRES_DB:-postiz-db}
+      # Prefixed APP_ on the compose side so generic names (POSTGRES_DB etc.)
+      # never leak into other containers via Coolify env injection.
+      POSTGRES_USER: ${APP_POSTGRES_USER:-postiz-user}
+      POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:-postiz-password}
+      POSTGRES_DB: ${APP_POSTGRES_DB:-postiz-db}
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
@@ -203,8 +205,13 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${TEMPORAL_POSTGRES_USER:-temporal}
-      POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:-temporal}
+      # Hardcoded on purpose (internal-only service, upstream parity): Coolify
+      # injects resource env vars into every container, so generic names like
+      # POSTGRES_DB would leak in and the temporal database would be created
+      # under a wrong name. Do not switch these to variable interpolation.
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
     networks:
       - temporal-network
     expose:
@@ -232,8 +239,10 @@ services:
     environment:
       - DB=postgres12
       - DB_PORT=5432
-      - POSTGRES_USER=${TEMPORAL_POSTGRES_USER:-temporal}
-      - POSTGRES_PWD=${TEMPORAL_POSTGRES_PASSWORD:-temporal}
+      # Hardcoded to match temporal-postgresql (see note there).
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - DBNAME=temporal
       - POSTGRES_SEEDS=temporal-postgresql
       - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/production-sql.yaml
       - ENABLE_ES=true
