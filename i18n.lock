@@ -772,3 +772,19 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    comment: 1be52fc8cdfb25a4c4abe2482fc478aa
+    reply: 37a07e1dbda9841da3feb16c9e1e63b5
+    add_a_comment: 92a18f71e9cef81fdbdb39ee69b0b771
+    add_a_comment_placeholder: c28cfccc0cc69a2a2487e37eb9988028
+    write_a_reply: e15bb5e29e4ad42490d0f9d40d17e21e
+    reviewer: 882ff4831ea1d7d9eeb7d19575006be8
+    resolve: 47362c1e812b301e132d9c4be5f0329e
+    reopen: 0066d9cce35e2f7a6cec3af252ce6580
+    resolved: a1de202e0c3b352731a33bea1897bdb8
+    collapse: d64b33ae34d2ff729b0232220dbd9a99
+    preview_comment_name_required: fa36cde1b98dc2a86671b5d732cc4cae
+    preview_comment_your_name: b00c01deec0af9a441331a5134210de1
+    preview_comment_failed: f12e2f9e71c2ef3d2848c6ed5a16b99b
+    preview_comment_detach_hint: 6fa385ae985c409b511cf7adea2f950a
+    preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
+    preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a

@@ -161,6 +161,12 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         value: 'X is currently unavailable, please try again later',
       };
     }
+    if (body.includes('Too Many Requests')) {
+      return {
+        type: 'retry',
+        value: 'X rate limit reached, please try again later',
+      };
+    }
     if (body.includes('maximum of one cashtag')) {
       return {
         type: 'bad-body',
@@ -230,6 +236,57 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           'The video you are trying to post is longer than 2 minutes, which is not allowed for this account',
+      };
+    }
+    if (
+      body.includes(
+        'This user is not allowed to post a video longer than 10 minutes'
+      )
+    ) {
+      return {
+        type: 'bad-body',
+        value:
+          'The video you are trying to post is longer than 10 minutes, which is not allowed for this account',
+      };
+    }
+    if (body.includes('Your account is temporarily locked')) {
+      return {
+        type: 'bad-body',
+        value:
+          'Your X account is temporarily locked, log in to x.com to unlock it and then try again',
+      };
+    }
+    if (body.includes('Crypto addresses are prohibited')) {
+      return {
+        type: 'bad-body',
+        value:
+          'X does not allow crypto addresses in posts for the first 7 days after connecting the account',
+      };
+    }
+    if (body.includes('Your media IDs are invalid')) {
+      return {
+        type: 'bad-body',
+        value:
+          'X rejected the attached media, please re-upload the media and try again',
+      };
+    }
+    if (body.includes('not authorized to create or publish articles')) {
+      return {
+        type: 'bad-body',
+        value: 'Publishing articles on X requires an X Premium subscription',
+      };
+    }
+    if (body.includes('Please include either text or media in your Tweet')) {
+      return {
+        type: 'bad-body',
+        value:
+          'One of the posts in this thread has no text or media, please add some text or remove it',
+      };
+    }
+    if (body.includes('"title":"Unauthorized"')) {
+      return {
+        type: 'refresh-token',
+        value: 'X rejected the connected account, please reconnect your account',
       };
     }
     return undefined;

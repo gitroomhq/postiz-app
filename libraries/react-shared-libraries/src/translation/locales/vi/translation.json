@@ -768,5 +768,21 @@
   "republish_the_post": "Đăng lại bài viết",
   "post_already_published_republish_warning": "Bài viết này đã được đăng. Đăng lại sẽ xuất bản bài viết một lần nữa đến",
   "republish_at": "lúc",
-  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ."
+  "republish_recurring_note": "Đây là bài viết định kỳ: các thay đổi của bạn sẽ áp dụng cho tất cả các lần lặp lại trong tương lai bắt đầu từ bây giờ.",
+  "comment": "Bình luận",
+  "reply": "Trả lời",
+  "add_a_comment": "Thêm bình luận",
+  "add_a_comment_placeholder": "Thêm bình luận...",
+  "write_a_reply": "Viết trả lời...",
+  "reviewer": "Người kiểm duyệt",
+  "resolve": "Đã xử lý",
+  "reopen": "Mở lại",
+  "resolved": "Đã xử lý",
+  "collapse": "Thu gọn",
+  "preview_comment_name_required": "Chúng tôi chỉ có thể đăng bình luận của bạn khi bạn cung cấp tên.",
+  "preview_comment_your_name": "Tên của bạn",
+  "preview_comment_failed": "Không thể đăng bình luận",
+  "preview_comment_detach_hint": "Bình luận trên đoạn văn bản được chọn sẽ mất nổi bật nếu văn bản bị chỉnh sửa sau đó.",
+  "preview_comment_text_changed": "Nội dung đã thay đổi",
+  "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung."
 }

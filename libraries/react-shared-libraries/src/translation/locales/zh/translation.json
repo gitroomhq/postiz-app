@@ -768,5 +768,21 @@
   "republish_the_post": "重新发布帖子",
   "post_already_published_republish_warning": "此帖子已发布。重新发布将再次将其发布到",
   "republish_at": "于",
-  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。"
+  "republish_recurring_note": "这是一个重复的帖子：你的更改将从现在开始应用于所有未来的重复内容。",
+  "comment": "评论",
+  "reply": "回复",
+  "add_a_comment": "添加评论",
+  "add_a_comment_placeholder": "添加评论……",
+  "write_a_reply": "写一个回复……",
+  "reviewer": "审阅者",
+  "resolve": "解决",
+  "reopen": "重新打开",
+  "resolved": "已解决",
+  "collapse": "折叠",
+  "preview_comment_name_required": "只有在你提供姓名后，我们才能发布你的评论。",
+  "preview_comment_your_name": "你的姓名",
+  "preview_comment_failed": "无法发布评论",
+  "preview_comment_detach_hint": "如果后续编辑了所选文本，所选文本上的评论高亮将丢失。",
+  "preview_comment_text_changed": "文本已更改",
+  "preview_no_comments_yet": "还没有评论。选中帖子中的某些文本以进行评论，或添加一个总体评论。"
 }
