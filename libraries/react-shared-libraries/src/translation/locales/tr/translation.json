@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "Gelişmiş Resim Editörü",
   "billing_ai_images_per_month": "Aylık Yapay Zeka Görselleri",
   "billing_ai_videos_per_month": "Aylık Yapay Zeka Videoları",
+  "billing_clipping_minutes_per_month": "dakika/ay yapay zeka video kırpma",
   "billing_billing_address": "Fatura Adresi",
   "billing_payment": "Ödeme",
   "billing_powered_by_stripe": "Güvenli ödemeler tarafından işlenir",

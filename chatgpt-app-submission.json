@@ -3,8 +3,8 @@
   "schema_version": 1,
   "app_info": {
     "display_name": "Postiz",
-    "subtitle": "Schedule social posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT. Users can list connected channels and groups, inspect platform requirements, upload or generate media, create drafts or scheduled posts, update provider settings, and review upcoming posts.",
+    "subtitle": "Schedule Social Media Posts",
+    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -162,6 +162,78 @@
         "read_only_justification": "Fetches a public media URL, uploads the file, and saves it to the media library.",
         "open_world_justification": "Reads from a public URL and stores the resulting media through external storage.",
         "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "uploadWidgetTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with.",
+        "open_world_justification": "Only creates an upload session inside the user's Postiz workspace; nothing is published or sent to a third party.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+      }
+    },
+    "uploadWidgetTicketTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived upload ticket for the upload widget; it is only callable by the widget, not by the model.",
+        "open_world_justification": "The ticket only allows uploads into the user's own Postiz media library; no public or third-party state changes.",
+        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
+      }
+    },
+    "uploadWidgetStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the media uploaded in an upload widget session.",
+        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
+        "destructive_justification": "Read-only; it cannot change or delete anything."
+      }
+    },
+    "clippingTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts a background clipping job that downloads a public YouTube video, renders short vertical clips with captions, consumes the user's clipping minutes, and saves every clip to the media library; when channels are passed it also creates draft posts.",
+        "open_world_justification": "Reads a public YouTube URL and calls external rendering and storage services to create media for the user's workspace.",
+        "destructive_justification": "Does not delete or overwrite existing media or posts, revoke access, or publish content; any posts it creates are drafts only."
+      }
+    },
+    "clippingStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads the status of a clipping job the user started and returns the hosted clip URLs once it is done.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "clippingWidgetTicketTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a short-lived ticket for the clipping widget to read the progress of a clipping job; it is only callable by the widget, not by the model.",
+        "open_world_justification": "The ticket only allows reading the user's own clipping job inside Postiz; no public or third-party state changes.",
+        "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
       }
     }
   },

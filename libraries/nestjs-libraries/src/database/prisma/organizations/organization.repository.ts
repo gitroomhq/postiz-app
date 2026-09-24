@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 
 @Injectable()
 export class OrganizationRepository {
@@ -21,7 +22,7 @@ export class OrganizationRepository {
       },
       data: {
         name: name ? `${name}###${id}` : `Unnamed User###${id}`,
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
         isTrailing: false,
         subscription: {
           create: {
@@ -42,7 +43,7 @@ export class OrganizationRepository {
                   : `${saasName}+` + makeId(10) + '@postiz.com',
                 name: name ? `${name}###${id}` : `Unnamed User###${id}`,
                 providerName: 'LOCAL',
-                password: AuthService.hashPassword(makeId(500)),
+                password: AuthService.hashPassword(makeSecureId(500)),
                 timezone: 0,
               },
             },
@@ -81,6 +82,22 @@ export class OrganizationRepository {
         disabled: false,
         user: {
           isSuperAdmin: true,
+          deletedAt: null,
+        },
+      },
+    });
+  }
+
+  getPrivilegedNonSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        role: {
+          in: [Role.SUPERADMIN, Role.ADMIN],
+        },
+        user: {
+          isSuperAdmin: false,
           deletedAt: null,
         },
       },
@@ -224,7 +241,7 @@ export class OrganizationRepository {
         id: orgId,
       },
       data: {
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
       },
     });
   }
@@ -285,6 +302,98 @@ export class OrganizationRepository {
         },
       },
     });
+  }
+
+  async getAccountOverview(orgId: string) {
+    const [organization, members] = await Promise.all([
+      this._organization.model.organization.findUnique({
+        where: {
+          id: orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          deletedAt: true,
+          allowTrial: true,
+          isTrailing: true,
+          subscription: {
+            select: {
+              subscriptionTier: true,
+              period: true,
+              identifier: true,
+              totalChannels: true,
+              isLifetime: true,
+              cancelAt: true,
+              createdAt: true,
+              updatedAt: true,
+              deletedAt: true,
+            },
+          },
+        },
+      }),
+      this._userOrg.model.userOrganization.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          role: true,
+          disabled: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              activated: true,
+              providerName: true,
+              lastOnline: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!organization) {
+      return null;
+    }
+
+    const owner = members.find((member) => member.role === Role.SUPERADMIN);
+    const lastOnlineMax = members.reduce<Date | null>(
+      (latest, member) =>
+        !latest || member.user.lastOnline > latest
+          ? member.user.lastOnline
+          : latest,
+      null
+    );
+
+    return {
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        createdAt: organization.createdAt,
+        deletedAt: organization.deletedAt,
+        allowTrial: organization.allowTrial,
+        isTrailing: organization.isTrailing,
+      },
+      subscription: organization.subscription || null,
+      owner: owner
+        ? {
+            ...owner.user,
+            role: owner.role,
+            memberSince: owner.createdAt,
+          }
+        : null,
+      users: {
+        total: members.length,
+        activated: members.filter((member) => member.user.activated).length,
+        disabled: members.filter((member) => member.disabled).length,
+        lastOnlineMax,
+      },
+    };
   }
 
   getUsersByEmail(email: string) {
@@ -358,7 +467,7 @@ export class OrganizationRepository {
     return this._organization.model.organization.create({
       data: {
         name: body.company,
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
         allowTrial: true,
         isTrailing: true,
         users: {

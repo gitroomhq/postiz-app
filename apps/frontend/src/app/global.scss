@@ -524,6 +524,12 @@ div div .set-font-family {
   display: none !important;
 }
 
+.hideChatbase #chatbase-bubble-button,
+.hideChatbase #chatbase-bubble-window,
+.hideChatbase #chatbase-message-bubbles {
+  display: none !important;
+}
+
 html[dir='rtl'] .rbox {
   direction: rtl !important;
 }

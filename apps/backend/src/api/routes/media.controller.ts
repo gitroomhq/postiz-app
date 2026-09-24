@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,7 +11,6 @@ import {
   Res,
   UploadedFile,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -19,7 +19,7 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { ApiTags } from '@nestjs/swagger';
 import handleR2Upload from '@gitroom/nestjs-libraries/upload/r2.uploader';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CustomFileValidationPipe } from '@gitroom/nestjs-libraries/upload/custom.upload.validation';
+import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.stream.engine';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
@@ -85,19 +85,19 @@ export class MediaController {
   }
 
   @Post('/upload-server')
-  @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new CustomFileValidationPipe())
+  @UseInterceptors(FileInterceptor('file', streamUploadOptions()))
   async uploadServer(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile() file: Express.Multer.File
   ) {
-    const originalName = file?.originalname || '';
-    const uploadedFile = await this.storage.uploadFile(file);
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
     return this._mediaService.saveFile(
       org.id,
-      uploadedFile.originalname,
-      uploadedFile.path,
-      originalName
+      file.filename,
+      file.path,
+      file.originalname
     );
   }
 
@@ -128,26 +128,25 @@ export class MediaController {
   }
 
   @Post('/upload-simple')
-  @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new CustomFileValidationPipe())
+  @UseInterceptors(FileInterceptor('file', streamUploadOptions()))
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File,
     @Body('preventSave') preventSave: string = 'false'
   ) {
-    const originalName = file.originalname;
-    const getFile = await this.storage.uploadFile(file);
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
 
     if (preventSave === 'true') {
-      const { path } = getFile;
-      return { path };
+      return { path: file.path };
     }
 
     return this._mediaService.saveFile(
       org.id,
-      getFile.originalname,
-      getFile.path,
-      originalName
+      file.filename,
+      file.path,
+      file.originalname
     );
   }
 

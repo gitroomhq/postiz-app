@@ -16,8 +16,65 @@ const VoicePrompt = z.object({
   voice: z.string(),
 });
 
+const ClipsPrompt = z.object({
+  clips: z.array(
+    z.object({
+      from: z.number().describe('Number of the first line of the clip'),
+      to: z.number().describe('Number of the last line of the clip'),
+      title: z.string().describe('Short title of the clip'),
+      content: z
+        .string()
+        .describe('Social media post to publish the clip with, no hashtags'),
+    })
+  ),
+});
+
 @Injectable()
 export class OpenaiService {
+  // The model answers with line numbers and not times, so a clip can only
+  // start and end where the transcript really has a boundary
+  async pickClips(
+    title: string,
+    language: string,
+    segments: { start: number; end: number; text: string }[],
+    maxClips: number
+  ) {
+    const { clips } = (
+      await openai.chat.completions.parse(
+        {
+          model: 'gpt-4.1',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an assistant that takes the transcript of a video and picks the parts that will work best as short vertical clips for social media.
+Every line of the transcript is "number [start seconds - end seconds] text".
+Pick up to ${maxClips} clips, best first. A clip is a range of consecutive lines that starts with a hook, makes one complete point and is understandable without the rest of the video.
+The length of a clip is the end of its last line minus the start of its first line: it must be between 20 and 90 seconds, never longer, so check the numbers before answering.
+Clips must not overlap. Write the title and the post in this language, whatever the language of these instructions: ${language}.`,
+            },
+            {
+              role: 'user',
+              content: `title: ${title}\n\n${segments
+                .map(
+                  (p, index) =>
+                    `${index} [${p.start.toFixed(1)} - ${p.end.toFixed(1)}] ${
+                      p.text
+                    }`
+                )
+                .join('\n')}`,
+            },
+          ],
+          response_format: zodResponseFormat(ClipsPrompt, 'clipsPrompt'),
+        },
+        // shorter than the activity: an attempt that was given up on must not
+        // still be running, and storing clips, when its retry gets there
+        { timeout: 8 * 60 * 1000, maxRetries: 0 }
+      )
+    ).choices[0].message.parsed || { clips: [] };
+
+    return clips;
+  }
+
   async generateImage(prompt: string, isVertical = false) {
     // gpt-image models always return base64 (b64_json) and do not accept the
     // `response_format` parameter, unlike the deprecated dall-e-3.

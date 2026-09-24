@@ -148,6 +148,10 @@ export class PostsService {
     return this._postRepository.getPostById(postId, orgId);
   }
 
+  async getPostTimeline(postId: string, orgId: string) {
+    return this._postRepository.getPostTimeline(postId, orgId);
+  }
+
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
     return this._postRepository.updateReleaseId(postId, orgId, releaseId);
   }

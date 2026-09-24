@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "高度な画像編集ツール",
   "billing_ai_images_per_month": "月あたりのAI画像数",
   "billing_ai_videos_per_month": "月あたりのAI動画数",
+  "billing_clipping_minutes_per_month": "分のAI動画クリッピング（月あたり）",
   "billing_billing_address": "請求先住所",
   "billing_payment": "支払い",
   "billing_powered_by_stripe": "安全な支払いはによって処理されています",

@@ -112,6 +112,11 @@ export const Features: FC<{
     if (currentPricing?.generate_videos) {
       list.push(`${currentPricing?.generate_videos} AI Videos per month`);
     }
+    if (currentPricing?.clipping_minutes) {
+      list.push(
+        `${currentPricing?.clipping_minutes} minutes of AI video clipping per month`
+      );
+    }
     return list;
   }, [pack]);
   return (

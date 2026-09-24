@@ -7,7 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
@@ -283,7 +283,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(7);
+    const state = makeSecureId(7);
     const { client } = clientAndYoutube();
     return {
       url: client.generateAuthUrl({
@@ -293,7 +293,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
       }),
-      codeVerifier: makeId(11),
+      codeVerifier: makeSecureId(11),
       state,
     };
   }

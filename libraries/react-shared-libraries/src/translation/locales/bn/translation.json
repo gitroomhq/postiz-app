@@ -530,6 +530,7 @@
   "billing_advanced_picture_editor": "উন্নত ছবি সম্পাদনা",
   "billing_ai_images_per_month": "প্রতি মাসে এআই ছবি",
   "billing_ai_videos_per_month": "প্রতি মাসে এআই ভিডিও",
+  "billing_clipping_minutes_per_month": "মিনিট এআই ভিডিও ক্লিপিং প্রতি মাসে",
   "billing_billing_address": "বিলিং ঠিকানা",
   "billing_payment": "পেমেন্ট",
   "billing_powered_by_stripe": "নিরাপদ পেমেন্ট প্রক্রিয়াকরণ করেছে",
