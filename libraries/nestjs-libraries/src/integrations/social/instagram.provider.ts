@@ -11,6 +11,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
   BadBody,
+  Disconnect,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -645,6 +646,14 @@ export class InstagramProvider
 
     if (status_code === 'ERROR' || status_code === 'EXPIRED') {
       const handleError = this.handleErrors(status || '', 200);
+      if (handleError?.type === 'disconnect') {
+        throw new Disconnect(
+          this.identifier,
+          JSON.stringify({ status_code, status }),
+          '{}',
+          handleError?.value
+        );
+      }
       throw new BadBody(
         this.identifier,
         JSON.stringify({ status_code, status }),
