@@ -5,9 +5,11 @@
 #     Temporal UI is bound to 127.0.0.1 only (access via SSH tunnel)
 #   - named volumes: pg-data, redis-data, uploads, temporal-*
 #   - healthchecks + restart policies + memory limits
-#   - production Temporal dynamic config (see deploy/temporal/dynamicconfig/)
-# Default values below are placeholders - real values live in Coolify
-# environment (see deploy/.env.production.example).
+#   - DB credentials hardcoded (internal services; see notes below)
+#   - unique aliases postmonster-db / postmonster-redis (the shared Coolify
+#     network has its own "postgres"/"redis" services)
+# Secrets and toggles live in the Coolify environment
+# (see deploy/.env.production.example).
 services:
   app:
     image: ghcr.io/fiveppm/postmonster:${POSTMONSTER_IMAGE_TAG:-latest}
