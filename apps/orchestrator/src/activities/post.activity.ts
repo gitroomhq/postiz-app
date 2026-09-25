@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Context } from '@temporalio/activity';
 import {
   Activity,
   ActivityMethod,
@@ -558,9 +559,17 @@ export class PostActivity {
       integration.providerIdentifier
     );
 
+    // the scheduled refresh has no rejected request behind it, so an
+    // unrecognized refresh error must not disconnect the channel there; post
+    // workflows calling this same activity keep disconnecting
+    const scheduled =
+      Context.current().info.workflowType === 'refreshTokenWorkflow';
+
     try {
       const refresh = await this._refreshIntegrationService.refresh(
-        integration
+        integration,
+        '',
+        scheduled
       );
       if (!refresh) {
         return false;

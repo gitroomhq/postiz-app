@@ -7,6 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { TemporalService } from 'nestjs-temporal-core';
+import { safeStringify } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @Injectable()
 export class RefreshIntegrationService {
@@ -16,12 +17,21 @@ export class RefreshIntegrationService {
     private _integrationService: IntegrationService,
     private _temporalService: TemporalService
   ) {}
-  async refresh(integration: Integration, cause = ''): Promise<false | AuthTokenDetails> {
+  async refresh(
+    integration: Integration,
+    cause = '',
+    tolerateUnknownErrors = false
+  ): Promise<false | AuthTokenDetails> {
     const socialProvider = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
 
-    const refresh = await this.refreshProcess(integration, socialProvider, cause);
+    const refresh = await this.refreshProcess(
+      integration,
+      socialProvider,
+      cause,
+      tolerateUnknownErrors
+    );
 
     if (!refresh) {
       return false as const;
@@ -71,13 +81,49 @@ export class RefreshIntegrationService {
   private async refreshProcess(
     integration: Integration,
     socialProvider: SocialProvider,
-    cause = ''
+    cause = '',
+    tolerateUnknownErrors = false
   ): Promise<AuthTokenDetails | false> {
+    let refreshError: any = null;
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
-      .catch((err) => false);
+      .catch((err) => {
+        refreshError = err;
+        return false as const;
+      });
 
     if (!refresh || !refresh.accessToken) {
+      // log a summary, not the raw error: a failed token request can carry the
+      // request body (client secret, refresh token) on the error object
+      console.error(
+        `Refresh failed for ${integration.providerIdentifier} (${integration.id}):`,
+        refreshError
+          ? `message=${refreshError?.message || ''} status=${
+              refreshError?.status || refreshError?.response?.status || 0
+            } response=${safeStringify(
+              refreshError?.details?.[0]?.json ??
+                refreshError?.response?.data ??
+                ''
+            )}`
+          : 'no access token returned'
+      );
+
+      // the scheduled refresh has no proof the token is dead, so transient /
+      // unrecognized errors should not disconnect the channel there, only
+      // errors the provider recognizes as an invalid refresh token. Every
+      // other caller refreshes because the platform already rejected the
+      // token, so they keep disconnecting.
+      if (refreshError && tolerateUnknownErrors) {
+        const handle = socialProvider.handleErrors?.(
+          `${refreshError?.message || ''} ${safeStringify(refreshError)}`,
+          refreshError?.status || refreshError?.response?.status || 0
+        );
+
+        if (handle?.type !== 'refresh-token') {
+          return false;
+        }
+      }
+
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
