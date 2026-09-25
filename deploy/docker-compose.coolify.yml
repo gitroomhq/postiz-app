@@ -21,7 +21,12 @@ services:
       # === Secrets
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate a long random string}
       # === Databases
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postiz-user:postiz-password@postgres:5432/postiz-db}
+      # Built from APP_POSTGRES_* (single source of truth) so the URL cannot
+      # drift from the credentials the postgres container was initialized
+      # with. A DATABASE_URL value in Coolify env is intentionally ignored.
+      # Use an alphanumeric APP_POSTGRES_PASSWORD (URL-hostile characters
+      # would need escaping here).
+      DATABASE_URL: postgresql://${APP_POSTGRES_USER:-postiz-user}:${APP_POSTGRES_PASSWORD:-postiz-password}@postgres:5432/${APP_POSTGRES_DB:-postiz-db}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
@@ -269,7 +274,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1g
+          memory: 2g
 
   # Optional: tctl/CLI for ops (no ports, run via `docker compose exec`).
   # temporal-admin-tools:
