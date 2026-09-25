@@ -785,5 +785,7 @@
   "preview_comment_failed": "댓글을 게시할 수 없습니다.",
   "preview_comment_detach_hint": "선택한 텍스트에 단 댓글은, 텍스트가 나중에 수정되면 강조가 사라집니다.",
   "preview_comment_text_changed": "텍스트가 변경됨",
-  "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요."
+  "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요.",
+  "past_publish_date_warning": "게시 날짜가 과거입니다. 미래 날짜를 선택하세요.",
+  "could_not_save_post": "게시물을 저장할 수 없습니다."
 }

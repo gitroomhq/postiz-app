@@ -785,5 +785,7 @@
   "preview_comment_failed": "לא ניתן היה לפרסם את התגובה",
   "preview_comment_detach_hint": "תגובות על טקסט נבחר מאבדות הדגשה אם הטקסט נערך מאוחר יותר.",
   "preview_comment_text_changed": "הטקסט השתנה",
-  "preview_no_comments_yet": "עדיין אין תגובות. בחר טקסט בפוסט כדי להגיב עליו, או הוסף תגובה כללית."
+  "preview_no_comments_yet": "עדיין אין תגובות. בחר טקסט בפוסט כדי להגיב עליו, או הוסף תגובה כללית.",
+  "past_publish_date_warning": "תאריך הפרסום הוא בעבר, יש לבחור תאריך עתידי.",
+  "could_not_save_post": "לא ניתן היה לשמור את הפוסט."
 }

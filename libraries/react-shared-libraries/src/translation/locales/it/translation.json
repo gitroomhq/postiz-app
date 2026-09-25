@@ -785,5 +785,7 @@
   "preview_comment_failed": "Impossibile pubblicare il commento",
   "preview_comment_detach_hint": "I commenti su testo selezionato perdono l'evidenziazione se il testo viene modificato successivamente.",
   "preview_comment_text_changed": "Testo modificato",
-  "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale."
+  "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale.",
+  "past_publish_date_warning": "La data di pubblicazione è nel passato, scegli una data futura.",
+  "could_not_save_post": "Impossibile salvare il post."
 }

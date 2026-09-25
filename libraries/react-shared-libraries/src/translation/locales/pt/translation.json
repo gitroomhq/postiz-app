@@ -785,5 +785,7 @@
   "preview_comment_failed": "Não foi possível publicar o comentário",
   "preview_comment_detach_hint": "Comentários em textos selecionados perdem o destaque se o texto for editado depois.",
   "preview_comment_text_changed": "Texto alterado",
-  "preview_no_comments_yet": "Ainda não há comentários. Selecione um trecho do post para comentar ou adicione um comentário geral."
+  "preview_no_comments_yet": "Ainda não há comentários. Selecione um trecho do post para comentar ou adicione um comentário geral.",
+  "past_publish_date_warning": "A data de publicação está no passado, escolha uma data futura.",
+  "could_not_save_post": "Não foi possível salvar a publicação."
 }

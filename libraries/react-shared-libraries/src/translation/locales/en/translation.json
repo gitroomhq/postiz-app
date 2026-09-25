@@ -787,5 +787,7 @@
   "preview_comment_failed": "Could not post the comment",
   "preview_comment_detach_hint": "Comments on selected text lose their highlight if the text is edited later.",
   "preview_comment_text_changed": "Text changed",
-  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment."
+  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment.",
+  "past_publish_date_warning": "The publish date is in the past, pick a future date.",
+  "could_not_save_post": "Could not save the post."
 }

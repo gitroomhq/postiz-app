@@ -388,7 +388,16 @@ export const areYouSure = ({
 export const DecisionEverywhere: FC = () => {
   const decision = useDecisionModal();
   useEffect(() => {
-    decisionModalEmitter.on('open', decision.open);
+    // Remove this exact listener on unmount. MantineWrapper (and therefore
+    // this component) unmounts/remounts on some navigations - e.g. returning
+    // from the bare /integrations/social callback route via router.push during
+    // a WordPress connect - and without cleanup each remount left a stale
+    // listener subscribed, so one areYouSure() opened several stacked dialogs.
+    const handler = decision.open;
+    decisionModalEmitter.on('open', handler);
+    return () => {
+      decisionModalEmitter.off('open', handler);
+    };
   }, []);
   return null;
 };
