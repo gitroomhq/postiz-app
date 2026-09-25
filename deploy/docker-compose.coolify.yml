@@ -21,12 +21,9 @@ services:
       # === Secrets
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate a long random string}
       # === Databases
-      # Built from APP_POSTGRES_* (single source of truth) so the URL cannot
-      # drift from the credentials the postgres container was initialized
-      # with. A DATABASE_URL value in Coolify env is intentionally ignored.
-      # Use an alphanumeric APP_POSTGRES_PASSWORD (URL-hostile characters
-      # would need escaping here).
-      DATABASE_URL: postgresql://${APP_POSTGRES_USER:-postiz-user}:${APP_POSTGRES_PASSWORD:-postiz-password}@postgres:5432/${APP_POSTGRES_DB:-postiz-db}
+      # Matches the hardcoded credentials of the postgres service below.
+      # A DATABASE_URL value in Coolify env is intentionally ignored.
+      DATABASE_URL: postgresql://postiz-user:postiz-password@postgres:5432/postiz-db
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
@@ -142,11 +139,14 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      # Prefixed APP_ on the compose side so generic names (POSTGRES_DB etc.)
-      # never leak into other containers via Coolify env injection.
-      POSTGRES_USER: ${APP_POSTGRES_USER:-postiz-user}
-      POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD:-postiz-password}
-      POSTGRES_DB: ${APP_POSTGRES_DB:-postiz-db}
+      # Hardcoded (upstream parity; this DB is internal-only). Two traps made
+      # env knobs unusable here: postgres fixes the role password at first
+      # volume init only (editing env later silently desyncs it from the
+      # app's connection string), and special characters in passwords break
+      # the URL. Do not switch these to variables.
+      POSTGRES_USER: postiz-user
+      POSTGRES_PASSWORD: postiz-password
+      POSTGRES_DB: postiz-db
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
