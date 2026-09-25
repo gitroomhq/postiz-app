@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 398 68" fill="none">
-  <!-- Postmonster horizontal lockup for light backgrounds -->
+  <!-- Postmonster horizontal lockup for dark backgrounds -->
   <g transform="translate(0,4) scale(0.875)">
-    <rect x="4" y="4" width="56" height="34" rx="14" fill="#0E0F13"/>
-    <rect x="4" y="4" width="28" height="56" rx="12" fill="#0E0F13"/>
-    <circle cx="22" cy="19" r="5.5" fill="#C8F560"/>
-    <circle cx="42" cy="19" r="5.5" fill="#C8F560"/>
-    <path d="M33 38h3.4l-1.7 5.8zM38.3 38h3.4l-1.7 5.8zM43.6 38h3.4l-1.7 5.8z" fill="#0E0F13"/>
+    <rect x="4" y="4" width="56" height="34" rx="14" fill="#C8F560"/>
+    <rect x="4" y="4" width="28" height="56" rx="12" fill="#C8F560"/>
+    <circle cx="22" cy="19" r="5.5" fill="#0E0F13"/>
+    <circle cx="42" cy="19" r="5.5" fill="#0E0F13"/>
+    <path d="M33 38h3.4l-1.7 5.8zM38.3 38h3.4l-1.7 5.8zM43.6 38h3.4l-1.7 5.8z" fill="#C8F560"/>
   </g>
-  <g transform="translate(76,0)" fill="none" stroke="#0E0F13" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(76,0)" fill="none" stroke="#F6F4EE" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
     <path d="M8 22 V56"/>
     <path d="M8 23 A10 10 0 0 1 8 43"/>
     <circle cx="38" cy="33" r="10"/>

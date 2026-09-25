@@ -1,8 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Postmonster sign: friendly geometric monster that reads as a blocky P -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+    <rect width="512" height="512" fill="#0E0F13"/>
+    <g transform="translate(92.16,92.16) scale(5.12)">
+
   <rect x="4" y="4" width="56" height="34" rx="14" fill="#C8F560"/>
   <rect x="4" y="4" width="28" height="56" rx="12" fill="#C8F560"/>
   <circle cx="22" cy="19" r="5.5" fill="#0E0F13"/>
   <circle cx="42" cy="19" r="5.5" fill="#0E0F13"/>
   <path d="M33 38h3.4l-1.7 5.8zM38.3 38h3.4l-1.7 5.8zM43.6 38h3.4l-1.7 5.8z" fill="#C8F560"/>
-</svg>
+</g>
+  </svg>

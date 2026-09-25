@@ -1,0 +1,27 @@
+{
+  "name": "Postmonster",
+  "short_name": "Postmonster",
+  "description": "Feed the feed. Plan, schedule and publish to every network from one calm calendar.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E0F13",
+  "theme_color": "#C8F560",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
