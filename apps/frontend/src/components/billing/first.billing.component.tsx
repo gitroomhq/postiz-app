@@ -51,6 +51,7 @@ export const FirstBillingComponent = () => {
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
+  const [stripeFailed, setStripeFailed] = useState(false);
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
@@ -60,7 +61,9 @@ export const FirstBillingComponent = () => {
   const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
-    setStripe(loadStripe(stripeClient));
+    const stripePromise = loadStripe(stripeClient);
+    stripePromise.catch(() => setStripeFailed(true));
+    setStripe(stripePromise);
   }, []);
 
   const loadCheckout = useCallback(async () => {
@@ -210,6 +213,13 @@ export const FirstBillingComponent = () => {
               {t(
                 'billing_other_account_subscribed',
                 'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
+              )}
+            </div>
+          ) : stripeFailed ? (
+            <div className="mt-[24px] p-[24px] rounded-[20px] border-[1.5px] border-newColColor text-[16px] font-[500]">
+              {t(
+                'billing_stripe_load_failed',
+                'The payment form could not be loaded. Please disable ad blockers or privacy extensions for this page and reload.'
               )}
             </div>
           ) : !isLoading && data && stripe ? (

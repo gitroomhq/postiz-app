@@ -505,6 +505,7 @@
   "delete_integration": "Xóa tích hợp",
   "start_writing_your_post": "Bắt đầu viết bài của bạn để xem trước",
   "billing_other_account_subscribed": "Một tài khoản khác sử dụng email này đã có đăng ký đang hoạt động. Vui lòng đăng xuất và đăng nhập vào tài khoản đó để quản lý đăng ký của bạn.",
+  "billing_stripe_load_failed": "Không thể tải biểu mẫu thanh toán. Vui lòng tắt trình chặn quảng cáo hoặc các tiện ích mở rộng bảo mật cho trang này và tải lại.",
   "already_subscribed": "Đã đăng ký",
   "ok": "OK",
   "billing_join_over": "Tham gia cùng hơn",

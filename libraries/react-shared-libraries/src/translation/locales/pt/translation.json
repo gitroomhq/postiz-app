@@ -505,6 +505,7 @@
   "delete_integration": "Excluir integração",
   "start_writing_your_post": "Comece a escrever sua postagem para visualizar",
   "billing_other_account_subscribed": "Outra conta com este e-mail já possui uma assinatura ativa. Por favor, faça logout e acesse essa conta para gerenciar sua assinatura.",
+  "billing_stripe_load_failed": "O formulário de pagamento não pôde ser carregado. Por favor, desative bloqueadores de anúncios ou extensões de privacidade para esta página e recarregue.",
   "already_subscribed": "Já inscrito",
   "ok": "OK",
   "billing_join_over": "Junte-se a mais de",
