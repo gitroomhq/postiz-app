@@ -51,6 +51,7 @@ type RedditPendingData = {
     submitted: boolean;
     lookups: number;
   };
+  missingSubredditRetries?: number;
 };
 
 export class RedditProvider extends SocialAbstract implements SocialProvider {
@@ -525,6 +526,15 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       // window has passed, instead of failing the whole post.
       if (all.json.errors.every((e: any[]) => e?.[0] === 'RATELIMIT')) {
         data.armed = undefined;
+        return { status: 'pending', pendingData: data };
+      }
+
+      if (
+        all.json.errors.every((e: any[]) => e?.[0] === 'SUBREDDIT_NOEXIST') &&
+        (data.missingSubredditRetries || 0) < 9
+      ) {
+        data.armed = undefined;
+        data.missingSubredditRetries = (data.missingSubredditRetries || 0) + 1;
         return { status: 'pending', pendingData: data };
       }
 
