@@ -80,12 +80,8 @@ export const FirstBillingComponent = () => {
   }, [tier, period]);
 
   const showYouTube = () => {
-    modals.openModal({
-      title: 'Grow Fast With Postmonster (Play the video)',
-      children: null,
-      // postmonster: upstream product video hidden
-
-    });
+    // postmonster: upstream tutorial video hidden - nothing to play
+    return;
   };
 
   const { data, isLoading } = useSWR(
@@ -110,8 +106,8 @@ export const FirstBillingComponent = () => {
       <>
         <div className="text-[46px] font-[600] leading-[110%] tablet:text-[36px] mobile:!text-[30px] whitespace-pre-line text-balance">
           {t('billing_join_over', 'Join Over')}{' '}
-          <span className="text-[#FC69FF]">
-            {t('billing_entrepreneurs_count', '20,000+ Entrepreneurs')}
+          <span className="text-[#C8F560]">
+            {t('billing_entrepreneurs_count', 'Creators')}
           </span>{' '}
           {t('billing_who_use', 'who use')}{' '}
           {t(
@@ -120,20 +116,7 @@ export const FirstBillingComponent = () => {
           )}
         </div>
 
-        <div className="flex" onClick={showYouTube}>
-          <div className="tablet:mb-[32px] cursor-pointer mt-[32px] flex gap-[10px] items-center underline hover:font-[700]">
-            <div>
-              <SafeImage
-                className="text-[12px]"
-                src="/icons/platforms/youtube.svg"
-                width={22.5}
-                height={16}
-                alt="YouTube"
-              />
-            </div>
-            <div>See the power of Postmonster (click here)</div>
-          </div>
-        </div>
+        {/* postmonster: upstream tutorial video card hidden */}
 
         {!!user?.allowTrial && (
           <div className="flex mt-[32px] mb-[10px] gap-[15px] tablet:mt-[32px] tablet:mb-[32px] text-[16px] font-[500] mobile:flex-col">

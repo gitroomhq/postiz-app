@@ -9,11 +9,13 @@
 #     run `pnpm --filter ./apps/frontend run build` first)
 #   * the email template sources (inline HTML produced by the services below)
 #
-# Method: every /postiz|gitroom/i occurrence is extracted with a small context
-# window (so a visible string cannot hide next to an internal identifier on the
-# same minified line). Contexts that consist only of internal identifiers are
-# dropped via the explicit exclusion list below. What remains must be empty -
-# those would be strings a user can read.
+# Method: lowercase /postiz|gitroom/ occurrences are extracted with a small
+# context window (so a visible string cannot hide next to an internal
+# identifier on the same minified line). Contexts where every occurrence sits
+# inside an internal identifier are dropped via the explicit exclusion list
+# below. Capitalized brand words are checked separately - internal ids are
+# lowercase/snake_case, so any "Postiz"/"Gitroom" is user-visible text and must
+# not appear at all. What remains must be empty.
 #
 # Excluded from the check (internal identifiers / legal files, never shown to
 # users as branding):
@@ -64,23 +66,18 @@ for g in "${EMAIL_TEMPLATE_GLOBS[@]}"; do
 done
 
 # --- exclusion list: internal identifiers, never user-visible branding -------
-INTERNAL='@gitroom|@postiz'                        # import paths / npm scopes
-INTERNAL="$INTERNAL|[A-Za-z0-9_-]+postiz[A-Za-z0-9_-]+"  # postiz inside a longer token
-INTERNAL="$INTERNAL|postiz[A-Za-z0-9_-]{2,}"       # postiz-frontend, postiz_*, ...
-INTERNAL="$INTERNAL|[A-Za-z0-9_-]{2,}postiz"       # x-postiz-org, ask_postiz, ...
-INTERNAL="$INTERNAL|[A-Za-z0-9_-]+gitroom[A-Za-z0-9_-]+"
-INTERNAL="$INTERNAL|gitroom[A-Za-z0-9_-]{2,}"
-INTERNAL="$INTERNAL|[A-Za-z0-9_-]{2,}gitroom"
-INTERNAL="$INTERNAL|postiz://"                     # mobile deep link scheme
-INTERNAL="$INTERNAL|postiz\.com"                   # upstream domain in comments
-INTERNAL="$INTERNAL|gitroomhq"                     # upstream GitHub org
-INTERNAL="$INTERNAL|com\.postiz\.mob"              # example product id
-INTERNAL="$INTERNAL|[\"']postiz[\"']"              # JS agent id (getAgent('postiz'))
-INTERNAL="$INTERNAL|[\"']gitroom[\"']"             # Stripe metadata marker, i18n key
-INTERNAL="$INTERNAL|POSTIZ"                        # env var names
+# NOTE: case-sensitive on purpose. Internal ids always have another identifier
+# character adjacent to the brand word (postiz-frontend, ask_postiz,
+# faq_..._postiz, x-postiz-org, postiz.com), while visible prose is a bare
+# word ("npm install -g postiz") - and must therefore stay in the results.
+INTERNAL='[a-z0-9_/.:@-]postiz|postiz[a-z0-9_/.:@-]'   # embedded in identifier/path
+INTERNAL="$INTERNAL|[a-z0-9_/.:@-]gitroom|gitroom[a-z0-9_/.:@-]"
+INTERNAL="$INTERNAL|[\"']postiz[\"']|[\"']gitroom[\"']" # quoted agent/metadata ids
+INTERNAL="$INTERNAL|postiz://"                          # mobile deep link scheme
+INTERNAL="$INTERNAL|POSTIZ|GITROOM"                     # env var names
 INTERNAL="$INTERNAL|LICENSE|NOTICE|Copyright|copyright|AGPL"
 
-VISIBLE="$(grep -viE "$INTERNAL" "$TMP" | sort -u || true)"
+VISIBLE="$(grep -vE "$INTERNAL" "$TMP" | sort -u || true)"
 
 # Belt and braces: internal ids are lowercase/snake_case, so any capitalized
 # brand word is user-visible text and must not appear anywhere.
