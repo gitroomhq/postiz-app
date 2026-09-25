@@ -505,6 +505,7 @@
   "delete_integration": "删除集成",
   "start_writing_your_post": "开始写你的帖子以预览",
   "billing_other_account_subscribed": "此邮箱已关联其他账户并有有效订阅。请注销当前账户并使用该账户登录以管理您的订阅。",
+  "billing_stripe_load_failed": "无法加载付款表单。请为此页面禁用广告拦截器或隐私扩展程序，然后重新加载。",
   "already_subscribed": "已订阅",
   "ok": "确定",
   "billing_join_over": "已有超过",

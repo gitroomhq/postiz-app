@@ -505,6 +505,7 @@
   "delete_integration": "連携を削除",
   "start_writing_your_post": "プレビュー用に投稿を書き始めてください",
   "billing_other_account_subscribed": "このメールアドレスを持つ別のアカウントですでに有効なサブスクリプションがあります。サブスクリプションを管理するには、そのアカウントからサインアウトし、該当するアカウントでサインインしてください。",
+  "billing_stripe_load_failed": "お支払いフォームを読み込めませんでした。このページの広告ブロッカーやプライバシー拡張機能を無効にして、再読み込みしてください。",
   "already_subscribed": "すでに登録済みです",
   "ok": "OK",
   "billing_join_over": "すでに参加している",

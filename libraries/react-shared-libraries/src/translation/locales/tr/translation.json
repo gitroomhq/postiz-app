@@ -505,6 +505,7 @@
   "delete_integration": "Entegrasyonu Sil",
   "start_writing_your_post": "Önizleme için gönderinizi yazmaya başlayın",
   "billing_other_account_subscribed": "Bu e-posta ile başka bir hesapta zaten aktif bir abonelik var. Aboneliğinizi yönetmek için lütfen çıkış yapıp o hesaba giriş yapın.",
+  "billing_stripe_load_failed": "Ödeme formu yüklenemedi. Lütfen bu sayfa için reklam engelleyicileri veya gizlilik eklentilerini devre dışı bırakıp sayfayı yeniden yükleyin.",
   "already_subscribed": "Zaten abone olundu",
   "ok": "Tamam",
   "billing_join_over": "Katılan",
