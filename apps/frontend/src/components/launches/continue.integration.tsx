@@ -183,7 +183,11 @@ export const ContinueIntegration: FC<{
               jwt: extensionToken,
               backendUrl,
             },
-            () => {}
+            () => {
+              if (chrome.runtime.lastError) {
+                return;
+              }
+            }
           );
         } catch {
           // Silently ignore — extension may not be available
