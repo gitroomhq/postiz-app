@@ -21,10 +21,11 @@ services:
       # === Secrets
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - generate a long random string}
       # === Databases
-      # Matches the hardcoded credentials of the postgres service below.
-      # A DATABASE_URL value in Coolify env is intentionally ignored.
-      DATABASE_URL: postgresql://postiz-user:postiz-password@postgres:5432/postiz-db
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Hosts are unique aliases (see the postgres/redis services): plain
+      # names "postgres"/"redis" would also resolve to Coolify's own
+      # coolify-db / coolify-redis on the shared proxy network.
+      DATABASE_URL: postgresql://postiz-user:postiz-password@postmonster-db:5432/postiz-db
+      REDIS_URL: redis://postmonster-redis:6379
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
       # === App behaviour
@@ -150,7 +151,12 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
-      - postmonster-network
+      postmonster-network:
+        aliases:
+          # Unique alias: the shared Coolify network has its own services
+          # named "postgres"/"redis" (coolify-db / coolify-redis), and the app
+          # container is attached to that network for the Traefik proxy.
+          - postmonster-db
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
@@ -167,7 +173,10 @@ services:
     volumes:
       - redis-data:/data
     networks:
-      - postmonster-network
+      postmonster-network:
+        aliases:
+          # See the note at the postgres service (Coolify name collision).
+          - postmonster-redis
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
