@@ -452,6 +452,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   async fetchPageInformation(accessToken: string, data: { page: string }) {
     const pageId = data.page;
     const fields = 'id,username,name,access_token,picture.type(large)';
+    let foundWithoutToken = false;
 
     const searchPaginated = async (startUrl: string) => {
       let url: string | undefined = startUrl;
@@ -461,7 +462,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
           const page = response.data.find(
             (p: any) => String(p.id) === String(pageId)
           );
-          if (page) {
+          // A page listed through a business the user has no role on comes
+          // back without a page token, keep looking for a listing that has one
+          if (page && !page.access_token) {
+            foundWithoutToken = true;
+          } else if (page) {
             return {
               id: page.id,
               name: page.name,
@@ -515,6 +520,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       }
     } catch {
       // Business Manager API not available for all users
+    }
+
+    if (foundWithoutToken) {
+      throw new Error(
+        'Your Facebook user has no permission to manage this page. Ask a page admin for full content access, then reconnect the channel'
+      );
     }
 
     throw new Error('Page not found in your accounts');

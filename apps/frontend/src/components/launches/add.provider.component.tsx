@@ -548,7 +548,11 @@ export const AddProviderComponent: FC<{
           if (!confirmed) {
             return;
           }
-          if (!extensionId || !chrome?.runtime?.sendMessage) {
+          if (
+            !extensionId ||
+            typeof chrome === 'undefined' ||
+            !chrome?.runtime?.sendMessage
+          ) {
             modal.openModal({
               title: t('extension_not_available_title', 'Extension Not Found'),
               withCloseButton: true,
