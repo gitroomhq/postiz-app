@@ -114,7 +114,7 @@ export const startMcp = async (app: INestApplication) => {
   };
 
   const serverConfig = {
-    name: 'Postiz MCP',
+    name: 'Postmonster MCP',
     version: '1.0.0',
     tools,
     agents: { postiz: agent },
@@ -127,7 +127,7 @@ export const startMcp = async (app: INestApplication) => {
   // exposed as an annotation-less catch-all ask_postiz tool, which the
   // ChatGPT and Claude directory reviews reject
   const oauthServer = new MCPServer({
-    name: 'Postiz MCP',
+    name: 'Postmonster MCP',
     version: '1.0.0',
     tools,
     appResources,
@@ -137,7 +137,7 @@ export const startMcp = async (app: INestApplication) => {
   const { [CLIPPING_WIDGET_URI]: hiddenWidget, ...claudeAppResources } = appResources as Record<string, (typeof appResources)[typeof UPLOAD_WIDGET_URI]>;
 
   const claudeOauthServer = new MCPServer({
-    name: 'Postiz MCP',
+    name: 'Postmonster MCP',
     version: '1.0.0',
     tools: claudeTools,
     appResources: claudeAppResources,

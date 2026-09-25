@@ -18,7 +18,7 @@ import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creat
 
 dayjs.extend(utc);
 export const metadata: Metadata = {
-  title: `${isGeneralServerSide() ? 'Postiz' : 'Gitroom'} Preview`,
+  title: `Postmonster Preview`,
   description: '',
 };
 export default async function Auth(
@@ -60,7 +60,7 @@ export default async function Auth(
             className="flex items-center gap-[10px] text-textColor"
           >
             <div className="w-[44px]">
-              <SafeImage src={'/postiz.svg'} width={44} height={44} alt="Logo" />
+              <SafeImage src={'/logo.svg'} width={44} height={44} alt="Logo" />
             </div>
             <div>
               <svg

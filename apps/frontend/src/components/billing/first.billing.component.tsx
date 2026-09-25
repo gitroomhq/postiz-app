@@ -81,16 +81,10 @@ export const FirstBillingComponent = () => {
 
   const showYouTube = () => {
     modals.openModal({
-      title: 'Grow Fast With Postiz (Play the video)',
-      children: (
-        <iframe
-          className="h-full aspect-video min-w-[800px]"
-          src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
-          title="Postiz Tutorial"
-          allow="autoplay"
-          allowFullScreen
-        />
-      ),
+      title: 'Grow Fast With Postmonster (Play the video)',
+      children: null,
+      // postmonster: upstream product video hidden
+
     });
   };
 
@@ -122,7 +116,7 @@ export const FirstBillingComponent = () => {
           {t('billing_who_use', 'who use')}{' '}
           {t(
             'billing_postiz_grow_social',
-            'Postiz To Grow Their Social Presence'
+            'Postmonster To Grow Their Social Presence'
           )}
         </div>
 
@@ -137,7 +131,7 @@ export const FirstBillingComponent = () => {
                 alt="YouTube"
               />
             </div>
-            <div>See the power of Postiz (click here)</div>
+            <div>See the power of Postmonster (click here)</div>
           </div>
         </div>
 

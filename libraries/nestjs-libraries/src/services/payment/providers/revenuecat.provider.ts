@@ -26,7 +26,7 @@ interface RevenueCatSubscription {
 // RevenueCat is the source of truth for App Store / Google Play subscriptions.
 // The webhook and the app only tell us *which* subscriber to re-check; we always
 // load the subscriber from the API instead of trusting the event payload.
-// app_user_id === Postiz organization id (the app calls Purchases.logIn(orgId)).
+// app_user_id === Postmonster organization id (the app calls Purchases.logIn(orgId)).
 // Product ids end with <tier>.<period> or <tier>_<period>, e.g. com.postiz.mob.pro.yearly
 @PaymentProvider({ provider: REVENUECAT_PROVIDER })
 export class RevenueCatProvider extends PaymentProviderAbstract {

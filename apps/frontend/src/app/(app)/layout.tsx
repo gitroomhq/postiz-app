@@ -40,11 +40,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta property="og:title" content="Postmonster" />
+        <meta property="og:description" content="Feed the feed. Plan, schedule and publish to every network from one calm calendar." />
+        <meta property="og:image" content="/og.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Postmonster" />
+        <meta name="twitter:image" content="/og.png" />
         {!!process.env.DATAFAST_WEBSITE_ID && (
           <Script
             data-website-id={process.env.DATAFAST_WEBSITE_ID}
-            data-domain="postiz.com"
+            data-domain="postmonster.xyz"
             src="https://datafa.st/js/script.js"
             strategy="afterInteractive"
           />
@@ -109,7 +117,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <FacebookComponent />
             <GoogleTagManagerComponent gtmId={process.env.NEXT_PUBLIC_GTM_ID} />
             <Plausible
-              domain={!!process.env.IS_GENERAL ? 'postiz.com' : 'gitroom.com'}
+              domain={'postmonster.xyz'}
             >
               <PHProvider
                 phkey={process.env.NEXT_PUBLIC_POSTHOG_KEY}

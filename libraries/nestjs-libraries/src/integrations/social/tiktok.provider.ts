@@ -239,7 +239,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body' as const,
         value:
-          'You have to upload the picture/video to Postiz when sending a URL',
+          'You have to upload the picture/video to Postmonster when sending a URL',
       };
     }
 

@@ -29,7 +29,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
     'With content_posting_method=UPLOAD, TikTok ignores every setting except the title / post content. Never tell the user that video_made_with_ai, privacy_level, duet, stitch, comment, autoAddMusic, brand_content_toggle or brand_organic_toggle will be applied in UPLOAD mode - they are silently discarded. If the user asks for any of those settings, tell them it requires DIRECT_POST.',
     'video_made_with_ai, duet and stitch apply to video posts only. privacy_level and autoAddMusic apply to photo posts only - the TikTok Business API has no privacy field for video posts, so those settings are discarded when the attachment is a video.',
     'The music setting attaches a commercial music library track (found via the musicSearch function) to a video or photo post, and the location setting tags the post with a location (found via the locationSearch function). Both apply only with content_posting_method=DIRECT_POST. music.audio_volume / music.video_volume (0-100, default 50) apply to video posts only. For photos, autoAddMusic=yes attaches a RANDOM commercial music library track and overrides any music selection - use autoAddMusic=no when the user wants a specific track.',
-    'Media is pulled by TikTok from its URL, so the media must be uploaded to Postiz and the media domain must be a verified URL property of the TikTok Business app.',
+    'Media is pulled by TikTok from its URL, so the media must be uploaded to Postmonster and the media domain must be a verified URL property of the TikTok Business app.',
   ].join(' ')
 )
 export class TiktokBusinessProvider
@@ -585,7 +585,7 @@ export class TiktokBusinessProvider
   }
 
   // autoAddMusic picks a random commercial-library track instead of TikTok's
-  // auto_add_music flag, so the attached music is chosen by Postiz rather than
+  // auto_add_music flag, so the attached music is chosen by Postmonster rather than
   // silently by TikTok. Returns undefined when the trending list is empty or
   // unavailable - the photo body then falls back to auto_add_music.
   private async pickRandomMusicId(

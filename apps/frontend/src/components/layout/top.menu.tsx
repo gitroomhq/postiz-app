@@ -246,7 +246,7 @@ export const useMenuItem = () => {
           />
         </svg>
       ),
-      path: 'https://affiliate.postiz.com',
+      path: '#', // postmonster: upstream affiliate program hidden
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
     },

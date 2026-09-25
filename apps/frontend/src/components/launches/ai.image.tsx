@@ -99,7 +99,7 @@ ${style}
               className={clsx(
                 'cursor-pointer rounded-[4px] px-[10px] h-[30px] flex items-center text-[12px] border',
                 style === p
-                  ? 'bg-[#612BD3] border-[#612BD3] text-white'
+                  ? 'bg-[#C8F560] border-[#C8F560] text-[#0E0F13]'
                   : 'bg-newColColor border-newBgLineColor'
               )}
             >

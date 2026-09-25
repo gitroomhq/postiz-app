@@ -254,7 +254,7 @@ export const CreateThumbnail: FC<{
             <button
               onClick={captureFrame}
               disabled={isCapturing}
-              className="bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-forth text-[#0E0F13] px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCapturing ? 'Capturing...' : 'Select This Frame'}
             </button>
@@ -483,7 +483,7 @@ export const MediaComponentInner: FC<{
           </button>
           <button
             onClick={save}
-            className="flex-1 bg-forth text-white px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
+            className="flex-1 bg-forth text-[#0E0F13] px-6 py-2 rounded-lg hover:bg-opacity-80 transition-all"
           >
             Save Changes
           </button>

@@ -21,7 +21,15 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <html>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta property="og:title" content="Postmonster" />
+        <meta property="og:description" content="Feed the feed. Plan, schedule and publish to every network from one calm calendar." />
+        <meta property="og:image" content="/og.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Postmonster" />
+        <meta name="twitter:image" content="/og.png" />
       </head>
       <body
         className={clsx(jakartaSans.className, 'dark text-primary !bg-primary')}

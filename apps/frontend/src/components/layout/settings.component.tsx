@@ -141,6 +141,30 @@ export const SettingsPopup: FC<{
           ))}
         </div>
         <div>
+          {/* postmonster: AGPL source offer, visible to every signed-in user */}
+          {!!process.env.NEXT_PUBLIC_SOURCE_CODE_URL && (
+            <a
+              href={process.env.NEXT_PUBLIC_SOURCE_CODE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-[8px] text-[14px] text-textColor/80 hover:text-textColor transition-colors mt-4"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+              {t('source_code', 'Source code')}
+            </a>
+          )}
           {showLogout && (
             <div className="mt-4">
               <LogoutComponent />

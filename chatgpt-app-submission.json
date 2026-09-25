@@ -2,9 +2,9 @@
   "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
-    "display_name": "Postiz",
+    "display_name": "Postmonster",
     "subtitle": "Schedule Social Media Posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
+    "description": "Postmonster helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -88,7 +88,7 @@
       },
       "justifications": {
         "read_only_justification": "Merges new provider settings into an existing draft or scheduled post.",
-        "open_world_justification": "Only updates settings stored on an unpublished Postiz post and does not reach any external or publicly visible system.",
+        "open_world_justification": "Only updates settings stored on an unpublished Postmonster post and does not reach any external or publicly visible system.",
         "destructive_justification": "Does not delete posts, change content, change publish dates, revoke access, or publish content immediately."
       }
     },
@@ -172,7 +172,7 @@
       },
       "justifications": {
         "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with.",
-        "open_world_justification": "Only creates an upload session inside the user's Postiz workspace; nothing is published or sent to a third party.",
+        "open_world_justification": "Only creates an upload session inside the user's Postmonster workspace; nothing is published or sent to a third party.",
         "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
       }
     },
@@ -184,7 +184,7 @@
       },
       "justifications": {
         "read_only_justification": "Creates a short-lived upload ticket for the upload widget; it is only callable by the widget, not by the model.",
-        "open_world_justification": "The ticket only allows uploads into the user's own Postiz media library; no public or third-party state changes.",
+        "open_world_justification": "The ticket only allows uploads into the user's own Postmonster media library; no public or third-party state changes.",
         "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
       }
     },
@@ -196,7 +196,7 @@
       },
       "justifications": {
         "read_only_justification": "Only reads the media uploaded in an upload widget session.",
-        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
+        "open_world_justification": "Reads internal Postmonster data for the user's workspace only.",
         "destructive_justification": "Read-only; it cannot change or delete anything."
       }
     },
@@ -232,15 +232,15 @@
       },
       "justifications": {
         "read_only_justification": "Creates a short-lived ticket for the clipping widget to read the progress of a clipping job; it is only callable by the widget, not by the model.",
-        "open_world_justification": "The ticket only allows reading the user's own clipping job inside Postiz; no public or third-party state changes.",
+        "open_world_justification": "The ticket only allows reading the user's own clipping job inside Postmonster; no public or third-party state changes.",
         "destructive_justification": "Does not delete or overwrite anything, revoke access, or publish content."
       }
     }
   },
   "test_cases": [
     {
-      "description": "List the user's connected Postiz channels.",
-      "user_prompt": "Which social channels do I have connected in Postiz? Show the platform and channel name for each one.",
+      "description": "List the user's connected Postmonster channels.",
+      "user_prompt": "Which social channels do I have connected in Postmonster? Show the platform and channel name for each one.",
       "file_attachment_urls": null,
       "tools_triggered": "integrationList",
       "expected_output": "Calls integrationList and lists every connected channel with its platform (for example LinkedIn, X) and channel name, so the user can pick where to post. No post is created.",
@@ -248,7 +248,7 @@
     },
     {
       "description": "Upload two remote images and create a LinkedIn draft (nothing is published).",
-      "user_prompt": "Create a LinkedIn draft in Postiz for next Monday at 10:00 UTC with the text \"Testing the Postiz ChatGPT app\" and attach these two images: https://platform.postiz.com/auth/bg-login.png and https://platform.postiz.com/auth/login-box.png. Keep it as a draft, do not schedule or publish it.",
+      "user_prompt": "Create a LinkedIn draft in Postmonster for next Monday at 10:00 UTC with the text \"Testing the Postmonster ChatGPT app\" and attach these two images: https://app.postmonster.xyz/auth/bg-login.png and https://app.postmonster.xyz/auth/login-box.png. Keep it as a draft, do not schedule or publish it.",
       "file_attachment_urls": null,
       "tools_triggered": "integrationList, uploadFromUrlTool, integrationSchedulePostTool",
       "expected_output": "Finds the LinkedIn channel, calls uploadFromUrlTool once per image (each returns a hosted media path), then calls integrationSchedulePostTool with type \"draft\" and both hosted attachments. Returns the new post id and confirms it was saved as a draft. Nothing is published to LinkedIn. Running the case again creates another draft and succeeds the same way.",
@@ -256,7 +256,7 @@
     },
     {
       "description": "Explain platform rules and available settings for a channel.",
-      "user_prompt": "What are the posting rules and the available settings for my LinkedIn channel in Postiz?",
+      "user_prompt": "What are the posting rules and the available settings for my LinkedIn channel in Postmonster?",
       "file_attachment_urls": null,
       "tools_triggered": "integrationList, integrationSchema",
       "expected_output": "Resolves the LinkedIn channel id, calls integrationSchema and summarises the platform rules (character limit, attachment rules such as carousels needing at least two images) and the settings keys (post_as_images_carousel, carousel_name). Read-only, no post is created or changed.",
@@ -264,7 +264,7 @@
     },
     {
       "description": "Find an existing draft and update only its provider settings.",
-      "user_prompt": "Find my Postiz LinkedIn draft with the text \"Testing the Postiz ChatGPT app\" and turn it into an image carousel named \"Product launch\". Don't change the text or the date.",
+      "user_prompt": "Find my Postmonster LinkedIn draft with the text \"Testing the Postmonster ChatGPT app\" and turn it into an image carousel named \"Product launch\". Don't change the text or the date.",
       "file_attachment_urls": null,
       "tools_triggered": "postsListTool, integrationSchema, postSettingsTool",
       "expected_output": "Calls postsListTool for the coming weeks, picks the matching LinkedIn draft (created by the previous test case), then calls postSettingsTool with post_as_images_carousel = true and carousel_name = \"Product launch\". Returns the post id and confirms the settings were updated while the content and date stayed the same. If no matching draft exists, it says so and does not create one.",
@@ -272,7 +272,7 @@
     },
     {
       "description": "Generate an image and save it to the media library.",
-      "user_prompt": "Generate an image of a sunrise over mountains for a product launch post and save it to my Postiz media library. Don't create a post.",
+      "user_prompt": "Generate an image of a sunrise over mountains for a product launch post and save it to my Postmonster media library. Don't create a post.",
       "file_attachment_urls": null,
       "tools_triggered": "generateImageTool",
       "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
@@ -285,7 +285,7 @@
       "user_prompt": "Move my team meeting from tomorrow to Friday afternoon.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT answers directly, because calendar events are not social media posts.",
+      "expected_output": "No Postmonster tool is called. ChatGPT answers directly, because calendar events are not social media posts.",
       "expected_output_url": null
     },
     {
@@ -293,7 +293,7 @@
       "user_prompt": "Write me three short tweet ideas about productivity. Just write them here, don't post or schedule anything.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT writes the three ideas in the conversation, because the user explicitly asked not to post or schedule.",
+      "expected_output": "No Postmonster tool is called. ChatGPT writes the three ideas in the conversation, because the user explicitly asked not to post or schedule.",
       "expected_output_url": null
     },
     {
@@ -301,7 +301,7 @@
       "user_prompt": "Send an email to my team letting them know the campaign launch moved to next week.",
       "file_attachment_urls": null,
       "tools_triggered": null,
-      "expected_output": "No Postiz tool is called. ChatGPT answers directly (or uses an email app if one is available), because email is not a social media channel Postiz publishes to.",
+      "expected_output": "No Postmonster tool is called. ChatGPT answers directly (or uses an email app if one is available), because email is not a social media channel Postmonster publishes to.",
       "expected_output_url": null
     }
   ]

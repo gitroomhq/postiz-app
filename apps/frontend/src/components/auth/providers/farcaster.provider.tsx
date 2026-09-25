@@ -190,7 +190,7 @@ export const FarcasterApproval: FC<{
       <div className="max-w-[400px]">
         {t(
           'farcaster_scan_instructions',
-          'Scan the QR code with your phone, or copy the link and open it on your phone, then approve Postiz in the Farcaster app.'
+          'Scan the QR code with your phone, or copy the link and open it on your phone, then approve Postmonster in the Farcaster app.'
         )}
       </div>
       <Button onClick={copyLink}>

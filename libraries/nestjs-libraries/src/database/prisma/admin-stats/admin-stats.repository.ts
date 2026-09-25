@@ -316,7 +316,7 @@ export class AdminStatsRepository {
   }
 
   // Active OAuth authorizations first created in the range (MCP clients like
-  // Claude, Cursor or ChatGPT connecting to Postiz), per client name. A
+  // Claude, Cursor or ChatGPT connecting to Postmonster), per client name. A
   // re-authorization upserts the same row, so it keeps its original createdAt
   // and is not counted again. Dynamic registration creates a new OAuthApp row
   // for every client install, so the counts are folded by the registered

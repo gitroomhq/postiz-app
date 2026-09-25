@@ -851,7 +851,7 @@ export const CalendarColumn: FC<{
       <div
         className={clsx(
           'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
-          canDrop && 'border border-[#612BD3]'
+          canDrop && 'border border-[#C8F560]'
         )}
       >
         <div
@@ -1057,7 +1057,7 @@ const CalendarItem: FC<{
     >
       {state === 'ERROR' && (
         <div
-          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          className="absolute -top-[6px] -left-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-[#0E0F13] text-[11px] font-bold cursor-pointer"
           data-tooltip-id="tooltip"
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
         >
@@ -1074,7 +1074,7 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-[#0E0F13] text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,

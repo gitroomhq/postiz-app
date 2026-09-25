@@ -1,5 +1,5 @@
 {
-	"name": "Postiz Dev Container",
+	"name": "Postmonster Dev Container",
 	"image": "localhost/postiz-devcontainer",
 	"features": {},
 	"customizations": {

@@ -17,7 +17,7 @@ import { lookup } from 'mime-types';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 const TUMBLR_API_URL = 'https://api.tumblr.com/v2';
-const TUMBLR_USER_AGENT = 'Postiz/1.0 (+https://postiz.com)';
+const TUMBLR_USER_AGENT = 'Postmonster/1.0 (+https://postmonster.xyz)';
 const TUMBLR_TEXT_BLOCK_LIMIT = 4096;
 const TUMBLR_DEFAULT_VIDEO_WIDTH = 540;
 const TUMBLR_DEFAULT_VIDEO_HEIGHT = 405;
