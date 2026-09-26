@@ -26,7 +26,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 export const META_GRAPH_API_VERSION = 'v25.0';
 
 @Rules(
-  "Facebook posts can be text only, or include photos or a video. If it's a story, it must have at least one attachment (photo or video), and each media is published as a separate story."
+  "Facebook posts can be text only, or include photos or a video. If it's a story, it must have at least one attachment (photo or video), and each media is published as a separate story. Video posts (not stories) can carry an optional title."
 )
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
@@ -845,6 +845,9 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
             body: JSON.stringify({
               file_url: firstPost?.media?.[0]?.path!,
               description: firstPost.message,
+              ...(firstPost?.settings?.title
+                ? { title: firstPost.settings.title }
+                : {}),
               published: true,
             }),
           },
