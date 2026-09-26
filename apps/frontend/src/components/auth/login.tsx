@@ -22,7 +22,11 @@ type Inputs = {
   providerToken: '';
   provider: 'LOCAL';
 };
-export function Login() {
+export function Login({
+  registrationDisabled,
+}: {
+  registrationDisabled?: boolean;
+}) {
   const t = useT();
   const [loading, setLoading] = useState(false);
   const [notActivated, setNotActivated] = useState(false);
@@ -145,9 +149,22 @@ export function Login() {
                 </div>
                 <p className="mt-4 text-sm">
                   {t('don_t_have_an_account', "Don't Have An Account?")}&nbsp;
-                  <Link href="/auth" className="underline cursor-pointer">
-                    {t('sign_up', 'Sign Up')}
-                  </Link>
+                  {/* postmonster: closed access (PRD 6) - no sign up link to an
+                      open registration, point at the landing instead */}
+                  {registrationDisabled ? (
+                    <a
+                      href="https://postmonster.xyz/request-access"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline cursor-pointer"
+                    >
+                      {t('request_access', 'Request access')}
+                    </a>
+                  ) : (
+                    <Link href="/auth/register" className="underline cursor-pointer">
+                      {t('sign_up', 'Sign Up')}
+                    </Link>
+                  )}
                 </p>
                 <p className="mt-4 text-sm">
                   <Link

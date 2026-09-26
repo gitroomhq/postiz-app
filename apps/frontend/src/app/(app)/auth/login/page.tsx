@@ -7,5 +7,8 @@ export const metadata: Metadata = {
   description: '',
 };
 export default async function Auth() {
-  return <Login />;
+  // postmonster: closed access (PRD 6) - swaps the Sign Up link for Request access
+  return (
+    <Login registrationDisabled={process.env.DISABLE_REGISTRATION === 'true'} />
+  );
 }

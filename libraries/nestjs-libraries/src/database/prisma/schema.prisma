@@ -1811,3 +1811,51 @@ model Announcement {
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
 }
+
+// postmonster: closed access (PRD 6) - landing access requests and one-time
+// registration invites. Deliberately separate from upstream team invites
+// (JWT ?org= links + User.inviteId), which keep working unchanged.
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model AccessRequest {
+  id           String              @id @default(uuid())
+  name         String
+  email        String
+  role         String?
+  networks     String[]
+  teamSize     String?
+  useCase      String?
+  status       AccessRequestStatus @default(PENDING)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  reviewedAt   DateTime?
+  reviewedById String?
+  ipHash       String?
+  userAgent    String?
+  invites      AccessInvite[]
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model AccessInvite {
+  id              String         @id @default(uuid())
+  email           String
+  tokenHash       String         @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdBy       String?
+  accessRequestId String?
+  accessRequest   AccessRequest? @relation(fields: [accessRequestId], references: [id])
+
+  @@index([email])
+  @@index([accessRequestId])
+}

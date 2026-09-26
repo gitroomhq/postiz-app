@@ -1,27 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="11" failures="0" errors="0" time="31.615">
-  <testsuite name="PermissionsService" errors="0" failures="0" skipped="0" timestamp="2025-03-24T05:53:33" time="31.496" tests="11">
-    <testcase classname="PermissionsService check() Verification Bypass (64) Bypass for Empty List" name="PermissionsService check() Verification Bypass (64) Bypass for Empty List" time="0.01">
+<testsuites name="jest tests" tests="36" failures="0" errors="0" time="78.434">
+  <testsuite name="AccessService (postmonster closed access)" errors="0" failures="0" skipped="0" timestamp="2026-09-26T21:51:30" time="65.61" tests="18">
+    <testcase classname="AccessService (postmonster closed access) token hashing stores only a sha256 of the token" name="AccessService (postmonster closed access) token hashing stores only a sha256 of the token" time="0.006">
     </testcase>
-    <testcase classname="PermissionsService check() Verification Bypass (64) Bypass for Missing Stripe" name="PermissionsService check() Verification Bypass (64) Bypass for Missing Stripe" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) token hashing hashes ips deterministically and not verbatim" name="AccessService (postmonster closed access) token hashing hashes ips deterministically and not verbatim" time="0.002">
     </testcase>
-    <testcase classname="PermissionsService check() Verification Bypass (64) No Bypass" name="PermissionsService check() Verification Bypass (64) No Bypass" time="0.002">
+    <testcase classname="AccessService (postmonster closed access) submitRequest stores the request and mails the applicant and the operator" name="AccessService (postmonster closed access) submitRequest stores the request and mails the applicant and the operator" time="0.005">
     </testcase>
-    <testcase classname="PermissionsService check() Channel Permission (82/87) All Conditions True" name="PermissionsService check() Channel Permission (82/87) All Conditions True" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) submitRequest does not create a duplicate for a pending request but still succeeds" name="AccessService (postmonster closed access) submitRequest does not create a duplicate for a pending request but still succeeds" time="0.003">
     </testcase>
-    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel With Option Limit" name="PermissionsService check() Channel Permission (82/87) Channel With Option Limit" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) getInviteByToken answers with the email of an active invite" name="AccessService (postmonster closed access) getInviteByToken answers with the email of an active invite" time="0.003">
     </testcase>
-    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel With Subscription Limit" name="PermissionsService check() Channel Permission (82/87) Channel With Subscription Limit" time="0.002">
+    <testcase classname="AccessService (postmonster closed access) getInviteByToken rejects a unknown invite" name="AccessService (postmonster closed access) getInviteByToken rejects a unknown invite" time="0.011">
     </testcase>
-    <testcase classname="PermissionsService check() Channel Permission (82/87) Channel Without Available Limits" name="PermissionsService check() Channel Permission (82/87) Channel Without Available Limits" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) getInviteByToken rejects a expired invite" name="AccessService (postmonster closed access) getInviteByToken rejects a expired invite" time="0.002">
     </testcase>
-    <testcase classname="PermissionsService check() Channel Permission (82/87) Section Different from Channel" name="PermissionsService check() Channel Permission (82/87) Section Different from Channel" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) getInviteByToken rejects a used invite" name="AccessService (postmonster closed access) getInviteByToken rejects a used invite" time="0.001">
     </testcase>
-    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Posts Within Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Posts Within Limit" time="0.008">
+    <testcase classname="AccessService (postmonster closed access) getInviteByToken rejects a revoked invite" name="AccessService (postmonster closed access) getInviteByToken rejects a revoked invite" time="0.002">
     </testcase>
-    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Posts Exceed Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Posts Exceed Limit" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) approveRequest / rejectRequest approve creates a 7 day one-time invite, marks the request and mails the link" name="AccessService (postmonster closed access) approveRequest / rejectRequest approve creates a 7 day one-time invite, marks the request and mails the link" time="0.013">
     </testcase>
-    <testcase classname="PermissionsService check() Monthly Posts Permission (97/110) Section Different with Posts Within Limit" name="PermissionsService check() Monthly Posts Permission (97/110) Section Different with Posts Within Limit" time="0.003">
+    <testcase classname="AccessService (postmonster closed access) approveRequest / rejectRequest reject optionally mails the applicant" name="AccessService (postmonster closed access) approveRequest / rejectRequest reject optionally mails the applicant" time="0.002">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) resend / revoke resend issues a new token and revokes the previous one" name="AccessService (postmonster closed access) resend / revoke resend issues a new token and revokes the previous one" time="0.003">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) resend / revoke cannot resend or revoke a used invite" name="AccessService (postmonster closed access) resend / revoke cannot resend or revoke a used invite" time="0.003">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) resend / revoke revoke kills the link" name="AccessService (postmonster closed access) resend / revoke revoke kills the link" time="0.003">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) registerWithInviteToken creates the user with its own workspace and burns the invite in one transaction" name="AccessService (postmonster closed access) registerWithInviteToken creates the user with its own workspace and burns the invite in one transaction" time="0.003">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) registerWithInviteToken rejects a foreign email" name="AccessService (postmonster closed access) registerWithInviteToken rejects a foreign email" time="0.002">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) registerWithInviteToken rejects an already used invite" name="AccessService (postmonster closed access) registerWithInviteToken rejects an already used invite" time="0.001">
+    </testcase>
+    <testcase classname="AccessService (postmonster closed access) registerWithInviteToken rejects an expired invite" name="AccessService (postmonster closed access) registerWithInviteToken rejects an expired invite" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="registration with invites (postmonster closed access)" errors="0" failures="0" skipped="0" timestamp="2026-09-26T21:52:35" time="7.517" tests="10">
+    <testcase classname="registration with invites (postmonster closed access) rejects registration without an invite token" name="registration with invites (postmonster closed access) rejects registration without an invite token" time="0.008">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) rejects an invite that belongs to a different email" name="registration with invites (postmonster closed access) rejects an invite that belongs to a different email" time="0.005">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) rejects an expired invite" name="registration with invites (postmonster closed access) rejects an expired invite" time="0.002">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) rejects an already used invite" name="registration with invites (postmonster closed access) rejects an already used invite" time="0.011">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) rejects an revoked invite" name="registration with invites (postmonster closed access) rejects an revoked invite" time="0.002">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) registers with a valid invite and burns it" name="registration with invites (postmonster closed access) registers with a valid invite and burns it" time="0.006">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) a burnt invite cannot register a second user" name="registration with invites (postmonster closed access) a burnt invite cannot register a second user" time="0.003">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) keeps upstream team-invites working (registration into an existing workspace)" name="registration with invites (postmonster closed access) keeps upstream team-invites working (registration into an existing workspace)" time="0.003">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) closes OAuth sign-up as well" name="registration with invites (postmonster closed access) closes OAuth sign-up as well" time="0.003">
+    </testcase>
+    <testcase classname="registration with invites (postmonster closed access) leaves open registration alone when DISABLE_REGISTRATION is off" name="registration with invites (postmonster closed access) leaves open registration alone when DISABLE_REGISTRATION is off" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="POST /public/access-requests (postmonster closed access)" errors="0" failures="0" skipped="0" timestamp="2026-09-26T21:52:43" time="4.825" tests="8">
+    <testcase classname="POST /public/access-requests (postmonster closed access) drops honeypot submissions silently and still answers ok" name="POST /public/access-requests (postmonster closed access) drops honeypot submissions silently and still answers ok" time="0.001">
+    </testcase>
+    <testcase classname="POST /public/access-requests (postmonster closed access) passes a real submission through with a hashed ip and the user agent" name="POST /public/access-requests (postmonster closed access) passes a real submission through with a hashed ip and the user agent" time="0.001">
+    </testcase>
+    <testcase classname="POST /public/access-requests (postmonster closed access) refuses malformed invite tokens without touching the service" name="POST /public/access-requests (postmonster closed access) refuses malformed invite tokens without touching the service" time="0.005">
+    </testcase>
+    <testcase classname="POST /public/access-requests (postmonster closed access) rate limits the endpoint at 5 requests per hour per ip" name="POST /public/access-requests (postmonster closed access) rate limits the endpoint at 5 requests per hour per ip" time="0.016">
+    </testcase>
+    <testcase classname="GET /admin/access-* (super admin guard) rejects anonymous requests" name="GET /admin/access-* (super admin guard) rejects anonymous requests" time="0.003">
+    </testcase>
+    <testcase classname="GET /admin/access-* (super admin guard) rejects regular users" name="GET /admin/access-* (super admin guard) rejects regular users" time="0.001">
+    </testcase>
+    <testcase classname="GET /admin/access-* (super admin guard) lets the super admin through" name="GET /admin/access-* (super admin guard) lets the super admin through" time="0.001">
+    </testcase>
+    <testcase classname="invite tokens are high entropy base64url strings" name="invite tokens are high entropy base64url strings" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>

@@ -46,6 +46,13 @@ async function start() {
         process.env.FRONTEND_URL,
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        // postmonster: landing origins (e.g. https://postmonster.xyz) that may
+        // call the public access-requests endpoint, from LANDING_ORIGINS
+        ...(process.env.LANDING_ORIGINS
+          ? process.env.LANDING_ORIGINS.split(',')
+              .map((origin) => origin.trim())
+              .filter(Boolean)
+          : []),
       ],
     },
   });

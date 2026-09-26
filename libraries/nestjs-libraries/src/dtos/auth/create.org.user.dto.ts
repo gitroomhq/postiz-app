@@ -1,6 +1,7 @@
 import {
   IsDefined,
   IsEmail,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -37,4 +38,11 @@ export class CreateOrgUserDto {
   company: string;
 
   datafast_visitor_id: string;
+
+  // postmonster: closed access (PRD 6) - one-time invite token from the
+  // /auth/register?invite=TOKEN link
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  inviteToken?: string;
 }

@@ -1,5 +1,10 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
-import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import {
+  Prisma,
+  Role,
+  ShortLinkPreference,
+  SubscriptionTier,
+} from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -462,9 +467,12 @@ export class OrganizationRepository {
     body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
     hasEmail: boolean,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    // postmonster: optional transaction client so invite consumption and user
+    // creation can commit atomically (PRD 6)
+    client?: Prisma.TransactionClient
   ) {
-    return this._organization.model.organization.create({
+    return (client ?? this._organization.model).organization.create({
       data: {
         name: body.company,
         apiKey: AuthService.fixedEncryption(makeSecureId(20)),

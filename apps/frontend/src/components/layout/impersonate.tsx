@@ -829,6 +829,22 @@ const ViewStats = () => {
   );
 };
 
+// postmonster: admin console (access requests, invites, users) - PRD 6
+const AdminConsole = () => {
+  const t = useT();
+  const handleClick = useCallback(() => {
+    window.location.href = '/admin';
+  }, []);
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-lime-600 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('admin_console', 'Admin')}
+    </div>
+  );
+};
+
 const ImportDebugPost = () => {
   const { openModal } = useModals();
   const t = useT();
@@ -1114,6 +1130,7 @@ export const Impersonate = () => {
                 </div>
                 <ImportDebugPost />
                 <AddAnnouncement />
+                <AdminConsole />
                 <ViewErrors />
                 <ViewStats />
               </div>

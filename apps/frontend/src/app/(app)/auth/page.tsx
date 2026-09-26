@@ -1,35 +1,19 @@
-import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
+import { redirect } from 'next/navigation';
+
 export const dynamic = 'force-dynamic';
-import { Register } from '@gitroom/frontend/components/auth/register';
-import { Metadata } from 'next';
-import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
-import Link from 'next/link';
-import { getT } from '@gitroom/react/translation/get.translation.service.backend';
-import { LoginWithOidc } from '@gitroom/frontend/components/auth/login.with.oidc';
-export const metadata: Metadata = {
-  title: `Postmonster Register`,
-  description: '',
-};
-export default async function Auth(params: {searchParams: Promise<{provider: string}>}) {
-  const t = await getT();
-  if (process.env.DISABLE_REGISTRATION === 'true') {
-    const canRegister = (
-      await (await internalFetch('/auth/can-register')).json()
-    ).register;
-    if (!canRegister && !(await params?.searchParams)?.provider) {
-      return (
-        <>
-          <LoginWithOidc />
-          <div className="text-center">
-            {t('registration_is_disabled', 'Registration is disabled')}
-            <br />
-            <Link className="underline hover:font-bold" href="/auth/login">
-              {t('login_instead', 'Login instead')}
-            </Link>
-          </div>
-        </>
-      );
+
+// postmonster: registration lives on /auth/register now; /auth keeps working
+// as the historical entry point (links, proxy redirects, OAuth callbacks)
+export default async function Auth(params: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const search = (await params?.searchParams) || {};
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    if (typeof value === 'string') {
+      query.set(key, value);
     }
   }
-  return <Register />;
+  const qs = query.toString();
+  redirect(`/auth/register${qs ? `?${qs}` : ''}`);
 }

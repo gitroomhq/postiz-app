@@ -50,6 +50,9 @@ import { ErrorsRepository } from '@gitroom/nestjs-libraries/database/prisma/erro
 import { ErrorsService } from '@gitroom/nestjs-libraries/database/prisma/errors/errors.service';
 import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.repository';
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+// postmonster: closed access (PRD 6)
+import { AccessRepository } from '@gitroom/nestjs-libraries/database/prisma/postmonster-access/access.repository';
+import { AccessService } from '@gitroom/nestjs-libraries/database/prisma/postmonster-access/access.service';
 
 @Global()
 @Module({
@@ -109,6 +112,9 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
     ErrorsService,
     AdminStatsRepository,
     AdminStatsService,
+    // postmonster: closed access (PRD 6)
+    AccessRepository,
+    AccessService,
   ],
   get exports() {
     return this.providers;

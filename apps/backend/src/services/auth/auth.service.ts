@@ -11,6 +11,7 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { AccessService } from '@gitroom/nestjs-libraries/database/prisma/postmonster-access/access.service';
 
 @Injectable()
 export class AuthService {
@@ -19,17 +20,17 @@ export class AuthService {
     private _organizationService: OrganizationService,
     private _notificationService: NotificationService,
     private _emailService: EmailService,
-    private _providerManager: AuthProviderManager
+    private _providerManager: AuthProviderManager,
+    // postmonster: closed access (PRD 6)
+    private _accessService: AccessService
   ) {}
   async canRegister(provider: string) {
-    if (
-      process.env.DISABLE_REGISTRATION !== 'true' ||
-      provider === Provider.GENERIC
-    ) {
-      return true;
-    }
-
-    return (await this._organizationService.getCount()) === 0;
+    // postmonster: closed access (PRD 6) - with DISABLE_REGISTRATION nothing
+    // registers without a one-time invite token. The upstream first-org
+    // bootstrap window is gone on purpose: the operator account is created by
+    // scripts/seed-operator.ts, and OAuth providers cannot sign up either
+    // (only already registered users can log in with them)
+    return process.env.DISABLE_REGISTRATION !== 'true';
   }
 
   async routeAuth(
@@ -52,15 +53,30 @@ export class AuthService {
           throw new Error('Email already exists');
         }
 
-        if (!(await this.canRegister(provider))) {
-          throw new Error('Registration is disabled');
-        }
+        // postmonster: closed access (PRD 6) - registration goes either
+        // through a one-time invite token (AccessInvite, consumed atomically
+        // with user creation) or through the upstream team-invite (?org= JWT
+        // cookie = invite into an existing workspace), which is untouched
+        const hasTeamInvite = !!addToOrg && typeof addToOrg !== 'boolean';
+        let create;
+        if (body.inviteToken) {
+          create = await this._accessService.registerWithInviteToken(
+            body,
+            body.inviteToken,
+            ip,
+            userAgent
+          );
+        } else {
+          if (!hasTeamInvite && !(await this.canRegister(provider))) {
+            throw new Error('Registration is disabled');
+          }
 
-        const create = await this._organizationService.createOrgAndUser(
-          body,
-          ip,
-          userAgent
-        );
+          create = await this._organizationService.createOrgAndUser(
+            body,
+            ip,
+            userAgent
+          );
+        }
 
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
@@ -322,6 +338,11 @@ export class AuthService {
     );
     if (checkExists) {
       return { jwt: await this.jwt(checkExists) };
+    }
+
+    // postmonster: closed access (PRD 6) - OAuth can only log in, never sign up
+    if (!(await this.canRegister(provider as string))) {
+      throw new Error('Registration is disabled');
     }
 
     return { token };

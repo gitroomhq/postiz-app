@@ -15,6 +15,8 @@ interface MenuItemInterface {
   role?: string[];
   hide?: boolean;
   requireBilling?: boolean;
+  // postmonster: platform super admin menu entry (PRD 6)
+  onlySuperAdmin?: boolean;
   onClick?: () => void;
 }
 
@@ -159,6 +161,35 @@ export const useMenuItem = () => {
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
   const secondMenu = [
+    // postmonster: admin console, hidden from everyone but the super admin
+    {
+      name: t('admin', 'Admin'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+        >
+          <path
+            d="M10 1.5L16.5 4V9C16.5 13.2 13.7 16.9 10 18.5C6.3 16.9 3.5 13.2 3.5 9V4L10 1.5Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.5 9.5L9.2 11.2L12.8 7.6"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/admin',
+      onlySuperAdmin: true,
+    },
     {
       name: t('UGC', 'UGC'),
       icon: (
@@ -328,6 +359,10 @@ export const TopMenu: FC = () => {
                 if (f.hide) {
                   return false;
                 }
+                // postmonster: super admin entries (PRD 6)
+                if (f.onlySuperAdmin && !user?.isSuperAdmin) {
+                  return false;
+                }
                 if (f.requireBilling && !billingEnabled) {
                   return false;
                 }
@@ -354,6 +389,10 @@ export const TopMenu: FC = () => {
         {secondMenu
           .filter((f) => {
             if (f.hide) {
+              return false;
+            }
+            // postmonster: super admin entries (PRD 6)
+            if (f.onlySuperAdmin && !user?.isSuperAdmin) {
               return false;
             }
             if (f.requireBilling && !billingEnabled) {

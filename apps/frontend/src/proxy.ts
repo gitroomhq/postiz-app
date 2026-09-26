@@ -79,12 +79,8 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (
-    nextUrl.pathname.startsWith('/auth/register') &&
-    process.env.DISABLE_REGISTRATION === 'true'
-  ) {
-    return NextResponse.redirect(new URL('/auth/login', nextUrl.href));
-  }
+  // postmonster: closed access (PRD 6) - /auth/register stays reachable and
+  // renders the Early Access screen / invite form instead of redirecting away
 
   const org = nextUrl.searchParams.get('org');
   const url = new URL(nextUrl).search;
