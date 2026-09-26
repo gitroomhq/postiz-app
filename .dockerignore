@@ -16,6 +16,9 @@ dist
 **/.git
 **/*.md
 **/LICENSE
+# postmonster: AGPL notices must ship inside the image
+!NOTICE.md
+!LICENSE
 **/npm-debug.log
 **/*.vscode
 .git
