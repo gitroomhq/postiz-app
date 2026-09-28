@@ -46,6 +46,15 @@ async function start() {
         process.env.FRONTEND_URL,
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        // Optional: the Canva app calls the public API from its iframe origin
+        // (browsers send it lowercase, e.g. https://app-aabbcc.canva-apps.com)
+        ...(process.env.CANVA_APP_ORIGIN
+          ? [
+              process.env.CANVA_APP_ORIGIN.trim()
+                .replace(/\/+$/, '')
+                .toLowerCase(),
+            ]
+          : []),
       ],
     },
   });

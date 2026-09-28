@@ -150,6 +150,7 @@ model UserOrganization {
   user           User         @relation(fields: [userId], references: [id])
 
   @@unique([userId, organizationId])
+  @@index([organizationId])
   @@index([disabled])
 }
 
