@@ -7,7 +7,7 @@ import {
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
+import { getPublicKey, Relay, finalizeEvent, SimplePool, nip19 } from 'nostr-tools';
 
 import WebSocket from 'ws';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -135,6 +135,44 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     return id;
   }
 
+
+  private profileLabel(content: Record<string, any>, pubkey: string) {
+    return (
+      content.display_name ||
+      content.displayName ||
+      content.name ||
+      pubkey.slice(0, 12)
+    );
+  }
+
+  private async profileMention(pubkey: string) {
+    const evt = await this.findRelayInformation(pubkey);
+    return {
+      id: pubkey,
+      label: this.profileLabel(evt, pubkey),
+      image: evt?.picture || '',
+    };
+  }
+
+  private decodePubkey(query: string): string | null {
+    const q = query.trim();
+    if (/^[0-9a-f]{64}$/i.test(q)) {
+      return q.toLowerCase();
+    }
+    try {
+      const decoded = nip19.decode(q);
+      if (decoded.type === 'npub') {
+        return decoded.data as string;
+      }
+      if (decoded.type === 'nprofile') {
+        return (decoded.data as { pubkey: string }).pubkey;
+      }
+    } catch {
+      /** empty **/
+    }
+    return null;
+  }
+
   async authenticate(params: {
     code: string;
     codeVerifier: string;
@@ -167,6 +205,87 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     return mediaContent
       ? `${post.message}\n\n${mediaContent}`
       : post.message;
+  }
+
+
+  override async mention(
+    token: string,
+    d: { query: string },
+    id: string,
+    integration: Integration
+  ) {
+    const query = (d?.query || '').trim();
+    if (!query) {
+      return [];
+    }
+
+    const direct = this.decodePubkey(query);
+    if (direct) {
+      try {
+        return [await this.profileMention(direct)];
+      } catch {
+        return [
+          {
+            id: direct,
+            label: direct.slice(0, 12),
+            image: '',
+          },
+        ];
+      }
+    }
+
+    // NIP-50 text search across configured relays for kind-0 profiles.
+    let events: any[] = [];
+    try {
+      events = await Promise.race([
+        pool.querySync(list, {
+          kinds: [0],
+          search: query,
+          limit: 12,
+        } as any),
+        new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 4500)),
+      ]);
+    } catch {
+      events = [];
+    }
+
+    const byPubkey = new Map<string, { id: string; label: string; image: string }>();
+    for (const evt of events || []) {
+      if (!evt?.pubkey || byPubkey.has(evt.pubkey)) continue;
+      let content: Record<string, any> = {};
+      try {
+        content = JSON.parse(evt.content || '{}');
+      } catch {
+        content = {};
+      }
+      const label = this.profileLabel(content, evt.pubkey);
+      const hay = `${label} ${content.name || ''} ${content.nip05 || ''}`.toLowerCase();
+      if (!hay.includes(query.toLowerCase()) && !(content.nip05 || '').toLowerCase().includes(query.toLowerCase())) {
+        // Keep NIP-50 hits even if local string match fails; search relays already ranked them.
+      }
+      byPubkey.set(evt.pubkey, {
+        id: evt.pubkey,
+        label,
+        image: content.picture || '',
+      });
+      if (byPubkey.size >= 8) break;
+    }
+
+    return Array.from(byPubkey.values());
+  }
+
+  mentionFormat(idOrHandle: string, name: string) {
+    try {
+      if (/^[0-9a-f]{64}$/i.test(idOrHandle)) {
+        return `nostr:${nip19.npubEncode(idOrHandle.toLowerCase())}`;
+      }
+      if (idOrHandle.startsWith('npub1') || idOrHandle.startsWith('nprofile1')) {
+        return `nostr:${idOrHandle}`;
+      }
+    } catch {
+      /** empty **/
+    }
+    return name?.startsWith('@') ? name : `@${name || idOrHandle}`;
   }
 
   async post(
