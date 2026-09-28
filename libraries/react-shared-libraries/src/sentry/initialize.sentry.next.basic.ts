@@ -21,6 +21,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     /^Failed to connect to MetaMask$/i,
     /^MetaMask extension not found$/i,
     /^undefined is not an object \(evaluating '\w+\.progress'\)$/i,
+    /^Cannot read properties of undefined \(reading 'progress'\)$/i,
   ];
 
   // Browser wallet extensions (Phantom, MetaMask, etc.) reject with a plain
