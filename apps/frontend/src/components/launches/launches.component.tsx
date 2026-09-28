@@ -29,6 +29,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
+import { ChannelsAfterPayment } from '@gitroom/frontend/components/layout/check.payment';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
 export const SVGLine = () => {
@@ -523,6 +524,7 @@ export const LaunchesComponent = () => {
   return (
     <DNDProvider>
       <Onboarding />
+      <ChannelsAfterPayment integrations={integrations} />
       <CalendarWeekProvider integrations={sortedIntegrations}>
         <div
           className={clsx(

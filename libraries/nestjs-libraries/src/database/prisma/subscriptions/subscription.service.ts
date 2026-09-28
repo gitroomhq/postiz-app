@@ -121,12 +121,14 @@ export class SubscriptionService {
     }
 
     // channels are auto-disabled when a subscription lapses; once the new plan
-    // can hold all of them, enable everything back (partial enabling would risk
-    // enabling channels the user disabled on purpose)
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
     if (
       billing !== 'FREE' &&
       currentTotalChannels.length < allChannels.length &&
-      allChannels.length <= totalChannels
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
     ) {
       await this._integrationService.enableAllIntegrations(organizationId);
     }
@@ -194,12 +196,14 @@ export class SubscriptionService {
     }
 
     // channels are auto-disabled when a subscription lapses; once the new plan
-    // can hold all of them, enable everything back (partial enabling would risk
-    // enabling channels the user disabled on purpose)
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
     if (
       billing !== 'FREE' &&
       currentTotalChannels.length < allChannels.length &&
-      allChannels.length <= totalChannels
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
     ) {
       await this._integrationService.enableAllIntegrations(
         getOrgByCustomerId?.id!
