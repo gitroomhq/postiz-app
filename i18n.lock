@@ -509,6 +509,7 @@ checksums:
     delete_integration: ccc879ccfcf7f85bcfe09f2bc3fa0dd3
     start_writing_your_post: 471efc4f2a7e2cf02a065a2de34e7213
     billing_other_account_subscribed: 6c12b4a726d55ee88b0594bd22ec556c
+    billing_stripe_load_failed: b578d90bcd0abe8bacc2c1e6d37ddc1a
     already_subscribed: 3694e02bcb0a41286ea6b79615e6cdbf
     ok: e2d6579a83aba07c4180c21c5fe9893d
     billing_join_over: 6e1c237241ba00ddbb07fd603344c5c3
@@ -534,6 +535,7 @@ checksums:
     billing_advanced_picture_editor: 329a6c2e8b2685f81609859a4de07b0f
     billing_ai_images_per_month: 5073aa90b32654abe6200d426a97f03e
     billing_ai_videos_per_month: c786199d8dc9bded54fab8f92c350b19
+    billing_clipping_minutes_per_month: e8337650fb3b1836ba1194e5e7730fd6
     billing_billing_address: 48980a775bfc7292b0c4f9b74b4d352e
     billing_payment: 95142d3fd8b6a6f551aba771842e9c11
     billing_powered_by_stripe: f2767a22c2cd93d4e8fe5c5d6ee05ad1

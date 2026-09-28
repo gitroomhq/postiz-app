@@ -71,6 +71,12 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  private secretKey(password: string) {
+    return Uint8Array.from(
+      (password.match(/.{1,2}/g) || []).map((byte: any) => parseInt(byte, 16))
+    );
+  }
+
   private async findRelayInformation(pubkey: string) {
     // This queries ALL relays in parallel and resolves with
     // the first matching event from ANY relay.
@@ -137,11 +143,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     try {
       const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-      const pubkey = getPublicKey(
-        Uint8Array.from(
-          body.password.match(/.{1,2}/g).map((byte: any) => parseInt(byte, 16))
-        )
-      );
+      const pubkey = getPublicKey(this.secretKey(body.password));
 
       const user = await this.findRelayInformation(pubkey);
 
@@ -182,7 +184,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKey(password)
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -219,7 +221,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKey(password)
     );
 
     const eventId = await this.publish(id, textEvent);

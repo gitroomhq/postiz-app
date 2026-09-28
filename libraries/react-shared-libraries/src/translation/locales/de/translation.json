@@ -505,6 +505,7 @@
   "delete_integration": "Integration löschen",
   "start_writing_your_post": "Beginne, deinen Beitrag für eine Vorschau zu schreiben",
   "billing_other_account_subscribed": "Ein anderes Konto mit dieser E-Mail-Adresse hat bereits ein aktives Abonnement. Bitte melden Sie sich ab und melden Sie sich mit diesem Konto an, um Ihr Abonnement zu verwalten.",
+  "billing_stripe_load_failed": "Das Zahlungsformular konnte nicht geladen werden. Bitte deaktivieren Sie Werbeblocker oder Datenschutz-Erweiterungen für diese Seite und laden Sie sie erneut.",
   "already_subscribed": "Bereits abonniert",
   "ok": "OK",
   "billing_join_over": "Schließen Sie sich über",

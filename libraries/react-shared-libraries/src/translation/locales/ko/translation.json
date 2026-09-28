@@ -505,6 +505,7 @@
   "delete_integration": "통합 삭제",
   "start_writing_your_post": "미리보기를 위해 게시글 작성을 시작하세요",
   "billing_other_account_subscribed": "이 이메일로 이미 활성화된 구독이 있는 다른 계정이 있습니다. 구독을 관리하려면 로그아웃한 후 해당 계정으로 다시 로그인해 주세요.",
+  "billing_stripe_load_failed": "결제 양식을 불러올 수 없습니다. 이 페이지에 대한 광고 차단기나 프라이버시 확장 기능을 비활성화한 후 다시 불러와 주세요.",
   "already_subscribed": "이미 구독됨",
   "ok": "확인",
   "billing_join_over": "이미 가입한",
