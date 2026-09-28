@@ -134,10 +134,13 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     });
 
     if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        const frame = Sentry.defaultStackParser(new Error().stack || '')[0];
+      const probe = new EventTarget();
+      probe.addEventListener('probe', () => {
+        const frames = Sentry.defaultStackParser(new Error().stack || '');
+        const frame = frames[frames.length - 2];
         sentryWrapperFrame = frame ? frameKey(frame) : '';
       });
+      probe.dispatchEvent(new Event('probe'));
     }
   } catch (err) {
     // Log initialization errors
