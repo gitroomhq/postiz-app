@@ -472,13 +472,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
           // A rejected save (e.g. past-date or republish guard) must not
           // report success and close the modal - surface it and stay open
+          // (402 stays silent, the payment dialog already explained it)
           if (!response.ok) {
-            const { message } = await response.json().catch(() => ({} as any));
-            toaster.show(
-              (Array.isArray(message) ? message[0] : message) ||
-                t('could_not_save_post', 'Could not save the post.'),
-              'warning'
-            );
+            if (response.status !== 402) {
+              const { message } = await response.json().catch(() => ({} as any));
+              toaster.show(
+                (Array.isArray(message) ? message[0] : message) ||
+                  t('could_not_save_post', 'Could not save the post.'),
+                'warning'
+              );
+            }
             setLoading(false);
             return;
           }
