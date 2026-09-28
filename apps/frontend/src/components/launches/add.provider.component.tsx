@@ -478,11 +478,13 @@ export const AddProviderComponent: FC<{
           ]
             .filter(Boolean)
             .join('&');
-          const { url, err } = await (
-            await fetch(
-              `/integrations/social/${identifier}${params ? `?${params}` : ''}`
-            )
-          ).json();
+          const response = await fetch(
+            `/integrations/social/${identifier}${params ? `?${params}` : ''}`
+          );
+          if (response.status === 402) {
+            return;
+          }
+          const { url, err } = await response.json();
           if (err) {
             toaster.show(
               t(
