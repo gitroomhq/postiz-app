@@ -842,28 +842,17 @@ export class IntegrationRepository {
     }
   }
 
-  async enableAllIntegrations(org: string) {
-    const getChannels = await this._integration.model.integration.findMany({
+  enableAllIntegrations(org: string) {
+    return this._integration.model.integration.updateMany({
       where: {
         organizationId: org,
         disabled: true,
         deletedAt: null,
       },
-      select: {
-        id: true,
+      data: {
+        disabled: false,
       },
     });
-
-    for (const channel of getChannels) {
-      await this._integration.model.integration.update({
-        where: {
-          id: channel.id,
-        },
-        data: {
-          disabled: false,
-        },
-      });
-    }
   }
 
   getPlugsByIntegrationId(org: string, id: string) {
