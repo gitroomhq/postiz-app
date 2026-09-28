@@ -437,12 +437,28 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }
 
       if (!dummy) {
-        addEditSets
-          ? addEditSets(data)
-          : await fetch('/posts', {
-              method: 'POST',
-              body: JSON.stringify(data),
-            });
+        if (addEditSets) {
+          addEditSets(data);
+        } else {
+          const response = await fetch('/posts', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+
+          if (!response.ok) {
+            if (response.status !== 402) {
+              const { message } = await response.json().catch(() => ({}));
+              toaster.show(
+                typeof message === 'string'
+                  ? message
+                  : t('post_save_failed', 'Could not save the post'),
+                'warning'
+              );
+            }
+            setLoading(false);
+            return;
+          }
+        }
 
         if (!addEditSets) {
           mutate();
