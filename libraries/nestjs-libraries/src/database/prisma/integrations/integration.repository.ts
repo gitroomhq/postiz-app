@@ -842,6 +842,19 @@ export class IntegrationRepository {
     }
   }
 
+  enableAllIntegrations(org: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        disabled: true,
+        deletedAt: null,
+      },
+      data: {
+        disabled: false,
+      },
+    });
+  }
+
   getPlugsByIntegrationId(org: string, id: string) {
     return this._plugs.model.plugs.findMany({
       where: {

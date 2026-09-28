@@ -785,5 +785,9 @@
   "preview_comment_failed": "Não foi possível publicar o comentário",
   "preview_comment_detach_hint": "Comentários em textos selecionados perdem o destaque se o texto for editado depois.",
   "preview_comment_text_changed": "Texto alterado",
-  "preview_no_comments_yet": "Ainda não há comentários. Selecione um trecho do post para comentar ou adicione um comentário geral."
+  "preview_no_comments_yet": "Ainda não há comentários. Selecione um trecho do post para comentar ou adicione um comentário geral.",
+  "channels_still_disabled": "Seus canais estão desativados",
+  "channels_still_disabled_description": "Seu plano não cobre todos os canais conectados, então eles permanecem desativados. Habilite os que deseja no menu de cada canal, até o limite do seu plano, ou faça um upgrade para habilitar todos.",
+  "channels_enabled_again": "Seus canais estão ativados",
+  "channels_enabled_again_description": "Todos os seus canais conectados foram ativados novamente e estão prontos para publicar."
 }

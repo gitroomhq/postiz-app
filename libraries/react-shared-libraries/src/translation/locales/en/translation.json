@@ -787,5 +787,9 @@
   "preview_comment_failed": "Could not post the comment",
   "preview_comment_detach_hint": "Comments on selected text lose their highlight if the text is edited later.",
   "preview_comment_text_changed": "Text changed",
-  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment."
+  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment.",
+  "channels_still_disabled": "Your channels are disabled",
+  "channels_still_disabled_description": "Your plan doesn't cover all of your connected channels, so they stay disabled. Enable the ones you want from each channel's menu, up to your plan's limit, or upgrade your plan to enable all of them.",
+  "channels_enabled_again": "Your channels are enabled",
+  "channels_enabled_again_description": "All of your connected channels were enabled again and are ready to publish."
 }

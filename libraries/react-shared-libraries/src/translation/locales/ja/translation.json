@@ -785,5 +785,9 @@
   "preview_comment_failed": "コメントの投稿に失敗しました",
   "preview_comment_detach_hint": "選択テキストへのコメントは、テキストが後から編集されるとハイライトが失われます。",
   "preview_comment_text_changed": "テキストが変更されました",
-  "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。"
+  "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。",
+  "channels_still_disabled": "チャンネルが無効になっています",
+  "channels_still_disabled_description": "ご利用中のプランでは、接続されているすべてのチャンネルをカバーしていないため、いくつかのチャンネルが無効のままです。各チャンネルのメニューから必要なものを有効にするか、またはプランをアップグレードしてすべてのチャンネルを有効にしてください（プランの上限まで有効化できます）。",
+  "channels_enabled_again": "チャンネルが再度有効になりました",
+  "channels_enabled_again_description": "接続されているすべてのチャンネルが再び有効になり、公開の準備ができました。"
 }

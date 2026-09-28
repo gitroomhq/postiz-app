@@ -785,5 +785,9 @@
   "preview_comment_failed": "No se pudo publicar el comentario",
   "preview_comment_detach_hint": "Los comentarios sobre texto seleccionado pierden su resalte si el texto se edita más tarde.",
   "preview_comment_text_changed": "Texto modificado",
-  "preview_no_comments_yet": "Aún no hay comentarios. Selecciona texto en la publicación para comentarlo o agrega un comentario general."
+  "preview_no_comments_yet": "Aún no hay comentarios. Selecciona texto en la publicación para comentarlo o agrega un comentario general.",
+  "channels_still_disabled": "Tus canales están deshabilitados",
+  "channels_still_disabled_description": "Tu plan no cubre todos tus canales conectados, por lo que permanecen deshabilitados. Habilita los que desees desde el menú de cada canal, hasta el límite de tu plan, o mejora tu plan para habilitarlos todos.",
+  "channels_enabled_again": "Tus canales están habilitados nuevamente",
+  "channels_enabled_again_description": "Todos tus canales conectados se habilitaron nuevamente y están listos para publicar."
 }
