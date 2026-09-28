@@ -209,13 +209,15 @@ export const CustomVariables: FC<{
   });
   const submit = useCallback(
     async (data: FieldValues) => {
-      const { url } = await (
-        await fetch(
-          `/integrations/social/${identifier}${
-            onboarding ? '?onboarding=true' : ''
-          }`
-        )
-      ).json();
+      const response = await fetch(
+        `/integrations/social/${identifier}${
+          onboarding ? '?onboarding=true' : ''
+        }`
+      );
+      if (response.status === 402) {
+        return;
+      }
+      const { url } = await response.json();
       modals.closeAll();
       gotoUrl(
         `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
@@ -433,13 +435,15 @@ export const AddProviderComponent: FC<{
           const { component: Web3Providers } = web3List.find(
             (item) => item.identifier === identifier
           )!;
-          const { url } = await (
-            await fetch(
-              `/integrations/social/${identifier}${
-                onboarding ? '?onboarding=true' : ''
-              }`
-            )
-          ).json();
+          const response = await fetch(
+            `/integrations/social/${identifier}${
+              onboarding ? '?onboarding=true' : ''
+            }`
+          );
+          if (response.status === 402) {
+            return;
+          }
+          const { url } = await response.json();
           modal.openModal({
             title: `Add ${capitalize(identifier)}`,
             withCloseButton: true,
@@ -611,13 +615,15 @@ export const AddProviderComponent: FC<{
               );
               return;
             }
-            const { url } = await (
-              await fetch(
-                `/integrations/social/${identifier}${
-                  onboarding ? '?onboarding=true' : ''
-                }`
-              )
-            ).json();
+            const response = await fetch(
+              `/integrations/social/${identifier}${
+                onboarding ? '?onboarding=true' : ''
+              }`
+            );
+            if (response.status === 402) {
+              return;
+            }
+            const { url } = await response.json();
             modal.closeAll();
             window.location.href = `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
               JSON.stringify(cookieResponse.cookies)
