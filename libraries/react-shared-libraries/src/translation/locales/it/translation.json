@@ -682,6 +682,7 @@
   "repeat_post_every_label": "Ripeti post ogni",
   "add_new_tag": "Aggiungi nuovo tag",
   "tag_name": "Nome",
+  "post_save_failed": "Impossibile salvare il post",
   "post_is_too_long": "il post è troppo lungo, per favore correggilo",
   "your_post_should_have_at_least_one_character_or_one_image": "Il tuo post deve contenere almeno un carattere o un'immagine.",
   "internal_edit": "Modifica interna",

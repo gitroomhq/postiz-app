@@ -682,6 +682,7 @@
   "repeat_post_every_label": "חזור על הפוסט כל",
   "add_new_tag": "הוסף תגית חדשה",
   "tag_name": "שם",
+  "post_save_failed": "לא ניתן היה לשמור את הפוסט",
   "post_is_too_long": "הפוסט ארוך מדי, אנא תקן אותו",
   "your_post_should_have_at_least_one_character_or_one_image": "הפוסט שלך צריך לכלול לפחות תו אחד או תמונה אחת.",
   "internal_edit": "עריכה פנימית",
