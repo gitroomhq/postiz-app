@@ -44,12 +44,12 @@ export const GET = async (
   // anything but a 206, so ignoring Range breaks their uploads.
   const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers.get('range') || '');
   const start = range ? Number(range[1]) : 0;
-  const end = range && range[2] ? Number(range[2]) : fileStats.size - 1;
+  const end =
+    range && range[2]
+      ? Math.min(Number(range[2]), fileStats.size - 1)
+      : fileStats.size - 1;
 
-  if (
-    range &&
-    (start >= fileStats.size || end >= fileStats.size || start > end)
-  ) {
+  if (range && (start >= fileStats.size || start > end)) {
     return new NextResponse(null, {
       status: 416,
       headers: { 'Content-Range': `bytes */${fileStats.size}` },
