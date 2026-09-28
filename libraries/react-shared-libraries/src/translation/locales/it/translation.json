@@ -785,5 +785,9 @@
   "preview_comment_failed": "Impossibile pubblicare il commento",
   "preview_comment_detach_hint": "I commenti su testo selezionato perdono l'evidenziazione se il testo viene modificato successivamente.",
   "preview_comment_text_changed": "Testo modificato",
-  "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale."
+  "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale.",
+  "channels_still_disabled": "I tuoi canali sono disabilitati",
+  "channels_still_disabled_description": "Il tuo piano non copre tutti i canali collegati, quindi rimangono disabilitati. Abilita quelli che desideri dal menu di ciascun canale, fino al limite del tuo piano, oppure esegui l'upgrade del piano per abilitarli tutti.",
+  "channels_enabled_again": "I tuoi canali sono stati abilitati",
+  "channels_enabled_again_description": "Tutti i tuoi canali collegati sono stati nuovamente abilitati e sono pronti per la pubblicazione."
 }
