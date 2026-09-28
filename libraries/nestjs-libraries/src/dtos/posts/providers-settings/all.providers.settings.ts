@@ -17,6 +17,7 @@ import { DevToSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers
 import { HashnodeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/hashnode.settings.dto';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 import { ListmonkDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/listmonk.dto';
+import { BeehiivDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/beehiiv.dto';
 import { GmbSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/gmb.settings.dto';
 import { FarcasterDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/farcaster.dto';
 import { FacebookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/facebook.dto';
@@ -49,6 +50,7 @@ export type AllProvidersSettings =
   | ProviderExtension<'hashnode', HashnodeSettingsDto>
   | ProviderExtension<'wordpress', WordpressDto>
   | ProviderExtension<'listmonk', ListmonkDto>
+  | ProviderExtension<'beehiiv', BeehiivDto>
   | ProviderExtension<'gmb', GmbSettingsDto>
   | ProviderExtension<'facebook', FacebookDto>
   | ProviderExtension<'wrapcast', FarcasterDto>
@@ -89,6 +91,7 @@ export const allProviders = (setEmpty?: any) => {
     { value: WordpressDto, name: 'wordpress' },
     { value: HashnodeSettingsDto, name: 'hashnode' },
     { value: ListmonkDto, name: 'listmonk' },
+    { value: BeehiivDto, name: 'beehiiv' },
     { value: GmbSettingsDto, name: 'gmb' },
     { value: FarcasterDto, name: 'wrapcast' },
     { value: FacebookDto, name: 'facebook' },

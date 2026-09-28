@@ -29,6 +29,7 @@ import { NostrProvider } from '@gitroom/nestjs-libraries/integrations/social/nos
 import { VkProvider } from '@gitroom/nestjs-libraries/integrations/social/vk.provider';
 import { WordpressProvider } from '@gitroom/nestjs-libraries/integrations/social/wordpress.provider';
 import { ListmonkProvider } from '@gitroom/nestjs-libraries/integrations/social/listmonk.provider';
+import { BeehiivProvider } from '@gitroom/nestjs-libraries/integrations/social/beehiiv.provider';
 import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.provider';
 import { KickProvider } from '@gitroom/nestjs-libraries/integrations/social/kick.provider';
 import { TwitchProvider } from '@gitroom/nestjs-libraries/integrations/social/twitch.provider';
@@ -70,6 +71,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new HashnodeProvider(),
   new WordpressProvider(),
   new ListmonkProvider(),
+  new BeehiivProvider(),
   new MoltbookProvider(),
   new WhopProvider(),
   new SkoolProvider(),
