@@ -27,19 +27,6 @@ const attachmentUrl = z
     message: validUrlExtension.defaultMessage({} as any),
   });
 
-// Attachments are either a plain URL string or { path, thumbnail? } where
-// thumbnail is an image URL (jpeg/png) used as the video's thumbnail / cover.
-const attachment = z.union([
-  attachmentUrl,
-  z.object({
-    path: attachmentUrl,
-    thumbnail: attachmentUrl.optional(),
-  }),
-]);
-
-const toMedia = (a: string | { path: string; thumbnail?: string }) =>
-  typeof a === 'string' ? { path: a } : { path: a.path, thumbnail: a.thumbnail };
-
 @Injectable()
 export class IntegrationSchedulePostTool implements AgentToolInterface {
   constructor(
@@ -108,10 +95,8 @@ If validation fails, the result contains output.errors describing what to fix; t
                         "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together)"
                       ),
                     attachments: z
-                      .array(attachment)
-                      .describe(
-                        'The media of the post: either an uploaded media URL string, or { path, thumbnail } where path is the uploaded video URL and thumbnail is the path of an uploaded jpeg/png (returned by uploadFromUrlTool) used as the video thumbnail / cover (e.g. Instagram Reel cover)'
-                      ),
+                      .array(attachmentUrl)
+                      .describe('The image of the post (URLS)'),
                   })
                 )
                 .describe(
@@ -185,7 +170,9 @@ If validation fails, the result contains output.errors describing what to fix; t
                 settings,
                 value: platform.postsAndComments.map((p: any) => ({
                   content: p.content,
-                  image: (p.attachments || []).map(toMedia),
+                  image: (p.attachments || []).map((path: string) => ({
+                    path,
+                  })),
                 })),
               },
             ]
@@ -257,9 +244,9 @@ If validation fails, the result contains output.errors describing what to fix; t
                   content: p.content,
                   id: makeId(10),
                   delay: 0,
-                  image: p.attachments.map((a: any) => ({
+                  image: p.attachments.map((p: any) => ({
                     id: makeId(10),
-                    ...toMedia(a),
+                    path: p,
                   })),
                 })),
               },
