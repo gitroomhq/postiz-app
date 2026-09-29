@@ -117,11 +117,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      # postmonster: service_started was not enough - the backend needs the
-      # Temporal gRPC port during startup (TemporalRegister) and auto-setup
-      # takes ~1-2 min before :7233 accepts connections
+      # postmonster: NOT service_healthy - auto-setup often needs longer than
+      # the healthcheck window and a flaky temporal must never fail the whole
+      # deploy. The backend retries its own boot until Temporal answers
+      # (STARTUP_RETRIES in apps/backend/src/main.ts).
       temporal:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       # nginx (:5000) proxies /api/ to the backend (:3000); 200 = backend is up
       test:
@@ -283,8 +284,9 @@ services:
       test: ['CMD-SHELL', 'bash -c "exec 3<>/dev/tcp/127.0.0.1/7233"']
       interval: 15s
       timeout: 5s
-      retries: 10
-      start_period: 60s
+      retries: 20
+      # auto-setup (schema + ES visibility) regularly needs 1-2 minutes
+      start_period: 180s
     deploy:
       resources:
         limits:
