@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
 import {
   SocialAbstract,
@@ -12,6 +12,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { InstagramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/instagram.dto';
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
+import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
@@ -67,7 +68,10 @@ export class InstagramStandaloneProvider
     body: string,
     status: number
   ):
-    | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
+    | {
+        type: 'refresh-token' | 'bad-body' | 'retry' | 'disconnect';
+        value: string;
+      }
     | undefined {
     return instagramProvider.handleErrors(body, status);
   }
@@ -86,7 +90,7 @@ export class InstagramStandaloneProvider
       profile_picture_url = '',
     } = await (
       await fetch(
-        `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
+        `https://graph.instagram.com/${META_GRAPH_API_VERSION}/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();
 
@@ -102,7 +106,7 @@ export class InstagramStandaloneProvider
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url:
         `https://www.instagram.com/oauth/authorize?enable_fb_login=0&client_id=${
@@ -116,7 +120,7 @@ export class InstagramStandaloneProvider
         )}&response_type=code&scope=${encodeURIComponent(
           this.scopes.join(',')
         )}` + `&state=${state}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
@@ -161,7 +165,7 @@ export class InstagramStandaloneProvider
 
     const { user_id, name, username, profile_picture_url } = await (
       await fetch(
-        `https://graph.instagram.com/v21.0/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
+        `https://graph.instagram.com/${META_GRAPH_API_VERSION}/me?fields=user_id,username,name,profile_picture_url&access_token=${access_token}`
       )
     ).json();
 

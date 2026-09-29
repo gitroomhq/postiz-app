@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { getPublicKey, Relay, finalizeEvent, SimplePool } from 'nostr-tools';
@@ -63,12 +63,18 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(17);
+    const state = makeSecureId(17);
     return {
       url: state,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
+  }
+
+  private secretKey(password: string) {
+    return Uint8Array.from(
+      (password.match(/.{1,2}/g) || []).map((byte: any) => parseInt(byte, 16))
+    );
   }
 
   private async findRelayInformation(pubkey: string) {
@@ -137,11 +143,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
     try {
       const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
-      const pubkey = getPublicKey(
-        Uint8Array.from(
-          body.password.match(/.{1,2}/g).map((byte: any) => parseInt(byte, 16))
-        )
-      );
+      const pubkey = getPublicKey(this.secretKey(body.password));
 
       const user = await this.findRelayInformation(pubkey);
 
@@ -182,7 +184,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         tags: [],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKey(password)
     );
 
     const eventId = await this.publish(id, textEvent);
@@ -219,7 +221,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
         ],
         created_at: Math.floor(Date.now() / 1000),
       },
-      password
+      this.secretKey(password)
     );
 
     const eventId = await this.publish(id, textEvent);

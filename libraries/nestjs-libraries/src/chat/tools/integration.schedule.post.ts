@@ -55,24 +55,26 @@ export class IntegrationSchedulePostTool implements AgentToolInterface {
         annotations: {
           title: 'Schedule Social Media Post',
           readOnlyHint: false,
-          destructiveHint: false,
+          destructiveHint: true,
           idempotentHint: false,
           openWorldHint: true,
         },
       },
       description: `
-This tool allows you to schedule a post to a social media platform, based on integrationSchema tool.
-So for example:
+Use this when the user wants to create a draft, scheduled, or immediate social media post on their connected channels, based on the integrationSchema tool.
+Examples of the input shape:
 
-If the user want to post a post to LinkedIn with one comment
+A single LinkedIn post with one comment
 - socialPost array length will be one
 - postsAndComments array length will be two (one for the post, one for the comment)
 
-If the user want to post 20 posts for facebook each in individual days without comments
+20 Facebook posts each on individual days without comments
 - socialPost array length will be 20
 - postsAndComments array length will be one
 
-If the tools return errors, you would need to rerun it with the right parameters, don't ask again, just run it
+Do not use this to update or delete existing posts.
+On success, each item in output contains a previewUrl the user can open to see the post.
+If validation fails, the result contains output.errors describing what to fix; the call can be retried with corrected parameters.
 `,
       inputSchema: z.object({
         socialPost: z
@@ -124,7 +126,7 @@ If the tools return errors, you would need to rerun it with the right parameters
                     value: z
                       .any()
                       .describe(
-                        'Value of the key, always prefer the id then label if possible'
+                        'Value of the key, always prefer the id then label if possible. When the settings schema says a field is an id, pass the id returned by the channel tools, never the display label'
                       ),
                   })
                 )
@@ -141,6 +143,11 @@ If the tools return errors, you would need to rerun it with the right parameters
             z.object({
               postId: z.string(),
               integration: z.string(),
+              previewUrl: z
+                .string()
+                .describe(
+                  'Public preview page of the created post, share it with the user'
+                ),
             })
           )
           .or(z.object({ errors: z.string() })),
@@ -186,28 +193,36 @@ If the tools return errors, you would need to rerun it with the right parameters
 
           if (validation.emptyContent) {
             return {
-              errors: `${validation.name}: Your post should have at least one character or one image.`,
+              output: {
+                errors: `${validation.name}: Your post should have at least one character or one image.`,
+              },
             };
           }
 
           if (platform.type !== 'draft') {
             if (!validation.valid) {
               return {
-                errors: `${validation.name}: ${
-                  validation.settingsError || 'Please fix your settings'
-                }, please fix it, and try integrationSchedulePostTool again.`,
+                output: {
+                  errors: `${validation.name}: ${
+                    validation.settingsError || 'Please fix your settings'
+                  }, please fix it, and try integrationSchedulePostTool again.`,
+                },
               };
             }
 
             if (validation.errors !== true) {
               return {
-                errors: `${validation.name}: ${validation.errors}, please fix it, and try integrationSchedulePostTool again.`,
+                output: {
+                  errors: `${validation.name}: ${validation.errors}, please fix it, and try integrationSchedulePostTool again.`,
+                },
               };
             }
 
             if (validation.tooLong) {
               return {
-                errors: `${validation.name}: The maximum characters is ${validation.maximumCharacters}, please fix it, and try integrationSchedulePostTool again.`,
+                output: {
+                  errors: `${validation.name}: The maximum characters is ${validation.maximumCharacters}, please fix it, and try integrationSchedulePostTool again.`,
+                },
               };
             }
           }
@@ -250,7 +265,13 @@ If the tools return errors, you would need to rerun it with the right parameters
               },
             ],
           }, 'MCP');
-          finalOutput.push(...output);
+          // Same public preview page the calendar "Preview Post" button opens.
+          finalOutput.push(
+            ...output.map((p) => ({
+              ...p,
+              previewUrl: `${process.env.FRONTEND_URL}/p/${p.postId}?share=true`,
+            }))
+          );
         }
 
         return {

@@ -158,7 +158,11 @@ export const Menu: FC<{
         chrome.runtime.sendMessage(
           extensionId,
           { type: 'REMOVE_REFRESH_TOKEN', integrationId: id },
-          () => {}
+          () => {
+            if (chrome.runtime.lastError) {
+              return;
+            }
+          }
         );
       } catch {
         // Silently ignore

@@ -48,12 +48,18 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           facebookPixel={process.env.NEXT_PUBLIC_FACEBOOK_PIXEL!}
           telegramBotName={process.env.TELEGRAM_BOT_NAME!}
           neynarClientId={process.env.NEYNAR_CLIENT_ID!}
+          appleClientId={process.env.APPLE_CLIENT_ID!}
           isSecured={!process.env.NOT_SECURED}
           isChatBase={false}
           disableImageCompression={!!process.env.DISABLE_IMAGE_COMPRESSION}
           disableXAnalytics={!!process.env.DISABLE_X_ANALYTICS}
           sentryDsn={process.env.NEXT_PUBLIC_SENTRY_DSN!}
           extensionId={process.env.EXTENSION_ID || ''}
+          mediaProcessing={
+            process.env.STORAGE_PROVIDER === 'cloudflare' &&
+            !!process.env.RUNPOD_API_KEY &&
+            !!process.env.RUNPOD_ENDPOINT_ID
+          }
           transloadit={
             process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
               ? [

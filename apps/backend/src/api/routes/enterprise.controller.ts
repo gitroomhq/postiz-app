@@ -17,15 +17,34 @@ export class EnterpriseController {
     private _postsService: PostsService
   ) {}
 
+  private verifyEnterpriseToken<T extends object>(params: string): T {
+    const payload = AuthService.verifyJWT(params) as any;
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      'providerName' in payload || // login token (full User row)
+      'orgId' in payload || // team invite token
+      'expires' in payload // password reset token
+    ) {
+      throw new Error('Invalid enterprise token');
+    }
+
+    return payload as T;
+  }
+
   @Post('/create-user')
   async createUser(@Body('params') params: string) {
     try {
-      const { id, name, saasName, email } = AuthService.verifyJWT(params) as {
+      const { id, name, saasName, email } = this.verifyEnterpriseToken<{
         id: string;
         name: string;
         email: string;
         saasName: string;
-      };
+      }>(params);
+
+      if (!id || !saasName) {
+        return { success: false };
+      }
 
       try {
         return await this._organizationService.createMaxUser(
@@ -45,13 +64,13 @@ export class EnterpriseController {
   @Post('/url')
   async redirectParams(@Body('params') params: string) {
     try {
-      const load = AuthService.verifyJWT(params) as {
+      const load = this.verifyEnterpriseToken<{
         redirectUrl: string;
         apiKey: string;
         refreshId?: string;
         provider: string;
         webhookUrl: string;
-      };
+      }>(params);
 
       if (!load || !load.redirectUrl || !load.apiKey || !load.provider) {
         return;
@@ -94,10 +113,10 @@ export class EnterpriseController {
   @Post('/delete-channel')
   async deleteChannel(@Body('params') params: string) {
     try {
-      const load = AuthService.verifyJWT(params) as {
+      const load = this.verifyEnterpriseToken<{
         apiKey: string;
         id: string;
-      };
+      }>(params);
 
       if (!load || !load.apiKey || !load.id) {
         return { success: false };

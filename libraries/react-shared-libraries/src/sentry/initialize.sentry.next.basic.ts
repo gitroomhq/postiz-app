@@ -12,7 +12,23 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     /^Load failed .*/i,
     /^NetworkError when attempting to fetch resource\.$/i,
     /^NetworkError when attempting to fetch resource\. .*/i,
+    /^Object captured as promise rejection with keys: code, message$/i,
+    /^Called on script loaded before session recording is available$/i,
+    /^Failed to connect to MetaMask$/i,
+    /^MetaMask extension not found$/i,
+    /^undefined is not an object \(evaluating '\w+\.progress'\)$/i,
+    /^Cannot read properties of undefined \(reading 'progress'\)$/i,
   ];
+
+  // Browser wallet extensions (Phantom, MetaMask, etc.) reject with a plain
+  // { code, message } object instead of an Error when the user closes their popup.
+  // Those rejections happen inside the extension's injected script, not in our code.
+  const isWalletExtensionRejection = (exception: unknown) =>
+    !!exception &&
+    typeof exception === 'object' &&
+    !(exception instanceof Error) &&
+    'code' in exception &&
+    'message' in exception;
 
   try {
     Sentry.init({
@@ -38,9 +54,13 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       sendDefaultPii: true,
       ...extension,
       debug: environment === 'development',
-      tracesSampleRate: 1.0,
+      tracesSampleRate: 0.1,
 
       beforeSend(event, hint) {
+        if (isWalletExtensionRejection(hint?.originalException)) {
+          return null; // Ignore the event
+        }
+
         if (event.exception && event.exception.values) {
           for (const exception of event.exception.values) {
             if (exception.value) {

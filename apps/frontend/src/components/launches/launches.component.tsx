@@ -1,6 +1,9 @@
 'use client';
 
-import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  AddProviderButton,
+  CustomVariables,
+} from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
@@ -26,6 +29,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 
 export const SVGLine = () => {
   return (
@@ -358,6 +362,7 @@ export const LaunchesComponent = () => {
   const toast = useToaster();
   const fireEvents = useFireEvents();
   const t = useT();
+  const modal = useModals();
   const [reload, setReload] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
   const [mode] = useCookie('mode', 'dark');
@@ -441,9 +446,31 @@ export const LaunchesComponent = () => {
     (
         integration: Integration & {
           identifier: string;
+          isCustomFields?: boolean;
+          customFields?: any[];
         }
       ) =>
       async () => {
+        // Custom-fields providers (Bluesky, etc.) have no OAuth URL to redirect
+        // to: reconnect by re-entering the credentials, like the menu does.
+        if (integration.isCustomFields) {
+          modal.openModal({
+            title: t('custom_url', 'Custom URL'),
+            withCloseButton: false,
+            classNames: {
+              modal: 'md',
+            },
+            children: (
+              <CustomVariables
+                identifier={integration.identifier}
+                gotoUrl={(url: string) => router.push(url)}
+                variables={integration.customFields || []}
+              />
+            ),
+          });
+          return;
+        }
+
         const { url } = await (
           await fetch(
             `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
