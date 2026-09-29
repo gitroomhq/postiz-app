@@ -117,8 +117,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # postmonster: service_started was not enough - the backend needs the
+      # Temporal gRPC port during startup (TemporalRegister) and auto-setup
+      # takes ~1-2 min before :7233 accepts connections
       temporal:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       # nginx (:5000) proxies /api/ to the backend (:3000); 200 = backend is up
       test:

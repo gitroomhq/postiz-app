@@ -79,16 +79,34 @@ async function start() {
 
   const port = process.env.PORT || 3000;
 
-  try {
-    await app.listen(port);
-    console.log('Backend started successfully on port ' + port);
+  // postmonster: on a cold stack pm2 starts us while temporalio/auto-setup is
+  // still bringing up Temporal, and the first boot then fails inside
+  // app.listen (TemporalRegister). Retry instead of dying instantly, and if
+  // it still fails exit non-zero so pm2 restarts us - the previous catch just
+  // logged the error and left a live process WITHOUT a listener, which left
+  // nginx with "no live upstreams" until the container was restarted.
+  const startAttempts = Number(process.env.STARTUP_RETRIES || 36);
+  for (let attempt = 1; attempt <= startAttempts; attempt++) {
+    try {
+      await app.listen(port);
+      console.log('Backend started successfully on port ' + port);
 
-    checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
+      checkConfiguration(); // Do this last, so that users will see obvious issues at the end of the startup log without having to scroll up.
 
-    Logger.log(`🚀 Backend is running on: http://localhost:${port}`);
-  } catch (e) {
-    Logger.error(`Backend failed to start on port ${port}`, e);
+      Logger.log(`?? Backend is running on: http://localhost:${port}`);
+      return;
+    } catch (e) {
+      Logger.error(
+        `Backend failed to start on port ${port} (attempt ${attempt}/${startAttempts})`,
+        e
+      );
+      if (attempt < startAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
   }
+
+  process.exit(1);
 }
 
 function checkConfiguration() {
