@@ -88,30 +88,7 @@ export class RefreshIntegrationService {
       });
 
     if (!refresh || !refresh.accessToken) {
-      await this._integrationService.refreshNeeded(
-        integration.organizationId,
-        integration.id
-      );
-
-      await this._integrationService.informAboutRefreshError(
-        integration.organizationId,
-        integration,
-        cause
-      );
-
-      await this._integrationService.disconnectChannel(
-        integration.organizationId,
-        integration
-      );
-
-      logger.error('provider_channel_disconnected', {
-        provider: integration.providerIdentifier,
-        integration_id: integration.id,
-        org_id: integration.organizationId,
-        reason: cause,
-      });
-
-      return false;
+      return this.markRefreshFailed(integration, cause);
     }
 
     if (
@@ -121,15 +98,57 @@ export class RefreshIntegrationService {
       return refresh;
     }
 
-    const reConnect = await socialProvider.reConnect(
-      integration.rootInternalId,
-      integration.internalId,
-      refresh.accessToken
-    );
+    const reConnect = await socialProvider
+      .reConnect(
+        integration.rootInternalId,
+        integration.internalId,
+        refresh.accessToken
+      )
+      .catch((err) => {
+        logger.error('provider_reconnect_failed', {
+          provider: integration.providerIdentifier,
+          integration_id: integration.id,
+          org_id: integration.organizationId,
+          error_type: errorType(err),
+          reason: cause,
+        });
+        return false as const;
+      });
+
+    if (!reConnect) {
+      return this.markRefreshFailed(integration, cause);
+    }
 
     return {
       ...refresh,
       ...reConnect,
     };
+  }
+
+  private async markRefreshFailed(integration: Integration, cause: string) {
+    await this._integrationService.refreshNeeded(
+      integration.organizationId,
+      integration.id
+    );
+
+    await this._integrationService.informAboutRefreshError(
+      integration.organizationId,
+      integration,
+      cause
+    );
+
+    await this._integrationService.disconnectChannel(
+      integration.organizationId,
+      integration
+    );
+
+    logger.error('provider_channel_disconnected', {
+      provider: integration.providerIdentifier,
+      integration_id: integration.id,
+      org_id: integration.organizationId,
+      reason: cause,
+    });
+
+    return false as const;
   }
 }
