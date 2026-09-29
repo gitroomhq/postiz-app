@@ -338,6 +338,25 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // postmonster: revoke the TikTok grant on Disconnect (PRD 8.3)
+  // https://developers.tiktok.com/doc/authentication/
+  async revokeToken(accessToken: string): Promise<void> {
+    const response = await fetch('https://open.tiktokapis.com/v2/oauth/revoke/', {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      method: 'POST',
+      body: new URLSearchParams({
+        client_key: process.env.TIKTOK_CLIENT_ID!,
+        client_secret: process.env.TIKTOK_CLIENT_SECRET!,
+        token: accessToken,
+      }).toString(),
+    });
+    if (!response.ok) {
+      throw new Error(`TikTok revoke failed with status ${response.status}`);
+    }
+  }
+
   async generateAuthUrl() {
     const state = makeSecureId(16);
 

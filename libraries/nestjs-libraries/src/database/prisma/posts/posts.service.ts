@@ -18,6 +18,7 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+import { GetPublicationsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.publications.dto';
 import { shuffle } from 'lodash';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -346,6 +347,11 @@ export class PostsService {
     return minifyPostsList(
       await this._postRepository.getPostsList(orgId, query)
     );
+  }
+
+  // postmonster: Publications page (PRD 7.1)
+  async getPublications(orgId: string, query: GetPublicationsDto) {
+    return this._postRepository.getPublications(orgId, query);
   }
 
   async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {

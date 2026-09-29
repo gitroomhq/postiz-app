@@ -8,7 +8,18 @@ import {
   headerName,
   languages,
 } from '@gitroom/react/translation/i18n.config';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 acceptLanguage.languages(languages);
+
+// postmonster: hidden sections (PRD 7.2) - a direct URL entry redirects to the
+// Dashboard instead of rendering a dead page
+const hiddenSections: [string, () => boolean][] = [
+  ['/agents', () => !isFeatureEnabled('ai')],
+  ['/plugs', () => !isFeatureEnabled('plugs')],
+  ['/third-party', () => !isFeatureEnabled('thirdParty')],
+  ['/billing', () => !isFeatureEnabled('billing')],
+  ['/oauth/authorize', () => !isFeatureEnabled('approvedApps')],
+];
 
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
@@ -153,13 +164,15 @@ export async function proxy(request: NextRequest) {
       }
       return redirect;
     }
+    // postmonster: hidden sections lead to the Dashboard, not to a 404
+    for (const [path, isHidden] of hiddenSections) {
+      if (nextUrl.pathname.startsWith(path) && isHidden()) {
+        return NextResponse.redirect(new URL('/dashboard', nextUrl.href));
+      }
+    }
+
     if (nextUrl.pathname === '/') {
-      return NextResponse.redirect(
-        new URL(
-          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
-          nextUrl.href
-        )
-      );
+      return NextResponse.redirect(new URL('/dashboard', nextUrl.href));
     }
 
     return topResponse;

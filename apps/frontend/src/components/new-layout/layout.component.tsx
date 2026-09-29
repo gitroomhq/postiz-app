@@ -43,6 +43,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 
 const jakartaSans = Plus_Jakarta_Sans({
   weight: ['600', '500', '700'],
@@ -78,6 +79,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
 
   return (
     <ContextWrapper user={user}>
+      {/* postmonster: the CopilotKit provider stays mounted even when the AI
+          feature is hidden - the composer hooks (useCopilotAction) require the
+          context; only the visible AI surfaces are gated (PRD 7.2) */}
       <CopilotKit
         credentials="include"
         runtimeUrl={backendUrl + '/copilot/chat'}
@@ -93,7 +97,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
             <ShowLinkedinCompany />
             <MediaSettingsLayout />
             <ShowPostSelector />
-            <PreConditionComponent />
+            {/* postmonster: paywall-related overlays hidden with the billing feature (PRD 7.2) */}
+            {isFeatureEnabled('billing') && <PreConditionComponent />}
             <NewSubscription />
             <ContinueProvider />
             <div
@@ -102,8 +107,19 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                 jakartaSans.className
               )}
             >
-              <div>{user?.admin ? <Impersonate /> : <div />}</div>
-              {user.tier === 'FREE' && isGeneral && billingEnabled ? (
+              {/* postmonster: the upstream super-admin impersonation/billing panel
+                  is hidden (PRD 7.2); super admins use /admin instead */}
+              <div>
+                {user?.admin && isFeatureEnabled('impersonate') ? (
+                  <Impersonate />
+                ) : (
+                  <div />
+                )}
+              </div>
+              {isFeatureEnabled('billing') &&
+              user.tier === 'FREE' &&
+              isGeneral &&
+              billingEnabled ? (
                 <FirstBillingComponent />
               ) : (
                 <>
@@ -115,7 +131,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         id="left-menu"
                         className={clsx(
                           'fixed h-full w-[64px] start-[17px] flex flex-1 top-0',
-                          user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
+                          user?.admin &&
+                            isFeatureEnabled('impersonate') &&
+                            'pt-[60px] max-h-[1000px]:w-[500px]'
                         )}
                       >
                         <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">

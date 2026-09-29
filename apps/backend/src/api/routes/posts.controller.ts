@@ -15,6 +15,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+import { GetPublicationsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.publications.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -150,6 +151,15 @@ export class PostsController {
     @Query() query: GetPostsListDto
   ) {
     return this._postsService.getPostsList(org.id, query);
+  }
+
+  // postmonster: Publications page (PRD 7.1)
+  @Get('/publications')
+  async getPublications(
+    @GetOrgFromRequest() org: Organization,
+    @Query() query: GetPublicationsDto
+  ) {
+    return this._postsService.getPublications(org.id, query);
   }
 
   @Get('/old')

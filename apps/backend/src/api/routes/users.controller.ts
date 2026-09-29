@@ -25,6 +25,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+// postmonster: account deletion confirmation (PRD 9)
+import { DeleteAccountDto } from '@gitroom/nestjs-libraries/dtos/users/delete.account.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
@@ -331,12 +333,24 @@ export class UsersController {
   async deleteAccount(
     @GetUserFromRequest() user: User,
     @Req() req: Request,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @Body() body: DeleteAccountDto
   ) {
     const impersonate = req.cookies.impersonate || req.headers.impersonate;
     if (impersonate) {
       throw new HttpException(
         'Account cannot be deleted while impersonating',
+        400
+      );
+    }
+
+    // postmonster: the deletion is confirmed by typing the account email (PRD 9)
+    if (
+      (body?.email || '').trim().toLowerCase() !==
+      (user.email || '').toLowerCase()
+    ) {
+      throw new HttpException(
+        'The email you entered does not match this account',
         400
       );
     }

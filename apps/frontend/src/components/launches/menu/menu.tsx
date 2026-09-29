@@ -129,8 +129,8 @@ export const Menu: FC<{
   const deleteChannel = useCallback(async () => {
     if (
       !(await deleteDialog(
-        t('are_you_sure_delete_channel', 'Are you sure you want to delete this channel?'),
-        t('delete_channel_title', 'Delete Channel')
+        t('are_you_sure_delete_channel', 'Are you sure you want to disconnect this channel? Its access will be revoked and the stored tokens removed.'),
+        t('delete_channel_title', 'Disconnect Channel')
       ))
     ) {
       return;
@@ -164,7 +164,7 @@ export const Menu: FC<{
         // Silently ignore
       }
     }
-    toast.show(t('channel_deleted', 'Channel Deleted'), 'success');
+    toast.show(t('channel_deleted', 'Channel Disconnected'), 'success');
     setShow(false);
     onChange(true);
   }, [t, extensionId, id]);
@@ -358,6 +358,19 @@ export const Menu: FC<{
           style={{ left: show.x, top: show.y }}
           className={`fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
         >
+          {/* postmonster: channel token status (PRD 7.1) */}
+          <div className="flex items-center gap-[8px] px-[10px] text-[12px]">
+            <span
+              className={`w-[8px] h-[8px] rounded-full ${
+                findIntegration?.refreshNeeded
+                  ? 'bg-yellow-500'
+                  : 'bg-green-500'
+              }`}
+            />
+            {findIntegration?.refreshNeeded
+              ? t('channel_needs_reconnect', 'Needs reconnect')
+              : t('channel_connected', 'Connected')}
+          </div>
           {canDisable && !findIntegration?.refreshNeeded && (
             <div
               className="flex gap-[12px] items-center py-[8px] px-[10px]"
@@ -626,7 +639,9 @@ export const Menu: FC<{
                 />
               </svg>
             </div>
-            <div className="text-[14px]">{t('delete', 'Delete')}</div>
+              <div className="text-[14px]">
+                {t('disconnect_channel', 'Disconnect')}
+              </div>
           </div>
         </div>
       )}

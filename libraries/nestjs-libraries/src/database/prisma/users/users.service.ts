@@ -4,15 +4,17 @@ import { Provider, Role } from '@prisma/client';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
-import { IntegrationRepository } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.repository';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { uniq } from 'lodash';
 
 @Injectable()
 export class UsersService {
   constructor(
     private _usersRepository: UsersRepository,
     private _organizationRepository: OrganizationRepository,
-    private _integrationRepository: IntegrationRepository,
+    private _integrationService: IntegrationService,
     private _notificationService: NotificationService
   ) {}
 
@@ -85,46 +87,110 @@ export class UsersService {
   }
 
   async getOrgsToDeleteForAccount(userId: string) {
+    // postmonster: only the workspaces where the account is the only member
+    // are deleted (PRD 9); shared workspaces are left, not deleted
     const orgs = await this._organizationRepository.getOrgsByUserId(userId);
-    const ownedOrgs = orgs.filter(
-      (org) => org.users[0].role === Role.SUPERADMIN
-    );
-
-    for (const org of ownedOrgs) {
+    const deletable = [] as typeof orgs;
+    for (const org of orgs) {
       const team = await this._organizationRepository.getTeam(org.id);
-      if (team?.users?.some((member) => member.user.id !== userId)) {
-        throw new HttpException(
-          'Please remove your team members before deleting your account',
-          400
-        );
+      const others = (team?.users || []).filter(
+        (member) => member.user.id !== userId
+      );
+      if (others.length === 0) {
+        deletable.push(org);
       }
     }
 
-    return ownedOrgs;
+    return deletable;
   }
 
   async deleteAccount(userId: string) {
-    const deletedOrgs = await this.getOrgsToDeleteForAccount(userId);
+    // postmonster: account deletion (PRD 9) - the sole-owner workspaces are
+    // deleted, shared workspaces are just left (with an ownership handover);
+    // DB changes run in one transaction, media files are removed afterwards
+    const user = await this._usersRepository.getUserById(userId);
+    if (!user || user.deletedAt) {
+      throw new HttpException('Account not found', 400);
+    }
+
     const orgs = await this._organizationRepository.getOrgsByUserId(userId);
+    const deleteOrgIds: string[] = [];
+    const leaveOrgs: { orgId: string; promoteNewOwner: boolean }[] = [];
 
     for (const org of orgs) {
-      if (org.users[0].role === Role.SUPERADMIN) {
-        await this._integrationRepository.deleteIntegrationsForAccount(org.id);
-        await this._organizationRepository.deleteOrganization(org.id);
+      const team = await this._organizationRepository.getTeam(org.id);
+      const others = (team?.users || []).filter(
+        (member) => member.user.id !== userId
+      );
+      if (others.length === 0) {
+        deleteOrgIds.push(org.id);
       } else {
-        await this._organizationRepository.deleteTeamMember(org.id, userId);
+        leaveOrgs.push({
+          orgId: org.id,
+          promoteNewOwner: org.users[0]?.role === Role.SUPERADMIN,
+        });
       }
     }
 
-    await this._usersRepository.deleteAccount(userId);
+    // platform grants are revoked while the tokens are still readable; best
+    // effort - a failing revoke must never block the deletion
+    for (const orgId of deleteOrgIds) {
+      await this._integrationService.revokeTokensForOrg(orgId);
+    }
 
-    this._logger.log(
-      `Account ${userId} deleted, organizations removed: ${deletedOrgs
-        .map((org) => org.id)
-        .join(', ')}`
+    const files = await this._usersRepository.deleteAccountData(
+      userId,
+      deleteOrgIds,
+      leaveOrgs
     );
 
-    return { deletedOrgs };
+    await this.removeAccountFiles(files);
+
+    if (this._notificationService.hasEmailProvider()) {
+      await this._notificationService
+        .sendEmail(
+          user.email,
+          'Your Postmonster account has been deleted',
+          'Your Postmonster account and its data have been deleted. ' +
+            'Connected channels were disconnected and their access revoked. ' +
+            'Backups are purged within 30 days. ' +
+            'If this was a mistake, please contact support.'
+        )
+        .catch((err) =>
+          this._logger.error(
+            `Failed to send the deletion confirmation to ${user.email}`,
+            err
+          )
+        );
+    }
+
+    this._logger.log(
+      `Account ${userId} deleted, organizations removed: ${deleteOrgIds.join(
+        ', '
+      )}`
+    );
+
+    return { deletedOrgIds: deleteOrgIds, leftOrgIds: leaveOrgs.map((o) => o.orgId) };
+  }
+
+  // postmonster: files are removed outside the deletion transaction and only
+  // ever come from our own uploads
+  private async removeAccountFiles(paths: string[]) {
+    const storage = UploadFactory.createStorage();
+    const uploadsPrefix = `${process.env.FRONTEND_URL}/uploads`;
+    for (const path of uniq(paths)) {
+      if (!path) {
+        continue;
+      }
+      if (path.indexOf('http') === 0 && path.indexOf(uploadsPrefix) !== 0) {
+        continue;
+      }
+      try {
+        await storage.removeFile(path);
+      } catch (err) {
+        this._logger.error(`Could not remove media file ${path}`, err);
+      }
+    }
   }
 
   activateUser(id: string) {

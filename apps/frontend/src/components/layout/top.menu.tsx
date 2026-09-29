@@ -7,6 +7,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { AgentMediaModal } from '@gitroom/frontend/components/layout/agent.media.modal';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 
 interface MenuItemInterface {
   name: string;
@@ -35,6 +36,49 @@ export const useMenuItem = () => {
   }, [openModal, t]);
 
   const firstMenu = [
+    // postmonster: Dashboard is the landing page after login (PRD 7.1)
+    {
+      name: t('dashboard', 'Dashboard'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="21"
+          height="21"
+          viewBox="0 0 21 21"
+          fill="none"
+        >
+          <path
+            d="M2.5 8.5L10.5 2L18.5 8.5V17C18.5 17.8284 17.8284 18.5 17 18.5H13V13H8V18.5H4C3.17157 18.5 2.5 17.8284 2.5 17V8.5Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/dashboard',
+    },
+    {
+      name: t('publications', 'Publications'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="21"
+          height="21"
+          viewBox="0 0 21 21"
+          fill="none"
+        >
+          <path
+            d="M3 5.5H18M3 10.5H18M3 15.5H12"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/publications',
+    },
     {
       name: isGeneral ? t('calendar', 'Calendar') : t('launches', 'Launches'),
       icon: (
@@ -73,6 +117,8 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/agents',
+      // postmonster: AI assistant is hidden unless the feature is on (PRD 7.2)
+      hide: !isFeatureEnabled('ai'),
     },
     {
       name: t('analytics', 'Analytics'),
@@ -136,6 +182,8 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/plugs',
+      // postmonster: plugs hidden in Early Access (PRD 7.2)
+      hide: !isFeatureEnabled('plugs'),
     },
     {
       name: t('integrations', 'Integrations'),
@@ -157,6 +205,8 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/third-party',
+      // postmonster: third-party marketplace hidden in Early Access (PRD 7.2)
+      hide: !isFeatureEnabled('thirdParty'),
     },
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
@@ -221,6 +271,8 @@ export const useMenuItem = () => {
       path: '#',
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
+      // postmonster: third-party UGC marketplace hidden in Early Access (PRD 7.2)
+      hide: !isFeatureEnabled('ugc'),
       onClick: handleAgentMediaClick,
     },
     {
@@ -280,6 +332,7 @@ export const useMenuItem = () => {
       path: '#', // postmonster: upstream affiliate program hidden
       role: ['ADMIN', 'SUPERADMIN', 'USER'],
       requireBilling: true,
+      hide: true,
     },
     {
       name: t('billing', 'Billing'),
@@ -303,6 +356,8 @@ export const useMenuItem = () => {
       path: '/billing',
       role: ['ADMIN', 'SUPERADMIN'],
       requireBilling: true,
+      // postmonster: billing hidden in Early Access, all features are free (PRD 7.2)
+      hide: !isFeatureEnabled('billing'),
     },
     {
       name: t('settings', 'Settings'),

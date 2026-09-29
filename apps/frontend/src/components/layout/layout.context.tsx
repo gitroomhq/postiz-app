@@ -5,6 +5,7 @@ import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useReturnUrl } from '@gitroom/frontend/app/(app)/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
     // eslint-disable-next-line react/no-children-prop
@@ -88,7 +89,8 @@ function LayoutContextInner(params: { children: ReactNode }) {
         }
         window.location.href = '/';
       }
-      if (response.status === 406) {
+      // postmonster: paywall dialogs belong to the hidden billing feature (PRD 7.2)
+      if (response.status === 406 && isFeatureEnabled('billing')) {
         if (
           await deleteDialog(
             'You are currently on trial, in order to use the feature you must finish the trial',
@@ -103,7 +105,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
         return false;
       }
 
-      if (response.status === 402) {
+      if (response.status === 402 && isFeatureEnabled('billing')) {
         if (
           await deleteDialog(
             (

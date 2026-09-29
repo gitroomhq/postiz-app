@@ -35,6 +35,7 @@ import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpe
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { ThirdPartyMediaLibrary } from '@gitroom/frontend/components/third-parties/third-party.media-library';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 import { Dashboard } from '@uppy/react';
 import {
   ChevronLeftIcon,
@@ -445,7 +446,9 @@ export const MediaBox: FC<{
           />
           <div className="flex gap-[8px]">
             {btn}
-            <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            {isFeatureEnabled('thirdParty') && (
+              <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            )}
           </div>
         </div>
         <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
@@ -507,7 +510,9 @@ export const MediaBox: FC<{
                 </div>
                 <div className="forceChange flex gap-[8px]">
                   {btn}
-                  <ThirdPartyMediaLibrary onImported={() => mutate()} />
+                  {isFeatureEnabled('thirdParty') && (
+              <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            )}
                 </div>
               </>
             )}
@@ -855,9 +860,12 @@ export const MultiMediaComponent: FC<{
                 </div>
               </div>
 
-              <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              {/* postmonster: third-party import hidden unless the feature is on (PRD 7.2) */}
+              {isFeatureEnabled('thirdParty') && (
+                <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              )}
 
-              {!!user?.tier?.ai && (
+              {!!user?.tier?.ai && isFeatureEnabled('ai') && (
                 <>
                   <AiImage value={text} onChange={changeMedia} />
                   <AiVideo value={text} onChange={changeMedia} />

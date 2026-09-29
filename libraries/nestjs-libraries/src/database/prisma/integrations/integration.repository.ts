@@ -742,13 +742,27 @@ export class IntegrationRepository {
   }
 
   deleteChannel(org: string, id: string) {
+    // postmonster: tokens are removed from the DB on Disconnect (PRD 8.3)
     return this._integration.model.integration.update({
       where: {
         id,
         organizationId: org,
       },
       data: {
+        token: '',
+        refreshToken: null,
+        tokenExpiration: null,
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  // postmonster: channel tokens for a workspace (account deletion, PRD 9)
+  getIntegrationsForOrg(org: string) {
+    return this._integration.model.integration.findMany({
+      where: {
+        organizationId: org,
+        deletedAt: null,
       },
     });
   }

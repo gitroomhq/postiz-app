@@ -387,7 +387,38 @@ export class IntegrationService {
   }
 
   async deleteChannel(org: string, id: string) {
+    // postmonster: revoke the platform grant before the tokens are wiped
+    // (PRD 8.3) - best effort, the local tokens go away either way
+    const integration = await this._integrationRepository.getIntegrationById(
+      org,
+      id
+    );
+    if (integration) {
+      await this.revokeIntegrationToken(integration);
+    }
     return this._integrationRepository.deleteChannel(org, id);
+  }
+
+  // postmonster: revokes a single channel grant where the provider supports it
+  async revokeIntegrationToken(integration: Integration) {
+    try {
+      const provider = this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      );
+      await provider?.revokeToken?.(integration.token, integration.refreshToken || undefined);
+    } catch (err) {
+      console.log('Could not revoke channel token', err);
+    }
+  }
+
+  // postmonster: revoke every channel grant of a workspace (account deletion)
+  async revokeTokensForOrg(org: string) {
+    const integrations = await this._integrationRepository.getIntegrationsForOrg(
+      org
+    );
+    for (const integration of integrations) {
+      await this.revokeIntegrationToken(integration);
+    }
   }
 
   async disableIntegrations(org: string, totalChannels: number) {

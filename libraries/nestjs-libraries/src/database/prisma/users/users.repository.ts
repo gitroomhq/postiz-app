@@ -209,6 +209,117 @@ export class UsersRepository {
     });
   }
 
+  // postmonster: account deletion (PRD 9) - every row change runs in one
+  // transaction; the service removes the returned media files from disk after
+  // the commit (files are never touched inside a transaction)
+  async deleteAccountData(
+    userId: string,
+    deleteOrgIds: string[],
+    leaveOrgs: { orgId: string; promoteNewOwner: boolean }[]
+  ) {
+    return this._transaction.model.$transaction(async (tx) => {
+      const now = new Date();
+      const hash = (value: string) =>
+        createHash('md5').update(value).digest('hex');
+
+      // file references are gathered before the rows are hidden
+      const mediaFiles = await tx.media.findMany({
+        where: { organizationId: { in: deleteOrgIds } },
+        select: { path: true },
+      });
+      const posts = await tx.post.findMany({
+        where: { organizationId: { in: deleteOrgIds }, deletedAt: null },
+        select: { image: true },
+      });
+
+      for (const orgId of deleteOrgIds) {
+        await tx.post.updateMany({
+          where: { organizationId: orgId, deletedAt: null },
+          data: { deletedAt: now },
+        });
+        await tx.media.updateMany({
+          where: { organizationId: orgId, deletedAt: null },
+          data: { deletedAt: now },
+        });
+        // channel tokens are wiped from the DB on account deletion (PRD 9)
+        await tx.integration.updateMany({
+          where: { organizationId: orgId },
+          data: {
+            token: '',
+            refreshToken: null,
+            tokenExpiration: null,
+            deletedAt: now,
+          },
+        });
+        await tx.userOrganization.deleteMany({
+          where: { organizationId: orgId },
+        });
+        await tx.organization.update({
+          where: { id: orgId },
+          data: { deletedAt: now },
+        });
+      }
+
+      // shared workspaces survive: the user just leaves, and ownership is
+      // handed over to the oldest remaining member
+      for (const { orgId, promoteNewOwner } of leaveOrgs) {
+        if (promoteNewOwner) {
+          const oldest = await tx.userOrganization.findFirst({
+            where: { organizationId: orgId, userId: { not: userId } },
+            orderBy: { createdAt: 'asc' },
+          });
+          if (oldest) {
+            await tx.userOrganization.update({
+              where: { id: oldest.id },
+              data: { role: Role.SUPERADMIN },
+            });
+          }
+        }
+        await tx.userOrganization.deleteMany({
+          where: { organizationId: orgId, userId },
+        });
+      }
+
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (user && !user.deletedAt) {
+        // Hash the identifying fields instead of removing the row, the random
+        // suffix keeps [email, providerName] unique if the same email is
+        // deleted more than once
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            email: `deleted_${hash(user.email.toLowerCase())}_${makeId(5)}`,
+            password: null,
+            name: user.name ? hash(user.name) : null,
+            lastName: user.lastName ? hash(user.lastName) : null,
+            providerId: user.providerId ? hash(user.providerId) : null,
+            bio: null,
+            ip: null,
+            agent: null,
+            account: null,
+            pictureId: null,
+            deletedAt: now,
+          },
+        });
+      }
+
+      const postImages = posts.flatMap((post) => {
+        try {
+          return (JSON.parse(post.image || '[]') || []).map(
+            (item: any) => item?.url || item?.path
+          );
+        } catch (err) {
+          return [];
+        }
+      });
+
+      return [
+        ...mediaFiles.map((file) => file.path),
+        ...postImages,
+      ].filter((path): path is string => !!path);
+    });
+  }
+
   updatePassword(id: string, password: string) {
     return this._user.model.user.update({
       where: {

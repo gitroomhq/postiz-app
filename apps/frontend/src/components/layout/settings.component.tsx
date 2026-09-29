@@ -32,6 +32,10 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
 import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
+// postmonster: Account (delete account) and About tabs (PRD 7.1, 7.4)
+import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
+import { AboutComponent } from '@gitroom/frontend/components/settings/about.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -97,16 +101,20 @@ export const SettingsPopup: FC<{
     if (user?.tier?.autoPost) {
       arr.push({ tab: 'autopost', label: t('auto_post', 'Auto Post') });
     }
-    if (user?.tier.current !== 'FREE') {
+    if (user?.tier.current !== 'FREE' && isFeatureEnabled('sets')) {
       arr.push({ tab: 'sets', label: t('sets', 'Sets') });
     }
     if (user?.tier.current !== 'FREE') {
       arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
     }
-    if (user?.tier?.public_api && isGeneral && showLogout) {
+    if (user?.tier?.public_api && isGeneral && showLogout && isFeatureEnabled('publicApi')) {
       arr.push({ tab: 'api', label: t('developers', 'Developers') });
     }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    if (isFeatureEnabled('approvedApps')) {
+      arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    }
+    arr.push({ tab: 'account', label: t('account', 'Account') });
+    arr.push({ tab: 'about', label: t('about', 'About') });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);
@@ -207,7 +215,9 @@ export const SettingsPopup: FC<{
                 </div>
               )}
 
-              {tab === 'sets' && user?.tier.current !== 'FREE' && (
+              {tab === 'sets' &&
+                user?.tier.current !== 'FREE' &&
+                isFeatureEnabled('sets') && (
                 <div>
                   <Sets />
                 </div>
@@ -222,15 +232,28 @@ export const SettingsPopup: FC<{
               {tab === 'api' &&
                 !!user?.tier?.public_api &&
                 isGeneral &&
-                showLogout && (
+                showLogout &&
+                isFeatureEnabled('publicApi') && (
                   <div>
                     <PublicComponent />
                   </div>
                 )}
 
-              {tab === 'approved_apps' && (
+              {tab === 'approved_apps' && isFeatureEnabled('approvedApps') && (
                 <div>
                   <ApprovedAppsComponent />
+                </div>
+              )}
+
+              {tab === 'account' && (
+                <div>
+                  <DeleteAccountComponent />
+                </div>
+              )}
+
+              {tab === 'about' && (
+                <div>
+                  <AboutComponent />
                 </div>
               )}
             </div>

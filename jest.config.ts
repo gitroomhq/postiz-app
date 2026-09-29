@@ -36,6 +36,9 @@ export default {
   moduleNameMapper: {
     // postmonster: ESM-only dependency pulled in transitively by upload code
     '^file-type$': '<rootDir>/jest.stubs/file-type.js',
+    // postmonster: ESM-only dependency pulled in transitively by the provider
+    // registry (integration.manager) through users.service -> integration.service
+    '^nostr-tools$': '<rootDir>/jest.stubs/nostr-tools.js',
     '^@gitroom/backend/(.*)$': '<rootDir>/apps/backend/src/$1',
     '^@gitroom/frontend/(.*)$': '<rootDir>/apps/frontend/src/$1',
     '^@gitroom/helpers/(.*)$': '<rootDir>/libraries/helpers/src/$1',

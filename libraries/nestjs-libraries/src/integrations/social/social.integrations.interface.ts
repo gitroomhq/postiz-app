@@ -15,6 +15,10 @@ export interface IAuthenticator {
     clientInformation?: ClientInformation
   ): Promise<AuthTokenDetails | string>;
   refreshToken(refreshToken: string): Promise<AuthTokenDetails>;
+  // postmonster: revoke the platform grant on Disconnect / account deletion
+  // where the platform supports it (PRD 8.3, e.g. TikTok /v2/oauth/revoke/);
+  // generic code calls it best-effort before wiping the stored tokens
+  revokeToken?(accessToken: string, refreshToken?: string): Promise<void>;
   reConnect?(
     id: string,
     requiredId: string,

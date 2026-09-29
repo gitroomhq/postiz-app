@@ -51,6 +51,7 @@ import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missi
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import i18next from 'i18next';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
+import { NewPost } from '@gitroom/frontend/components/launches/new.post';
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -524,8 +525,12 @@ export const ListView = () => {
 
   if (listPosts.length === 0) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center">
+      <div className="flex flex-col flex-1 items-center justify-center gap-[12px]">
         <div className="text-textColor text-[16px]">{emptyMessage}</div>
+        {/* postmonster: empty state CTA (PRD 7.4) */}
+        <div className="w-[220px]">
+          <NewPost />
+        </div>
       </div>
     );
   }
@@ -566,9 +571,16 @@ export const ListView = () => {
 };
 
 export const Calendar = () => {
-  const { display } = useCalendar();
+  const t = useT();
+  const { display, posts, loading, integrations } = useCalendar();
+  // postmonster: empty calendar hint (PRD 7.4)
+  const empty =
+    display !== 'list' &&
+    !loading &&
+    (integrations?.length || 0) > 0 &&
+    posts.length === 0;
   return (
-    <>
+    <div className="flex flex-1 relative">
       {display === 'list' ? (
         <ListView />
       ) : display === 'day' ? (
@@ -578,7 +590,17 @@ export const Calendar = () => {
       ) : (
         <MonthView />
       )}
-    </>
+      {empty && (
+        <div className="absolute inset-0 z-[15] flex items-center justify-center pointer-events-none">
+          <div className="bg-newBgColorInner border border-newTableBorder rounded-[12px] px-[20px] py-[14px] text-[14px] opacity-90 text-textColor">
+            {t(
+              'calendar_empty_hint',
+              'No posts here yet. Click any time slot to plan your first post.'
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 export const CalendarColumn: FC<{

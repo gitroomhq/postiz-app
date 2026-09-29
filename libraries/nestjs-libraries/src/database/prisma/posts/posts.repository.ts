@@ -9,6 +9,9 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+// postmonster: Publications page (PRD 7.1)
+import { GetPublicationsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.publications.dto';
+import { UNCONFIRMED_ERROR_MARKERS } from '@gitroom/helpers/postmonster/post-status';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -325,6 +328,102 @@ export class PostsRepository {
     };
   }
 
+  // postmonster: Publications page (PRD 7.1) - full post history of the
+  // workspace with the unified status filters (PRD 7.3)
+  async getPublications(orgId: string, query: GetPublicationsDto) {
+    const page = query.page || 0;
+    const limit = query.limit || 20;
+    const skip = page * limit;
+    const now = dayjs.utc().toDate();
+
+    const statusFilter = query.status || 'all';
+    const unconfirmedError = {
+      OR: UNCONFIRMED_ERROR_MARKERS.map((marker) => ({
+        error: { contains: marker, mode: 'insensitive' as const },
+      })),
+    };
+    const statusWhere =
+      statusFilter === 'draft'
+        ? { state: State.DRAFT }
+        : statusFilter === 'scheduled' || statusFilter === 'publishing'
+        ? { state: State.QUEUE }
+        : statusFilter === 'published'
+        ? { state: State.PUBLISHED }
+        : statusFilter === 'failed'
+        ? { state: State.ERROR, NOT: unconfirmedError }
+        : statusFilter === 'needs_check'
+        ? { state: State.ERROR, ...unconfirmedError }
+        : {};
+
+    // the status window and the period filter are separate AND conditions -
+    // merging them into one publishDate object would let one `lte`/`gte`
+    // silently override the other
+    const publishDateConditions = [
+      ...(statusFilter === 'scheduled'
+        ? [{ publishDate: { gt: now } }]
+        : statusFilter === 'publishing'
+        ? [{ publishDate: { lte: now } }]
+        : []),
+      ...(query.from
+        ? [{ publishDate: { gte: dayjs.utc(query.from).toDate() } }]
+        : []),
+      ...(query.to
+        ? [{ publishDate: { lte: dayjs.utc(query.to).toDate() } }]
+        : []),
+    ];
+
+    const where = {
+      organizationId: orgId,
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+      ...statusWhere,
+      ...(query.integrationId ? { integrationId: query.integrationId } : {}),
+      ...(publishDateConditions.length ? { AND: publishDateConditions } : {}),
+      integration: {
+        deletedAt: null as any,
+        organizationId: orgId,
+      },
+    };
+
+    const [posts, total] = await Promise.all([
+      this._post.model.post.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          publishDate: query.order === 'asc' ? 'asc' : 'desc',
+        },
+        select: {
+          id: true,
+          content: true,
+          publishDate: true,
+          releaseURL: true,
+          state: true,
+          error: true,
+          image: true,
+          group: true,
+          integration: {
+            select: {
+              id: true,
+              providerIdentifier: true,
+              name: true,
+              picture: true,
+            },
+          },
+        },
+      }),
+      this._post.model.post.count({ where }),
+    ]);
+
+    return {
+      posts,
+      total,
+      page,
+      limit,
+      hasMore: skip + posts.length < total,
+    };
+  }
+
   async deletePost(orgId: string, group: string) {
     await this._post.model.post.updateMany({
       where: {
@@ -431,6 +530,22 @@ export class PostsRepository {
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
+    // postmonster: keep a human-readable failure reason (PRD 7.3) - Error
+    // subclasses stringify to "{}" which is useless in the UI
+    const humanError = (value: any): string => {
+      if (typeof value === 'string') {
+        return value;
+      }
+      if (value?.message) {
+        return String(value.message);
+      }
+      try {
+        return JSON.stringify(value);
+      } catch (e) {
+        return String(value);
+      }
+    };
+
     const update = await this._post.model.post.update({
       where: {
         id,
@@ -438,7 +553,7 @@ export class PostsRepository {
       data: {
         state,
         ...(err
-          ? { error: typeof err === 'string' ? err : JSON.stringify(err) }
+          ? { error: typeof err === 'string' ? err : humanError(err) }
           : {}),
       },
       include: {
@@ -454,7 +569,7 @@ export class PostsRepository {
       try {
         await this._errors.model.errors.create({
           data: {
-            message: typeof err === 'string' ? err : JSON.stringify(err),
+            message: typeof err === 'string' ? err : humanError(err),
             organizationId: update.organizationId,
             platform: update.integration.providerIdentifier,
             postId: update.id,

@@ -1,7 +1,16 @@
 'use client';
 
-import React, { FC, Fragment, useCallback, useMemo, useState } from 'react';
+import React, {
+  FC,
+  Fragment,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+// postmonster: feature flags for the optional onboarding steps (PRD 7.2)
+import { isFeatureEnabled } from '@gitroom/helpers/postmonster/postmonster.features';
 import useSWR from 'swr';
 import { orderBy } from 'lodash';
 import clsx from 'clsx';
@@ -33,14 +42,44 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
   const modals = useModals();
   const t = useT();
 
-  const steps = useMemo(
-    () => [
-      t('connect_channels', 'Connect Channels'),
-      t('connect_agents', 'Connect Agents'),
-      t('watch_tutorial', 'Watch Tutorial'),
-    ],
-    [t]
-  );
+  // postmonster: the agents/API step belongs to the hidden public API and AI
+  // features (PRD 7.2), the flow just skips it
+  const flow = useMemo(() => {
+    const items: { label: string; content: ReactNode }[] = [
+      {
+        label: t('connect_channels', 'Connect Channels'),
+        content: (
+          <OnboardingStep1
+            onNext={() => setStep(2)}
+            onSkip={() => setStep(2)}
+          />
+        ),
+      },
+    ];
+    if (isFeatureEnabled('publicApi') || isFeatureEnabled('ai')) {
+      items.push({
+        label: t('connect_agents', 'Connect Agents'),
+        content: (
+          <OnboardingStep2
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
+          />
+        ),
+      });
+    }
+    items.push({
+      label: t('watch_tutorial', 'Watch Tutorial'),
+      content: (
+        <OnboardingStep3
+          onBack={() => setStep(items.length - 1)}
+          onFinish={onClose}
+        />
+      ),
+    });
+    return items;
+  }, [t, onClose]);
+
+  const current = Math.min(step, flow.length);
 
   return (
     <div className="w-full min-h-full flex-1 p-[24px] flex relative">
@@ -70,8 +109,8 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
           <div className="flex flex-col gap-[24px] flex-1">
             {/* Step indicators */}
             <div className="flex items-center justify-center gap-[16px]">
-              {steps.map((label, index) => (
-                <Fragment key={label}>
+              {flow.map((item, index) => (
+                <Fragment key={item.label}>
                   {index > 0 && (
                     <div className="w-[40px] h-[2px] bg-boxFocused" />
                   )}
@@ -79,7 +118,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
                     <div
                       className={clsx(
                         'w-[32px] h-[32px] rounded-full flex items-center justify-center text-[14px] font-semibold transition-colors',
-                        step === index + 1
+                        current === index + 1
                           ? 'bg-boxFocused text-textItemFocused'
                           : 'bg-newTableHeader'
                       )}
@@ -89,10 +128,10 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
                     <span
                       className={clsx(
                         'text-[14px]',
-                        step === index + 1 ? 'font-medium' : 'text-textColor'
+                        current === index + 1 ? 'font-medium' : 'text-textColor'
                       )}
                     >
-                      {label}
+                      {item.label}
                     </span>
                   </div>
                 </Fragment>
@@ -100,21 +139,7 @@ export const OnboardingModal: FC<OnboardingModalProps> = ({ onClose }) => {
             </div>
 
             {/* Step content */}
-            {step === 1 && (
-              <OnboardingStep1
-                onNext={() => setStep(2)}
-                onSkip={() => setStep(2)}
-              />
-            )}
-            {step === 2 && (
-              <OnboardingStep2
-                onBack={() => setStep(1)}
-                onNext={() => setStep(3)}
-              />
-            )}
-            {step === 3 && (
-              <OnboardingStep3 onBack={() => setStep(2)} onFinish={onClose} />
-            )}
+            {flow[current - 1].content}
           </div>
         </div>
       </div>
