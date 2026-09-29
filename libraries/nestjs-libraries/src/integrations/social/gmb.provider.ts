@@ -5,7 +5,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
@@ -157,7 +157,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(7);
+    const state = makeSecureId(7);
     const { client } = clientAndGmb();
     return {
       url: client.generateAuthUrl({
@@ -167,7 +167,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/gmb`,
         scope: this.scopes.slice(0),
       }),
-      codeVerifier: makeId(11),
+      codeVerifier: makeSecureId(11),
       state,
     };
   }
@@ -508,8 +508,9 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     const postId = postData.name;
     const locationId = id.split('/').pop();
 
-    // GMB posts don't have direct URLs, but we can link to the business profile
-    const releaseURL = `https://business.google.com/locations/${locationId}`;
+    const releaseURL =
+      postData.searchUrl ||
+      `https://business.google.com/locations/${locationId}`;
 
     return [
       {

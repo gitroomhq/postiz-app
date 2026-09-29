@@ -12,7 +12,7 @@ export interface Voice {
   preview_url: string;
 }
 
-const VEO3Settings: FC = () => {
+const SeedanceSettings: FC = () => {
   const { register, watch, setValue, formState } = useFormContext();
   const { value } = useVideo();
 
@@ -57,8 +57,8 @@ const VEO3Settings: FC = () => {
   );
 };
 
-const VeoComponent = () => {
-  return <VEO3Settings />;
+const SeedanceComponent = () => {
+  return <SeedanceSettings />;
 };
 
-videoWrapper('veo3', VeoComponent);
+videoWrapper('seedance', SeedanceComponent);

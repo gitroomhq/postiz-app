@@ -4,9 +4,13 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import dayjs from 'dayjs';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  BadBody,
+  RefreshToken,
+  SocialAbstract,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { createHash, randomBytes } from 'crypto';
 import FormDataNew from 'form-data';
 import mime from 'mime-types';
@@ -40,7 +44,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     formData.append('refresh_token', oldRefreshToken);
     formData.append('client_id', process.env.VK_ID!);
     formData.append('device_id', device_id);
-    formData.append('state', makeId(32));
+    formData.append('state', makeSecureId(32));
     formData.append('scope', this.scopes.join(' '));
 
     const { access_token, refresh_token, expires_in } = await (
@@ -75,7 +79,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(32);
+    const state = makeSecureId(32);
     const codeVerifier = randomBytes(64).toString('base64url');
     const challenge = Buffer.from(
       createHash('sha256').update(codeVerifier).digest()
@@ -229,6 +233,23 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
     );
   }
 
+  // VK answers HTTP 200 with { error } instead of { response } on failures,
+  // so this.fetch never sees them and the post used to be marked completed.
+  private checkApiError(all: any) {
+    if (!all?.error) {
+      return;
+    }
+    const json = JSON.stringify(all);
+    const message = all.error.error_msg || 'VK rejected the request';
+    if (all.error.error_code === 5) {
+      throw new RefreshToken(this.identifier, json, Buffer.from('{}'), message);
+    }
+    if ([6, 9, 29].includes(all.error.error_code)) {
+      throw new Error(message);
+    }
+    throw new BadBody(this.identifier, json, Buffer.from('{}'), message);
+  }
+
   async post(
     userId: string,
     accessToken: string,
@@ -249,7 +270,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       );
     }
 
-    const { response } = await (
+    const all = await (
       await this.fetch(
         `https://api.vk.com/method/wall.post?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
         {
@@ -258,6 +279,8 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
         }
       )
     ).json();
+    this.checkApiError(all);
+    const { response } = all;
 
     return [
       {
@@ -293,7 +316,7 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
       );
     }
 
-    const { response } = await (
+    const all = await (
       await this.fetch(
         `https://api.vk.com/method/wall.createComment?v=5.251&access_token=${accessToken}&client_id=${process.env.VK_ID}`,
         {
@@ -302,6 +325,8 @@ export class VkProvider extends SocialAbstract implements SocialProvider {
         }
       )
     ).json();
+    this.checkApiError(all);
+    const { response } = all;
 
     return [
       {

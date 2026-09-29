@@ -5,10 +5,12 @@ import {
 
 @AuthProvider({ provider: 'GITHUB' })
 export class GithubProvider extends AuthProviderAbstract {
-  generateLink(): string {
+  generateLink(query?: { state?: string }): string {
     return `https://github.com/login/oauth/authorize?client_id=${
       process.env.GITHUB_CLIENT_ID
-    }&scope=user:email&redirect_uri=${encodeURIComponent(
+    }&scope=user:email&state=${
+      query?.state || 'login'
+    }&redirect_uri=${encodeURIComponent(
       `${process.env.FRONTEND_URL}/settings`
     )}`;
   }

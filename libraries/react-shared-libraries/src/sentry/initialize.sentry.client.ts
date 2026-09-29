@@ -28,7 +28,8 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       Sentry.browserProfilingIntegration(),
       Sentry.replayIntegration({
         maskAllText: false,
-        maskAllInputs: true,
+        maskAllInputs: false,
+        blockAllMedia: false,
       }),
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget
@@ -37,8 +38,8 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       }),
       Sentry.replayCanvasIntegration(),
     ],
-    replaysSessionSampleRate: 1.0,
+    replaysSessionSampleRate: 0.4,
     replaysOnErrorSampleRate: 1.0,
 
-    profilesSampleRate: environment === 'development' ? 1.0 : 0.75,
+    profilesSampleRate: environment === 'development' ? 1.0 : 0.60,
   });

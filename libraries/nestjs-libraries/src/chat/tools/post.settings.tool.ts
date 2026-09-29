@@ -19,7 +19,7 @@ export class PostSettingsTool implements AgentToolInterface {
           readOnlyHint: false,
           destructiveHint: false,
           idempotentHint: false,
-          openWorldHint: true,
+          openWorldHint: false,
         },
       },
       description: `
@@ -28,7 +28,7 @@ Only the settings change - the content and the publish date stay exactly as they
 Find the post first (list your posts) and pass its "id" here.
 The settings are merged into the existing ones, so only pass the keys you want to change; anything you don't pass stays as it is.
 This relies on the integrationSchema tool [input:settings] to know which keys exist for the platform.
-If the tool returns errors, rerun it with the right parameters, don't ask again, just run it.
+If validation fails, the result contains output.errors describing what to fix; the call can be retried with corrected parameters.
 `,
       inputSchema: z.object({
         id: z
@@ -41,7 +41,7 @@ If the tool returns errors, rerun it with the right parameters, don't ask again,
               value: z
                 .any()
                 .describe(
-                  'New value of the key, always prefer the id then label if possible'
+                  'New value of the key, always prefer the id then label if possible. When the settings schema says a field is an id, pass the id returned by the channel tools, never the display label'
                 ),
             })
           )

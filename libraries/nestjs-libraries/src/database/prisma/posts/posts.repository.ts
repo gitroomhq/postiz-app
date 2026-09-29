@@ -177,6 +177,11 @@ export class PostsRepository {
         creationMethod: true,
         settings: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -289,6 +294,11 @@ export class PostsRepository {
           group: true,
           creationMethod: true,
           tags: {
+            where: {
+              tag: {
+                deletedAt: null,
+              },
+            },
             select: {
               tag: true,
             },
@@ -348,6 +358,11 @@ export class PostsRepository {
       include: {
         integration: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -373,6 +388,11 @@ export class PostsRepository {
           ? {
               integration: true,
               tags: {
+                where: {
+                  tag: {
+                    deletedAt: null,
+                  },
+                },
                 select: {
                   tag: true,
                 },
@@ -598,6 +618,7 @@ export class PostsRepository {
           const tagsList = await this._tags.model.tags.findMany({
             where: {
               orgId: orgId,
+              deletedAt: null,
               name: {
                 in: tags.map((tag) => tag.label).filter((f) => f),
               },
@@ -734,6 +755,59 @@ export class PostsRepository {
     });
   }
 
+  private get postTimelineSelect() {
+    return {
+      id: true,
+      state: true,
+      publishDate: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      releaseId: true,
+      releaseURL: true,
+      error: true,
+      creationMethod: true,
+      group: true,
+      parentPostId: true,
+    } as const;
+  }
+
+  getPostTimeline(id: string, org: string) {
+    return this._post.model.post.findFirst({
+      where: {
+        id,
+        organizationId: org,
+      },
+      select: {
+        ...this.postTimelineSelect,
+        integration: {
+          select: {
+            id: true,
+            name: true,
+            providerIdentifier: true,
+            disabled: true,
+            refreshNeeded: true,
+            deletedAt: true,
+          },
+        },
+        childrenPost: {
+          select: this.postTimelineSelect,
+          orderBy: { publishDate: 'asc' as const },
+        },
+        errors: {
+          select: {
+            id: true,
+            platform: true,
+            message: true,
+            body: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' as const },
+        },
+      },
+    });
+  }
+
   findAllExistingCategories() {
     return this._popularPosts.model.popularPosts.findMany({
       select: {
@@ -814,13 +888,79 @@ export class PostsRepository {
     );
   }
 
-  async getComments(postId: string) {
+  getCommentsForPosts(postIds: string[]) {
     return this._comments.model.comments.findMany({
       where: {
-        postId,
+        postId: {
+          in: postIds,
+        },
+        deletedAt: null,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            lastName: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
+      },
+    });
+  }
+
+  getCommentById(id: string) {
+    return this._comments.model.comments.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
+      include: {
+        post: {
+          select: {
+            id: true,
+            organizationId: true,
+          },
+        },
+      },
+    });
+  }
+
+  setCommentResolved(id: string, resolvedAt: Date | null) {
+    return this._comments.model.comments.update({
+      where: {
+        id,
+      },
+      data: {
+        resolvedAt,
+      },
+    });
+  }
+
+  getAnchoredCommentsForPost(postId: string) {
+    return this._comments.model.comments.findMany({
+      where: {
+        postId,
+        deletedAt: null,
+        anchorStart: {
+          not: null,
+        },
+      },
+    });
+  }
+
+  detachAnchorsForPost(postId: string, ids: string[]) {
+    return this._comments.model.comments.updateMany({
+      where: {
+        postId,
+        id: {
+          in: ids,
+        },
+      },
+      data: {
+        anchorStart: null,
+        anchorEnd: null,
       },
     });
   }
@@ -856,8 +996,8 @@ export class PostsRepository {
     });
   }
 
-  deleteTag(id: string, orgId: string) {
-    return this._tags.model.tags.update({
+  async deleteTag(id: string, orgId: string) {
+    const tag = await this._tags.model.tags.update({
       where: {
         id,
         orgId,
@@ -866,13 +1006,28 @@ export class PostsRepository {
         deletedAt: new Date(),
       },
     });
+
+    await this._tagsPosts.model.tagsPosts.deleteMany({
+      where: {
+        tagId: tag.id,
+      },
+    });
+
+    return tag;
   }
 
   createComment(
     orgId: string,
-    userId: string,
+    userId: string | null,
     postId: string,
-    content: string
+    content: string,
+    extra: {
+      displayName?: string;
+      parentId?: string;
+      anchorStart?: number;
+      anchorEnd?: number;
+      anchorQuote?: string;
+    } = {}
   ) {
     return this._comments.model.comments.create({
       data: {
@@ -880,33 +1035,60 @@ export class PostsRepository {
         userId,
         postId,
         content,
+        displayName: extra.displayName ?? null,
+        parentId: extra.parentId ?? null,
+        anchorStart: extra.anchorStart ?? null,
+        anchorEnd: extra.anchorEnd ?? null,
+        anchorQuote: extra.anchorQuote ?? null,
       },
     });
   }
 
-  async getPostByForWebhookId(postId: string) {
-    return this._post.model.post.findMany({
+  async getPostByForWebhookId(postId: string, integrationId: string) {
+    const select = {
+      id: true,
+      content: true,
+      publishDate: true,
+      releaseURL: true,
+      state: true,
+      integration: {
+        select: {
+          id: true,
+          name: true,
+          providerIdentifier: true,
+          picture: true,
+          type: true,
+        },
+      },
+    };
+
+    const posts = await this._post.model.post.findMany({
       where: {
         id: postId,
         deletedAt: null,
         parentPostId: null,
       },
-      select: {
-        id: true,
-        content: true,
-        publishDate: true,
-        releaseURL: true,
-        state: true,
-        integration: {
-          select: {
-            id: true,
-            name: true,
-            providerIdentifier: true,
-            picture: true,
-            type: true,
-          },
-        },
+      select,
+    });
+
+    if (posts.length) {
+      return posts;
+    }
+
+    // The running workflows pass the platform's post id, which updatePost
+    // already stored on the row as releaseId before the webhook is sent.
+    return this._post.model.post.findMany({
+      where: {
+        releaseId: postId,
+        integrationId,
+        deletedAt: null,
+        parentPostId: null,
       },
+      orderBy: {
+        updatedAt: 'desc' as const,
+      },
+      take: 1,
+      select,
     });
   }
 

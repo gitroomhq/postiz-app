@@ -1,11 +1,12 @@
-import { proxyActivities, sleep } from '@temporalio/workflow';
+import { patched, proxyActivities, sleep } from '@temporalio/workflow';
 import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
 
-const { sendEmailAsync, getUserOrgs, setStreak } = proxyActivities<EmailActivity>({
-  startToCloseTimeout: '10 minute',
-  taskQueue: 'main',
-  cancellationType: 'ABANDON',
-});
+const { sendEmailAsync, getUserOrgs, setStreak } =
+  proxyActivities<EmailActivity>({
+    startToCloseTimeout: '10 minute',
+    taskQueue: 'main',
+    cancellationType: 'ABANDON',
+  });
 
 export async function streakWorkflow({
   organizationId,
@@ -15,17 +16,35 @@ export async function streakWorkflow({
   await setStreak(organizationId, 'start');
   await sleep(79200000);
   const userOrgs = await getUserOrgs(organizationId);
-  for (const user of userOrgs.users) {
-    if (!user.user.sendStreakEmails) {
-      continue;
+
+  if (!patched('reminder')) {
+    for (const user of userOrgs.users) {
+      if (!user.user.sendStreakEmails) {
+        continue;
+      }
+      await sendEmailAsync(
+        user.user.email,
+        'Streak Reminder',
+        '<p>You are about to lose your streak in two hours! schedule a post now to keep it!</p>',
+        'bottom'
+      );
     }
-    await sendEmailAsync(
-      user.user.email,
-      'Streak Reminder',
-      '<p>You are about to lose your streak in two hours! schedule a post now to keep it!</p>',
-      'bottom'
-    );
   }
+
   await sleep(7200000);
+
+  if (patched('reminder')) {
+    for (const user of userOrgs.users) {
+      if (!user.user.sendStreakEmails) {
+        continue;
+      }
+      await sendEmailAsync(
+        user.user.email,
+        'Streak Ended',
+        '<p>Your streak has ended! You didn\'t post anything in the last 24 hours. Schedule a post now to start a new streak!</p>',
+        'bottom'
+      );
+    }
+  }
   await setStreak(organizationId, 'end');
 }
