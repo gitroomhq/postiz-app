@@ -119,6 +119,11 @@ const fetchUploadApiEndpoint = async (
       'Content-Type': 'application/json',
     },
   });
+  // customFetch does not throw on HTTP errors, and Uppy treats whatever this
+  // returns as a successful step
+  if (!res.ok) {
+    throw new Error(await res.text().catch(() => ''));
+  }
   return res.json();
 };
 
