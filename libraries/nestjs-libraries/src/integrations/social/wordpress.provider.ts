@@ -15,6 +15,8 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
 
+const WORDPRESS_USER_AGENT = 'Postiz/1.0 (+https://postiz.com)';
+
 export class WordpressProvider
   extends SocialAbstract
   implements SocialProvider
@@ -114,6 +116,7 @@ export class WordpressProvider
       response = await fetch(`${domain}/wp-json/wp/v2/users/me`, {
         headers: {
           Authorization: `Basic ${auth}`,
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
         // @ts-ignore - undici-only option; blocks SSRF to internal IPs
         dispatcher: getSsrfSafeDispatcher(),
@@ -212,6 +215,7 @@ export class WordpressProvider
     const response = await fetch(`${body.domain}${path}`, {
       headers: {
         Authorization: `Basic ${auth}`,
+        'User-Agent': WORDPRESS_USER_AGENT,
       },
       // @ts-ignore - undici-only option; blocks SSRF to internal IPs
       dispatcher: getSsrfSafeDispatcher(),
@@ -312,6 +316,7 @@ export class WordpressProvider
               .split('/')
               .pop()}"`,
             'Content-Type': blob.type,
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           body: blob,
         })
@@ -334,6 +339,7 @@ export class WordpressProvider
           headers: {
             Authorization: `Basic ${auth}`,
             'Content-Type': 'application/json',
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           method: 'POST',
           body: JSON.stringify({
