@@ -102,7 +102,7 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
             }
           }
 
-          if (isThirdPartyOnly(event)) {
+          if (typeof window !== 'undefined' && isThirdPartyOnly(event)) {
             event.tags = { ...event.tags, third_party_code: true };
           }
 
