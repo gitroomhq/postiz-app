@@ -107,11 +107,21 @@ services:
     expose:
       - '5000'
     networks:
-      - postmonster-network
-      - temporal-network
+      postmonster-network:
+      temporal-network:
       # Coolify's shared proxy network (Traefik). Without this the proxy
       # cannot reach the container and answers 504 Gateway Timeout.
-      - coolify
+      # postmonster: pinned addresses on the shared coolify network
+      # (subnet 10.0.1.0/24, IPv6 fd99:6513:f442::/64). Every redeploy
+      # recreates the container and Docker hands out a new address, while
+      # Traefik keeps dialing the previous one -> 504 on all paths until the
+      # proxy reloads. With the address pinned the route stays valid across
+      # redeploys and the shared proxy never needs to be touched (the server
+      # hosts other projects). If a deploy ever fails with "address already
+      # in use", pick another free address inside those subnets.
+      coolify:
+        ipv4_address: 10.0.1.16
+        ipv6_address: fd99:6513:f442::10
     depends_on:
       postgres:
         condition: service_healthy
