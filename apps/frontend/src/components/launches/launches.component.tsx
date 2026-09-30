@@ -215,6 +215,7 @@ export const MenuGroupComponent: FC<
       const val: string | undefined = await new Promise((resolve) => {
         modals.openModal({
           title: t('edit_group_name', 'Edit group name'),
+          onClose: () => resolve(undefined),
           children: (close) => (
             <EditGroupNameModal
               name={group.name}
