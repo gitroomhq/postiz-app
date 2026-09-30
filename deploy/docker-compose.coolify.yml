@@ -267,6 +267,12 @@ services:
       - POSTGRES_PWD=temporal
       - DBNAME=temporal
       - POSTGRES_SEEDS=temporal-postgresql
+      # postmonster: without this the entrypoint binds the gRPC frontend to a
+      # single address from `getent hosts $(hostname)` and every client (the
+      # auto-setup CLI, the app) gets "connection refused" on the container IP
+      # while the server itself runs fine. 0.0.0.0 is the documented setting
+      # for the temporalio docker images.
+      - BIND_ON_IP=0.0.0.0
       # No DYNAMIC_CONFIG_FILE_PATH / bind mount on purpose: relative bind
       # mounts resolve from the compose project directory, which differs
       # between Coolify (--project-directory = repo root) and local runs,
