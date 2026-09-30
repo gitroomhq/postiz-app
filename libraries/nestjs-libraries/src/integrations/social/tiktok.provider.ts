@@ -18,17 +18,33 @@ import {
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
-import { createReadStream } from 'fs';
-import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+// postmonster: TikTok Direct Post audit modules (PRD 8.2)
+import {
+  TikTokCantPostError,
+  TikTokCreatorInfo,
+  TikTokPostSettings,
+  validateTikTokSettings,
+  validateTikTokStaticSettings,
+} from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.validation';
+import {
+  isTikTokCantPostCode,
+  mapTikTokErrorBody,
+  mapTikTokErrorCode,
+} from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.errors';
+import {
+  creatorInfoCacheKey,
+  getCreatorInfoCache,
+  setCreatorInfoCache,
+} from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.creator-info.cache';
 
 @Rules(
   [
     'TikTok can have one video or one picture or multiple pictures, it cannot be without an attachment.',
-    'content_posting_method=DIRECT_POST publishes the post to the account. content_posting_method=UPLOAD does NOT publish: it only sends the media to the user inbox of the TikTok app, where the user must manually complete and publish it within 24 hours or it is discarded. Use DIRECT_POST unless the user explicitly asks to review or edit the post inside the TikTok app first.',
-    'With content_posting_method=UPLOAD, TikTok ignores every setting except the title / post content. Never tell the user that video_made_with_ai, privacy_level, duet, stitch, comment, autoAddMusic, brand_content_toggle or brand_organic_toggle will be applied in UPLOAD mode - they are silently discarded. If the user asks for any of those settings, tell them it requires DIRECT_POST.',
-    'video_made_with_ai, duet and stitch apply to video posts only. TikTok has no equivalent field for photo posts, so those settings are discarded when the attachment is a picture.',
+    'The post is always published directly to the TikTok account (Direct Post).',
+    'privacy_level is required, has no default and must be one of the privacy_level_options of the connected account. Branded content cannot be combined with private (SELF_ONLY) visibility.',
+    'duet and stitch apply to video posts only, photo posts only take comments. All interaction settings default to off.',
   ].join(' ')
 )
 export class TiktokProvider extends SocialAbstract implements SocialProvider {
@@ -36,24 +52,29 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   name = 'Tiktok';
   isBetweenSteps = false;
   convertToJPEG = true;
-  scopes = [
-    'video.list',
-    'user.info.basic',
-    'video.publish',
-    'video.upload',
-    'user.info.profile',
-    'user.info.stats',
-  ];
+  // postmonster: minimal scopes for the Content Posting audit (PRD 8.1)
+  scopes = ['user.info.basic', 'video.publish'];
   override maxConcurrentJob = 10000;
   dto = TikTokDto;
   editor = 'normal' as const;
+  // postmonster: video caption limit, UTF-16 runes (PRD TT-04)
   maxLength() {
-    return 2000;
+    return 2200;
   }
 
   override async checkValidity(
-    items: Array<ValidityMedia[]>
+    items: Array<ValidityMedia[]>,
+    settings?: TikTokDto
   ): Promise<string | true> {
+    // postmonster: static settings rules before media checks (PRD TT-05/08/10/22)
+    const settingsErrors = validateTikTokStaticSettings(
+      (settings || {}) as TikTokPostSettings,
+      this.isAudited()
+    );
+    if (settingsErrors.length) {
+      return settingsErrors[0];
+    }
+
     const [firstItems] = items ?? [];
     if ((firstItems?.length ?? 0) === 0) {
       return 'No video / images selected';
@@ -94,6 +115,19 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         value: string;
       }
     | undefined {
+    // postmonster: shared TikTok error table (PRD TT-20) takes precedence; the
+    // legacy per-code branches below stay as fallback for codes outside it.
+    const mapped = mapTikTokErrorBody(body);
+    if (mapped) {
+      const type =
+        mapped.code === 'access_token_invalid'
+          ? ('refresh-token' as const)
+          : mapped.action === 'reconnect'
+            ? ('disconnect' as const)
+            : ('bad-body' as const);
+      return { type, value: mapped.message };
+    }
+
     // Authentication/Authorization errors - require re-authentication
     if (body.indexOf('access_token_invalid') > -1) {
       return {
@@ -313,11 +347,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id, username },
+        user: { avatar_url, display_name, open_id },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
         {
           method: 'GET',
           headers: {
@@ -326,6 +360,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         }
       )
     ).json();
+
+    // postmonster: username comes from creator_info/query - the user/info
+    // username field needs the user.info.username scope we no longer request
+    // (PRD 8.1). A capped account can still connect: the composer shows the
+    // TT-02 state from creator_info later.
+    let username = '';
+    try {
+      username = (await this.queryCreatorInfo(access_token)).creator_username;
+    } catch {
+      username = '';
+    }
 
     return {
       refreshToken: refresh_token,
@@ -411,11 +456,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     const {
       data: {
-        user: { avatar_url, display_name, open_id, username },
+        user: { avatar_url, display_name, open_id },
       },
     } = await (
       await fetch(
-        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id,username',
+        'https://open.tiktokapis.com/v2/user/info/?fields=open_id,avatar_url,display_name,union_id',
         {
           method: 'GET',
           headers: {
@@ -424,6 +469,17 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         }
       )
     ).json();
+
+    // postmonster: username comes from creator_info/query - the user/info
+    // username field needs the user.info.username scope we no longer request
+    // (PRD 8.1). A capped account can still connect: the composer shows the
+    // TT-02 state from creator_info later.
+    let username = '';
+    try {
+      username = (await this.queryCreatorInfo(access_token)).creator_username;
+    } catch {
+      username = '';
+    }
 
     return {
       id: open_id.replace(/-/g, ''),
@@ -436,24 +492,103 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
-  async maxVideoLength(accessToken: string) {
-    const {
-      data: { max_video_post_duration_sec },
-    } = await (
-      await fetch(
-        'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      )
-    ).json();
+  // postmonster: TIKTOK_AUDITED turns the unaudited-client restrictions
+  // (PRD TT-18/TT-22) off once the app passes the TikTok content audit.
+  private isAudited(): boolean {
+    return String(process.env.TIKTOK_AUDITED || '').toLowerCase() === 'true';
+  }
 
+  // postmonster: TT-01 - creator_info/query returns the account profile, the
+  // available privacy_level_options, the interaction switches and the video
+  // duration limit. Cached in-process for up to 60 seconds (API limit is
+  // 20 requests per minute per token). Throws TikTokCantPostError on the
+  // "can not post right now" codes - they arrive as error.code with HTTP 200
+  // (TT-02).
+  async queryCreatorInfo(accessToken: string): Promise<TikTokCreatorInfo> {
+    const key = creatorInfoCacheKey(this.identifier, accessToken);
+    const cached = getCreatorInfoCache(key);
+    if (cached) {
+      return cached;
+    }
+
+    let body: any;
+    try {
+      body = await (
+        await this.fetch(
+          'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+          '',
+          0,
+          true
+        )
+      ).json();
+    } catch (err) {
+      if (err instanceof RefreshToken || err instanceof Disconnect) {
+        throw err;
+      }
+      throw new BadBody(
+        'tiktok-creator-info',
+        '{}',
+        Buffer.from('{}'),
+        'Could not load TikTok account info. Please try again.'
+      );
+    }
+
+    const error = body?.error;
+    if (error?.code && error.code !== 'ok') {
+      if (isTikTokCantPostCode(error.code)) {
+        throw new TikTokCantPostError(error.code);
+      }
+      const handleError = this.handleErrors(JSON.stringify(body));
+      if (handleError?.type === 'refresh-token') {
+        throw new RefreshToken(
+          'tiktok-creator-info',
+          JSON.stringify(body),
+          '',
+          handleError.value
+        );
+      }
+      if (handleError?.type === 'disconnect') {
+        throw new Disconnect(
+          'tiktok-creator-info',
+          JSON.stringify(body),
+          '',
+          handleError.value
+        );
+      }
+      throw new BadBody(
+        'tiktok-creator-info',
+        JSON.stringify(body),
+        Buffer.from(JSON.stringify(body)),
+        handleError?.value || 'Could not load TikTok account info.'
+      );
+    }
+
+    const data = body?.data || {};
+    const creator: TikTokCreatorInfo = {
+      creator_avatar_url: data.creator_avatar_url || '',
+      creator_username: data.creator_username || '',
+      creator_nickname: data.creator_nickname || '',
+      privacy_level_options: data.privacy_level_options || [],
+      comment_disabled: !!data.comment_disabled,
+      duet_disabled: !!data.duet_disabled,
+      stitch_disabled: !!data.stitch_disabled,
+      max_video_post_duration_sec: data.max_video_post_duration_sec || 0,
+    };
+    setCreatorInfoCache(key, creator);
+    return creator;
+  }
+
+  async maxVideoLength(accessToken: string) {
+    const creator = await this.queryCreatorInfo(accessToken);
     return {
-      maxDurationSeconds: max_video_post_duration_sec,
+      maxDurationSeconds: creator.max_video_post_duration_sec,
     };
   }
 
@@ -461,11 +596,35 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // a `pending` PostResponse right after the upload, and the post workflow polls
   // this method with durable timers, so a stuck/retried check can never re-run
   // the publish and duplicate the post.
+  //
+  // postmonster (PRD TT-15): real API calls follow an exponential backoff
+  // (5s, 10s, 20s ... capped at 5 minutes; the status API allows 30 req/min)
+  // while the workflow keeps ticking every 20 seconds for up to 30 minutes.
+  // Statuses map to the PRD 7.3 model: PROCESSING_* -> still publishing,
+  // PUBLISH_COMPLETE -> Published, FAILED -> Failed with a mapped fail_reason
+  // (TT-20).
   override async checkPostStatus(
     accessToken: string,
-    pendingData: { publishId: string },
+    pendingData: {
+      publishId: string;
+      checks?: number;
+      nextCheckAt?: number;
+    },
     integration: Integration
   ): Promise<PendingCheckResponse> {
+    const now = Date.now();
+    if (pendingData.nextCheckAt && now < pendingData.nextCheckAt) {
+      // backoff window: no API call, just tell the workflow to keep waiting
+      return { status: 'pending', pendingData };
+    }
+
+    const checks = (pendingData.checks || 0) + 1;
+    const nextPending = {
+      publishId: pendingData.publishId,
+      checks,
+      nextCheckAt: now + Math.min(5000 * Math.pow(2, checks - 1), 5 * 60 * 1000),
+    };
+
     let post: any;
     try {
       post = await (
@@ -494,21 +653,16 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       // Transient API error while checking the status: the post may already
       // be live, so keep polling instead of failing it - if the API stays
       // broken the caller exhausts its checks and warns the user properly.
-      return { status: 'pending', pendingData };
+      return { status: 'pending', pendingData: nextPending };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
-
-    if (status === 'SEND_TO_USER_INBOX') {
-      return {
-        status: 'completed',
-        releaseURL: 'https://www.tiktok.com/messages?lang=en',
-        postId: 'missing',
-      };
-    }
+    const { status, fail_reason, publicaly_available_post_id } =
+      post?.data || {};
 
     if (status === 'PUBLISH_COMPLETE') {
-      // an empty array is truthy, so index it once and branch on the value
+      // an empty array is truthy, so index it once and branch on the value;
+      // publicaly_available_post_id (sic) only arrives for public posts after
+      // moderation - a private post is Published without a link (PRD TT-15)
       const publicPostId = publicaly_available_post_id?.[0];
 
       return {
@@ -522,303 +676,81 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (status === 'FAILED') {
-      const handleError = this.handleErrors(JSON.stringify(post));
+      // postmonster: TT-20 - fail_reason maps to a human message + action
+      const mapped =
+        mapTikTokErrorCode(fail_reason) ||
+        mapTikTokErrorBody(JSON.stringify(post));
       throw new BadBody(
-        'titok-error-upload',
+        'tiktok-error-upload',
         JSON.stringify(post),
         Buffer.from(JSON.stringify(post)),
-        handleError?.value || ''
+        mapped?.message || 'TikTok failed to publish this post.'
       );
     }
 
-    return { status: 'pending', pendingData };
+    // PROCESSING_UPLOAD / PROCESSING_DOWNLOAD: keep polling
+    return { status: 'pending', pendingData: nextPending };
   }
 
-  // UPLOAD does not publish - it only drops the media into the user's TikTok
-  // inbox - so only an explicit UPLOAD selects it. A missing value (drafts, or
-  // any caller that skipped the setting) publishes instead of silently landing
-  // in the inbox.
-  private contentPostingMethod(
-    firstPost: PostDetails<TikTokDto>
-  ): TikTokDto['content_posting_method'] {
-    return firstPost?.settings?.content_posting_method === 'UPLOAD'
-      ? 'UPLOAD'
-      : 'DIRECT_POST';
+  // postmonster: Direct Post only - the inbox/upload mode (video.upload) is
+  // outside the reviewed scopes and was removed (PRD 8.1).
+  private postingMethod(isPhoto: boolean): string {
+    return isPhoto ? '/content/init/' : '/video/init/';
   }
 
-  private postingMethod(
-    method: TikTokDto['content_posting_method'],
-    isPhoto: boolean
-  ): string {
-    switch (method) {
-      case 'UPLOAD':
-        return isPhoto ? '/content/init/' : '/inbox/video/init/';
-      case 'DIRECT_POST':
-      default:
-        return isPhoto ? '/content/init/' : '/video/init/';
-    }
-  }
-
+  // postmonster: Direct Post post_info (PRD TT-04..TT-07). privacy_level is
+  // required and never defaulted (TT-05); Allow-flags invert into disable_*;
+  // is_aigc / auto_add_music are intentionally not sent.
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-    const method = this.contentPostingMethod(firstPost);
-
-    if (method === 'DIRECT_POST') {
-      return {
-        post_info: {
-          ...(isPhoto && firstPost.settings.title
-            ? { title: firstPost.settings.title.slice(0, 90) }
-            : {}),
-          ...(!isPhoto && firstPost.message
-            ? { title: firstPost.message }
-            : {}),
-          ...(isPhoto ? { description: firstPost.message } : {}),
-          privacy_level:
-            firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-          ...(isPhoto
-            ? {}
-            : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
-          disable_comment: !this.assetBoolean(firstPost.settings.comment),
-          ...(isPhoto
-            ? {}
-            : {
-                disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
-              }),
-          ...(isPhoto
-            ? {}
-            : {
-                is_aigc: this.assetBoolean(
-                  firstPost.settings.video_made_with_ai
-                ),
-              }),
-          brand_content_toggle: this.assetBoolean(
-            firstPost.settings.brand_content_toggle
-          ),
-          brand_organic_toggle: this.assetBoolean(
-            firstPost.settings.brand_organic_toggle
-          ),
-          ...(isPhoto
-            ? {
-                auto_add_music: firstPost.settings.autoAddMusic === 'yes',
-              }
-            : {}),
-        },
-      };
-    }
+    const settings = firstPost.settings || ({} as TikTokDto);
 
     return {
       post_info: {
-        ...(isPhoto && firstPost.settings.title
-          ? { title: firstPost.settings.title }
-          : {}),
-        ...(!isPhoto && firstPost.message ? { title: firstPost.message } : {}),
-        ...(isPhoto ? { description: firstPost.message } : {}),
+        ...(isPhoto
+          ? {
+              ...(settings.title
+                ? { title: settings.title.slice(0, 90) }
+                : {}),
+              ...(firstPost.message
+                ? { description: firstPost.message }
+                : {}),
+            }
+          : firstPost.message
+            ? { title: firstPost.message }
+            : {}),
+        privacy_level: settings.privacy_level,
+        disable_comment: !this.assetBoolean(settings.comment),
+        ...(isPhoto
+          ? {}
+          : {
+              disable_duet: !this.assetBoolean(settings.duet),
+              disable_stitch: !this.assetBoolean(settings.stitch),
+              ...(firstPost?.media?.[0]?.thumbnailTimestamp
+                ? {
+                    video_cover_timestamp_ms:
+                      firstPost.media[0].thumbnailTimestamp,
+                  }
+                : {}),
+            }),
+        brand_content_toggle: this.assetBoolean(settings.brand_content_toggle),
+        brand_organic_toggle: this.assetBoolean(settings.brand_organic_toggle),
       },
     };
   }
 
-  // ---------------------------------------------------------------------------
-  // OLD PULL_FROM_URL IMPLEMENTATION (kept for when the TikTok PULL bug is fixed)
-  // ---------------------------------------------------------------------------
-  // private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
-  //   const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-  //
-  //   if (isPhoto) {
-  //     return {
-  //       post_mode:
-  //         firstPost?.settings?.content_posting_method === 'DIRECT_POST'
-  //           ? 'DIRECT_POST'
-  //           : 'MEDIA_UPLOAD',
-  //       media_type: 'PHOTO',
-  //       source_info: {
-  //         source: 'PULL_FROM_URL',
-  //         photo_cover_index: 0,
-  //         photo_images: firstPost.media?.map((p) => p.path),
-  //       },
-  //     };
-  //   }
-  //
-  //   return {
-  //     source_info: {
-  //       source: 'PULL_FROM_URL',
-  //       video_url: firstPost?.media?.[0]?.path!,
-  //       ...(firstPost?.media?.[0]?.thumbnailTimestamp!
-  //         ? {
-  //             video_cover_timestamp_ms:
-  //               firstPost?.media?.[0]?.thumbnailTimestamp!,
-  //           }
-  //         : {}),
-  //     },
-  //   };
-  // }
-  //
-  // async post(
-  //   id: string,
-  //   accessToken: string,
-  //   postDetails: PostDetails<TikTokDto>[],
-  //   integration: Integration
-  // ): Promise<PostResponse[]> {
-  //   const [firstPost] = postDetails;
-  //   const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-  //
-  //   console.log({
-  //     ...this.buildTikokPostInfoBody(firstPost),
-  //     ...this.buildTikokSourceInfoBody(firstPost),
-  //   });
-  //   const {
-  //     data: { publish_id },
-  //   } = await (
-  //     await this.fetch(
-  //       `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
-  //         firstPost.settings.content_posting_method,
-  //         !hasExtension(firstPost?.media?.[0]?.path, 'mp4')
-  //       )}`,
-  //       {
-  //         method: 'POST',
-  //         headers: {
-  //           'Content-Type': 'application/json; charset=UTF-8',
-  //           Authorization: `Bearer ${accessToken}`,
-  //         },
-  //         body: JSON.stringify({
-  //           ...this.buildTikokPostInfoBody(firstPost),
-  //           ...this.buildTikokSourceInfoBody(firstPost),
-  //         }),
-  //       }
-  //     )
-  //   ).json();
-  //
-  //   const { url, id: videoId } = await this.uploadedVideoSuccess(
-  //     integration.profile!,
-  //     publish_id,
-  //     accessToken
-  //   );
-  //
-  //   return [
-  //     {
-  //       id: firstPost.id,
-  //       releaseURL: url,
-  //       postId: String(videoId),
-  //       status: 'success',
-  //     },
-  //   ];
-  // }
-
-  // ---------------------------------------------------------------------------
-  // NEW FILE_UPLOAD IMPLEMENTATION (no PULL_FROM_URL for videos)
-  // ---------------------------------------------------------------------------
-  // TikTok video chunk constraints: a chunk must be between 5MB and 64MB.
-  // When the whole file fits in a single chunk (<= 64MB) we upload it in one
-  // request; otherwise we split it into 10MB chunks (the final chunk carries
-  // the remainder, which TikTok allows to exceed chunk_size).
-  private static readonly TIKTOK_MAX_SINGLE_CHUNK = 64 * 1024 * 1024;
-  private static readonly TIKTOK_CHUNK_SIZE = 10 * 1024 * 1024;
-
-  private tiktokChunkPlan(videoSize: number) {
-    if (videoSize <= TiktokProvider.TIKTOK_MAX_SINGLE_CHUNK) {
-      return { chunkSize: videoSize, totalChunkCount: 1 };
-    }
-
-    const chunkSize = TiktokProvider.TIKTOK_CHUNK_SIZE;
-    return {
-      chunkSize,
-      totalChunkCount: Math.floor(videoSize / chunkSize),
-    };
-  }
-
-  // Returns a streaming body for the [start, end] byte range of the media so we
-  // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
-  // read stream for local files.
-  private async tiktokChunkStream(path: string, start: number, end: number) {
-    if (path.indexOf('http') === 0) {
-      // identity encoding so the store keeps content-length and can answer
-      // with the requested range, matching every other media read
-      const response = await fetch(path, {
-        headers: {
-          Range: `bytes=${start}-${end}`,
-          'accept-encoding': 'identity',
-        },
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-
-      // A store that ignores Range (200 with the full file) or answers with an
-      // error page would corrupt the upload at this offset.
-      if (response.status !== 206) {
-        throw new BadBody(
-          'tiktok-error-upload',
-          '{}',
-          '{}',
-          'The media storage did not return the requested byte range, please try again'
-        );
-      }
-
-      return response.body;
-    }
-
-    return createReadStream(path, { start, end });
-  }
-
-  // Streams the video bytes to the upload_url returned by the init call.
-  // We use the global fetch (not this.fetch) because chunked uploads answer
-  // with 206 (Partial Content), which this.fetch would treat as an error.
-  private async uploadTikTokVideoBytes(
-    uploadUrl: string,
-    path: string,
-    videoSize: number,
-    contentType: string
-  ) {
-    const { chunkSize, totalChunkCount } = this.tiktokChunkPlan(videoSize);
-
-    for (let i = 0; i < totalChunkCount; i++) {
-      const start = i * chunkSize;
-      const end =
-        i === totalChunkCount - 1 ? videoSize - 1 : start + chunkSize - 1;
-      const contentLength = end - start + 1;
-
-      const body = await this.tiktokChunkStream(path, start, end);
-
-      const upload = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': String(contentLength),
-          'Content-Range': `bytes ${start}-${end}/${videoSize}`,
-        },
-        body,
-        // Required by undici when streaming a request body.
-        duplex: 'half',
-      } as any);
-
-      if (
-        upload.status !== 200 &&
-        upload.status !== 201 &&
-        upload.status !== 206
-      ) {
-        const text = await upload.text().catch(() => '{}');
-        const handleError = this.handleErrors(text);
-        throw new BadBody(
-          'tiktok-error-upload',
-          text,
-          Buffer.from(text),
-          handleError?.value || 'Failed to upload the video to TikTok'
-        );
-      }
-    }
-  }
-
-  private buildTikokSourceInfoBody(
-    firstPost: PostDetails<TikTokDto>,
-    videoSize?: number
-  ) {
+  // postmonster (PRD TT-19): PULL_FROM_URL for both video and photos. The
+  // media lives on our own storage, and the TikTok guidelines say: "If video
+  // resources are already on API Clients' servers, do not use FILE_UPLOAD; use
+  // PULL_FROM_URL instead". The URL prefix must be verified in the TikTok
+  // developer portal (Manage URL properties), the URL must be https, must not
+  // redirect and must stay available for at least an hour.
+  private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
 
-    // TikTok photo posts only support PULL_FROM_URL, there is no FILE_UPLOAD
-    // path for photos, so this branch keeps pulling from the URL.
     if (isPhoto) {
       return {
-        post_mode:
-          this.contentPostingMethod(firstPost) === 'DIRECT_POST'
-            ? 'DIRECT_POST'
-            : 'MEDIA_UPLOAD',
+        post_mode: 'DIRECT_POST',
         media_type: 'PHOTO',
         source_info: {
           source: 'PULL_FROM_URL',
@@ -828,14 +760,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
-    const { chunkSize, totalChunkCount } = this.tiktokChunkPlan(videoSize || 0);
-
     return {
       source_info: {
-        source: 'FILE_UPLOAD',
-        video_size: videoSize,
-        chunk_size: chunkSize,
-        total_chunk_count: totalChunkCount,
+        source: 'PULL_FROM_URL',
+        video_url: firstPost?.media?.[0]?.path!,
       },
     };
   }
@@ -848,21 +776,33 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
-    const videoPath = firstPost?.media?.[0]?.path!;
 
-    // For videos we only need the total size up front (HEAD / statSync) so we
-    // can init the upload; the bytes themselves are streamed later, never fully
-    // loaded into memory.
-    const videoSize = isPhoto
-      ? undefined
-      : await this.mediaSize(videoPath, 'tiktok-error-upload');
+    // postmonster: TT-16 - fetch the latest creator info and revalidate the
+    // post against it right before publishing. Nothing is silently changed:
+    // any mismatch fails the post with a clear reason.
+    const creator = await this.queryCreatorInfo(accessToken);
+    const validation = validateTikTokSettings({
+      settings: (firstPost.settings || {}) as TikTokPostSettings,
+      creator,
+      isPhoto,
+      audited: this.isAudited(),
+      videoDurationSec: firstPost?.settings?.videoDurationSec,
+      messageLength: firstPost.message ? firstPost.message.length : 0,
+    });
+    if (validation.ok === false) {
+      throw new BadBody(
+        'tiktok-invalid-settings',
+        JSON.stringify(firstPost.settings || {}),
+        Buffer.from(JSON.stringify(validation.errors)),
+        validation.errors[0]
+      );
+    }
 
     const {
-      data: { publish_id, upload_url },
+      data: { publish_id },
     } = await (
       await this.fetch(
         `https://open.tiktokapis.com/v2/post/publish${this.postingMethod(
-          this.contentPostingMethod(firstPost),
           isPhoto
         )}`,
         {
@@ -873,33 +813,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           },
           body: JSON.stringify({
             ...this.buildTikokPostInfoBody(firstPost),
-            ...this.buildTikokSourceInfoBody(firstPost, videoSize),
+            ...this.buildTikokSourceInfoBody(firstPost),
           }),
         }
       )
     ).json();
-
-    // Videos: stream the bytes to the upload_url returned by the init call.
-    if (!isPhoto && upload_url && videoSize) {
-      try {
-        await this.uploadTikTokVideoBytes(
-          upload_url,
-          videoPath,
-          videoSize,
-          'video/mp4'
-        );
-      } catch (err) {
-        // An explicit rejection from TikTok: the post won't publish, fail it
-        if (err instanceof BadBody) {
-          throw err;
-        }
-
-        // A network error here is ambiguous - TikTok may have received all
-        // the bytes and still publish. Return pending and let checkPostStatus
-        // deliver TikTok's own verdict instead of letting the caller retry
-        // the publish.
-      }
-    }
 
     // The publish is now irreversible on TikTok's side: return `pending` so the
     // workflow polls checkPostStatus instead of blocking (and possibly timing

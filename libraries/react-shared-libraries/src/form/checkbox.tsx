@@ -8,6 +8,11 @@ export const Checkbox = forwardRef<
   {
     checked?: boolean;
     disableForm?: boolean;
+    // postmonster: a real disabled state (greyed out, not clickable) - used by
+    // the TikTok panel when an interaction is disabled in the account settings
+    disabled?: boolean;
+    title?: string;
+    'aria-describedby'?: string;
     name?: string;
     className?: string;
     label?: string;
@@ -20,13 +25,25 @@ export const Checkbox = forwardRef<
     variant?: 'default' | 'hollow';
   }
 >((props, ref: any) => {
-  const { checked, className, label, disableForm, variant } = props;
+  const {
+    checked,
+    className,
+    label,
+    disableForm,
+    variant,
+    disabled,
+    title,
+    'aria-describedby': ariaDescribedBy,
+  } = props;
   const form = useFormContext();
   const register = disableForm ? {} : form.register(props.name!);
   const watch = disableForm ? false : form.watch(props.name!);
   const val = watch || checked;
 
   const changeStatus = useCallback(() => {
+    if (disabled) {
+      return;
+    }
     props?.onChange?.({
       target: {
         name: props.name!,
@@ -42,15 +59,23 @@ export const Checkbox = forwardRef<
         },
       });
     }
-  }, [val]);
+  }, [val, disabled]);
   return (
     <div className="flex gap-[10px]">
       <div
         ref={ref}
-        {...disableForm ? {} : form.register(props.name!)}
+        {...(disableForm ? {} : form.register(props.name!))}
         onClick={changeStatus}
+        role="checkbox"
+        aria-checked={!!val}
+        aria-disabled={disabled || undefined}
+        aria-describedby={ariaDescribedBy}
+        title={title}
         className={clsx(
-          'cursor-pointer rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex text-white',
+          'rounded-[4px] select-none w-[24px] h-[24px] justify-center items-center flex text-white',
+          disabled
+            ? 'cursor-not-allowed opacity-50'
+            : 'cursor-pointer',
           variant === 'default' || !variant
             ? 'bg-forth'
             : 'border-customColor1 border-2 bg-customColor2',

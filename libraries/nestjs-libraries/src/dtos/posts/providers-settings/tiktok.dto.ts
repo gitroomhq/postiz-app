@@ -58,35 +58,57 @@ export class TikTokLocation {
   address?: string;
 }
 
-// TikTok only honors most of these settings on a DIRECT_POST. With
-// content_posting_method=UPLOAD the media lands in the user's TikTok inbox as a
-// draft, and TikTok's inbox/upload endpoints accept nothing but the title /
-// description - every other field below is silently discarded.
-// video_made_with_ai / duet / stitch are additionally video-only: TikTok's photo
-// post_info has no is_aigc, disable_duet or disable_stitch field.
-// music / location are TikTok Business only: the legacy TikTok provider ignores
-// them (its Content Posting API has no music_sound_info / location fields).
-// Fields stay required here (existing clients depend on it); the constraints are
-// documented, not enforced.
+// postmonster (PRD 8.2): Direct Post settings only. The "Upload to inbox/draft"
+// mode (content_posting_method=UPLOAD, scope video.upload) is intentionally
+// gone - it is outside the reviewed scopes (user.info.basic, video.publish).
+// title is the photo post title (<= 90); the caption/description itself is the
+// post message: <= 2200 for video, <= 4000 for photo (UTF-16 runes).
+// privacy_level is required and has no default (TT-05).
+// comment/duet/stitch default to off (TT-06); disclose/brand toggles default to
+// off (TT-07). duet/stitch are video-only; photo posts only take comments.
+// music / location / autoAddMusic are TikTok Business only: the reviewed TikTok
+// provider ignores them (its Content Posting API has no music/location fields).
 export class TikTokDto {
-  @ValidateIf((p) => p.title)
-  @MaxLength(90)
+  @IsOptional()
+  @IsString()
+  @MaxLength(90, {
+    message: 'The title is too long (max 90 characters).',
+  })
   @JSONSchema({
     description:
-      'Used as the title of the post. The only setting TikTok keeps when content_posting_method=UPLOAD.',
+      'Photo posts only: the post title (max 90). Not used for video posts.',
   })
   title: string;
 
-  @IsIn([
-    'PUBLIC_TO_EVERYONE',
-    'MUTUAL_FOLLOW_FRIENDS',
-    'FOLLOWER_OF_CREATOR',
-    'SELF_ONLY',
-  ])
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @JSONSchema({
+    description:
+      'Video posts only: the video duration in seconds, measured by the editor. ' +
+      'Used to revalidate against max_video_post_duration_sec at publish time (TT-03/TT-16).',
+  })
+  videoDurationSec?: number;
+
+  @IsDefined({ message: 'Please select who can view this post.' })
+  @IsIn(
+    [
+      'PUBLIC_TO_EVERYONE',
+      'MUTUAL_FOLLOW_FRIENDS',
+      'FOLLOWER_OF_CREATOR',
+      'SELF_ONLY',
+    ],
+    {
+      message:
+        'Unknown privacy option. Please select who can view this post.',
+    }
+  )
   @IsString()
   @JSONSchema({
     description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
+      'Required, no default. Must be one of the privacy_level_options returned by creator_info/query. ' +
+      'Branded content cannot be combined with SELF_ONLY.',
   })
   privacy_level:
     | 'PUBLIC_TO_EVERYONE'
@@ -94,64 +116,67 @@ export class TikTokDto {
     | 'FOLLOWER_OF_CREATOR'
     | 'SELF_ONLY';
 
+  @IsOptional()
   @IsBoolean()
   @JSONSchema({
     description:
-      'Video posts only, and only when content_posting_method=DIRECT_POST. TikTok has no duet setting for photo posts.',
+      'Allow Duet. Video posts only. Defaults to false; TikTok has no duet setting for photo posts.',
   })
-  duet: boolean;
+  duet?: boolean;
 
+  @IsOptional()
   @IsBoolean()
   @JSONSchema({
     description:
-      'Video posts only, and only when content_posting_method=DIRECT_POST. TikTok has no stitch setting for photo posts.',
+      'Allow Stitch. Video posts only. Defaults to false; TikTok has no stitch setting for photo posts.',
   })
-  stitch: boolean;
+  stitch?: boolean;
 
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description: 'Allow Comments. Defaults to false.',
+  })
+  comment?: boolean;
+
+  @IsOptional()
   @IsBoolean()
   @JSONSchema({
     description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
+      'Commercial content disclosure toggle ("Disclose post content"). Off by default; when on, at least one of brand_organic_toggle / brand_content_toggle must be true (TT-07/TT-08).',
   })
-  comment: boolean;
+  disclose?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Branded content: the post promotes another brand or a third party (labeled "Paid partnership"). Cannot be combined with privacy_level=SELF_ONLY.',
+  })
+  brand_content_toggle?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Your brand: the post promotes yourself or your own business (labeled "Promotional content").',
+  })
+  brand_organic_toggle?: boolean;
 
   @IsIn(['yes', 'no'])
-  @JSONSchema({
-    description:
-      'Photo posts only, and only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD. ' +
-      'On TikTok Business, "yes" attaches a random commercial music library track and overrides the music setting; ' +
-      'on legacy TikTok, "yes" lets TikTok auto-add its recommended music.',
-  })
-  autoAddMusic: 'yes' | 'no';
-
-  @IsBoolean()
-  @JSONSchema({
-    description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
-  })
-  brand_content_toggle: boolean;
-
-  @IsBoolean()
   @IsOptional()
   @JSONSchema({
     description:
-      'Labels the post as AI generated. Video posts only, and only when content_posting_method=DIRECT_POST. TikTok has no AI-generated label for photo posts, and discards it on UPLOAD.',
+      'TikTok Business photo posts only: "yes" attaches a random commercial music library track. Ignored by the reviewed TikTok provider.',
   })
-  video_made_with_ai: boolean;
-
-  @IsBoolean()
-  @JSONSchema({
-    description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
-  })
-  brand_organic_toggle: boolean;
+  autoAddMusic?: 'yes' | 'no';
 
   @Type(() => TikTokMusic)
   @ValidateNested()
   @IsOptional()
   @JSONSchema({
     description:
-      'TikTok Business only, and only when content_posting_method=DIRECT_POST. Attaches a commercial music library track to the post (use the musicSearch function to find one). audio_volume / video_volume apply to video posts only. For photos, ignored when autoAddMusic is "yes" (a random track is attached instead).',
+      'TikTok Business only: attaches a commercial music library track to the post (use the musicSearch function to find one). Ignored by the reviewed TikTok provider.',
   })
   music?: TikTokMusic;
 
@@ -160,19 +185,7 @@ export class TikTokDto {
   @IsOptional()
   @JSONSchema({
     description:
-      'TikTok Business only, and only when content_posting_method=DIRECT_POST. Tags the post with a location (use the locationSearch function to find one).',
+      'TikTok Business only: tags the post with a location (use the locationSearch function to find one). Ignored by the reviewed TikTok provider.',
   })
   location?: TikTokLocation;
-
-  @IsIn(['DIRECT_POST', 'UPLOAD'])
-  @IsString()
-  @JSONSchema({
-    description:
-      'Required. Use "DIRECT_POST" to actually publish the post to TikTok. ' +
-      '"UPLOAD" does NOT publish: it only sends the media to the user\'s TikTok app inbox, ' +
-      'where they must manually finish and publish it within 24 hours or it is discarded, ' +
-      'and it makes TikTok ignore every other setting here. ' +
-      'Only use "UPLOAD" when the user explicitly asks to review or edit the post inside the TikTok app before publishing.',
-  })
-  content_posting_method: 'DIRECT_POST' | 'UPLOAD';
 }

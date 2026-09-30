@@ -59,6 +59,7 @@ import { StripeController } from '@gitroom/backend/api/routes/stripe.controller'
 // postmonster: closed access (PRD 6)
 import { PublicAccessController } from '@gitroom/backend/api/routes/postmonster.public.access.controller';
 import { AdminAccessController } from '@gitroom/backend/api/routes/postmonster.admin.access.controller';
+import { PostmonsterTiktokController } from '@gitroom/backend/api/routes/postmonster.tiktok.controller';
 import { SuperAdminUserGuard } from '@gitroom/backend/services/auth/super.admin.user.guard';
 
 const authenticatedController = [
@@ -83,6 +84,7 @@ const authenticatedController = [
   AnnouncementsController,
   AdminController,
   AdminAccessController,
+  PostmonsterTiktokController,
 ];
 @Module({
   imports: [UploadModule],

@@ -513,10 +513,14 @@ export class TiktokBusinessProvider
   // inbox as a draft - so only an explicit UPLOAD selects it. A missing value
   // (drafts, or any caller that skipped the setting) publishes instead of
   // silently landing in the inbox.
+  // postmonster: content_posting_method was removed from TikTokDto (the
+  // reviewed TikTok provider is Direct Post only) - keep reading it from raw
+  // settings so old saved posts still behave, it always resolves to
+  // DIRECT_POST for anything saved by the current UI.
   private contentPostingMethod(
     firstPost: PostDetails<TikTokDto>
-  ): TikTokDto['content_posting_method'] {
-    return firstPost?.settings?.content_posting_method === 'UPLOAD'
+  ): 'UPLOAD' | 'DIRECT_POST' {
+    return (firstPost?.settings as any)?.content_posting_method === 'UPLOAD'
       ? 'UPLOAD'
       : 'DIRECT_POST';
   }
@@ -551,7 +555,7 @@ export class TiktokBusinessProvider
               disable_duet: !this.assetBoolean(firstPost.settings.duet),
               disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
               is_ai_generated: this.assetBoolean(
-                firstPost.settings.video_made_with_ai
+                (firstPost.settings as any).video_made_with_ai
               ),
               ...(firstPost.settings.location?.id
                 ? {

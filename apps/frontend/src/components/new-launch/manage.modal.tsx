@@ -42,6 +42,11 @@ import {
 } from '@gitroom/frontend/components/ui/icons';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
+import { useTikTokConfirm } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.confirm';
+import {
+  tikTokBlockersFor,
+  useTikTokGate,
+} from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.gate';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 
@@ -57,6 +62,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
+
+  // postmonster: TikTok publish gate + confirmation (PRD TT-13)
+  const confirmTikTokPost = useTikTokConfirm();
+  const tiktokGateBlockers = useTikTokGate(useShallow((state) => state.blockers));
 
   const {
     selectedIntegrations,
@@ -411,6 +420,45 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
 
+      // postmonster: TT-13 - explicit confirmation before anything is sent to
+      // TikTok (Content Sharing Guidelines UX 5c)
+      const tiktokConfirmPosts = posts
+        .filter(
+          (p: any) =>
+            integrationById(p.integration.id)?.integration?.identifier ===
+            'tiktok'
+        )
+        .map((p: any) => ({
+          integration: {
+            id: p.integration.id,
+            identifier: 'tiktok',
+            name: integrationById(p.integration.id)?.integration?.name || '',
+          },
+          settings: p.settings,
+          isPhoto: (p.value?.[0]?.image || []).some(
+            (m: any) => (m?.path?.indexOf?.('mp4') ?? -1) === -1
+          ),
+        }));
+
+      if (
+        tiktokConfirmPosts.length &&
+        (type === 'now' || type === 'schedule')
+      ) {
+        const confirmed = await confirmTikTokPost(tiktokConfirmPosts, {
+          isNow: type === 'now',
+          label:
+            type === 'now'
+              ? t('now_immediately', 'Now (immediately)')
+              : `${date.format('DD/MM/YYYY HH:mm')} (${
+                  Intl.DateTimeFormat().resolvedOptions().timeZone
+                })`,
+        });
+        if (!confirmed) {
+          setLoading(false);
+          return;
+        }
+      }
+
       const data = {
         type,
         ...(republish ? { republish } : {}),
@@ -452,6 +500,23 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               ? t('added_successfully', 'Added successfully')
               : t('updated_successfully', 'Updated successfully')
           );
+
+          // postmonster: TT-14 - processing notice after a live send
+          if (
+            type === 'now' &&
+            posts.some(
+              (p: any) =>
+                integrationById(p.integration.id)?.integration?.identifier ===
+                'tiktok'
+            )
+          ) {
+            toaster.show(
+              t(
+                'tiktok_processing_notice',
+                'Your post was sent to TikTok. It may take a few minutes to process and appear on your profile.'
+              )
+            );
+          }
         }
         if (customClose) {
           setTimeout(() => {
@@ -464,8 +529,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         }
       }
     },
-    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
+    [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData, confirmTikTokPost]
   );
+
+  // postmonster: publish gate - TikTok settings still missing (PRD TT)
+  const tiktokMissing = useMemo(() => {
+    const ids = (selectedIntegrations || [])
+      .filter((p: any) => p?.integration?.identifier === 'tiktok')
+      .map((p: any) => p.integration.id);
+    return tikTokBlockersFor(tiktokGateBlockers, ids);
+  }, [selectedIntegrations, tiktokGateBlockers]);
 
   return (
     <div className="w-full h-full flex-1 p-[10px] md:p-[40px] flex relative">
@@ -599,6 +672,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
           </div>
           <div className="pe-[20px] flex items-center justify-end gap-[8px]">
+            {/* postmonster: list of what is still missing before publishing */}
+            {tiktokMissing.length > 0 && (
+              <div className="max-w-[280px] text-[12px] me-[10px]">
+                <div className="font-[600]">
+                  {t('to_publish', 'To publish:')}
+                </div>
+                <ul className="list-disc ps-[16px]">
+                  {tiktokMissing.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -644,7 +730,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <div className="group cursor-pointer relative">
                 <button
                   disabled={
-                    selectedIntegrations.length === 0 || loading || locked
+                    selectedIntegrations.length === 0 ||
+                    loading ||
+                    locked ||
+                    tiktokMissing.length > 0
                   }
                   onClick={schedule('schedule')}
                   className="text-[#0E0F13] relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#C8F560] ps-[20px] pe-[16px]"
@@ -681,7 +770,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   <button
                     onClick={schedule('now')}
                     disabled={
-                      selectedIntegrations.length === 0 || loading || locked
+                      selectedIntegrations.length === 0 ||
+                      loading ||
+                      locked ||
+                      tiktokMissing.length > 0
                     }
                     className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
                   >

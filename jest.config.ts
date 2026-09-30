@@ -6,9 +6,9 @@ export default {
   // imported module chains open redis/temporal sockets the tests never close
   forceExit: true,
   roots: ['<rootDir>/apps', '<rootDir>/libraries'],
-  testMatch: ['**/*.spec.ts'],
+  testMatch: ['**/*.spec.ts', '**/*.spec.tsx'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   transform: {
     '^.+\\.ts$': [
       'ts-jest',

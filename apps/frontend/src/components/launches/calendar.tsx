@@ -37,6 +37,7 @@ import { ExistingDataContextProvider } from '@gitroom/frontend/components/launch
 import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
+import { stripTikTokSettings } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.gate';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -115,6 +116,11 @@ const usePostActions = (onMutate?: () => void) => {
       };
 
       const data = await (await fetch(`/posts/group/${post.group}`)).json();
+      // postmonster: TT-17 - duplicating a post resets the TikTok settings
+      // (privacy, disclosure, interactions); text and media are kept
+      const groupIntegration = integrations.find(
+        (f) => f.id === data.integration
+      );
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
@@ -143,7 +149,10 @@ const usePostActions = (onMutate?: () => void) => {
                     onlyValues: data.posts.map(
                       ({ image, settings, content }: any) => ({
                         image,
-                        settings,
+                        settings: stripTikTokSettings(
+                          settings,
+                          groupIntegration?.identifier
+                        ),
                         content,
                       })
                     ),
