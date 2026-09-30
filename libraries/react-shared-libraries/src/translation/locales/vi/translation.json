@@ -787,5 +787,10 @@
   "preview_comment_detach_hint": "Bình luận trên đoạn văn bản được chọn sẽ mất nổi bật nếu văn bản bị chỉnh sửa sau đó.",
   "preview_comment_text_changed": "Nội dung đã thay đổi",
   "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung.",
-  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại"
+  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại",
+  "rename_channel": "Đổi tên kênh",
+  "channel_name": "Tên",
+  "channel_renamed": "Đã đổi tên kênh",
+  "channel_name_reset": "Đã đặt lại tên kênh",
+  "reset_channel_name": "Đặt lại tên gốc"
 }

@@ -369,6 +369,7 @@ model Integration {
   internalId            String
   organizationId        String
   name                  String
+  customName            String?
   picture               String?
   providerIdentifier    String
   type                  String

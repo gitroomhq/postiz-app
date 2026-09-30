@@ -787,5 +787,10 @@
   "preview_comment_detach_hint": "Comentários em textos selecionados perdem o destaque se o texto for editado depois.",
   "preview_comment_text_changed": "Texto alterado",
   "preview_no_comments_yet": "Ainda não há comentários. Selecione um trecho do post para comentar ou adicione um comentário geral.",
-  "some_files_failed_to_upload": "Alguns arquivos não foram carregados, tente novamente"
+  "some_files_failed_to_upload": "Alguns arquivos não foram carregados, tente novamente",
+  "rename_channel": "Renomear canal",
+  "channel_name": "Nome",
+  "channel_renamed": "Canal renomeado",
+  "channel_name_reset": "Nome do canal redefinido",
+  "reset_channel_name": "Redefinir para o nome original"
 }
