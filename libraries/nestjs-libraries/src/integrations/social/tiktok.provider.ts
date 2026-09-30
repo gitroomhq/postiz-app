@@ -1141,7 +1141,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
-    if (postId.indexOf('v_pub_url') > -1) {
+    // Posts whose public id was not available yet when publishing keep the
+    // publish_id (v_pub_url~... / v_pub_file~...) as releaseId - resolve it
+    // to the public post id first.
+    if (postId.indexOf('_pub_') > -1) {
       const post = await (
         await fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
