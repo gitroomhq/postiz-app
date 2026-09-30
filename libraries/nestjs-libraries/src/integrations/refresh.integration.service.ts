@@ -88,6 +88,10 @@ export class RefreshIntegrationService {
       });
 
     if (!refresh || !refresh.accessToken) {
+      // informAboutRefreshError (with the failure cause) already notifies
+      // the user, and refreshNeeded sets the same flag disconnectChannel
+      // would — calling disconnectChannel here sent a second, cause-less
+      // copy of the same email for every failed refresh.
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
@@ -98,18 +102,6 @@ export class RefreshIntegrationService {
         integration,
         cause
       );
-
-      await this._integrationService.disconnectChannel(
-        integration.organizationId,
-        integration
-      );
-
-      logger.error('provider_channel_disconnected', {
-        provider: integration.providerIdentifier,
-        integration_id: integration.id,
-        org_id: integration.organizationId,
-        reason: cause,
-      });
 
       return false;
     }

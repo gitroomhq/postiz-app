@@ -448,8 +448,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PendingCheckResponse> {
     let post: any;
+    let publicPostId: string | undefined;
     try {
-      post = await (
+      const raw = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -466,7 +467,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           0,
           true
         )
-      ).json();
+      ).text();
+      ({ post, publicPostId } = this.parsePublishStatus(raw));
     } catch (err) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
@@ -478,7 +480,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { status: 'pending', pendingData };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
+    const { status } = post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
       return {
@@ -489,16 +491,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     if (status === 'PUBLISH_COMPLETE') {
-      // an empty array is truthy, so index it once and branch on the value
-      const publicPostId = publicaly_available_post_id?.[0];
-
       return {
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
           : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
-        // TikTok returns the id as a number, releaseId in the db is a string
-        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+        postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
 
@@ -513,6 +511,15 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     return { status: 'pending', pendingData };
+  }
+
+  // TikTok returns publicaly_available_post_id as an int64, which JSON.parse
+  // rounds past 2^53 - pull the digits out of the raw body before parsing.
+  private parsePublishStatus(raw: string) {
+    const [, publicPostId] =
+      raw.match(/"publicaly_available_post_id"\s*:\s*\[\s*"?(\d+)/) || [];
+
+    return { post: JSON.parse(raw), publicPostId };
   }
 
   // UPLOAD does not publish - it only drops the media into the user's TikTok
@@ -1141,28 +1148,33 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
 
-    if (postId.indexOf('v_pub_url') > -1) {
-      const post = await (
-        await fetch(
-          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=UTF-8',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              publish_id: postId,
-            }),
-          }
-        )
-      ).json();
+    // Posts whose public id was not available yet when publishing keep the
+    // publish_id (v_pub_url~... / v_pub_file~...) as releaseId - resolve it
+    // to the public post id first.
+    if (postId.indexOf('_pub_') > -1) {
+      const { publicPostId } = this.parsePublishStatus(
+        await (
+          await fetch(
+            'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                publish_id: postId,
+              }),
+            }
+          )
+        ).text()
+      );
 
-      if (!post?.data?.publicaly_available_post_id?.[0]) {
+      if (!publicPostId) {
         return [];
       }
 
-      postId = post.data.publicaly_available_post_id[0];
+      postId = publicPostId;
     }
 
     try {
