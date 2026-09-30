@@ -8,6 +8,7 @@
 
 import { useCallback } from 'react';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Button } from '@gitroom/react/form/button';
 import {
@@ -34,6 +35,7 @@ interface CreatorInfoResponse {
 
 export const useTikTokConfirm = () => {
   const modal = useModals();
+  const fetch = useFetch();
   const t = useT();
 
   return useCallback(
@@ -135,6 +137,6 @@ export const useTikTokConfirm = () => {
         });
       });
     },
-    [modal, t]
+    [modal, fetch, t]
   );
 };

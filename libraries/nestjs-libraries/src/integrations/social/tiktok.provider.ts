@@ -17,7 +17,6 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
-import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 // postmonster: TikTok Direct Post audit modules (PRD 8.2)
@@ -25,6 +24,7 @@ import {
   TikTokCantPostError,
   TikTokCreatorInfo,
   TikTokPostSettings,
+  isTikTokVideoPath,
   validateTikTokSettings,
   validateTikTokStaticSettings,
 } from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.validation';
@@ -79,21 +79,22 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     if ((firstItems?.length ?? 0) === 0) {
       return 'No video / images selected';
     }
+    // postmonster: mp4-only heuristic upstream treated MOV/WebM as photos
     if (
       (firstItems?.length ?? 0) > 1 &&
-      firstItems?.some((p) => (p?.path?.indexOf?.('mp4') ?? -1) > -1)
+      firstItems?.some((p) => isTikTokVideoPath(p?.path))
     ) {
       return 'Only pictures are supported when selecting multiple items';
     } else if (
       firstItems?.length !== 1 &&
-      (firstItems?.[0]?.path?.indexOf?.('mp4') ?? -1) > -1
+      isTikTokVideoPath(firstItems?.[0]?.path)
     ) {
       return 'You need one media';
     }
 
     // TikTok fails the whole photo post when a single image is oversized, and
     // the status only says `picture_size_check_failed` without naming it.
-    if (firstItems?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)) {
+    if (firstItems?.every((p) => !isTikTokVideoPath(p?.path))) {
       const dimensions = await Promise.all(
         firstItems?.map((p) => this.getImageDimensions(p?.path)) ?? []
       );
@@ -702,7 +703,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // required and never defaulted (TT-05); Allow-flags invert into disable_*;
   // is_aigc / auto_add_music are intentionally not sent.
   private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = !isTikTokVideoPath(firstPost?.media?.[0]?.path);
     const settings = firstPost.settings || ({} as TikTokDto);
 
     return {
@@ -746,7 +747,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   // developer portal (Manage URL properties), the URL must be https, must not
   // redirect and must stay available for at least an hour.
   private buildTikokSourceInfoBody(firstPost: PostDetails<TikTokDto>) {
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = !isTikTokVideoPath(firstPost?.media?.[0]?.path);
 
     if (isPhoto) {
       return {
@@ -775,7 +776,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PostResponse[]> {
     const [firstPost] = postDetails;
-    const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
+    const isPhoto = !isTikTokVideoPath(firstPost?.media?.[0]?.path);
 
     // postmonster: TT-16 - fetch the latest creator info and revalidate the
     // post against it right before publishing. Nothing is silently changed:

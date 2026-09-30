@@ -47,6 +47,7 @@ import {
   tikTokBlockersFor,
   useTikTokGate,
 } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.gate';
+import { isTikTokVideoPath } from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.validation';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 
@@ -436,7 +437,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           },
           settings: p.settings,
           isPhoto: (p.value?.[0]?.image || []).some(
-            (m: any) => (m?.path?.indexOf?.('mp4') ?? -1) === -1
+            (m: any) => !isTikTokVideoPath(m?.path)
           ),
         }));
 

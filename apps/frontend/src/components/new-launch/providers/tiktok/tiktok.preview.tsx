@@ -10,6 +10,7 @@ import { FC } from 'react';
 import { SliderComponent } from '@gitroom/frontend/components/third-parties/slider.component';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
+import { isTikTokVideoPath } from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.validation';
 import { tikTokPrivacyLabel } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.gate';
 
 export const TiktokPreview: FC<{
@@ -108,9 +109,7 @@ export const TiktokPreview: FC<{
         <div>Visibility: {tikTokPrivacyLabel(privacy)}</div>
         <div>
           Comments: {comment ? 'on' : 'off'}
-          {topValue?.[0]?.image?.some(
-            (p: any) => (p?.path?.indexOf?.('mp4') ?? -1) > -1
-          )
+          {topValue?.[0]?.image?.some((p: any) => isTikTokVideoPath(p?.path))
             ? ` · Duet: ${duet ? 'on' : 'off'} · Stitch: ${stitch ? 'on' : 'off'}`
             : ''}
         </div>

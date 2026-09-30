@@ -70,6 +70,17 @@ export function assetOn(value: boolean | string | undefined): boolean {
   return value === true || value === 'true' || value === 'yes';
 }
 
+// TikTok video formats (Media Transfer Guide: MP4/WebM/MOV). The media-type
+// split in the composer and provider is extension-based - upstream only knew
+// about mp4 and silently treated MOV/WebM as photos.
+export function isTikTokVideoPath(path?: string | null): boolean {
+  if (!path) {
+    return false;
+  }
+  const lower = path.toLowerCase();
+  return ['.mp4', '.mov', '.webm'].some((ext) => lower.indexOf(ext) > -1);
+}
+
 function countUtf16(value: string): number {
   return value ? value.length : 0;
 }

@@ -15,6 +15,8 @@ import { Checkbox } from '@gitroom/react/form/checkbox';
 import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { isTikTokVideoPath } from '@gitroom/nestjs-libraries/postmonster/tiktok/tiktok.validation';
 import { Input } from '@gitroom/react/form/input';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { TiktokPreview } from '@gitroom/frontend/components/new-launch/providers/tiktok/tiktok.preview';
@@ -52,6 +54,7 @@ export const TikTokSettings: FC<{
 }> = () => {
   const { watch, register, setValue } = useSettings();
   const { value, integration } = useIntegration();
+  const fetch = useFetch();
   const t = useT();
   const toaster = useToaster();
   const setBlockers = useTikTokGate((state) => state.setBlockers);
@@ -61,9 +64,7 @@ export const TikTokSettings: FC<{
   const isBusiness = integration?.identifier === 'tiktok-business';
 
   const isTitle = useMemo(() => {
-    return value?.[0]?.image?.some(
-      (p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1
-    );
+    return value?.[0]?.image?.some((p) => !isTikTokVideoPath(p?.path));
   }, [value]);
   const hasMedia = (value?.[0]?.image?.length ?? 0) > 0;
   const isVideo = hasMedia && !isTitle;

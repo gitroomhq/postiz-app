@@ -3,6 +3,7 @@
 import {
   assetOn,
   cantPostMessage,
+  isTikTokVideoPath,
   TikTokCantPostError,
   TikTokCreatorInfo,
   validateTikTokSettings,
@@ -307,5 +308,13 @@ describe('TikTok error mapping (TT-20)', () => {
     expect(assetOn('true')).toBe(true);
     expect(assetOn(false)).toBe(false);
     expect(assetOn(undefined)).toBe(false);
+  });
+
+  it('recognizes every TikTok video format as video (MP4/WebM/MOV)', () => {
+    expect(isTikTokVideoPath('https://x/uploads/a.mp4')).toBe(true);
+    expect(isTikTokVideoPath('https://x/uploads/a.MOV')).toBe(true);
+    expect(isTikTokVideoPath('https://x/uploads/a.webm')).toBe(true);
+    expect(isTikTokVideoPath('https://x/uploads/a.jpeg')).toBe(false);
+    expect(isTikTokVideoPath(undefined)).toBe(false);
   });
 });
