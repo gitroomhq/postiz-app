@@ -448,6 +448,9 @@ checksums:
     not_matching_order: 6b6eecb31dcef6e646e896259273b1c7
     submit_for_order: 8727628dac88340824634e0d94065de2
     schedule: a75428cb811bc50150cecde090a3a0d5
+    restore_global_schedule_time: 07cc14e2124a283f7bdcbaab66de6e54
+    using_global_schedule_time: e2e321ff68a6d481ead87703671f1ca5
+    set_custom_channel_schedule_time: f91b379f52b853fa11e61cc43c256de2
     update: 079fc039262fd31b10532929685c2d1b
     attachments: c07b0f71c56630aef60ef8d754efd867
     tags: 97813c8ae67d69575fd04e35a88aed0c
