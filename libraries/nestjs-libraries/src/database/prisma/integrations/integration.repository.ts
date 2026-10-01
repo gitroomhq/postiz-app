@@ -106,6 +106,9 @@ export class IntegrationRepository {
 
   updateCustomName(org: string, id: string, name: string) {
     return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
       where: {
         id,
         organizationId: org,
