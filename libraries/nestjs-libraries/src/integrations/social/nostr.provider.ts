@@ -235,4 +235,24 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
       },
     ];
   }
+
+  async searchProfiles(query: string): Promise<Array<{ id: string; name: string; username: string; picture?: string }>> {
+    const results = await pool.list(list, [
+      {
+        kinds: [0],
+        search: query,
+        limit: 10,
+      }
+    ]);
+
+    return results.map((profile: any) => {
+      const content = JSON.parse(profile.content || '{}');
+      return {
+        id: profile.pubkey,
+        name: content.display_name || content.displayName || content.name || 'No Name',
+        username: content.name || 'nousername',
+        picture: content.picture || undefined,
+      };
+    });
+  }
 }
