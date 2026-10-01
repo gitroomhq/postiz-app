@@ -551,6 +551,28 @@ export class IntegrationRepository {
     });
   }
 
+  getCustomerByName(orgId: string, name: string) {
+    return this._customers.model.customer.findFirst({
+      where: {
+        orgId,
+        name,
+        deletedAt: null,
+      },
+    });
+  }
+
+  updateCustomerName(orgId: string, id: string, name: string) {
+    return this._customers.model.customer.update({
+      where: {
+        id,
+        orgId,
+      },
+      data: {
+        name,
+      },
+    });
+  }
+
   customers(orgId: string) {
     return this._customers.model.customer.findMany({
       where: {
