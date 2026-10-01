@@ -10,7 +10,6 @@ import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
-import axios from 'axios';
 import sharp from 'sharp';
 import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
@@ -277,7 +276,9 @@ export abstract class SocialAbstract {
 
     try {
       return (
-        await axios({
+        // the media path is user-influenced, so it goes through the same
+        // SSRF-safe client as every other outbound media read
+        await this.getSsrfSafeAxios()({
           url: path,
           method: 'GET',
           responseType: 'arraybuffer',
