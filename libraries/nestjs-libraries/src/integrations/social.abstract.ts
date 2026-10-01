@@ -5,15 +5,26 @@ import {
   PendingCheckResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
-import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import axios from 'axios';
 import sharp from 'sharp';
-import { createReadStream, statSync } from 'fs';
+import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
+
+// Media reads answer headers in well under a second and the chunk sizes the
+// providers ask for finish in under two, so a minute is only ever reached by a
+// stalled transfer. Matches the AbortSignal.timeout values used for the other
+// outbound media calls.
+const MEDIA_READ_TIMEOUT = 60_000;
+
+// AbortSignal.timeout rejects with a TimeoutError, which undici may surface
+// directly or wrap as the cause of the fetch rejection.
+const isReadTimeout = (err: any) =>
+  err?.name === 'TimeoutError' || err?.cause?.name === 'TimeoutError';
 
 export const stripQuery = (url: string) => {
   try {
@@ -76,6 +87,26 @@ export class Disconnect extends ApplicationFailure {
     super(
       truncateForTemporal(message, MAX_FAILURE_MESSAGE),
       'disconnect',
+      true,
+      [
+        {
+          identifier,
+          json: truncateForTemporal(json, MAX_FAILURE_FIELD),
+          body: truncateForTemporal(body, MAX_FAILURE_FIELD),
+        },
+      ]
+    );
+  }
+}
+
+// A media read that answered its headers and then stalled, after its own
+// retry was spent. Nothing has been sent to the platform at that point, so the
+// workflow repeats the publish instead of failing the post.
+export class MediaStall extends ApplicationFailure {
+  constructor(identifier: string, json: string, body: BodyInit, message = '') {
+    super(
+      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
+      'media_stall',
       true,
       [
         {
@@ -231,9 +262,49 @@ export abstract class SocialAbstract {
         : path;
     setHeartbeatDetails(`read media ${stripQuery(url)}`);
     const { width = 0, height = 0 } = await sharp(
-      await readOrFetch(url)
+      await this.readOrFetch(url)
     ).metadata();
     return { width, height };
+  }
+
+  // Reads the whole media into memory: used for images, which the providers
+  // hand straight to sharp. Lives here rather than in a helper so it can
+  // classify a stall like the ranged reads below do.
+  protected async readOrFetch(path: string, retried = false): Promise<Buffer> {
+    if (path.indexOf('http') !== 0) {
+      return readFileSync(path);
+    }
+
+    try {
+      return (
+        await axios({
+          url: path,
+          method: 'GET',
+          responseType: 'arraybuffer',
+          // Same stall as the ranged reads: headers arrive fast and the body
+          // then stops, and without a deadline the read never settles and
+          // holds the activity's worker slot. Images are a few MB and arrive
+          // in about a second.
+          signal: AbortSignal.timeout(MEDIA_READ_TIMEOUT),
+        })
+      ).data;
+    } catch (err: any) {
+      // axios reports an aborted signal as a canceled request
+      if (err?.code !== 'ERR_CANCELED' && !isReadTimeout(err)) {
+        throw err;
+      }
+
+      if (!retried) {
+        return this.readOrFetch(path, true);
+      }
+
+      throw new MediaStall(
+        '',
+        '{}',
+        Buffer.from('{}'),
+        `Media read timed out after ${MEDIA_READ_TIMEOUT}ms (${stripQuery(path)})`
+      );
+    }
   }
 
   // Resolves the total byte size of the media without loading it into memory:
@@ -274,31 +345,58 @@ export abstract class SocialAbstract {
     path: string,
     start: number,
     end: number,
-    identifier = ''
+    identifier = '',
+    retried = false
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
       setHeartbeatDetails(
         `media chunk ${start}-${end} ${stripQuery(path)}`
       );
-      const response = await fetch(path, {
-        headers: {
-          Range: `bytes=${start}-${end}`,
-          'accept-encoding': 'identity',
-        },
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      // Anything but 206 means the server ignored the Range header: buffering
-      // response.body here would silently load the whole file into memory and
-      // upload corrupted chunks.
-      if (response.status !== 206) {
-        throw new BadBody(
+      try {
+        const response = await fetch(path, {
+          headers: {
+            Range: `bytes=${start}-${end}`,
+            'accept-encoding': 'identity',
+          },
+          dispatcher: getSsrfSafeDispatcher(),
+          // The store answers the headers in well under a second and then
+          // stops mid-body. Without a deadline that read never settles, and
+          // the activity keeps its worker slot until the process restarts: a
+          // startToCloseTimeout fails the activity on the server but does not
+          // stop the function, which nothing here subscribes to cancellation
+          // to notice. Healthy reads of these chunk sizes finish in under 2s.
+          signal: AbortSignal.timeout(MEDIA_READ_TIMEOUT),
+        } as any);
+        // Anything but 206 means the server ignored the Range header: buffering
+        // response.body here would silently load the whole file into memory and
+        // upload corrupted chunks.
+        if (response.status !== 206) {
+          throw new BadBody(
+            identifier,
+            '{}',
+            Buffer.from('{}'),
+            `Media server did not honor the range request (status ${response.status})`
+          );
+        }
+        return Buffer.from(await response.arrayBuffer());
+      } catch (err) {
+        if (!isReadTimeout(err)) {
+          throw err;
+        }
+
+        // A stall is transient and nothing has been sent to the platform yet,
+        // so read the same range once more before giving up.
+        if (!retried) {
+          return this.mediaChunk(path, start, end, identifier, true);
+        }
+
+        throw new MediaStall(
           identifier,
           '{}',
           Buffer.from('{}'),
-          `Media server did not honor the range request (status ${response.status})`
+          `Media read timed out after ${MEDIA_READ_TIMEOUT}ms (bytes ${start}-${end})`
         );
       }
-      return Buffer.from(await response.arrayBuffer());
     }
 
     return new Promise((resolve, reject) => {
