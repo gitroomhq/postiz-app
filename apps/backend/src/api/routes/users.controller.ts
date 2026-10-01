@@ -298,9 +298,14 @@ export class UsersController {
 
   @Get('/organizations')
   async getOrgs(@GetUserFromRequest() user: User) {
-    return (await this._orgService.getOrgsByUserId(user.id)).filter(
-      (f) => !f.users[0].disabled
-    );
+    return (await this._orgService.getOrgsByUserId(user.id))
+      .filter((f) => !f.users[0].disabled)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        users: p.users,
+        subscription: p.subscription,
+      }));
   }
 
   @Post('/change-org')
