@@ -80,6 +80,7 @@ const useCommunity = () => {
 - Before adding a field to a shared repository/service `select` or changing a shared method's return shape, grep for all its consumers (frontend, public API, MCP/agent tools, orchestrator, webhooks) and confirm the change is intended for each.
 - Exposing a stored field to a new external surface (public API, MCP, webhooks) is a data-exposure decision — ask first, and check what existing production rows hold for that column before shipping it.
 - Never silently change the meaning or format of a value persisted in an existing DB column; that affects every reader and all historical rows, so ask first.
+- Never return a raw Prisma row from a model that holds credentials (`Integration`, `User` and similar) in a controller response. Repository writes on those models must use a `select` with only the fields the caller needs (like `setTimes` with `select: { id: true }`), or the controller returns nothing. This applies even where nearby code looks different.
 
 ## Testing
 
