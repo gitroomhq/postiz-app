@@ -64,7 +64,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 />
               </svg>
               {!!current?.name && (
-                <div className="max-w-[240px] truncate">{current?.name}</div>
+                <div className="max-w-[240px] truncate mobile:hidden">{current?.name}</div>
               )}
             </div>
           )}
@@ -106,7 +106,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
           )}
         </div>
       </div>
-      {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator" />}
+      {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator mobile:hidden" />}
     </>
   );
 };
