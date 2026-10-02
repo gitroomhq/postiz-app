@@ -11,7 +11,6 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { lookup } from 'mime-types';
 import sharp from 'sharp';
-import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   BadBody,
@@ -734,7 +733,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                   mediaId: await this.uploadWithRateLimitRetry(async () =>
                     asArticleImage
                       ? client.v2.uploadMedia(
-                          await sharp(await readOrFetch(m.path))
+                          await sharp(await this.readOrFetch(m.path))
                             .resize({
                               width: 1000,
                             })
@@ -746,7 +745,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                           }
                         )
                       : client.v2.uploadMedia(
-                          await sharp(await readOrFetch(m.path), {
+                          await sharp(await this.readOrFetch(m.path), {
                             animated: lookup(m.path) === 'image/gif',
                           })
                             .resize({
