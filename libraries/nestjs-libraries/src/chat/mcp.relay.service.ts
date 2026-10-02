@@ -168,11 +168,12 @@ export class McpRelayService {
         );
       }
 
-      // Every tool this server lists has to run on the instance, an older one
-      // would answer some calls with errors
-      const missing = Object.keys(await this._loadToolsService.loadTools()).filter(
-        (name) => !tools.includes(name)
-      );
+      // Every tool any install has must run on the instance, an older one
+      // would answer some calls with errors (tools of optional features, like
+      // clipping, depend on the instance setup, not its version)
+      const missing = this._loadToolsService
+        .coreToolNames()
+        .filter((name) => !tools.includes(name));
       if (missing.length) {
         throw new HttpException(
           `Your Postiz instance is missing tools this connection needs (${missing.join(', ')}). Update it to the latest Postiz version and connect again`,
@@ -211,12 +212,18 @@ export class McpRelayService {
               );
             }
 
-            const result = await this.callTool(
-              instance,
-              name,
-              inputData,
-              context?.mcp?.extra?.signal
-            );
+            let result: CallToolResult;
+            try {
+              result = await this.callTool(
+                instance,
+                name,
+                inputData,
+                context?.mcp?.extra?.signal
+              );
+            } catch (err) {
+              return this.failure(tool, (err as Error).message);
+            }
+
             const text = this.text(result);
             if (!tool.outputSchema) {
               return text;
@@ -229,7 +236,8 @@ export class McpRelayService {
               try {
                 output = JSON.parse(text);
               } catch {
-                throw new Error(
+                return this.failure(
+                  tool,
                   text ||
                     `${name} returned an unexpected answer from your Postiz instance`
                 );
@@ -239,7 +247,8 @@ export class McpRelayService {
             // an instance on another Postiz version can answer in another shape
             const check = await tool.outputSchema['~standard']?.validate(output);
             if (check?.issues) {
-              throw new Error(
+              return this.failure(
+                tool,
                 `Your Postiz instance answered ${name} in a format this connection does not know, update the instance to the latest Postiz version`
               );
             }
@@ -280,7 +289,7 @@ export class McpRelayService {
       // an instance older than this server doesn't have every tool yet
       if (text.startsWith('Unknown tool:')) {
         throw new Error(
-          `Your Postiz instance does not have ${name} yet, update it to the latest Postiz version to use it`
+          `${name} is not available on your Postiz instance: the feature it needs is not set up there, or the instance needs an update to the latest Postiz version`
         );
       }
       // arguments this server validated but an older instance doesn't accept
@@ -321,6 +330,22 @@ export class McpRelayService {
       }
       await client.close().catch(() => {});
     }
+  }
+
+  // A tool whose output has an `error` field answers normally with it (the
+  // clients count error results against the connector), any other one
+  // returns an error result
+  private async failure(tool: any, message: string) {
+    if (!tool.outputSchema) {
+      return message;
+    }
+    const check = await tool.outputSchema['~standard']?.validate({
+      error: message,
+    });
+    if (check && !check.issues) {
+      return { error: message };
+    }
+    throw new Error(message);
   }
 
   private text(result: CallToolResult) {
