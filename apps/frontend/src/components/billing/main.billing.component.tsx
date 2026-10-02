@@ -137,7 +137,7 @@ export const Features: FC<{
               />
             </svg>
           </div>
-          <div>{feature}</div>
+          <div className="text-start">{feature}</div>
         </div>
       ))}
     </div>
@@ -583,8 +583,11 @@ export const MainBillingComponent: FC<{
           ))}
       </div>
       {!!subscription?.id && (
-        <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>
+        <div className="flex justify-center mt-[20px] gap-[10px] mobile:flex-col">
+          <Button
+            onClick={updatePayment}
+            className="mobile:h-auto mobile:min-h-[40px] mobile:py-[8px] mobile:text-center"
+          >
             {t(
               'update_payment_method_invoices_history',
               'Update Payment Method / Invoices History'

@@ -76,6 +76,7 @@ export const Menu: FC<{
     if (show && menuRef.current) {
       const menuRect = menuRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
       const padding = 10;
 
       // Check if menu overflows bottom of viewport
@@ -87,6 +88,14 @@ export const Menu: FC<{
         // Only update if position actually changed significantly to avoid infinite loop
         if (Math.abs(show.y - newY) > 1) {
           setShow((prev) => (prev ? { ...prev, y: newY } : false));
+        }
+      }
+
+      // Check if menu overflows right of viewport (small screens)
+      if (menuRect.right > viewportWidth - padding) {
+        const newX = Math.max(padding, viewportWidth - menuRect.width - padding);
+        if (Math.abs(show.x - newX) > 1) {
+          setShow((prev) => (prev ? { ...prev, x: newX } : false));
         }
       }
     }
