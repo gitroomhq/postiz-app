@@ -66,7 +66,7 @@ If you discover a security vulnerability in the Postiz app, report it through [G
 
 Email the maintainers only when the report requires immediate, time-critical attention. Email does not replace submitting the report through GAdvisory.
 
-- @egelhaus ([E-Mail](mailto:egelhaus@ennogelhaus.de))
+- Gelhaus Solutions (@egelhaus): [contact@gplatform.org](mailto:contact@gplatform.org)
 
 ### AI Reports
 
