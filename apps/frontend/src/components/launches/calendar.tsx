@@ -259,16 +259,21 @@ const usePostActions = (onMutate?: () => void) => {
 
   const openPost = useCallback(
     (post: Post) => async () => {
-      const { releaseURL } = await (
-        await fetch(`/posts/${post.id}/release-url`)
-      ).json();
+      // opened before the request so popup blockers still see the click
+      const tab = window.open('', '_blank');
+      if (!tab) {
+        return;
+      }
+      tab.opener = null;
+      let releaseURL = post.releaseURL;
+      try {
+        releaseURL =
+          (await (await fetch(`/posts/${post.id}/release-url`)).json())
+            .releaseURL || releaseURL;
+      } catch (e) {}
       // multi-target posts (several subreddits / communities / channels)
       // join their URLs with commas: open the first one
-      window.open(
-        (releaseURL || post.releaseURL).split(',')[0],
-        '_blank',
-        'noopener,noreferrer'
-      );
+      tab.location.href = releaseURL.split(',')[0];
     },
     [fetch]
   );
