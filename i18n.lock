@@ -730,6 +730,8 @@ checksums:
     chat_onboarding_description: 9da74037342cd6adb283e8205299b986
     connector: 7abb5584501ce0e3cc51ba19f0561ca8
     connector_onboarding_description: eb8027296b46bf58475f6b4925bd6351
+    official_connector: cdaaab2f023cb2eaea40b666e9859442
+    connector_self_hosted_description: c966620ed2df1d6ffeaa92969aaf30a6
     mcp_onboarding_description: 5b33036d174222d86ac50039a3a31724
     cli_onboarding_description: b4aba065e5a8410ee2c365ee4d7aa87c
     agent_settings_later: bbdd45a80cc5218809363348e0b03a32

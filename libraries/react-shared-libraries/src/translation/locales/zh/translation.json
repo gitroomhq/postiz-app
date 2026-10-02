@@ -726,6 +726,8 @@
   "chat_onboarding_description": "无需 MCP 或 CLI 设置。将此粘贴到聊天中，代理会安装 Postiz CLI 并向您索取 API 密钥。",
   "connector": "连接器",
   "connector_onboarding_description": "最快捷的方法：一键添加 Postiz，系统会要求您登录",
+  "official_connector": "官方连接器",
+  "connector_self_hosted_description": "官方连接器同样适用于自托管的 Postiz。在要求登录时，选择“Use self-hosted”，然后输入 {{url}} 和你的 API 密钥。",
   "mcp_onboarding_description": "为您的代理提供 Postiz 工具，以创建、安排和管理帖子",
   "cli_onboarding_description": "安装 Postiz CLI 以及教您的代理如何使用的技能",
   "agent_settings_later": "更多代理和完整说明可在 设置 > 开发者 下查看",

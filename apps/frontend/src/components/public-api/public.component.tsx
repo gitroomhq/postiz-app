@@ -21,8 +21,9 @@ export const remoteMcpClients = {
     'In ChatGPT go to Settings > Connectors > Create and paste this URL.',
 } as const;
 
-// Official one-click connectors listed in the assistants' directories.
-// Only for the hosted Postiz (billingEnabled), they point at the public MCP server.
+// Official one-click connectors listed in the assistants' directories, they
+// point at the public MCP server: the hosted Postiz (billingEnabled), or a
+// self-hosted install through "Use self-hosted" on its sign-in page.
 export const mcpConnectorUrls = {
   Claude: 'https://claude.ai/directory/postiz',
   ChatGPT:
@@ -60,6 +61,17 @@ export type AnyMcpClient = RemoteMcpClient | ChatOnlyMcpClient | McpClient;
 // oauth: no API key, the client registers itself (DCR) and the user signs in to Postiz
 // apikey: the organization API key, as a Bearer header (or inside the URL for remote clients)
 export type McpAuth = 'oauth' | 'apikey';
+
+// Only the self-hosted docker images are built with a version
+export const isSelfHosted = !!process.env.NEXT_PUBLIC_VERSION;
+
+// The directory listings behind the "Official connector" tab
+const officialConnectorClients = [
+  'Claude',
+  'ChatGPT',
+  'Cursor',
+  'Grok Bot',
+] as const;
 
 export const getMcpOauthUrl = (mcpBase: string) =>
   `${mcpBase}/mcp-oauth-dynamic`;
@@ -305,7 +317,13 @@ const McpSection = ({
   const t = useT();
   const { billingEnabled } = useVariables();
   const [activeClient, setActiveClient] = useState<AnyMcpClient>('Claude');
-  const [auth, setAuth] = useState<McpAuth>('oauth');
+  const officialConnectors = billingEnabled || isSelfHosted;
+  // the directory connectors come first wherever they work
+  const tabs: Array<'official' | McpAuth> = officialConnectors
+    ? ['official', 'oauth', 'apikey']
+    : ['oauth', 'apikey'];
+  const [tab, setTab] = useState(tabs[0]);
+  const auth: McpAuth = tab === 'apikey' ? 'apikey' : 'oauth';
   const [revealed, setRevealed] = useState(false);
 
   const { config, hint } = getMcpConfig(
@@ -342,7 +360,7 @@ const McpSection = ({
           </div>
         </div>
         <div className="flex flex-wrap gap-[6px] shrink-0 pt-[2px]">
-          {billingEnabled && (
+          {officialConnectors && (
             <>
               <a
                 className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
@@ -373,25 +391,27 @@ const McpSection = ({
         </div>
       </div>
       <div className="p-[20px] mobile:p-[14px] flex flex-col gap-[16px]">
-        {!chatOnly && (
+        {(tab === 'official' || !chatOnly) && (
           <div className="flex flex-col gap-[6px]">
             <div className="text-[13px] font-[600] text-customColor18">
               {t('auth_method', 'Authentication')}
             </div>
-            <div className="flex gap-[6px]">
-              {(['oauth', 'apikey'] as const).map((m) => (
+            <div className="flex flex-wrap gap-[6px]">
+              {tabs.map((m) => (
                 <button
                   key={m}
                   type="button"
                   className={clsx(
                     'cursor-pointer px-[14px] h-[36px] text-[13px] font-[500] rounded-[8px] transition-colors',
-                    auth === m
+                    tab === m
                       ? 'bg-[#612BD3] text-white'
                       : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
                   )}
-                  onClick={() => setAuth(m)}
+                  onClick={() => setTab(m)}
                 >
-                  {m === 'oauth'
+                  {m === 'official'
+                    ? t('official_connector', 'Official connector')
+                    : m === 'oauth'
                     ? t('sign_in_no_api_key', 'Sign in with Postiz (no API key)')
                     : t('api_key', 'API Key')}
                 </button>
@@ -399,6 +419,42 @@ const McpSection = ({
             </div>
           </div>
         )}
+        {tab === 'official' ? (
+          <div className="flex flex-col gap-[8px]">
+            <div className="text-[12px] text-customColor18 font-[500]">
+              {isSelfHosted
+                ? t(
+                    'connector_self_hosted_description',
+                    'The official connector works with self-hosted Postiz too. When asked to sign in, choose "Use self-hosted" and enter {{url}} with your API key.',
+                    { url: mcpBase, interpolation: { escapeValue: false } }
+                  )
+                : t(
+                    'connector_onboarding_description',
+                    'The fastest way: add Postiz with one click, you will be asked to sign in'
+                  )}
+            </div>
+            <div className="flex flex-wrap gap-[8px]">
+              {officialConnectorClients.map((client) => (
+                <a
+                  key={client}
+                  className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[8px]"
+                  href={mcpConnectorUrls[client]}
+                  target="_blank"
+                >
+                  <McpClientIcon client={client} />
+                  {client === 'Claude'
+                    ? t('add_to_claude', 'Add to Claude')
+                    : client === 'ChatGPT'
+                    ? t('add_to_chatgpt', 'Add to ChatGPT')
+                    : client === 'Cursor'
+                    ? t('add_to_cursor', 'Add to Cursor')
+                    : t('add_to_grok_bot', 'Add to Grok Bot')}
+                </a>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="flex flex-col gap-[6px]">
           <div className="text-[13px] font-[600] text-customColor18">
             {t('mcp_client', 'Client')}
@@ -478,7 +534,7 @@ const McpSection = ({
             {!isRemoteMcpClient(activeClient) && !chatOnly && (
               <CopyButton text={baseUrl} label={t('copy_url', 'Copy URL')} />
             )}
-            {activeClient === 'Claude' && billingEnabled && (
+            {activeClient === 'Claude' && officialConnectors && (
               <a
                 className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
                 href={mcpConnectorUrls.Claude}
@@ -488,7 +544,7 @@ const McpSection = ({
                 {t('add_to_claude', 'Add to Claude')}
               </a>
             )}
-            {activeClient === 'ChatGPT' && billingEnabled && (
+            {activeClient === 'ChatGPT' && officialConnectors && (
               <a
                 className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
                 href={mcpConnectorUrls.ChatGPT}
@@ -498,7 +554,7 @@ const McpSection = ({
                 {t('add_to_chatgpt', 'Add to ChatGPT')}
               </a>
             )}
-            {activeClient === 'Grok Bot' && billingEnabled && (
+            {activeClient === 'Grok Bot' && officialConnectors && (
               <a
                 className="cursor-pointer px-[16px] h-[36px] bg-[#612BD3] hover:bg-[#5520CB] text-white transition-colors rounded-[8px] text-[13px] font-[600] flex items-center gap-[6px]"
                 href={mcpConnectorUrls['Grok Bot']}
@@ -510,6 +566,8 @@ const McpSection = ({
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

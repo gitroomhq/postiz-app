@@ -726,6 +726,8 @@
   "chat_onboarding_description": "لا حاجة لإعدادات MCP أو CLI. الصق هذا في الدردشة، سيقوم الوكيل بتثبيت Postiz CLI ويطلب منك مفتاح API الخاص بك.",
   "connector": "موصل",
   "connector_onboarding_description": "الأسرع: أضف Postiz بنقرة واحدة، سيطلب منك تسجيل الدخول",
+  "official_connector": "الموصل الرسمي",
+  "connector_self_hosted_description": "يعمل الموصل الرسمي أيضًا مع Postiz المستضاف ذاتيًا. عند طلب تسجيل الدخول، اختر \"Use self-hosted\" وأدخل {{url}} مع مفتاح API الخاص بك.",
   "mcp_onboarding_description": "زود وكيلك بأدوات Postiz لإنشاء وجدولة وإدارة المنشورات",
   "cli_onboarding_description": "ثبّت Postiz CLI والمهارة التي تعلم وكيلك كيفية استخدامها",
   "agent_settings_later": "المزيد من الوكلاء والتعليمات الكاملة متوفرة في الإعدادات > المطورون",

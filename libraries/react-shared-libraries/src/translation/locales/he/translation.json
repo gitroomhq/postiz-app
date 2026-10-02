@@ -726,6 +726,8 @@
   "chat_onboarding_description": "אין צורך ב-MCP או הגדרות CLI. העתיקו את זה לצ'אט, הסוכן יתקין את Postiz CLI וישאל אתכם את מפתח ה-API שלכם.",
   "connector": "מחבר",
   "connector_onboarding_description": "הדרך המהירה ביותר: הוסיפו את Postiz בלחיצה אחת, תתבקשו להתחבר",
+  "official_connector": "מחבר רשמי",
+  "connector_self_hosted_description": "המחבר הרשמי עובד גם עם Postiz באירוח עצמי. כשתתבקש להתחבר, בחר \"Use self-hosted\" והזן את {{url}} יחד עם מפתח ה-API שלך.",
   "mcp_onboarding_description": "העניקו לסוכן שלכם כלים של Postiz ליצירת, תזמון וניהול פוסטים",
   "cli_onboarding_description": "התקינו את Postiz CLI ואת המיומנות שמלמדת את הסוכן איך להשתמש בו",
   "agent_settings_later": "סוכנים נוספים והוראות מלאות זמינים תחת הגדרות > מפתחים",
