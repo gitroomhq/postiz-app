@@ -257,7 +257,23 @@ const usePostActions = (onMutate?: () => void) => {
     [modal, t, mutate]
   );
 
-  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease };
+  const openPost = useCallback(
+    (post: Post) => async () => {
+      const { releaseURL } = await (
+        await fetch(`/posts/${post.id}/release-url`)
+      ).json();
+      // multi-target posts (several subreddits / communities / channels)
+      // join their URLs with commas: open the first one
+      window.open(
+        (releaseURL || post.releaseURL).split(',')[0],
+        '_blank',
+        'noopener,noreferrer'
+      );
+    },
+    [fetch]
+  );
+
+  return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
 };
 
 export const DayView = () => {
@@ -504,7 +520,7 @@ export const ListView = () => {
       : t('no_posts', 'No posts');
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
 
   // Group posts by date
   const groupedPosts = useMemo(() => {
@@ -553,6 +569,7 @@ export const ListView = () => {
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
+                  openPost={openPost(post)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
@@ -609,7 +626,7 @@ export const CalendarColumn: FC<{
   const fetch = useFetch();
 
   // Use shared post actions hook
-  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease } = usePostActions();
+  const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
   const postList = useMemo(() => {
     return posts.filter((post) => {
       const pList = dayjs.utc(post.publishDate).local();
@@ -886,6 +903,7 @@ export const CalendarColumn: FC<{
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
+                  openPost={openPost(post)}
                   editPost={editPost(post, false)}
                   duplicatePost={editPost(post, true)}
                   copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
@@ -998,6 +1016,7 @@ const CalendarItem: FC<{
   deletePost: () => void;
   statistics: () => void;
   missingRelease?: () => void;
+  openPost: () => void;
   integrations: Integrations[];
   state: State;
   display: 'day' | 'week' | 'month';
@@ -1023,6 +1042,7 @@ const CalendarItem: FC<{
     deletePost,
     showTime,
     missingRelease,
+    openPost,
   } = props;
   const { disableXAnalytics } = useVariables();
   const user = useUser();
@@ -1079,7 +1099,7 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[10px] px-[5px] bg-btnPrimary'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[6px] px-[5px] bg-btnPrimary'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -1130,15 +1150,7 @@ const CalendarItem: FC<{
                 'hidden group-hover:block hover:underline cursor-pointer',
                 post?.tags?.[0]?.tag?.color && 'mix-blend-difference'
               )}
-              onClick={() =>
-                window.open(
-                  // multi-target posts (several subreddits / communities /
-                  // channels) join their URLs with commas: open the first one
-                  post.releaseURL.split(',')[0],
-                  '_blank',
-                  'noopener,noreferrer'
-                )
-              }
+              onClick={openPost}
             >
               <OpenPost />
             </div>
