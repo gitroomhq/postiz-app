@@ -98,26 +98,6 @@ export class Disconnect extends ApplicationFailure {
   }
 }
 
-// A media read that answered its headers and then stalled, after its own
-// retry was spent. Nothing has been sent to the platform at that point, so the
-// workflow repeats the publish instead of failing the post.
-export class MediaStall extends ApplicationFailure {
-  constructor(identifier: string, json: string, body: BodyInit, message = '') {
-    super(
-      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
-      'media_stall',
-      true,
-      [
-        {
-          identifier,
-          json: truncateForTemporal(json, MAX_FAILURE_FIELD),
-          body: truncateForTemporal(body, MAX_FAILURE_FIELD),
-        },
-      ]
-    );
-  }
-}
-
 export class BadBody extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
     super(truncateForTemporal(message, MAX_FAILURE_MESSAGE), 'bad_body', true, [
@@ -299,11 +279,11 @@ export abstract class SocialAbstract {
         return this.readOrFetch(path, true);
       }
 
-      throw new MediaStall(
+      throw new BadBody(
         '',
-        '{}',
+        JSON.stringify({ timeoutMs: MEDIA_READ_TIMEOUT, path: stripQuery(path) }),
         Buffer.from('{}'),
-        `Media read timed out after ${MEDIA_READ_TIMEOUT}ms (${stripQuery(path)})`
+        'We could not read the media for this post, so it was not published'
       );
     }
   }
@@ -391,11 +371,15 @@ export abstract class SocialAbstract {
           return this.mediaChunk(path, start, end, identifier, true);
         }
 
-        throw new MediaStall(
+        // BadBody rather than a retryable error: the read already retried
+        // itself, and repeating the publish would re-read the same media and
+        // re-upload everything already sent while holding the provider's
+        // queue slot. The message is what the user is shown.
+        throw new BadBody(
           identifier,
-          '{}',
+          JSON.stringify({ timeoutMs: MEDIA_READ_TIMEOUT, start, end }),
           Buffer.from('{}'),
-          `Media read timed out after ${MEDIA_READ_TIMEOUT}ms (bytes ${start}-${end})`
+          'We could not read the media for this post, so it was not published'
         );
       }
     }
