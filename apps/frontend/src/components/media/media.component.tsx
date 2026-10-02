@@ -119,7 +119,7 @@ export const Pagination: FC<{
   }, [current, totalPages]);
 
   return (
-    <ul className="flex flex-row items-center gap-1 justify-center mt-[15px]">
+    <ul className="flex flex-row flex-wrap items-center gap-1 justify-center mt-[15px]">
       <li className={clsx(current === 0 && 'opacity-20 pointer-events-none')}>
         <div
           className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 px-4 py-2 gap-1 ps-2.5 text-gray-400 hover:text-white border-[#1F1F1F] hover:bg-forth"
@@ -127,7 +127,7 @@ export const Pagination: FC<{
           onClick={() => setPage(current - 1)}
         >
           <ChevronLeftIcon className="lucide lucide-chevron-left h-4 w-4" />
-          <span>{t('previous', 'Previous')}</span>
+          <span className="mobile:hidden">{t('previous', 'Previous')}</span>
         </div>
       </li>
       {paginationItems.map((item, index) => (
@@ -162,7 +162,7 @@ export const Pagination: FC<{
           aria-label="Go to next page"
           onClick={() => setPage(current + 1)}
         >
-          <span>{t('next', 'Next')}</span>
+          <span className="mobile:hidden">{t('next', 'Next')}</span>
           <ChevronRightIcon className="lucide lucide-chevron-right h-4 w-4" />
         </a>
       </li>
@@ -420,14 +420,14 @@ export const MediaBox: FC<{
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
-            'flex items-center gap-[12px]',
+            'flex items-center gap-[12px] mobile:flex-wrap',
             !isLoading &&
               !data?.results?.length &&
               !debouncedSearch &&
               'hidden'
           )}
         >
-          <div className="flex-1">
+          <div className="flex-1 mobile:basis-full">
             <input
               type="text"
               value={search}
@@ -516,7 +516,7 @@ export const MediaBox: FC<{
                 {[...new Array(16)].map((_, i) => (
                   <div
                     className={clsx(
-                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max aspect-square'
+                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max mobile:!w-1/3 mobile:!max-w-[33.333%] aspect-square'
                     )}
                     key={i}
                   >
@@ -537,7 +537,7 @@ export const MediaBox: FC<{
               .map((media: any) => (
                 <div
                   className={clsx(
-                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max aspect-square',
+                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max mobile:!w-1/3 mobile:!max-w-[33.333%] aspect-square',
                     !standalone && 'cursor-pointer'
                   )}
                   key={media.id}
@@ -561,7 +561,9 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
-                    <div className="absolute bottom-[10px] end-[10px] z-[100]">{media.originalName}</div>
+                    <div className="absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]">
+                      {media.originalName}
+                    </div>
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
@@ -825,9 +827,9 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        <div className="flex gap-[8px] mobile:gap-x-[4px] mobile:gap-y-0 mobile:flex-wrap px-[12px] border-t border-newColColor w-full b1 text-textColor">
           {!mediaNotAvailable && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex py-[10px] mobile:pb-0 b2 items-center gap-[4px] mobile:flex-wrap">
               <div
                 onClick={showModal}
                 className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
@@ -866,7 +868,7 @@ export const MultiMediaComponent: FC<{
             </div>
           )}
           {!mediaNotAvailable && (
-            <div className="text-newColColor h-full flex items-center">
+            <div className="text-newColColor h-full flex items-center mobile:hidden">
               <VerticalDividerIcon />
             </div>
           )}

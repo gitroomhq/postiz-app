@@ -43,6 +43,7 @@ import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
+import { useClickOutside } from '@mantine/hooks';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -53,6 +54,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const toaster = useToaster();
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
+  const [showPostNow, setShowPostNow] = useState(false);
+  const postNowRef = useClickOutside<HTMLDivElement>(() => {
+    setShowPostNow(false);
+  });
   const { data: shortlinkPreferenceData } = useShortlinkPreference();
 
   const { addEditSets, mutate, customClose, dummy } = props;
@@ -483,24 +489,48 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   );
 
   return (
-    <div className="w-full h-full flex-1 p-[40px] flex relative">
-      <div className="flex flex-1 bg-newBgColorInner rounded-[20px] flex-col">
-        <div className="flex-1 flex">
-          <div className="flex flex-col flex-1 border-e border-newBorder">
-            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
+    <div className="w-full h-full flex-1 p-[40px] mobile:p-0 mobile:h-auto mobile:min-h-full flex relative">
+      <div className="flex flex-1 min-w-0 bg-newBgColorInner rounded-[20px] mobile:rounded-none flex-col">
+        <div className="flex-1 flex mobile:contents">
+          <div className="flex flex-col flex-1 min-w-0 border-e border-newBorder mobile:border-e-0 mobile:flex-none">
+            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] mobile:rounded-none flex items-center gap-[12px] px-[20px] mobile:px-[16px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
               <CreationMethodBadge
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
               />
+              <div className="hidden mobile:block ms-auto cursor-pointer">
+                <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
+              </div>
             </div>
-            <div className="flex-1 flex flex-col gap-[16px]">
+            <div className="hidden mobile:flex mx-[12px] mt-[12px] p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
+              {(['edit', 'preview'] as const).map((tab) => (
+                <div
+                  key={tab}
+                  onClick={() => setMobileTab(tab)}
+                  className={clsx(
+                    'flex-1 pt-[6px] pb-[5px] cursor-pointer text-center rounded-[6px]',
+                    mobileTab === tab && 'text-textItemFocused bg-boxFocused'
+                  )}
+                >
+                  {tab === 'edit'
+                    ? t('edit', 'Edit')
+                    : t('post_preview', 'Post Preview')}
+                </div>
+              ))}
+            </div>
+            <div
+              className={clsx(
+                'flex-1 flex flex-col gap-[16px]',
+                mobileTab === 'preview' && 'mobile:hidden'
+              )}
+            >
               <div
                 className={clsx('flex-1 relative', showSettings && 'hidden')}
               >
                 <div
                   id="social-content"
-                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] absolute top-0 left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] mobile:px-[12px] mobile:static absolute top-0 left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
                 >
                   <div className="flex w-full">
                     <div className="flex flex-1">
@@ -533,7 +563,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <div
                 id="wrapper-settings"
                 className={clsx(
-                  'pb-[20px] px-[20px] select-none',
+                  'pb-[20px] px-[20px] mobile:px-[12px] select-none',
                   showSettings && 'flex-1 flex pt-[20px]',
                   current === 'global' && 'hidden'
                 )}
@@ -562,7 +592,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       'text-[14px] text-textColor font-[500] relative'
                     )}
                   >
-                    <div className="absolute left-0 top-0 w-full h-full flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                    <div className="absolute mobile:static left-0 top-0 w-full h-full mobile:h-auto flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
                       <div
                         id="social-settings"
                         className="flex flex-col gap-[20px] bg-newBgColor"
@@ -576,25 +606,35 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </div>
             </div>
           </div>
-          <div className="w-[580px] flex flex-col">
-            <div className="bg-newBgColor h-[65px] rounded-e-[20px] !rounded-b-[0] flex items-center px-[20px] text-[20px] font-[600]">
+          <div
+            className={clsx(
+              'w-[580px] tablet:w-[440px] mobile:!w-full flex flex-col mobile:order-3 mobile:flex-1',
+              mobileTab === 'edit' && 'mobile:hidden'
+            )}
+          >
+            <div className="bg-newBgColor h-[65px] rounded-e-[20px] !rounded-b-[0] mobile:hidden flex items-center px-[20px] text-[20px] font-[600]">
               <div className="flex-1">{t('post_preview', 'Post Preview')}</div>
-              <div className="cursor-pointer">
+              <div className="cursor-pointer mobile:hidden">
                 <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
               </div>
             </div>
             <div className="flex-1 relative">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute top-0 p-[20px] pe-[8px] left-0 w-full h-full overflow-x-hidden overflow-y-scroll scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                className="absolute mobile:static top-0 p-[20px] pe-[8px] mobile:p-[12px] left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center">
-          <div className="flex-1 flex ps-[20px] gap-[8px]">
+        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center mobile:contents">
+          <div
+            className={clsx(
+              'flex-1 flex ps-[20px] gap-[8px] mobile:order-2 mobile:flex-wrap mobile:flex-none mobile:p-[12px]',
+              mobileTab === 'preview' && 'mobile:hidden'
+            )}
+          >
             {!dummy && (
               <TagsComponent
                 name="tags"
@@ -610,7 +650,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
+          <div className="pe-[20px] flex items-center justify-end gap-[8px] mobile:order-4 mobile:sticky mobile:bottom-0 mobile:z-[20] mobile:mt-auto mobile:flex-wrap mobile:p-[12px] mobile:bg-newBgColorInner mobile:border-t mobile:border-newBorder">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -643,7 +683,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {addEditSets && (
               <button
-                className="text-white text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
+                className="text-white text-[15px] font-[600] min-w-[180px] mobile:basis-full btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -653,13 +693,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div className="group cursor-pointer relative">
+              <div
+                ref={postNowRef}
+                className="group cursor-pointer relative mobile:basis-full"
+              >
                 <button
                   disabled={
                     selectedIntegrations.length === 0 || loading || locked
                   }
                   onClick={schedule('schedule')}
-                  className="text-white relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
+                  className="text-white relative min-w-[180px] mobile:w-full btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 >
                   {loading && (
                     <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
@@ -668,7 +711,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   )}
                   <div
                     className={clsx(
-                      'text-[15px] font-[600]',
+                      'text-[15px] font-[600] mobile:flex-1',
                       loading && 'invisible'
                     )}
                   >
@@ -683,8 +726,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       : t('update', 'Update')}
                   </div>
                   {!dummy && (
-                    <div className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change">
-                      <DropdownArrowSmallIcon className="group-hover:rotate-180 text-white" />
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPostNow(!showPostNow);
+                      }}
+                      className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] mobile:pt-0 mobile:h-[44px] mobile:w-[44px] mobile:-me-[16px] mobile:border-s mobile:border-white/20 arrow-change"
+                    >
+                      <DropdownArrowSmallIcon
+                        className={clsx(
+                          'group-hover:rotate-180 text-white',
+                          showPostNow && 'rotate-180'
+                        )}
+                      />
                     </div>
                   )}
                 </button>
@@ -695,7 +749,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     disabled={
                       selectedIntegrations.length === 0 || loading || locked
                     }
-                    className="rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 hidden group-hover:flex absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner"
+                    className={clsx(
+                      'rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 absolute bottom-[100%] -left-[12px] mobile:left-0 p-[12px] mobile:px-0 w-[206px] mobile:w-full bg-newBgColorInner',
+                      showPostNow ? 'flex' : 'hidden group-hover:flex'
+                    )}
                   >
                     <div className="text-white rounded-[8px] bg-[#D82D7E] h-[44px] w-full flex justify-center items-center post-now">
                       {t('post_now', 'Post Now')}
@@ -708,6 +765,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         </div>
       </div>
       <CopilotPopup
+        className="mobile:!bottom-[136px]"
         hitEscapeToClose={false}
         clickOutsideToClose={true}
         instructions={`
