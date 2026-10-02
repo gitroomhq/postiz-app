@@ -46,6 +46,16 @@ export class LoadToolsService {
     );
   }
 
+  // Tools every install has, whatever features it configured
+  coreToolNames() {
+    return toolList
+      .map(
+        (p) => this._moduleRef.get(p, { strict: false }) as AgentToolInterface
+      )
+      .filter((p) => !p.mcpOnly && !p.available)
+      .map((p) => p.name);
+  }
+
   async agent() {
     const tools = await this.loadTools();
     return new Agent({
