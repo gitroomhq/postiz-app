@@ -156,6 +156,37 @@ export class PostsService {
     return this._postRepository.updateReleaseId(postId, orgId, releaseId);
   }
 
+  async resolveRelease(
+    orgId: string,
+    post: {
+      id: string;
+      releaseId: string;
+      releaseURL: string;
+      integration: Integration;
+    }
+  ) {
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    const resolved = await integrationProvider.resolveReleaseId?.(
+      post.integration.token,
+      post.releaseId,
+      post.integration
+    );
+    if (!resolved || resolved.postId === post.releaseId) {
+      return { releaseId: post.releaseId, releaseURL: post.releaseURL };
+    }
+
+    await this._postRepository.updateResolvedRelease(
+      post.id,
+      orgId,
+      resolved.postId,
+      resolved.releaseURL
+    );
+    return { releaseId: resolved.postId, releaseURL: resolved.releaseURL };
+  }
+
   async checkPostAnalytics(
     orgId: string,
     postId: string,
@@ -214,10 +245,12 @@ export class PostsService {
     // }
 
     try {
+      const { releaseId } = await this.resolveRelease(orgId, post);
+
       const loadAnalytics = await integrationProvider.postAnalytics(
         getIntegration.internalId,
         getIntegration.token,
-        post.releaseId,
+        releaseId,
         date
       );
       await ioRedis.set(
