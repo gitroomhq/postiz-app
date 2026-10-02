@@ -30,6 +30,36 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
     'code' in exception &&
     'message' in exception;
 
+  // Frameless rejections our code can never produce: every chrome.runtime.sendMessage
+  // call we make passes a callback, so it never rejects with this message.
+  const thirdPartyFramelessPatterns = [
+    /^Could not establish connection\. Receiving end does not exist\.$/,
+  ];
+
+  // Sentry wraps timer and event listener callbacks, extensions' included, and the
+  // wrapper lives in our bundle. Its location is recorded so it is not counted as ours.
+  let sentryWrapperFrame = '';
+  const frameKey = (frame: Sentry.StackFrame) =>
+    `${(frame.filename || '').split('/_next/').pop()}:${frame.lineno}:${frame.colno}`;
+
+  const isThirdPartyOnly = (event: Sentry.ErrorEvent) => {
+    const values = event.exception?.values || [];
+    return (
+      values.length > 0 &&
+      values.every((value) => {
+        const frames = value.stacktrace?.frames || [];
+        const wrapperIndex = frames.map(frameKey).lastIndexOf(sentryWrapperFrame);
+        const callbackFrames = frames
+          .slice(wrapperIndex + 1)
+          .filter((frame) => frame.filename && (frame.lineno || frame.colno));
+        if (!callbackFrames.length) {
+          return thirdPartyFramelessPatterns.some((pattern) => pattern.test(value.value || ''));
+        }
+        return callbackFrames.every((frame) => !frame.filename!.includes('/_next/'));
+      })
+    );
+  };
+
   try {
     Sentry.init({
       initialScope: {
@@ -72,8 +102,12 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
             }
           }
 
+          if (typeof window !== 'undefined' && isThirdPartyOnly(event)) {
+            event.tags = { ...event.tags, third_party_code: true };
+          }
+
           // If there's an exception and an event id, present the user report dialog.
-          if (event.event_id) {
+          if (event.event_id && !event.tags?.third_party_code) {
             // Only attempt to show the dialog in a browser environment.
             if (typeof window !== 'undefined' && window.document) {
               // Dynamically import the package that exports showReportDialog to avoid
@@ -98,6 +132,16 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
         return event; // Send the event to Sentry
       },
     });
+
+    if (typeof window !== 'undefined') {
+      const probe = new EventTarget();
+      probe.addEventListener('probe', () => {
+        const frames = Sentry.defaultStackParser(new Error().stack || '');
+        const frame = frames[frames.length - 2];
+        sentryWrapperFrame = frame ? frameKey(frame) : '';
+      });
+      probe.dispatchEvent(new Event('probe'));
+    }
   } catch (err) {
     // Log initialization errors
     // eslint-disable-next-line no-console
