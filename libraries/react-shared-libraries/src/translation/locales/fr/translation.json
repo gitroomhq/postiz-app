@@ -726,6 +726,8 @@
   "chat_onboarding_description": "Aucun paramétrage MCP ou CLI nécessaire. Collez ceci dans le chat, l’agent installe le CLI Postiz et vous demande votre clé API.",
   "connector": "Connecteur",
   "connector_onboarding_description": "La façon la plus rapide : ajoutez Postiz en un clic, vous serez invité à vous connecter",
+  "official_connector": "Connecteur officiel",
+  "connector_self_hosted_description": "Le connecteur officiel fonctionne aussi avec Postiz auto-hébergé. Lorsqu'on vous demande de vous connecter, choisissez \"Use self-hosted\" et saisissez {{url}} avec votre clé API.",
   "mcp_onboarding_description": "Donnez à votre agent des outils Postiz pour créer, programmer et gérer des publications",
   "cli_onboarding_description": "Installez le CLI Postiz et la compétence qui apprend à votre agent à l’utiliser",
   "agent_settings_later": "Plus d’agents et les instructions complètes sont disponibles dans Paramètres > Développeurs",

@@ -726,6 +726,8 @@
   "chat_onboarding_description": "MCPやCLIの設定は不要です。これをチャットに貼り付けるだけで、エージェントがPostiz CLIをインストールし、APIキーを尋ねます。",
   "connector": "コネクタ",
   "connector_onboarding_description": "最速の方法: ワンクリックでPostizを追加、サインインが求められます。",
+  "official_connector": "公式コネクタ",
+  "connector_self_hosted_description": "公式コネクタはセルフホストの Postiz でも使えます。サインインを求められたら「Use self-hosted」を選び、{{url}} と API キーを入力してください。",
   "mcp_onboarding_description": "エージェントにPostizのツールを使わせて、投稿の作成やスケジュール管理をさせましょう。",
   "cli_onboarding_description": "Postiz CLIと、それを使い方をエージェントに教えるスキルをインストールします。",
   "agent_settings_later": "その他のエージェントや詳細な手順は、設定 > 開発者 から利用できます。",

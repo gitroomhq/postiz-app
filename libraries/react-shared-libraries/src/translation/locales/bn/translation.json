@@ -726,6 +726,8 @@
   "chat_onboarding_description": "MCP বা CLI সেটিংসের প্রয়োজন নেই। এটি চ্যাটে পেস্ট করুন, এজেন্টটি Postiz CLI ইনস্টল করবে এবং আপনার API কী চাইবে।",
   "connector": "কনেক্টর",
   "connector_onboarding_description": "সবচেয়ে দ্রুত উপায়: এক ক্লিকে Postiz যোগ করুন, আপনাকে সাইন ইন করতে বলা হবে",
+  "official_connector": "অফিসিয়াল কানেক্টর",
+  "connector_self_hosted_description": "অফিসিয়াল কানেক্টর সেলফ-হোস্টেড Postiz-এর সাথেও কাজ করে। সাইন ইন করতে বলা হলে, \"Use self-hosted\" বেছে নিন এবং আপনার API কী সহ {{url}} লিখুন।",
   "mcp_onboarding_description": "আপনার এজেন্টকে Postiz টুল দিন যাতে সে পোস্ট তৈরি, নির্ধারণ এবং পরিচালনা করতে পারে",
   "cli_onboarding_description": "Postiz CLI এবং সেই স্কিল ইনস্টল করুন যা আপনার এজেন্টকে এটি ব্যবহার করতে শেখায়",
   "agent_settings_later": "আরও এজেন্ট এবং সম্পূর্ণ নির্দেশিকা সেটিংস > ডেভেলপারস-এ পাওয়া যাবে",

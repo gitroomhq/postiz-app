@@ -726,6 +726,8 @@
   "chat_onboarding_description": "Không cần cài đặt MCP hoặc CLI. Dán dòng này vào chat, Agent sẽ cài đặt Postiz CLI và yêu cầu API key của bạn.",
   "connector": "Connector",
   "connector_onboarding_description": "Nhanh nhất: thêm Postiz chỉ với một cú nhấp, bạn sẽ được yêu cầu đăng nhập",
+  "official_connector": "Trình kết nối chính thức",
+  "connector_self_hosted_description": "Trình kết nối chính thức cũng hoạt động với Postiz tự lưu trữ. Khi được yêu cầu đăng nhập, hãy chọn \"Use self-hosted\" và nhập {{url}} cùng khóa API của bạn.",
   "mcp_onboarding_description": "Cung cấp cho Agent của bạn các công cụ của Postiz để tạo, lên lịch và quản lý bài đăng",
   "cli_onboarding_description": "Cài đặt Postiz CLI và kỹ năng hướng dẫn Agent của bạn cách sử dụng nó",
   "agent_settings_later": "Thêm nhiều Agent và hướng dẫn đầy đủ có tại Cài đặt > Nhà phát triển",

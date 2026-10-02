@@ -726,6 +726,8 @@
   "chat_onboarding_description": "MCP veya CLI ayarlarına gerek yok. Bunu sohbete yapıştırın, ajan Postiz CLI'yı yükler ve sizden API anahtarınızı ister.",
   "connector": "Konnektör",
   "connector_onboarding_description": "En hızlı yol: Postiz'i tek tıkla ekleyin, giriş yapmanız istenecektir",
+  "official_connector": "Resmi bağlayıcı",
+  "connector_self_hosted_description": "Resmi bağlayıcı, kendi sunucunuzda barındırdığınız Postiz ile de çalışır. Giriş yapmanız istendiğinde \"Use self-hosted\" seçeneğini seçin ve API anahtarınızla birlikte {{url}} adresini girin.",
   "mcp_onboarding_description": "Ajanınıza gönderi oluşturma, zamanlama ve yönetme araçları verin",
   "cli_onboarding_description": "Postiz CLI ve ajanınıza bunun nasıl kullanılacağını öğreten beceriyi kurun",
   "agent_settings_later": "Daha fazla ajan ve tam talimatlar Ayarlar > Geliştiriciler bölümünde mevcuttur",

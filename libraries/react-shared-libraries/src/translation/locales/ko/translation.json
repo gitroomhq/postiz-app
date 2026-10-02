@@ -726,6 +726,8 @@
   "chat_onboarding_description": "MCP나 CLI 설정이 필요 없습니다. 채팅에 이 내용을 붙여넣으면 에이전트가 Postiz CLI를 설치하고 API 키를 입력받습니다.",
   "connector": "커넥터",
   "connector_onboarding_description": "가장 빠른 방법: 한 번의 클릭으로 Postiz를 추가하고, 로그인 요청을 받게 됩니다.",
+  "official_connector": "공식 커넥터",
+  "connector_self_hosted_description": "공식 커넥터는 자체 호스팅 Postiz에서도 작동합니다. 로그인하라는 메시지가 나타나면 \"Use self-hosted\"를 선택하고 {{url}}과 API 키를 입력하세요.",
   "mcp_onboarding_description": "에이전트에게 Postiz 도구를 제공해 게시물을 생성, 예약, 관리할 수 있습니다.",
   "cli_onboarding_description": "Postiz CLI와 에이전트에게 사용법을 알려주는 스킬을 설치하세요.",
   "agent_settings_later": "더 많은 에이전트와 전체 안내는 설정 > 개발자에서 볼 수 있습니다.",
