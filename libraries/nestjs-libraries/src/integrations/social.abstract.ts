@@ -15,10 +15,10 @@ import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
 
 // Media reads answer headers in well under a second and the chunk sizes the
-// providers ask for finish in under two, so a minute is only ever reached by a
-// stalled transfer. Matches the AbortSignal.timeout values used for the other
-// outbound media calls.
-const MEDIA_READ_TIMEOUT = 60_000;
+// providers ask for finish in under two, with the slowest healthy read we
+// measured at about eleven, so two minutes is only ever reached by a stalled
+// transfer.
+const MEDIA_READ_TIMEOUT = 120_000;
 
 // AbortSignal.timeout rejects with a TimeoutError, which undici may surface
 // directly or wrap as the cause of the fetch rejection.
