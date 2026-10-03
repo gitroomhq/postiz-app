@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "预测 GitHub 趋势变化",
   "duplicate_post": "重复帖子",
   "preview_post": "预览帖子",
+  "open_post": "打开帖子",
   "post_statistics": "帖子统计",
   "draft": "草稿",
   "week_number": "第 {{number}} 周",
