@@ -73,6 +73,7 @@ export const DatePicker: FC<{
           />
           <TimeInput
             onChange={changeDate('time')}
+            format={isUSCitizen() ? '12' : '24'}
             label="Pick time"
             classNames={{
               label: 'text-textColor py-[12px]',
