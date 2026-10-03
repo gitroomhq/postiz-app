@@ -689,6 +689,7 @@ checksums:
     two_weeks: 2535083efa302c3dde7d06cce2455b74
     repeat_post_every_label: f3e3fd4d95a0eeaf1eab0219278ae812
     add_new_tag: 911360b396ef6db7a24eb53134f0f7d2
+    edit_tag: 5a8b41a0364539c5d7c243f9d3695e9b
     tag_name: 9368b5a047572b6051f334af5aa76819
     post_save_failed: 164475f6751549f91a5b6e7f759fbca8
     post_is_too_long: 7784c6ecca2c7e58665e83e219aff80b
