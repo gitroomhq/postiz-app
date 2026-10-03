@@ -32,6 +32,10 @@ export class WordpressProvider
     return 100000;
   }
 
+  inlineImages() {
+    return true;
+  }
+
   async generateAuthUrl() {
     const state = makeSecureId(6);
     return {

@@ -26,6 +26,10 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
     return 100000000;
   }
 
+  inlineImages() {
+    return true;
+  }
+
   async customFields() {
     return [
       {
@@ -188,6 +192,10 @@ export class ListmonkProvider extends SocialAbstract implements SocialProvider {
   padding: 20px;
   font-size: 15px;
   line-height: 1.6;
+}
+.content img {
+  max-width: 100%;
+  height: auto;
 }
 </style>
 <div class="hidden-preheader"

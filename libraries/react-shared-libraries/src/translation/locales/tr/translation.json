@@ -702,6 +702,7 @@
   "delete_post_tooltip": "Gönderiyi Sil",
   "drop_files_here_to_upload": "Yüklemek için dosyalarınızı buraya bırakın",
   "insert_emoji": "Emoji Ekle",
+  "only_images_can_be_added_to_the_content": "İçeriğe yalnızca görseller eklenebilir",
   "write_something": "Bir şeyler yazın …",
   "click_channel_to_add": "Eklemek için bir kanal seçin",
   "connect_your_channels": "Kanallarınızı Bağlayın",

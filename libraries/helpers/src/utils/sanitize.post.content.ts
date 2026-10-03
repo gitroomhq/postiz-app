@@ -13,6 +13,7 @@ const ALLOWED_TAGS = [
   'h2',
   'h3',
   'span',
+  'img',
 ];
 
 const ALLOWED_ATTR = [
@@ -22,7 +23,20 @@ const ALLOWED_ATTR = [
   'class',
   'data-mention-id',
   'data-mention-label',
+  'src',
+  'alt',
 ];
+
+// <img> keeps data: URIs whatever ALLOWED_URI_REGEXP says, so a picture
+// that doesn't point to a real file is dropped
+DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+  if (
+    data.tagName === 'img' &&
+    !/^https?:\/\//i.test((node as Element).getAttribute('src') || '')
+  ) {
+    node.parentNode?.removeChild(node);
+  }
+});
 
 export const sanitizePostContent = (value: unknown): string => {
   if (typeof value !== 'string' || !value) {

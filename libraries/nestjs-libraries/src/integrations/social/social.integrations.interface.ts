@@ -197,6 +197,7 @@ export interface SocialProvider
   isChromeExtension?: boolean;
   extensionCookies?: { name: string; domain: string }[];
   editor: 'none' | 'normal' | 'markdown' | 'html';
+  inlineImages?: (settings?: any) => boolean;
   customFields?: () => Promise<
     {
       key: string;

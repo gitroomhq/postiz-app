@@ -706,6 +706,7 @@ checksums:
     delete_post_tooltip: bcf081392c76d2f2a8522944ddd36b78
     drop_files_here_to_upload: a7971302d02a19a461c519cffedfa5e5
     insert_emoji: 6e2ab0e239c0ee87d385b1cd17185e00
+    only_images_can_be_added_to_the_content: 39229242be2e514ce641c5edce713caa
     write_something: bc9257cede62880c411001e61310ca43
     click_channel_to_add: 7dc67c45eba252d1fa931e5a101d568b
     connect_your_channels: a8303310a9cc5f4e11510f8f55c0978d

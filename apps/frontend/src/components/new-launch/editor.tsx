@@ -38,6 +38,7 @@ import {
   useEditor,
   EditorContent,
   Extension,
+  Node,
   mergeAttributes,
 } from '@tiptap/react';
 import Document from '@tiptap/extension-document';
@@ -50,12 +51,13 @@ import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
 import { Bullets } from '@gitroom/frontend/components/new-launch/bullets.component';
 import Heading from '@tiptap/extension-heading';
+import { Slice } from '@tiptap/pm/model';
 import { HeadingComponent } from '@gitroom/frontend/components/new-launch/heading.component';
 import Mention from '@tiptap/extension-mention';
 import { suggestion } from '@gitroom/frontend/components/new-launch/mention.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { AComponent } from '@gitroom/frontend/components/new-launch/a.component';
-import { Placeholder } from '@tiptap/extensions';
+import { Dropcursor, Placeholder, TrailingNode } from '@tiptap/extensions';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { InformationComponent } from '@gitroom/frontend/components/launches/information.component';
 import {
@@ -98,6 +100,48 @@ const InterceptUnderlineShortcut = Extension.create({
   },
 });
 
+const EditorImage = Node.create({
+  name: 'image',
+  group: 'block',
+  draggable: true,
+
+  addAttributes() {
+    return {
+      src: { default: null },
+      alt: { default: null },
+    };
+  },
+
+  // same rule as the server sanitizer, any other source is dropped on save
+  parseHTML() {
+    return [{ tag: 'img[src^="https://"], img[src^="http://"]' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['img', HTMLAttributes];
+  },
+});
+
+const insertImages = (
+  editor: any,
+  media: { path: string; alt?: string }[]
+) => {
+  if (!media.length) {
+    return;
+  }
+
+  editor
+    ?.chain()
+    ?.focus()
+    ?.insertContent(
+      media.map((p) => ({
+        type: 'image',
+        attrs: { src: p.path, alt: p.alt },
+      }))
+    )
+    ?.run();
+};
+
 export const EditorWrapper: FC<{
   totalPosts: number;
   value: string;
@@ -130,6 +174,7 @@ export const EditorWrapper: FC<{
     postComment,
     dummy,
     editor,
+    inlineImages,
     loadedState,
     setLoadedState,
     selectedIntegration,
@@ -164,6 +209,7 @@ export const EditorWrapper: FC<{
       appendGlobalValueMedia: state.appendGlobalValueMedia,
       postComment: state.postComment,
       editor: state.editor,
+      inlineImages: state.inlineImages,
       loadedState: state.loaded,
       setLoadedState: state.setLoaded,
       selectedIntegration: state.selectedIntegrations,
@@ -436,6 +482,7 @@ export const EditorWrapper: FC<{
               <Editor
                 comments={comments}
                 editorType={editor}
+                inlineImages={editor === 'html' && inlineImages && index === 0}
                 allValues={items}
                 onChange={changeValue(index)}
                 key={index}
@@ -527,6 +574,7 @@ export const EditorWrapper: FC<{
 
 export const Editor: FC<{
   editorType?: 'none' | 'normal' | 'markdown' | 'html';
+  inlineImages?: boolean;
   totalPosts: number;
   value: string;
   num?: number;
@@ -547,6 +595,7 @@ export const Editor: FC<{
 }> = (props) => {
   const {
     editorType = 'normal',
+    inlineImages = false,
     allValues,
     pictures,
     setImages,
@@ -564,9 +613,18 @@ export const Editor: FC<{
   const toaster = useToaster();
   const editorRef = useRef<undefined | { editor: any }>(undefined);
   const [loading, setLoading] = useState(false);
+  // the uploader is created once, so it reads the latest value from here
+  const inlineImagesRef = useRef(inlineImages);
+  inlineImagesRef.current = inlineImages;
 
   const uppy = useUppyUploader({
     onUploadSuccess: (result: any) => {
+      const editor = editorRef?.current?.editor;
+      if (inlineImagesRef.current && editor) {
+        insertImages(editor, result);
+        return;
+      }
+
       appendImages(result);
     },
     allowedFileTypes: 'image/*,video/mp4',
@@ -574,8 +632,36 @@ export const Editor: FC<{
     onEnd: () => setLoading(false),
   });
 
+  // inline images go into the content, which only holds pictures
+  const filterFiles = useCallback(
+    (files: File[]) => {
+      if (!inlineImages) {
+        return files;
+      }
+
+      const images = files.filter((file) => file.type.startsWith('image/'));
+      if (images.length < files.length) {
+        toaster.show(
+          t(
+            'only_images_can_be_added_to_the_content',
+            'Only images can be added to the content'
+          ),
+          'warning'
+        );
+      }
+
+      return images;
+    },
+    [inlineImages, toaster, t]
+  );
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    (droppedFiles: File[]) => {
+      const acceptedFiles = filterFiles(droppedFiles);
+      if (!acceptedFiles.length) {
+        return;
+      }
+
       const totalSize = acceptedFiles.reduce((acc, file) => acc + file.size, 0);
 
       if (totalSize > MAX_UPLOAD_SIZE) {
@@ -595,31 +681,43 @@ export const Editor: FC<{
         uppy.addFile(file);
       }
     },
-    [uppy, toaster, t]
+    [uppy, toaster, t, filterFiles]
   );
 
   const paste = useCallback(
-    async (event: ClipboardEvent | File[]) => {
+    (event: ClipboardEvent | File[], slice?: Slice) => {
       if (num > 0 && comments === 'no-media') {
-        return;
+        return false;
       }
       // @ts-ignore
       const clipboardItems = event.clipboardData?.items;
       if (!clipboardItems) {
-        return;
+        return false;
       }
 
-      const files: File[] = [];
+      const clipboardFiles: File[] = [];
       // @ts-ignore
       for (const item of clipboardItems) {
         if (item.kind === 'file') {
           const file = item.getAsFile();
           if (file) {
-            files.push(file);
+            clipboardFiles.push(file);
           }
         }
       }
 
+      // a copied picture also comes as html linking to the site it was copied
+      // from, so the file wins unless the html has text of its own
+      // @ts-ignore
+      const html = event.clipboardData.getData('text/html');
+      const uploadInline =
+        !!clipboardFiles.length &&
+        (!html || !slice?.content.textBetween(0, slice.content.size).trim());
+      if (inlineImages && !uploadInline) {
+        return false;
+      }
+
+      const files = filterFiles(clipboardFiles);
       const totalSize = files.reduce((acc, file) => acc + file.size, 0);
 
       if (totalSize > MAX_UPLOAD_SIZE) {
@@ -630,7 +728,7 @@ export const Editor: FC<{
           ),
           'warning'
         );
-        return;
+        return false;
       }
 
       if (files.length > 0) {
@@ -640,12 +738,41 @@ export const Editor: FC<{
       for (const file of files) {
         uppy.addFile(file);
       }
+
+      // the uploaded pictures replace the pasted html
+      return inlineImages;
     },
-    [uppy, num, comments, toaster, t]
+    [uppy, num, comments, toaster, t, inlineImages, filterFiles]
   );
 
+  // a drag that starts on the page (like moving a picture inside the editor)
+  // is not an upload, but Chrome reports a dragged <img> as "Files"
+  const [internalDrag, setInternalDrag] = useState(false);
+  useEffect(() => {
+    if (!inlineImages) {
+      return;
+    }
+
+    const dragStart = (event: DragEvent) => {
+      if (!event.defaultPrevented) {
+        setInternalDrag(true);
+      }
+    };
+    const dragEnd = () => setInternalDrag(false);
+
+    window.addEventListener('dragstart', dragStart);
+    window.addEventListener('dragend', dragEnd);
+    window.addEventListener('drop', dragEnd);
+    return () => {
+      window.removeEventListener('dragstart', dragStart);
+      window.removeEventListener('dragend', dragEnd);
+      window.removeEventListener('drop', dragEnd);
+      setInternalDrag(false);
+    };
+  }, [inlineImages]);
+
   const { getRootProps, isDragActive } = useDropzone({
-    onDrop: (files) => {
+    onDrop: (files, _, event) => {
       if (loading) {
         toaster.show(
           'Upload current in progress, please wait and then try again.',
@@ -653,9 +780,23 @@ export const Editor: FC<{
         );
         return;
       }
+
+      if (inlineImages) {
+        // uploads land at the cursor, move it to where the files were dropped
+        const editor = editorRef?.current?.editor;
+        const { clientX, clientY } = event as DragEvent;
+        const position = editor?.view?.posAtCoords({
+          left: clientX,
+          top: clientY,
+        });
+        if (position) {
+          editor.commands.focus(position.pos);
+        }
+      }
+
       onDrop(files);
     },
-    noDrag: num > 0 && comments === 'no-media',
+    noDrag: internalDrag || (num > 0 && comments === 'no-media'),
   });
 
   const valueWithoutHtml = useMemo(() => {
@@ -670,15 +811,17 @@ export const Editor: FC<{
     [props.value, id]
   );
 
-  const [loadedEditor, setLoadedEditor] = useState(editorType);
+  // the extensions are fixed once the editor is created, rebuild it when they change
+  const editorKey = `${editorType}-${inlineImages}`;
+  const [loadedEditor, setLoadedEditor] = useState(editorKey);
   const [showEditor, setShowEditor] = useState(true);
   useEffect(() => {
-    if (editorType === loadedEditor) {
+    if (editorKey === loadedEditor) {
       return;
     }
-    setLoadedEditor(editorType);
+    setLoadedEditor(editorKey);
     setShowEditor(false);
-  }, [editorType]);
+  }, [editorKey]);
 
   useEffect(() => {
     if (showEditor) {
@@ -716,6 +859,7 @@ export const Editor: FC<{
               <OnlyEditor
                 value={props.value}
                 editorType={editorType}
+                inlineImages={inlineImages}
                 onChange={props.onChange}
                 paste={paste}
                 ref={editorRef}
@@ -765,6 +909,12 @@ export const Editor: FC<{
                   value={props.pictures}
                   dummy={dummy}
                   name="image"
+                  insertInContent={
+                    inlineImages
+                      ? (media) =>
+                          insertImages(editorRef?.current?.editor, media)
+                      : undefined
+                  }
                   information={
                     <InformationComponent
                       isPicture={pictures?.length > 0}
@@ -859,11 +1009,12 @@ export const OnlyEditor = forwardRef<
   any,
   {
     editorType: 'none' | 'normal' | 'markdown' | 'html';
+    inlineImages?: boolean;
     value: string;
     onChange: (value: string) => void;
-    paste?: (event: ClipboardEvent | File[]) => void;
+    paste?: (event: ClipboardEvent | File[], slice?: Slice) => boolean;
   }
->(({ editorType, value, onChange, paste }, ref) => {
+>(({ editorType, inlineImages, value, onChange, paste }, ref) => {
   const t = useT();
   const fetch = useFetch();
 
@@ -1023,6 +1174,21 @@ export const OnlyEditor = forwardRef<
             }),
           ]
         : []),
+      ...(inlineImages
+        ? [
+            EditorImage,
+            Dropcursor.configure({
+              color: 'var(--new-btn-primary)',
+              width: 2,
+            }),
+            // a picture can't hold the cursor, keep a paragraph after a
+            // trailing one so clicking below the content doesn't select it
+            TrailingNode.configure({
+              node: 'paragraph',
+              notAfter: ['heading', 'bulletList'],
+            }),
+          ]
+        : []),
       History.configure({
         depth: 100, // default is 100
         newGroupDelay: 100, // default is 500ms
@@ -1031,8 +1197,9 @@ export const OnlyEditor = forwardRef<
     content: value || '',
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
-    // @ts-ignore
-    onPaste: paste,
+    editorProps: {
+      handlePaste: (view, event, slice) => !!paste?.(event as any, slice),
+    },
     onUpdate: (innerProps) => {
       onChange?.(innerProps.editor.getHTML());
     },

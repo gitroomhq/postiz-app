@@ -702,6 +702,7 @@
   "delete_post_tooltip": "Eliminar publicación",
   "drop_files_here_to_upload": "Suelta tus archivos aquí para subirlos",
   "insert_emoji": "Insertar emoji",
+  "only_images_can_be_added_to_the_content": "Solo se pueden añadir imágenes al contenido",
   "write_something": "Escribe algo…",
   "click_channel_to_add": "Haz clic en un canal para agregarlo",
   "connect_your_channels": "Conecta tus canales",
