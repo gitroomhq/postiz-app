@@ -66,7 +66,7 @@ type XPendingData = {
 };
 
 @Rules(
-  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article ${
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article, in an article pictures go inside the content as <img src="..."> where they should appear (the src must be a picture from the media library, upload it with uploadFromUrlTool first) ${
     process.env.STRIP_LINKS_FROM_X_POSTS
       ? 'do not add links, they will be stripped from the post'
       : ''

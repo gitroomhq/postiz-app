@@ -15,7 +15,7 @@ export class UploadFromUrlTool implements AgentToolInterface {
       id: 'uploadFromUrlTool',
       description: `Upload a remote image or video into the media library from a public URL.
 Use this before scheduling a post when the user provides an external media URL (not already hosted on our domain),
-so the attachment passes the upload-domain validation. Returns the hosted media { id, path } to use as an attachment, or { error } on failure.`,
+so the attachment passes the upload-domain validation. Returns the hosted media { id, path } to use as an attachment (or as the src of an <img> in the content, when the channel rules say pictures go inside the content), or { error } on failure.`,
       mcp: {
         annotations: {
           title: 'Upload Media From URL',
