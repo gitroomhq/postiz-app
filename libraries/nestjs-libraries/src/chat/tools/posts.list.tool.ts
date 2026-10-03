@@ -39,6 +39,7 @@ List the organization's posts scheduled to be published between two dates (the s
 Returns every post in the window whatever its state (scheduled, draft, published, errored).
 "startDate" and "endDate" are required (UTC) - to list all upcoming posts, pass a wide window (for example from now to a year ahead).
 Each item has an "id", its publish date, state, content, channel and current provider settings.
+Pass "includeAttachments": true to also get each post's "attachments" (media already uploaded to Postiz). Their "path" values can be passed straight to integrationSchedulePostTool as "attachments" to reuse the same media on another channel - do not re-upload them.
 Posts cannot be deleted through the Postiz tools - if the user wants to delete a post, tell them to do it themselves in the Postiz app; never offer to delete a post.
 `,
       inputSchema: z.object({
@@ -52,6 +53,12 @@ Posts cannot be deleted through the Postiz tools - if the user wants to delete a
           .string()
           .optional()
           .describe('Optional customer (group) id to filter the channels by'),
+        includeAttachments: z
+          .boolean()
+          .optional()
+          .describe(
+            'Set to true to include the attachments of each post (needed to duplicate or mirror a post with its media)'
+          ),
       }),
       outputSchema: z.object({
         output: z.object({
@@ -70,6 +77,18 @@ Posts cannot be deleted through the Postiz tools - if the user wants to delete a
               integrationId: z.string(),
               platform: z.string(),
               integrationName: z.string(),
+              attachments: z
+                .array(
+                  z.object({
+                    id: z.string().optional(),
+                    path: z.string(),
+                    thumbnail: z.string().nullable(),
+                  })
+                )
+                .optional()
+                .describe(
+                  'Only present when "includeAttachments" is true - pass the "path" values to integrationSchedulePostTool to reuse the media'
+                ),
             })
           ),
         }),
@@ -80,11 +99,15 @@ Posts cannot be deleted through the Postiz tools - if the user wants to delete a
           (context?.requestContext as any)?.get('organization') as string
         ).id;
 
-        const posts = await this._postsService.getPosts(organizationId, {
-          startDate: inputData.startDate,
-          endDate: inputData.endDate,
-          customer: inputData.customer,
-        } as any);
+        const posts = await this._postsService.getPosts(
+          organizationId,
+          {
+            startDate: inputData.startDate,
+            endDate: inputData.endDate,
+            customer: inputData.customer,
+          } as any,
+          inputData.includeAttachments
+        );
 
         return {
           output: {
@@ -100,6 +123,7 @@ Posts cannot be deleted through the Postiz tools - if the user wants to delete a
               integrationId: p.integration?.id,
               platform: p.integration?.providerIdentifier,
               integrationName: p.integration?.name,
+              attachments: p.attachments,
             })),
           },
         };
