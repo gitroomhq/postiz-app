@@ -31,6 +31,7 @@ import {
 import {
   BadBody,
   Disconnect,
+  PublishedWithError,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
@@ -289,6 +290,27 @@ export class PostActivity {
             integration.organizationId,
             integration,
             err.message
+          );
+        } catch (e) {
+          /**empty**/
+        }
+
+        throw new BadBody(
+          integration.providerIdentifier,
+          JSON.stringify({}),
+          Buffer.from('{}'),
+          err.message
+        );
+      }
+
+      // The post is live but a follow-up mutation failed: keep its platform
+      // id / URL on the post, then fail it as BadBody like any other error.
+      if (err instanceof PublishedWithError) {
+        try {
+          await this._postService.setReleaseDetails(
+            err.postDbId,
+            err.releaseId,
+            err.releaseURL
           );
         } catch (e) {
           /**empty**/
