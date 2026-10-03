@@ -496,6 +496,8 @@
   "30_days": "30 Dias",
   "90_days": "90 Dias",
   "start_7_days_free_trial": "Comece o teste gratuito de 7 dias",
+  "video_paid_plans_only": "Apenas planos pagos, não disponível durante o período de teste",
+  "ai_videos_paid_only_note": "Alguns geradores de vídeos com IA estão disponíveis após o término do teste",
   "change_language": "Mudar idioma",
   "that_a_wrap": "É isso aí!\n\nSe você gostou deste fio:\n\n1. Siga-me @{{username}} para ver mais conteúdos como este\n2. Dê RT no tweet abaixo para compartilhar este fio com seu público\n",
   "post_as_images_carousel": "Publicar como carrossel de imagens",
