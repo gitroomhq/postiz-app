@@ -12,11 +12,15 @@ import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-set
 import slugify from 'slugify';
 // import FormData from 'form-data';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
 
 const WORDPRESS_USER_AGENT = 'Postiz/1.0 (+https://postiz.com)';
 
+@Rules(
+  'WordPress publishes the content as an article: pictures go inside the content as <img src="..."> where they should appear, the src must be a picture from the media library (upload it with uploadFromUrlTool first), attachments are not published, the cover picture is the main_image setting'
+)
 export class WordpressProvider
   extends SocialAbstract
   implements SocialProvider
@@ -30,6 +34,10 @@ export class WordpressProvider
   dto = WordpressDto;
   maxLength() {
     return 100000;
+  }
+
+  inlineImages() {
+    return true;
   }
 
   async generateAuthUrl() {

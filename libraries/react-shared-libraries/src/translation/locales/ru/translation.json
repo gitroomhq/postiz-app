@@ -702,6 +702,7 @@
   "delete_post_tooltip": "Удалить публикацию",
   "drop_files_here_to_upload": "Перетащите файлы сюда для загрузки",
   "insert_emoji": "Вставить эмодзи",
+  "only_images_can_be_added_to_the_content": "В контент можно добавлять только изображения",
   "write_something": "Напишите что-нибудь …",
   "click_channel_to_add": "Нажмите на канал, чтобы добавить его",
   "connect_your_channels": "Подключите ваши каналы",

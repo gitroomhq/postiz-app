@@ -702,6 +702,7 @@
   "delete_post_tooltip": "删除帖子",
   "drop_files_here_to_upload": "将文件拖到此处以上传",
   "insert_emoji": "插入表情",
+  "only_images_can_be_added_to_the_content": "只能向内容中添加图片",
   "write_something": "写点什么…",
   "click_channel_to_add": "点击频道以添加",
   "connect_your_channels": "连接你的频道",

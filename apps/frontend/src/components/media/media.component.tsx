@@ -655,6 +655,7 @@ export const MultiMediaComponent: FC<{
   onClose?: () => void;
   toolBar?: React.ReactNode;
   information?: React.ReactNode;
+  insertInContent?: (media: Array<{ id: string; path: string }>) => void;
   onChange: (event: {
     target: {
       name: string;
@@ -679,6 +680,7 @@ export const MultiMediaComponent: FC<{
     toolBar,
     information,
     mediaNotAvailable,
+    insertInContent,
   } = props;
   const user = useUser();
   const modals = useModals();
@@ -704,6 +706,11 @@ export const MultiMediaComponent: FC<{
           }[]
     ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
+      if (insertInContent) {
+        insertInContent(mediaArray);
+        return;
+      }
+
       const newMedia = [...(currentMedia || []), ...mediaArray];
       setCurrentMedia(newMedia);
       onChange({
@@ -713,7 +720,7 @@ export const MultiMediaComponent: FC<{
         },
       });
     },
-    [currentMedia]
+    [currentMedia, insertInContent]
   );
   const showModal = useCallback(() => {
     modals.openModal({
@@ -724,10 +731,14 @@ export const MultiMediaComponent: FC<{
       size: 'calc(100% - 80px)',
       height: 'calc(100% - 80px)',
       children: (close) => (
-        <MediaBox setMedia={changeMedia} closeModal={close} />
+        <MediaBox
+          setMedia={changeMedia}
+          closeModal={close}
+          type={insertInContent ? 'image' : undefined}
+        />
       ),
     });
-  }, [changeMedia, t]);
+  }, [changeMedia, insertInContent, t]);
 
   const clearMedia = useCallback(
     (topIndex: number) => () => {
@@ -857,12 +868,16 @@ export const MultiMediaComponent: FC<{
                 </div>
               </div>
 
-              <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              {!insertInContent && (
+                <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+              )}
 
               {!!user?.tier?.ai && (
                 <>
                   <AiImage value={text} onChange={changeMedia} />
-                  <AiVideo value={text} onChange={changeMedia} />
+                  {!insertInContent && (
+                    <AiVideo value={text} onChange={changeMedia} />
+                  )}
                 </>
               )}
             </div>

@@ -29,6 +29,7 @@ import { stripLinks as removeLinks } from '@gitroom/helpers/utils/strip.links';
 import { XDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/x.dto';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isAllowedUploadPath } from '@gitroom/helpers/utils/valid.url.path';
 
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media ids and the tweet content).
@@ -52,6 +53,8 @@ type XPendingData = {
   // Article cover selected in the settings, uploaded separately from the post
   // media (which is embedded in the article body).
   coverMediaId?: string;
+  // Pictures placed inside the article body, by their src.
+  inlineMediaIds?: Record<string, string>;
   // Media still transcoding on X's side, waiting for STATUS = succeeded.
   processingIds: string[];
   // Arm -> confirm -> publish handshake (same as the Facebook story flow):
@@ -63,7 +66,7 @@ type XPendingData = {
 };
 
 @Rules(
-  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article ${
+  `X can have maximum 4 pictures, or maximum one video, it can also be without attachments, it can also be published as a long-form article (draft or published) when post_type is set to article, in an article pictures go inside the content as <img src="..."> where they should appear (the src must be a picture from the media library, upload it with uploadFromUrlTool first) ${
     process.env.STRIP_LINKS_FROM_X_POSTS
       ? 'do not add links, they will be stripped from the post'
       : ''
@@ -101,6 +104,11 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ? !!additionalSettings.find((p: any) => p?.title === 'Verified')?.value
       : !!additionalSettings;
     return isTwitterPremium ? 4000 : 280;
+  }
+
+  // Article bodies hold pictures, tweets only take attachments.
+  inlineImages(settings?: any) {
+    return settings?.post_type === 'article';
   }
 
   // With `editor = 'html'` the activity hands the provider HTML (needed for
@@ -847,6 +855,19 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         ).media['article-cover']?.[0]
       : undefined;
 
+    // Pictures placed in the article body are uploaded the same way and take
+    // the place of their <img> in finalizeArticle.
+    const inlineImages = isArticle
+      ? [...new Set(this.articleImages(parseFragment(firstPost.message)))]
+      : [];
+    const { media: inlineMedia } = await this.uploadMediaEntries(
+      client,
+      inlineImages.map(
+        (path, index) => ({ id: String(index), media: [{ path }] } as any)
+      ),
+      true
+    );
+
     return [
       {
         id: firstPost.id,
@@ -870,6 +891,16 @@ export class XProvider extends SocialAbstract implements SocialProvider {
           },
           mediaIds: (media[firstPost.id] || []).filter((f) => f),
           ...(coverMediaId ? { coverMediaId } : {}),
+          ...(inlineImages.length
+            ? {
+                inlineMediaIds: Object.fromEntries(
+                  inlineImages.map((path, index) => [
+                    path,
+                    inlineMedia[String(index)]?.[0],
+                  ])
+                ),
+              }
+            : {}),
           processingIds,
         } as XPendingData,
       },
@@ -969,14 +1000,34 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // Pictures of the article body at any depth. Only http(s) files from where
+  // uploads are allowed are kept: anything else would be read from the disk or
+  // fetched from an arbitrary site when it's uploaded to X.
+  private articleImages(node: any): string[] {
+    if (node.nodeName === 'img') {
+      const src =
+        (node.attrs || []).find((a: any) => a.name === 'src')?.value || '';
+      return /^https?:\/\//i.test(src) && isAllowedUploadPath(src) ? [src] : [];
+    }
+
+    return (node.childNodes || []).flatMap((child: any) =>
+      this.articleImages(child)
+    );
+  }
+
   // Converts the editor HTML (already sanitized by stripHtmlValidation's
-  // 'html' mode - only p, h1-h3, ul, li, strong, u and a survive) into the
-  // content_state the X Articles API expects, embedding the post media as
-  // atomic image blocks at the end (the cover travels separately).
+  // 'html' mode - only p, h1-h3, ul, li, strong, u, a and img survive) into
+  // the content_state the X Articles API expects. Pictures in the body become
+  // atomic image blocks where they are, the post media is appended at the end
+  // (the cover travels separately).
   // X's schema is a snake_case Draft.js dialect with additionalProperties
   // disallowed: blocks only accept key/text/type/data/entity_ranges/
   // inline_style_ranges (no depth).
-  private articleContentState(html: string, embeddedMediaIds: string[]) {
+  private articleContentState(
+    html: string,
+    embeddedMediaIds: string[],
+    inlineMediaIds: Record<string, string> = {}
+  ) {
     const blocks: any[] = [];
     const entities: any[] = [];
 
@@ -1037,10 +1088,38 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     const pushBlock = (node: any, type: string) => {
       const ctx = { text: '', styles: [] as any[], entityRanges: [] as any[] };
       walkInline(node, ctx);
-      if (!ctx.text.trim()) {
-        return;
+      if (ctx.text.trim()) {
+        blocks.push(makeBlock(ctx.text, type, ctx.styles, ctx.entityRanges));
       }
-      blocks.push(makeBlock(ctx.text, type, ctx.styles, ctx.entityRanges));
+
+      // pictures inside the node (a list item can hold one) follow its text
+      for (const src of this.articleImages(node)) {
+        if (inlineMediaIds[src]) {
+          pushImage(inlineMediaIds[src]);
+        }
+      }
+    };
+
+    const pushImage = (mediaId: string) => {
+      const key = entities.length;
+      entities.push({
+        key: String(key),
+        value: {
+          type: 'image',
+          mutability: 'immutable',
+          data: {
+            media_items: [
+              // Must match the category the media was uploaded with -
+              // lowercase, like the upload endpoint (the uppercase
+              // TWEET_IMAGE in the docs example is wrong).
+              { media_category: 'tweet_image', media_id: mediaId },
+            ],
+          },
+        },
+      });
+      blocks.push(
+        makeBlock(' ', 'atomic', [], [{ offset: 0, length: 1, key }])
+      );
     };
 
     const fragment = parseFragment(html) as any;
@@ -1088,25 +1167,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
 
     for (const mediaId of embeddedMediaIds) {
-      const key = entities.length;
-      entities.push({
-        key: String(key),
-        value: {
-          type: 'image',
-          mutability: 'immutable',
-          data: {
-            media_items: [
-              // Must match the category the media was uploaded with -
-              // lowercase, like the upload endpoint (the uppercase
-              // TWEET_IMAGE in the docs example is wrong).
-              { media_category: 'tweet_image', media_id: mediaId },
-            ],
-          },
-        },
-      });
-      blocks.push(
-        makeBlock(' ', 'atomic', [], [{ offset: 0, length: 1, key }])
-      );
+      pushImage(mediaId);
     }
 
     return { blocks, entities };
@@ -1140,7 +1201,8 @@ export class XProvider extends SocialAbstract implements SocialProvider {
         title: settings.article_title,
         content_state: this.articleContentState(
           pendingData.message,
-          embeddedMediaIds
+          embeddedMediaIds,
+          pendingData.inlineMediaIds
         ),
         ...(coverMediaId
           ? {

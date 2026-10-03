@@ -702,6 +702,7 @@
   "delete_post_tooltip": "게시물 삭제",
   "drop_files_here_to_upload": "여기에 파일을 끌어다 놓아 업로드하세요",
   "insert_emoji": "이모지 삽입",
+  "only_images_can_be_added_to_the_content": "콘텐츠에는 이미지만 추가할 수 있습니다",
   "write_something": "무엇인가를 작성하세요 …",
   "click_channel_to_add": "채널을 추가하려면 클릭하세요",
   "connect_your_channels": "채널 연결하기",

@@ -702,6 +702,7 @@
   "delete_post_tooltip": "投稿を削除",
   "drop_files_here_to_upload": "ここにファイルをドロップしてアップロード",
   "insert_emoji": "絵文字を挿入",
+  "only_images_can_be_added_to_the_content": "コンテンツに追加できるのは画像のみです",
   "write_something": "何かを書いてください…",
   "click_channel_to_add": "追加するチャンネルをクリック",
   "connect_your_channels": "チャンネルを接続する",
