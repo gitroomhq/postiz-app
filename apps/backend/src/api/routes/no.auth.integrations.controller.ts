@@ -62,12 +62,18 @@ export class NoAuthIntegrationsController {
       ? 'none'
       : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
-      throw new Error('Invalid state');
+      throw new HttpException(
+        'This connection link has expired or was already used, please start the connection again',
+        400
+      );
     }
 
     const organization = await ioRedis.get(`organization:${body.state}`);
     if (!organization) {
-      throw new Error('Organization not found');
+      throw new HttpException(
+        'This connection link has expired or was already used, please start the connection again',
+        400
+      );
     }
 
     const org = await this._organizationService.getOrgById(organization);
