@@ -193,7 +193,15 @@ export class PostActivity {
     // only the root drives the pre-publish sleep and the repeat schedule,
     // the rest are comments
     const [root, ...comments] = getPosts.map(slimPost);
-    return [reanchorInterval(root), ...comments];
+
+    // a thread item with no text and no media has nothing to publish
+    const publishable = comments.filter(
+      (comment) =>
+        JSON.parse(comment.image || '[]').length ||
+        stripHtmlValidation('normal', comment.content || '', true).trim()
+    );
+
+    return [reanchorInterval(root), ...publishable];
   }
 
   @ActivityMethod()
