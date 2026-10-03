@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"],
+    "resolveJsonModule": true,
+    // vitest.config.mts and its helpers import each other by explicit .mts path.
+    "allowImportingTsExtensions": true,
+    // Matches apps/*/tsconfig.build.json, so tests compile under the same rules
+    // as the code they exercise rather than a stricter set the app never meets.
+    "noImplicitAny": false
+  },
+  "include": [
+    "vitest/**/*.ts",
+    "vitest/**/*.mts",
+    "libraries/testing/**/*.ts",
+    "tests/**/*.ts",
+    "e2e/**/*.ts",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "exclude": ["node_modules", "dist", "**/.next/**"]
+}

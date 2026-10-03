@@ -98,12 +98,15 @@ export const TagsComponentInner: FC<{
       setTagValue(modify);
       onChange({
         target: {
-          value: modify,
+          value: modify.map((p: any) => ({
+            label: p.name,
+            value: p.name,
+          })),
           name,
         },
       });
     }
-  }, []);
+  }, [tagValue, name, onChange, mutate, modals, t]);
 
   const deleteTag = useCallback(
     async (tag: any, e: React.MouseEvent) => {

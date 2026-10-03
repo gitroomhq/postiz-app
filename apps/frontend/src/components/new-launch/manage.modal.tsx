@@ -211,8 +211,11 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const isRecurring =
           !!repeater || !!existingData?.posts?.[0]?.intervalInDays;
 
+        const choiceModalId = makeId(10);
         const whatToDo = await new Promise((resolve) => {
           modal.openModal({
+            id: choiceModalId,
+            onClose: () => resolve('cancel'),
             title: t('what_do_you_want_to_do', 'What do you want to do?'),
             children: (
               <div className="flex flex-col">
@@ -260,6 +263,12 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           });
         });
 
+        if (whatToDo === 'cancel') {
+          return;
+        }
+
+        modal.closeById(choiceModalId);
+
         if (whatToDo === 'update') {
           type = 'update';
         }
@@ -267,6 +276,22 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (whatToDo === 'republish') {
           republish = true;
         }
+      }
+
+      // A past-dated schedule would publish immediately (the server rejects
+      // it) - catch it here so the user stays in the modal and fixes the date
+      if (
+        type === 'schedule' &&
+        dayjs().subtract(1, 'minute').isAfter(date.utc())
+      ) {
+        toaster.show(
+          t(
+            'past_publish_date_warning',
+            'The publish date is in the past, pick a future date.'
+          ),
+          'warning'
+        );
+        return;
       }
 
       setLoading(true);
@@ -451,13 +476,15 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             body: JSON.stringify(data),
           });
 
+          // A rejected save (e.g. past-date or republish guard) must not
+          // report success and close the modal - surface it and stay open
+          // (402 stays silent, the payment dialog already explained it)
           if (!response.ok) {
             if (response.status !== 402) {
-              const { message } = await response.json().catch(() => ({}));
+              const { message } = await response.json().catch(() => ({} as any));
               toaster.show(
-                typeof message === 'string'
-                  ? message
-                  : t('post_save_failed', 'Could not save the post'),
+                (Array.isArray(message) ? message[0] : message) ||
+                  t('could_not_save_post', 'Could not save the post.'),
                 'warning'
               );
             }
