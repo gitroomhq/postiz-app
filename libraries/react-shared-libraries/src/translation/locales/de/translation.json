@@ -794,5 +794,10 @@
   "preview_comment_detach_hint": "Kommentare zu ausgewähltem Text verlieren ihre Markierung, wenn der Text später bearbeitet wird.",
   "preview_comment_text_changed": "Text geändert",
   "preview_no_comments_yet": "Noch keine Kommentare. Wählen Sie einen Text im Beitrag aus, um ihn zu kommentieren, oder fügen Sie einen allgemeinen Kommentar hinzu.",
-  "some_files_failed_to_upload": "Einige Dateien konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut."
+  "some_files_failed_to_upload": "Einige Dateien konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
+  "rename_channel": "Kanal umbenennen",
+  "channel_name": "Name",
+  "channel_renamed": "Kanal umbenannt",
+  "channel_name_reset": "Kanalname zurückgesetzt",
+  "reset_channel_name": "Auf ursprünglichen Namen zurücksetzen"
 }

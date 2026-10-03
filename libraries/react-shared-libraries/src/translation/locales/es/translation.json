@@ -794,5 +794,10 @@
   "preview_comment_detach_hint": "Los comentarios sobre texto seleccionado pierden su resalte si el texto se edita más tarde.",
   "preview_comment_text_changed": "Texto modificado",
   "preview_no_comments_yet": "Aún no hay comentarios. Selecciona texto en la publicación para comentarlo o agrega un comentario general.",
-  "some_files_failed_to_upload": "Algunos archivos no se pudieron subir, por favor inténtalo de nuevo"
+  "some_files_failed_to_upload": "Algunos archivos no se pudieron subir, por favor inténtalo de nuevo",
+  "rename_channel": "Renombrar canal",
+  "channel_name": "Nombre",
+  "channel_renamed": "Canal renombrado",
+  "channel_name_reset": "Nombre del canal restablecido",
+  "reset_channel_name": "Restablecer al nombre original"
 }

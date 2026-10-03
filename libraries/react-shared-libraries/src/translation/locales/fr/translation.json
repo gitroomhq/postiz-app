@@ -794,5 +794,10 @@
   "preview_comment_detach_hint": "Les commentaires sur le texte sélectionné perdent leur surlignement si le texte est modifié par la suite.",
   "preview_comment_text_changed": "Texte modifié",
   "preview_no_comments_yet": "Aucun commentaire pour le moment. Sélectionnez du texte dans la publication pour le commenter, ou ajoutez un commentaire général.",
-  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer."
+  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer.",
+  "rename_channel": "Renommer le canal",
+  "channel_name": "Nom",
+  "channel_renamed": "Canal renommé",
+  "channel_name_reset": "Nom du canal réinitialisé",
+  "reset_channel_name": "Réinitialiser au nom d'origine"
 }

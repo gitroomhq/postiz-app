@@ -799,3 +799,8 @@ checksums:
     preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
     preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
     some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7
+    rename_channel: 81dff725b16582b6a13c2f0a826eb2cb
+    channel_name: 9368b5a047572b6051f334af5aa76819
+    channel_renamed: a1551cd9d9669ac7602efc3f3c888c59
+    channel_name_reset: 2c7c64bbf0fce057e61d4942f191c861
+    reset_channel_name: ac06e9718420527b4bb04cee342e60cf
