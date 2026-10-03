@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { Provider, User } from '@prisma/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
@@ -335,14 +335,21 @@ export class AuthService {
       !redirectUri &&
       (!state || state !== stateCookie)
     ) {
-      throw new Error('Invalid state');
+      throw new HttpException('Invalid state', 400);
     }
 
     const providerInstance = this._providerManager.getProvider(provider);
-    const token = await providerInstance.getToken(code, redirectUri);
+    const token = await providerInstance
+      .getToken(code, redirectUri)
+      .catch((err) => {
+        if (String(err?.message).includes('invalid_grant')) {
+          throw new HttpException('Invalid or expired authorization code', 400);
+        }
+        throw err;
+      });
     const user = await providerInstance.getUser(token);
     if (!user) {
-      throw new Error('Invalid user');
+      throw new HttpException('Invalid user', 400);
     }
     const checkExists = await this._userService.getUserByProvider(
       user.id,
