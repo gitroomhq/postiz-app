@@ -93,7 +93,7 @@ export class UsersController {
       process.env.AGENT_MEDIA_SSO_KEY
     );
 
-    return { url: `https://agent-media.ai/sso/${token}` };
+    return { url: `https://app.agent-media.ai/sso/${token}` };
   }
 
   @Get('/self')
