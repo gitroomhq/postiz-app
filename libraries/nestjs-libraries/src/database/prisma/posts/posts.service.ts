@@ -264,10 +264,11 @@ export class PostsService {
       );
       return loadAnalytics;
     } catch (e) {
-      console.log(e);
-      if (e instanceof RefreshToken) {
+      // Retry once with a refreshed token
+      if (e instanceof RefreshToken && !forceRefresh) {
         return this.checkPostAnalytics(orgId, postId, date, true);
       }
+      console.log(e);
     }
 
     return [];
@@ -586,6 +587,10 @@ export class PostsService {
 
   async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
+    if (!posts?.[0]) {
+      throw new NotFoundException('Post not found');
+    }
+
     const list = {
       group: posts?.[0]?.group,
       posts: await Promise.all(

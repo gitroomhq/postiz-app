@@ -1215,11 +1215,14 @@ export class TiktokBusinessProvider
       }
 
       return result;
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
-      console.error('Error fetching TikTok Business post analytics:', err);
+      console.error(
+        'Error fetching TikTok Business post analytics:',
+        err?.cause?.code || err?.message || err
+      );
       return [];
     }
   }
