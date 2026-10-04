@@ -877,8 +877,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
-      console.error('Error fetching Threads post analytics:', err);
+    } catch (err: any) {
+      console.error(
+        'Error fetching Threads post analytics:',
+        err?.cause?.code || err?.message || err
+      );
       return [];
     }
   }
