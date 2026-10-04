@@ -30,7 +30,7 @@ export class WordpressProvider
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];
-  override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits
+  override maxConcurrentJob = 8; // WordPress sites are the customer's own servers
   dto = WordpressDto;
   maxLength() {
     return 100000;

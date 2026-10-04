@@ -61,7 +61,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
-  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
+  override maxConcurrentJob = 10; // Pinterest limits are per user
   maxLength() {
     return 500;
   }
