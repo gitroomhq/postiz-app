@@ -371,6 +371,23 @@ export class PostsRepository {
     });
   }
 
+  getPostsByIds(orgId: string, ids: string[]) {
+    return this._post.model.post.findMany({
+      where: {
+        id: { in: ids },
+        organizationId: orgId,
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: {
+        id: true,
+        group: true,
+        state: true,
+        publishDate: true,
+      },
+    });
+  }
+
   getPost(
     id: string,
     includeIntegration = false,

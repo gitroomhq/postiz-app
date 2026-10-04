@@ -267,6 +267,10 @@ export const Filters = () => {
     [calendar]
   );
 
+  const toggleSelectMode = useCallback(() => {
+    calendar.setListSelectMode(!calendar.listSelectMode);
+  }, [calendar]);
+
   const listStateOptions: { value: ListStateFilter; label: string }[] = [
     { value: 'all', label: t('all', 'All') },
     { value: 'scheduled', label: t('scheduled', 'Scheduled') },
@@ -424,6 +428,17 @@ export const Filters = () => {
             ))}
           </div>
           <div className="flex-1" />
+          <div
+            onClick={toggleSelectMode}
+            className={clsx(
+              'h-[42px] px-[16px] flex items-center cursor-pointer select-none rounded-[8px] border border-newTableBorder text-[14px] font-[500] hover:text-textItemFocused hover:bg-boxFocused',
+              calendar.listSelectMode
+                ? 'text-textItemFocused bg-boxFocused'
+                : 'bg-newBgColorInner'
+            )}
+          >
+            {t('select', 'Select')}
+          </div>
         </div>
       )}
       <SelectCustomer

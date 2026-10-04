@@ -15,6 +15,11 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
+import {
+  BulkChangePostsDateDto,
+  BulkChangePostsStatusDto,
+  BulkPostIdsDto,
+} from '@gitroom/nestjs-libraries/dtos/posts/bulk.posts.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import { ApiTags } from '@nestjs/swagger';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
@@ -191,6 +196,34 @@ export class PostsController {
     @Body() rawBody: any
   ) {
     return this._postsService.validatePosts(org.id, rawBody?.posts || []);
+  }
+
+  @Post('/bulk/delete')
+  bulkDeletePosts(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: BulkPostIdsDto
+  ) {
+    return this._postsService.bulkDeletePosts(org.id, body.ids);
+  }
+
+  @Post('/bulk/status')
+  bulkChangePostsStatus(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: BulkChangePostsStatusDto
+  ) {
+    return this._postsService.bulkChangePostsStatus(
+      org.id,
+      body.ids,
+      body.status
+    );
+  }
+
+  @Post('/bulk/date')
+  bulkChangePostsDate(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: BulkChangePostsDateDto
+  ) {
+    return this._postsService.bulkChangePostsDate(org.id, body.posts);
   }
 
   @Post('/')

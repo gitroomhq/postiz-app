@@ -84,6 +84,10 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  listSelectMode: false,
+  setListSelectMode: (selectMode: boolean) => {
+    /** empty **/
+  },
 });
 
 export interface Integrations {
@@ -162,6 +166,7 @@ export const CalendarWeekProvider: FC<{
     setListStateRaw(next);
     setListPage(0);
   }, []);
+  const [listSelectMode, setListSelectMode] = useState(false);
 
   // Initialize with current date range based on URL params or defaults
   const initStartDate = searchParams.get('startDate');
@@ -284,6 +289,7 @@ export const CalendarWeekProvider: FC<{
       setDisplaySaved(newFilters.display);
       setFilters(newFilters);
       setInternalData([]);
+      setListSelectMode(false);
 
       // Reset page when switching to list view
       if (newFilters.display === 'list') {
@@ -362,6 +368,8 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        listSelectMode,
+        setListSelectMode,
       }}
     >
       {children}

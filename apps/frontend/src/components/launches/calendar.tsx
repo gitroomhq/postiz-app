@@ -58,6 +58,8 @@ import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
+import { Checkbox } from '@gitroom/react/form/checkbox';
+import { BulkActionsBar } from '@gitroom/frontend/components/launches/bulk.actions';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -493,7 +495,16 @@ export const MonthView = () => {
 export const ListView = () => {
   const t = useT();
   const user = useUser();
-  const { integrations, loading, listPosts, listState } = useCalendar();
+  const {
+    integrations,
+    loading,
+    listPosts,
+    listState,
+    listSelectMode,
+    setListSelectMode,
+    reloadCalendarView,
+  } = useCalendar();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const emptyMessage =
     listState === 'scheduled'
       ? t('no_upcoming_posts', 'No upcoming posts scheduled')
@@ -519,6 +530,42 @@ export const ListView = () => {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [listPosts]);
 
+  // The selection only holds posts of the page on screen: start over whenever
+  // the page, the filter or the select mode changes
+  const [selectionScope, setSelectionScope] = useState({
+    listPosts,
+    listSelectMode,
+  });
+  if (
+    selectionScope.listPosts !== listPosts ||
+    selectionScope.listSelectMode !== listSelectMode
+  ) {
+    setSelectionScope({ listPosts, listSelectMode });
+    setSelectedIds([]);
+  }
+
+  const selectedPosts = useMemo(
+    () => listPosts.filter((post) => selectedIds.includes(post.id)),
+    [listPosts, selectedIds]
+  );
+
+  const toggleSelect = useCallback(
+    (ids: string[]) => () => {
+      setSelectedIds((current) =>
+        ids.every((id) => current.includes(id))
+          ? current.filter((id) => !ids.includes(id))
+          : [...current, ...ids.filter((id) => !current.includes(id))]
+      );
+    },
+    []
+  );
+
+  const clearSelection = useCallback(() => setSelectedIds([]), []);
+  const cancelSelection = useCallback(
+    () => setListSelectMode(false),
+    [setListSelectMode]
+  );
+
   if (loading) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center">
@@ -537,34 +584,61 @@ export const ListView = () => {
 
   return (
     <div className="flex flex-col gap-[10px] flex-1 relative">
-      <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {groupedPosts.map(([dateKey, datePosts]) => (
-          <Fragment key={dateKey}>
-            <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px]">
-              {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
-            </div>
-            <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
-              {datePosts.map((post) => (
-                <CalendarItem
-                  key={post.id}
-                  display="day"
-                  isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
-                  state={post.state}
-                  statistics={openStatistics(post.id)}
-                  missingRelease={openMissingRelease(post.id)}
-                  editPost={editPost(post, false)}
-                  duplicatePost={editPost(post, true)}
-                  copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
-                  post={post}
-                  integrations={integrations}
-                  deletePost={deletePost(post)}
-                  showTime={true}
-                />
-              ))}
-            </div>
-          </Fragment>
-        ))}
+      {listSelectMode && (
+        <BulkActionsBar
+          posts={selectedPosts}
+          totalOnPage={listPosts.length}
+          onSelectAll={toggleSelect(listPosts.map((post) => post.id))}
+          onClear={clearSelection}
+          onCancel={cancelSelection}
+          onDone={() => {
+            clearSelection();
+            reloadCalendarView();
+          }}
+        />
+      )}
+      <div className="flex-1 relative">
+        <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+          {groupedPosts.map(([dateKey, datePosts]) => (
+            <Fragment key={dateKey}>
+              <div className="text-center text-[14px] min-h-[21px] text-textColor font-[500] mt-[10px] flex justify-center items-center gap-[10px]">
+                {listSelectMode && (
+                  <Checkbox
+                    disableForm
+                    checked={datePosts.every((post) =>
+                      selectedIds.includes(post.id)
+                    )}
+                    onChange={toggleSelect(datePosts.map((post) => post.id))}
+                  />
+                )}
+                {newDayjs(dateKey).format(isUSCitizen() ? 'dddd, MMMM D, YYYY' : 'dddd, D MMMM YYYY')}
+              </div>
+              <div className="flex flex-col gap-[10px] mb-[20px] px-[10px]">
+                {datePosts.map((post) => (
+                  <CalendarItem
+                    key={post.id}
+                    display="day"
+                    isBeforeNow={false}
+                    date={newDayjs(post.publishDate)}
+                    state={post.state}
+                    statistics={openStatistics(post.id)}
+                    missingRelease={openMissingRelease(post.id)}
+                    editPost={editPost(post, false)}
+                    duplicatePost={editPost(post, true)}
+                    copyDebugJson={user?.isSuperAdmin ? copyDebugJson(post) : undefined}
+                    post={post}
+                    integrations={integrations}
+                    deletePost={deletePost(post)}
+                    showTime={true}
+                    selectable={listSelectMode}
+                    selected={selectedIds.includes(post.id)}
+                    toggleSelect={toggleSelect([post.id])}
+                  />
+                ))}
+              </div>
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1002,6 +1076,9 @@ const CalendarItem: FC<{
   state: State;
   display: 'day' | 'week' | 'month';
   showTime?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  toggleSelect?: () => void;
   post: Post & {
     integration: Integration;
     tags: {
@@ -1023,6 +1100,9 @@ const CalendarItem: FC<{
     deletePost,
     showTime,
     missingRelease,
+    selectable,
+    selected,
+    toggleSelect,
   } = props;
   const { disableXAnalytics } = useVariables();
   const user = useUser();
@@ -1054,7 +1134,9 @@ const CalendarItem: FC<{
       className={clsx(
         'w-full flex h-full flex-1 flex-col group',
         'relative',
-        state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
+        selected
+          ? 'rounded-[10px] ring-2 ring-btnPrimary'
+          : state === 'ERROR' && 'rounded-[10px] ring-2 ring-red-500'
       )}
       style={{
         opacity,
@@ -1158,13 +1240,21 @@ const CalendarItem: FC<{
         </div>
       </div>
       <div
-        onClick={editPost}
+        onClick={selectable ? toggleSelect : editPost}
         className={clsx(
           'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
           'relative',
           isBeforeNow && '!grayscale'
         )}
       >
+        {selectable && (
+          <div
+            className="flex items-center pe-[5px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox disableForm checked={!!selected} onChange={toggleSelect} />
+          </div>
+        )}
         <div className={clsx('relative min-w-[20px]')}>
           <img
             className="w-[20px] h-[20px] rounded-[8px]"

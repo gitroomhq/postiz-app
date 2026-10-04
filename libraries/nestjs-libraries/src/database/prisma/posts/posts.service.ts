@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NotFoundException,
   ValidationPipe,
@@ -18,7 +19,8 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
-import { shuffle } from 'lodash';
+import { BulkPostsResult } from '@gitroom/nestjs-libraries/dtos/posts/bulk.posts.dto';
+import { chunk, shuffle } from 'lodash';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -741,6 +743,110 @@ export class PostsService {
     }
 
     return { error: true };
+  }
+
+  // Runs `handler` for each requested post of the organization and collects
+  // the outcome per post, so one bad post never fails the whole batch. The
+  // handler returns a reason to skip the post, or nothing on success. Posts run
+  // a few at a time because every one of them talks to Temporal.
+  private async runBulk(
+    orgId: string,
+    ids: string[],
+    handler: (post: {
+      id: string;
+      group: string;
+      state: State;
+      publishDate: Date;
+    }) => Promise<string | void>
+  ): Promise<BulkPostsResult> {
+    const posts = new Map(
+      (await this._postRepository.getPostsByIds(orgId, ids)).map((post) => [
+        post.id,
+        post,
+      ])
+    );
+
+    const result: BulkPostsResult = { succeeded: [], failed: [] };
+    for (const batch of chunk(ids, 10)) {
+      const outcomes = await Promise.all(
+        batch.map(async (id) => {
+          const post = posts.get(id);
+          if (!post) {
+            return { id, reason: 'Post not found' };
+          }
+
+          try {
+            return { id, reason: await handler(post) };
+          } catch (err) {
+            if (err instanceof HttpException) {
+              return { id, reason: err.message };
+            }
+
+            Sentry.captureException(err);
+            return { id, reason: 'Something went wrong, please try again' };
+          }
+        })
+      );
+
+      for (const { id, reason } of outcomes) {
+        if (reason) {
+          result.failed.push({ id, reason });
+        } else {
+          result.succeeded.push(id);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  bulkDeletePosts(orgId: string, ids: string[]) {
+    return this.runBulk(orgId, ids, async (post) => {
+      await this.deletePost(orgId, post.group);
+    });
+  }
+
+  bulkChangePostsStatus(
+    orgId: string,
+    ids: string[],
+    status: 'draft' | 'schedule'
+  ) {
+    const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
+    return this.runBulk(orgId, ids, async (post) => {
+      if (post.state === 'PUBLISHED') {
+        return 'Published posts cannot be changed';
+      }
+
+      if (post.state === state) {
+        return;
+      }
+
+      // Queueing a post whose date has passed would publish it right away
+      if (
+        state === 'QUEUE' &&
+        dayjs.utc(post.publishDate).isBefore(dayjs.utc())
+      ) {
+        return 'The publish date is in the past, reschedule the post first';
+      }
+
+      await this.changePostStatus(orgId, post.id, status);
+    });
+  }
+
+  bulkChangePostsDate(orgId: string, posts: { id: string; date: string }[]) {
+    const dates = new Map(posts.map((post) => [post.id, post.date]));
+    return this.runBulk(orgId, [...dates.keys()], async (post) => {
+      if (post.state === 'PUBLISHED') {
+        return 'Published posts cannot be rescheduled';
+      }
+
+      const date = dayjs.utc(dates.get(post.id));
+      if (post.state !== 'DRAFT' && date.isBefore(dayjs.utc())) {
+        return 'The new date is in the past';
+      }
+
+      await this.changeDate(orgId, post.id, date.toISOString(), 'schedule');
+    });
   }
 
   async countPostsFromDay(orgId: string, date: Date) {
