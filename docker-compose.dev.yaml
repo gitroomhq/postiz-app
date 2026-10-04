@@ -14,8 +14,9 @@ services:
       TEMPORAL_ADDRESS: "temporal:7233"
     volumes:
       - postgres-volume:/var/lib/postgresql/data
+    # Host port 5432 is often taken by another local Postgres; expose on 5433.
     ports:
-      - 5432:5432
+      - 5433:5432
     networks:
       - postiz-network
   postiz-redis:
@@ -131,8 +132,9 @@ services:
       - TEMPORAL_CORS_ORIGINS=http://127.0.0.1:3000
     networks:
       - temporal-network
+    # Host port 8080 is often taken by another local app; expose on 8081.
     ports:
-      - "8080:8080"
+      - "8081:8080"
 
 volumes:
   redisinsight:
