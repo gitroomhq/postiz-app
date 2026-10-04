@@ -42,7 +42,7 @@ export const Checkbox = forwardRef<
         },
       });
     }
-  }, [val]);
+  }, [val, props.onChange]);
   return (
     <div className="flex gap-[10px]">
       <div
