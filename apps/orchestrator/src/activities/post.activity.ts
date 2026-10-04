@@ -395,11 +395,12 @@ export class PostActivity {
     try {
       await this._temporalService.client
         .getRawClient()
-        .workflow.start('streakWorkflow', {
+        .workflow.start('streakWorkflowV2', {
           args: [{ organizationId: integration.organizationId }],
           workflowId: `streak_${integration.organizationId}`,
           taskQueue: 'main',
-          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          // Keep a running streak, it checks for newer posts before it ends
+          workflowIdConflictPolicy: 'USE_EXISTING',
           typedSearchAttributes: new TypedSearchAttributes([
             {
               key: organizationId,
