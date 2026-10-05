@@ -801,6 +801,10 @@ checksums:
     preview_comment_detach_hint: 6fa385ae985c409b511cf7adea2f950a
     preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
     preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
+    channels_still_disabled: 1a8b6447bbdfde8b7fd84fe5b87bec4a
+    channels_still_disabled_description: a869ee5b969817a13ee01e0079269477
+    channels_enabled_again: 636241055a7d339ac16f1f4f7d72d194
+    channels_enabled_again_description: 595e387b2a32d35cb2a3860b209a7bc6
     some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7
     rename_channel: 81dff725b16582b6a13c2f0a826eb2cb
     channel_name: 9368b5a047572b6051f334af5aa76819
