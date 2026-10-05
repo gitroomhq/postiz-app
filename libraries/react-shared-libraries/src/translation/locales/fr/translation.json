@@ -686,6 +686,7 @@
   "two_weeks": "Deux semaines",
   "repeat_post_every_label": "Répéter la publication tous les",
   "add_new_tag": "Ajouter un nouveau tag",
+  "edit_tag": "Modifier le tag",
   "tag_name": "Nom",
   "post_save_failed": "Impossible d’enregistrer l’article",
   "post_is_too_long": "le message est trop long, veuillez le corriger",

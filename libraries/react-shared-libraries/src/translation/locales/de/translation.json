@@ -686,6 +686,7 @@
   "two_weeks": "Zwei Wochen",
   "repeat_post_every_label": "Beitrag wiederholen alle",
   "add_new_tag": "Neues Schlagwort hinzufügen",
+  "edit_tag": "Tag bearbeiten",
   "tag_name": "Name",
   "post_save_failed": "Der Beitrag konnte nicht gespeichert werden",
   "post_is_too_long": "Beitrag ist zu lang, bitte korrigieren",

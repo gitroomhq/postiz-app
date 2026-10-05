@@ -688,6 +688,7 @@
   "two_weeks": "Two Weeks",
   "repeat_post_every_label": "Repeat Post Every",
   "add_new_tag": "Add New Tag",
+  "edit_tag": "Edit Tag",
   "tag_name": "Name",
   "post_save_failed": "Could not save the post",
   "post_is_too_long": "post is too long, please fix it",
