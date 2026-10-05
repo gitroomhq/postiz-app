@@ -806,5 +806,12 @@
   "channel_name": "名称",
   "channel_renamed": "频道已重命名",
   "channel_name_reset": "频道名称已重置",
-  "reset_channel_name": "重置为原始名称"
+  "reset_channel_name": "重置为原始名称",
+  "authentication": "身份验证",
+  "auth_method_local": "邮箱和密码",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "钱包",
+  "auth_method_generic": "单点登录"
 }
