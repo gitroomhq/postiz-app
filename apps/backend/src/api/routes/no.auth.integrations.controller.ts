@@ -62,7 +62,11 @@ export class NoAuthIntegrationsController {
       ? 'none'
       : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
-      throw new Error('Invalid state');
+      // The state expires after an hour and is deleted once used (page reload)
+      throw new HttpException(
+        'This connection link expired or was already used, please connect the channel again',
+        400
+      );
     }
 
     const organization = await ioRedis.get(`organization:${body.state}`);

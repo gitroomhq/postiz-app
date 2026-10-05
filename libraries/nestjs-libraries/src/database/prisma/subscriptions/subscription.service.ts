@@ -84,6 +84,13 @@ export class SubscriptionService {
     );
   }
 
+  updateCancelAt(organizationId: string, cancelAt: number | null) {
+    return this._subscriptionRepository.updateCancelAt(
+      organizationId,
+      cancelAt
+    );
+  }
+
   async checkSubscription(organizationId: string, subscriptionId: string) {
     return await this._subscriptionRepository.checkSubscription(
       organizationId,

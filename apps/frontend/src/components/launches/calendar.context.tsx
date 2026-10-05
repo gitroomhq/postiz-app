@@ -88,6 +88,7 @@ export const CalendarContext = createContext({
 
 export interface Integrations {
   name: string;
+  originalName?: string;
   id: string;
   disabled?: boolean;
   inBetweenSteps: boolean;
@@ -145,7 +146,14 @@ export const CalendarWeekProvider: FC<{
   const [internalData, setInternalData] = useState([] as any[]);
   const [trendings] = useState<string[]>([]);
   const searchParams = useSearchParams();
-  const [displaySaved, setDisplaySaved] = useCookie('calendar-display', 'week');
+  // A 7-column week doesn't fit a phone, so default small screens (tailwind `mobile`) to the day view
+  const [displaySaved, setDisplaySaved] = useCookie(
+    'calendar-display',
+    typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1025px)').matches
+      ? 'day'
+      : 'week'
+  );
   const display = searchParams.get('display') || displaySaved;
 
   // List view state

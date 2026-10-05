@@ -104,6 +104,21 @@ export class IntegrationRepository {
     });
   }
 
+  updateCustomName(org: string, id: string, name: string) {
+    return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customName: name.trim() || null,
+      },
+    });
+  }
+
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
     return this._integration.model.integration.update({
       select: {
@@ -536,6 +551,28 @@ export class IntegrationRepository {
               },
             },
           },
+    });
+  }
+
+  getCustomerByName(orgId: string, name: string) {
+    return this._customers.model.customer.findFirst({
+      where: {
+        orgId,
+        name,
+        deletedAt: null,
+      },
+    });
+  }
+
+  updateCustomerName(orgId: string, id: string, name: string) {
+    return this._customers.model.customer.update({
+      where: {
+        id,
+        orgId,
+      },
+      data: {
+        name,
+      },
     });
   }
 

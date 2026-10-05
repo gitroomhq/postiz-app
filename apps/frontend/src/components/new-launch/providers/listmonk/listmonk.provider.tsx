@@ -30,4 +30,5 @@ export default withProvider({
   CustomPreviewComponent: undefined,
   dto: ListmonkDto,
   maximumCharacters: 300000,
+  inlineImages: true,
 });

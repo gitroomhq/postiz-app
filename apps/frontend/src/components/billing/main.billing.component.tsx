@@ -137,7 +137,7 @@ export const Features: FC<{
               />
             </svg>
           </div>
-          <div>{feature}</div>
+          <div className="text-start">{feature}</div>
         </div>
       ))}
     </div>
@@ -299,7 +299,11 @@ export const MainBillingComponent: FC<{
             cancelAt: cancel_at,
           }));
 
-          toast.show('Subscription reactivated successfully');
+          toast.show(
+            cancel_at
+              ? 'Your subscription was already active, so it is now set to cancel. Click Reactivate subscription again to keep it.'
+              : 'Subscription reactivated successfully'
+          );
           setLoading(false);
           return;
         }
@@ -375,8 +379,11 @@ export const MainBillingComponent: FC<{
               ...subs!,
               cancelAt: cancel_at,
             }));
-            if (cancel_at)
-              toast.show('Subscription set to canceled successfully');
+            toast.show(
+              cancel_at
+                ? 'Subscription set to canceled successfully'
+                : 'Your subscription was already set to cancel, so it has been reactivated. Click Cancel subscription again to cancel it.'
+            );
             setLoading(false);
           }
           return;
@@ -583,8 +590,11 @@ export const MainBillingComponent: FC<{
           ))}
       </div>
       {!!subscription?.id && (
-        <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>
+        <div className="flex justify-center mt-[20px] gap-[10px] mobile:flex-col">
+          <Button
+            onClick={updatePayment}
+            className="mobile:h-auto mobile:min-h-[40px] mobile:py-[8px] mobile:text-center"
+          >
             {t(
               'update_payment_method_invoices_history',
               'Update Payment Method / Invoices History'

@@ -4,12 +4,16 @@ import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
 import { LoadToolsService } from '@gitroom/nestjs-libraries/chat/load.tools.service';
 import { MCPServer } from '@mastra/mcp';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
-import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
+import {
+  OAuthService,
+  selfHostedRelayEnabled,
+} from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { runWithContext } from './async.storage';
 import { createOAuthMiddleware } from './oauth-middleware';
 import { UPLOAD_WIDGET_URI, uploadWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/upload.widget';
 import { CLIPPING_WIDGET_URI, clippingWidgetHtml } from '@gitroom/nestjs-libraries/chat/ui/clipping.widget';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { McpRelayService } from '@gitroom/nestjs-libraries/chat/mcp.relay.service';
 const fixAcceptHeader = (req: Request) => {
   const value = 'application/json, text/event-stream';
   req.headers.accept = value;
@@ -34,6 +38,7 @@ export const startMcp = async (app: INestApplication) => {
   const organizationService = app.get(OrganizationService, { strict: false });
   const oauthService = app.get(OAuthService, { strict: false });
   const loadToolsService = app.get(LoadToolsService, { strict: false });
+  const mcpRelayService = app.get(McpRelayService, { strict: false });
 
   const resolveAuth = async (token: string) => {
     if (token.startsWith('pos_')) {
@@ -44,10 +49,15 @@ export const startMcp = async (app: INestApplication) => {
     return organizationService.getOrgByApiKey(token);
   };
 
+  // psh_ tokens: a self-hosted Postiz this server relays to (McpRelayService)
+  const resolveSelfHosted = (token: string) =>
+    oauthService.getSelfHostedByAccessToken(token);
+
   const mastra = await mastraService.mastra();
   const agent = mastra.getAgent('postiz');
+  const agentTools = await agent.listTools();
   const tools = {
-    ...(await agent.listTools()),
+    ...agentTools,
     // tools that only make sense inside an MCP host (ui:// widgets)
     ...(await loadToolsService.loadTools(true)),
   };
@@ -66,9 +76,11 @@ export const startMcp = async (app: INestApplication) => {
     'clippingStatusTool',
     'clippingWidgetTicketTool',
   ];
-  const claudeTools = Object.fromEntries(
-    Object.entries(tools).filter(([name]) => !claudeHiddenTools.includes(name))
-  ) as typeof tools;
+  const withoutClaudeHidden = <T extends Record<string, unknown>>(source: T) =>
+    Object.fromEntries(
+      Object.entries(source).filter(([name]) => !claudeHiddenTools.includes(name))
+    ) as T;
+  const claudeTools = withoutClaudeHidden(tools);
 
   const backendUrl = process.env.NEXT_PUBLIC_OVERRIDE_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
   // this runs before the backend listens: a bucket url that doesn't parse only
@@ -143,6 +155,24 @@ export const startMcp = async (app: INestApplication) => {
     appResources: claudeAppResources,
   });
 
+  // Self-hosted connections, built from the agent tools so the ui:// widgets
+  // (which upload to this server) are left out
+  let selfHostedServer: MCPServer | undefined;
+  let claudeSelfHostedServer: MCPServer | undefined;
+  if (selfHostedRelayEnabled()) {
+    const selfHostedTools = mcpRelayService.tools(agentTools);
+    selfHostedServer = new MCPServer({
+      name: 'Postiz MCP',
+      version: '1.0.0',
+      tools: selfHostedTools,
+    });
+    claudeSelfHostedServer = new MCPServer({
+      name: 'Postiz MCP',
+      version: '1.0.0',
+      tools: withoutClaudeHidden(selfHostedTools),
+    });
+  }
+
   // Two RFC 8414 path-based issuers backed by the same endpoints and code.
   // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
   // not advertise a registration_endpoint, so the OpenAI builder defaults to
@@ -190,7 +220,9 @@ export const startMcp = async (app: INestApplication) => {
         authorizationServers: [authorizationServers[authorizationServer].issuer],
         scopesSupported: oauthScopes,
         validateToken: async (token: string) => {
-          const org = await resolveAuth(token);
+          const org = token.startsWith('psh_')
+            ? await resolveSelfHosted(token)
+            : await resolveAuth(token);
           if (!org) {
             return { valid: false, error: 'invalid_token', errorDescription: 'Invalid API Key or OAuth token' };
           }
@@ -202,17 +234,21 @@ export const startMcp = async (app: INestApplication) => {
 
   const oauthResources: Record<
     string,
-    { middleware: ReturnType<typeof createOAuthMiddleware>; mcpServer: MCPServer }
+    {
+      middleware: ReturnType<typeof createOAuthMiddleware>;
+      mcpServer: MCPServer;
+      selfHostedServer?: MCPServer;
+    }
   > = {
     // ChatGPT app submission (pre-defined client credentials, no DCR)
-    '/mcp-oauth-chatgpt': { middleware: createResourceMiddleware('/mcp-oauth-chatgpt', '/mcp-oauth-chatgpt'), mcpServer: oauthServer },
+    '/mcp-oauth-chatgpt': { middleware: createResourceMiddleware('/mcp-oauth-chatgpt', '/mcp-oauth-chatgpt'), mcpServer: oauthServer, selfHostedServer },
     // Former ChatGPT path, kept for connectors that were created against it
-    '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth', '/mcp-oauth-dynamic'), mcpServer: oauthServer },
+    '/mcp-oauth': { middleware: createResourceMiddleware('/mcp-oauth', '/mcp-oauth-dynamic'), mcpServer: oauthServer, selfHostedServer },
     // Claude connector directory submission
-    '/mcp-oauth-claude': { middleware: createResourceMiddleware('/mcp-oauth-claude', '/mcp-oauth-dynamic'), mcpServer: claudeOauthServer },
+    '/mcp-oauth-claude': { middleware: createResourceMiddleware('/mcp-oauth-claude', '/mcp-oauth-dynamic'), mcpServer: claudeOauthServer, selfHostedServer: claudeSelfHostedServer },
     // Clients that register themselves through DCR (/oauth/register) - not
     // directory-reviewed, so they get the full toolset (media generation included)
-    '/mcp-oauth-dynamic': { middleware: createResourceMiddleware('/mcp-oauth-dynamic', '/mcp-oauth-dynamic'), mcpServer: oauthServer },
+    '/mcp-oauth-dynamic': { middleware: createResourceMiddleware('/mcp-oauth-dynamic', '/mcp-oauth-dynamic'), mcpServer: oauthServer, selfHostedServer },
   };
 
   if (process.env.OPENAI_APP_CHALLANGE) {
@@ -288,22 +324,25 @@ export const startMcp = async (app: INestApplication) => {
     }
 
     // baseUrl is the mount path that matched, e.g. /mcp-oauth-claude
-    const { middleware, mcpServer } = oauthResources[req.baseUrl];
+    const { middleware, mcpServer, selfHostedServer } = oauthResources[req.baseUrl];
     const url = new URL(req.baseUrl, process.env.NEXT_PUBLIC_BACKEND_URL);
 
     const result = await middleware(req, res, url);
     if (!result.proceed) return;
 
     const token = result.tokenValidation?.subject;
-    const auth = await resolveAuth(token!);
-    if (!auth) {
+    // a self-hosted connection has no organization here
+    const selfHosted = token!.startsWith('psh_');
+    const relay = selfHosted ? await resolveSelfHosted(token!) : undefined;
+    const auth = selfHosted ? undefined : await resolveAuth(token!);
+    if (!auth && !(relay && selfHostedServer)) {
       res.status(401).json({ error: 'invalid_token', error_description: 'Could not resolve organization' });
       return;
     }
 
     fixAcceptHeader(req);
-    await runWithContext({ requestId: token!, auth }, async () => {
-      await mcpServer.startHTTP({
+    await runWithContext({ requestId: token!, auth, relay: relay || undefined }, async () => {
+      await (relay ? selfHostedServer! : mcpServer).startHTTP({
         url: url,
         httpPath: url.pathname,
         options: {

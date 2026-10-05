@@ -137,7 +137,8 @@ export const stripHtmlValidation = (
   replaceBold = false,
   none = false,
   plain = false,
-  convertMentionFunction?: (idOrHandle: string, name: string) => string
+  convertMentionFunction?: (idOrHandle: string, name: string) => string,
+  inlineImages = false
 ): string => {
   if (plain) {
     return val;
@@ -156,7 +157,12 @@ export const stripHtmlValidation = (
   }
 
   if (type === 'html') {
-    return striptags(convertMention(value, convertMentionFunction), [
+    return striptags(
+      convertMention(
+        inlineImages ? convertImages(value) : value,
+        convertMentionFunction
+      ),
+      [
       'ul',
       'li',
       'h1',
@@ -166,7 +172,9 @@ export const stripHtmlValidation = (
       'strong',
       'u',
       'a',
-    ])
+      ...(inlineImages ? ['img'] : []),
+      ]
+    )
       .replace(/&gt;/gi, '>')
       .replace(/&lt;/gi, '<')
       .replace(/&amp;/gi, '&')
@@ -266,6 +274,22 @@ export const stripHtmlValidation = (
   return striptags(html, ['ul', 'li', 'h1', 'h2', 'h3'])
     .replace(/&gt;/gi, '>')
     .replace(/&lt;/gi, '<');
+};
+
+// keeps only an http(s) src and the alt of a picture, a value holding a quote
+// is dropped since &quot; is decoded afterwards and would close the attribute
+export const convertImages = (value: string) => {
+  return value.replace(/<img\b[^>]*>/gi, (match) => {
+    const src = /\ssrc="(https?:\/\/[^"]*)"/i.exec(match)?.[1];
+    const alt = /\salt="([^"]*)"/i.exec(match)?.[1];
+    if (!src || src.includes('&quot;')) {
+      return '';
+    }
+
+    return `<img src="${src}"${
+      alt && !alt.includes('&quot;') ? ` alt="${alt}"` : ''
+    }>`;
+  });
 };
 
 export const convertMention = (

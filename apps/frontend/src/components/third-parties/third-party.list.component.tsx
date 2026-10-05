@@ -126,12 +126,12 @@ export const ThirdPartyListComponent: FC<{ reload: () => void }> = (props) => {
   );
 
   return (
-    <div className="grid grid-cols-4 gap-[10px] justify-items-center justify-center">
+    <div className="grid grid-cols-4 tablet:grid-cols-3 mobile:!grid-cols-2 gap-[10px] justify-items-center justify-center">
       {data?.map((p: any) => (
         <div
           onClick={addApiKey(p.title, p.identifier)}
           key={p.identifier}
-          className="w-full h-full p-[20px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
+          className="w-full h-full p-[20px] mobile:p-[14px] min-h-[100px] text-[14px] bg-newTableHeader hover:bg-newTableBorder rounded-[8px] transition-all text-textColor relative flex flex-col gap-[15px] cursor-pointer"
         >
           <div>
             <img

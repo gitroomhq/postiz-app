@@ -17,7 +17,7 @@ import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-setting
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class SlackProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 3; // Slack has moderate API limits
+  override maxConcurrentJob = 10; // Slack limits are per workspace
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
