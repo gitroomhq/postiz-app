@@ -616,6 +616,7 @@
   "profile_updated": "Profil mis à jour",
   "sets": "Ensembles",
   "invitation_link_sent": "Lien d'invitation envoyé",
+  "could_not_send_invitation": "Impossible d'envoyer l'invitation",
   "send_invitation_link": "Envoyer le lien d'invitation",
   "copy_link": "Copier le lien",
   "are_you_sure_remove_team_member": "Êtes-vous sûr de vouloir retirer ce membre de l'équipe ?",

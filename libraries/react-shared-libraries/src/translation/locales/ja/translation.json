@@ -616,6 +616,7 @@
   "profile_updated": "プロフィールが更新されました",
   "sets": "セット",
   "invitation_link_sent": "招待リンクが送信されました",
+  "could_not_send_invitation": "招待状を送信できませんでした",
   "send_invitation_link": "招待リンクを送信",
   "copy_link": "リンクをコピー",
   "are_you_sure_remove_team_member": "このチームメンバーを削除してもよろしいですか？",

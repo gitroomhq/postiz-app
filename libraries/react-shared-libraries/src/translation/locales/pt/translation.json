@@ -616,6 +616,7 @@
   "profile_updated": "Perfil atualizado",
   "sets": "Conjuntos",
   "invitation_link_sent": "Link de convite enviado",
+  "could_not_send_invitation": "Não foi possível enviar o convite",
   "send_invitation_link": "Enviar link de convite",
   "copy_link": "Copiar link",
   "are_you_sure_remove_team_member": "Tem certeza de que deseja remover este membro da equipe?",

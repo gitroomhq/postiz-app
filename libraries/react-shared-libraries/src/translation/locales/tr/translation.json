@@ -616,6 +616,7 @@
   "profile_updated": "Profil güncellendi",
   "sets": "Setler",
   "invitation_link_sent": "Davet bağlantısı gönderildi",
+  "could_not_send_invitation": "Davetiye gönderilemedi",
   "send_invitation_link": "Davet Bağlantısı Gönder",
   "copy_link": "Bağlantıyı Kopyala",
   "are_you_sure_remove_team_member": "Bu ekip üyesini kaldırmak istediğinizden emin misiniz?",

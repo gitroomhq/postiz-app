@@ -616,6 +616,7 @@
   "profile_updated": "הפרופיל עודכן",
   "sets": "סטים",
   "invitation_link_sent": "קישור ההזמנה נשלח",
+  "could_not_send_invitation": "לא ניתן היה לשלוח את ההזמנה",
   "send_invitation_link": "שלח קישור הזמנה",
   "copy_link": "העתק קישור",
   "are_you_sure_remove_team_member": "האם אתה בטוח שברצונך להסיר את חבר הצוות הזה?",

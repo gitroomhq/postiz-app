@@ -616,6 +616,7 @@
   "profile_updated": "Профиль обновлён",
   "sets": "Наборы",
   "invitation_link_sent": "Ссылка-приглашение отправлена",
+  "could_not_send_invitation": "Не удалось отправить приглашение",
   "send_invitation_link": "Отправить ссылку-приглашение",
   "copy_link": "Скопировать ссылку",
   "are_you_sure_remove_team_member": "Вы уверены, что хотите удалить этого участника команды?",

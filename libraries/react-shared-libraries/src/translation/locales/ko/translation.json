@@ -616,6 +616,7 @@
   "profile_updated": "프로필이 업데이트되었습니다",
   "sets": "세트",
   "invitation_link_sent": "초대 링크가 전송되었습니다",
+  "could_not_send_invitation": "초대를 보낼 수 없습니다",
   "send_invitation_link": "초대 링크 보내기",
   "copy_link": "링크 복사",
   "are_you_sure_remove_team_member": "이 팀 멤버를 삭제하시겠습니까?",
