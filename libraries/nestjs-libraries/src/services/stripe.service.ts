@@ -438,7 +438,12 @@ export class StripeService extends PaymentProviderAbstract {
         status: 'all',
         expand: ['data.latest_invoice'],
       })
-    ).data.filter((f) => f.status !== 'canceled');
+    ).data.filter(
+      (f) =>
+        f.status !== 'canceled' &&
+        f.status !== 'incomplete' &&
+        f.status !== 'incomplete_expired'
+    );
   }
 
   async setToCancel(organizationId: string) {
