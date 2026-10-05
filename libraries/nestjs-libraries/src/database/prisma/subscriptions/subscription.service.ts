@@ -115,15 +115,36 @@ export class SubscriptionService {
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
-    const currentTotalChannels = (
-      await this._integrationService.getIntegrationsList(organizationId)
-    ).filter((f) => !f.disabled);
+    const allChannels = await this._integrationService.getIntegrationsList(
+      organizationId
+    );
+    const currentTotalChannels = allChannels.filter((f) => !f.disabled);
 
     if (currentTotalChannels.length > totalChannels) {
       await this._integrationService.disableIntegrations(
         organizationId,
         currentTotalChannels.length - totalChannels
       );
+    }
+
+    // channels are auto-disabled when a subscription lapses; once the new plan
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
+    if (
+      billing !== 'FREE' &&
+      currentTotalChannels.length < allChannels.length &&
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
+    ) {
+      try {
+        await this._integrationService.enableAllIntegrations(organizationId);
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -176,17 +197,38 @@ export class SubscriptionService {
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
-    const currentTotalChannels = (
-      await this._integrationService.getIntegrationsList(
-        getOrgByCustomerId?.id!
-      )
-    ).filter((f) => !f.disabled);
+    const allChannels = await this._integrationService.getIntegrationsList(
+      getOrgByCustomerId?.id!
+    );
+    const currentTotalChannels = allChannels.filter((f) => !f.disabled);
 
     if (currentTotalChannels.length > totalChannels) {
       await this._integrationService.disableIntegrations(
         getOrgByCustomerId?.id!,
         currentTotalChannels.length - totalChannels
       );
+    }
+
+    // channels are auto-disabled when a subscription lapses; once the new plan
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
+    if (
+      billing !== 'FREE' &&
+      currentTotalChannels.length < allChannels.length &&
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
+    ) {
+      try {
+        await this._integrationService.enableAllIntegrations(
+          getOrgByCustomerId?.id!
+        );
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -236,6 +278,7 @@ export class SubscriptionService {
           return {};
         }
       } catch (e) {
+        console.error('Error modifying subscription:', e);
         return {};
       }
     }
@@ -280,6 +323,7 @@ export class SubscriptionService {
         return {};
       }
     } catch (e) {
+      console.error('Error modifying subscription:', e);
       return {};
     }
 
