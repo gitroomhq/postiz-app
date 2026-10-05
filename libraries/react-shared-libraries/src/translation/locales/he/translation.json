@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "שינוי מגמה חזוי ב-GitHub",
   "duplicate_post": "פוסט כפול",
   "preview_post": "תצוגה מקדימה של הפוסט",
+  "open_post": "פתח פוסט",
   "post_statistics": "סטטיסטיקות פוסט",
   "draft": "טיוטה",
   "week_number": "שבוע {{number}}",
@@ -686,6 +687,7 @@
   "two_weeks": "שבועיים",
   "repeat_post_every_label": "חזור על הפוסט כל",
   "add_new_tag": "הוסף תגית חדשה",
+  "edit_tag": "ערוך תגית",
   "tag_name": "שם",
   "post_save_failed": "לא ניתן היה לשמור את הפוסט",
   "post_is_too_long": "הפוסט ארוך מדי, אנא תקן אותו",
@@ -797,5 +799,10 @@
   "preview_comment_detach_hint": "תגובות על טקסט נבחר מאבדות הדגשה אם הטקסט נערך מאוחר יותר.",
   "preview_comment_text_changed": "הטקסט השתנה",
   "preview_no_comments_yet": "עדיין אין תגובות. בחר טקסט בפוסט כדי להגיב עליו, או הוסף תגובה כללית.",
-  "some_files_failed_to_upload": "חלק מהקבצים לא הועלו, אנא נסה שוב"
+  "some_files_failed_to_upload": "חלק מהקבצים לא הועלו, אנא נסה שוב",
+  "rename_channel": "שנה שם ערוץ",
+  "channel_name": "שם",
+  "channel_renamed": "שם הערוץ שונה",
+  "channel_name_reset": "שם הערוץ אופס",
+  "reset_channel_name": "אפס לשם המקורי"
 }

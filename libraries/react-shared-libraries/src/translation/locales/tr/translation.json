@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Tahmini GitHub Trend Değişimi",
   "duplicate_post": "Yinelenen Gönderi",
   "preview_post": "Gönderiyi Önizle",
+  "open_post": "Gönderiyi Aç",
   "post_statistics": "Gönderi İstatistikleri",
   "draft": "Taslak",
   "week_number": "{{number}}. Hafta",
@@ -686,6 +687,7 @@
   "two_weeks": "İki Hafta",
   "repeat_post_every_label": "Gönderiyi Her Tekrarla",
   "add_new_tag": "Yeni Etiket Ekle",
+  "edit_tag": "Etiketi Düzenle",
   "tag_name": "Adı",
   "post_save_failed": "Gönderi kaydedilemedi",
   "post_is_too_long": "gönderi çok uzun, lütfen düzeltin",
@@ -797,5 +799,10 @@
   "preview_comment_detach_hint": "Seçili metindeki yorumlar, metin daha sonra değiştirilirse vurgusunu kaybeder.",
   "preview_comment_text_changed": "Metin değişti",
   "preview_no_comments_yet": "Henüz yorum yok. Yorum yapmak için gönderide bir metin seçin veya genel bir yorum ekleyin.",
-  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin"
+  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin",
+  "rename_channel": "Kanalı yeniden adlandır",
+  "channel_name": "Ad",
+  "channel_renamed": "Kanal yeniden adlandırıldı",
+  "channel_name_reset": "Kanal adı sıfırlandı",
+  "reset_channel_name": "Orijinal adına sıfırla"
 }

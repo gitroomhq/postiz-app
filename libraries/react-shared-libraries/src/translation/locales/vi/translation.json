@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Dự đoán thay đổi xu hướng GitHub",
   "duplicate_post": "Bài viết trùng lặp",
   "preview_post": "Xem trước bài viết",
+  "open_post": "Mở bài viết",
   "post_statistics": "Thống kê bài viết",
   "draft": "Bản nháp",
   "week_number": "Tuần {{number}}",
@@ -686,6 +687,7 @@
   "two_weeks": "Hai tuần",
   "repeat_post_every_label": "Lặp lại bài đăng mỗi",
   "add_new_tag": "Thêm thẻ mới",
+  "edit_tag": "Chỉnh sửa thẻ",
   "tag_name": "Tên",
   "post_save_failed": "Không thể lưu bài viết",
   "post_is_too_long": "bài đăng quá dài, vui lòng chỉnh sửa",
@@ -797,5 +799,10 @@
   "preview_comment_detach_hint": "Bình luận trên đoạn văn bản được chọn sẽ mất nổi bật nếu văn bản bị chỉnh sửa sau đó.",
   "preview_comment_text_changed": "Nội dung đã thay đổi",
   "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung.",
-  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại"
+  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại",
+  "rename_channel": "Đổi tên kênh",
+  "channel_name": "Tên",
+  "channel_renamed": "Đã đổi tên kênh",
+  "channel_name_reset": "Đã đặt lại tên kênh",
+  "reset_channel_name": "Đặt lại tên gốc"
 }

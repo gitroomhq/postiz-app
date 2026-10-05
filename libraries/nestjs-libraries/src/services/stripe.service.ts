@@ -435,6 +435,7 @@ export class StripeService extends PaymentProviderAbstract {
         cancel_at_period_end: false,
         metadata: { service: 'gitroom', id },
       });
+      await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
       return {
         id,
@@ -468,6 +469,7 @@ export class StripeService extends PaymentProviderAbstract {
       cancel_at_period_end: true,
       metadata: { service: 'gitroom', id },
     });
+    await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
     return {
       id,

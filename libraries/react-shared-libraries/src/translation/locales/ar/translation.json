@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "التغير المتوقع في ترند GitHub",
   "duplicate_post": "منشور مكرر",
   "preview_post": "معاينة المنشور",
+  "open_post": "فتح المشاركة",
   "post_statistics": "إحصائيات المنشور",
   "draft": "مسودة",
   "week_number": "الأسبوع {{number}}",
@@ -686,6 +687,7 @@
   "two_weeks": "أسبوعان",
   "repeat_post_every_label": "تكرار النشر كل",
   "add_new_tag": "إضافة وسم جديد",
+  "edit_tag": "تعديل الوسم",
   "tag_name": "الاسم",
   "post_save_failed": "تعذّر حفظ المنشور",
   "post_is_too_long": "المنشور طويل جدًا، يرجى تعديله",
@@ -797,5 +799,10 @@
   "preview_comment_detach_hint": "التعليقات على النص المحدد تفقد تمييزها إذا تم تعديل النص لاحقًا.",
   "preview_comment_text_changed": "تم تغيير النص",
   "preview_no_comments_yet": "لا توجد تعليقات بعد. حدد بعض النص في المنشور للتعليق عليه، أو أضف تعليقًا عامًا.",
-  "some_files_failed_to_upload": "فشل تحميل بعض الملفات، يرجى المحاولة مرة أخرى"
+  "some_files_failed_to_upload": "فشل تحميل بعض الملفات، يرجى المحاولة مرة أخرى",
+  "rename_channel": "إعادة تسمية القناة",
+  "channel_name": "الاسم",
+  "channel_renamed": "تمت إعادة تسمية القناة",
+  "channel_name_reset": "تم إعادة ضبط اسم القناة",
+  "reset_channel_name": "إعادة الاسم إلى الاسم الأصلي"
 }

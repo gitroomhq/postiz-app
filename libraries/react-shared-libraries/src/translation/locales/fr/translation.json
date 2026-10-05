@@ -334,6 +334,7 @@
   "predicted_github_trending_change": "Changement de tendance GitHub prédit",
   "duplicate_post": "Publication en double",
   "preview_post": "Aperçu de la publication",
+  "open_post": "Ouvrir le post",
   "post_statistics": "Statistiques de la publication",
   "draft": "Brouillon",
   "week_number": "Semaine {{number}}",
@@ -686,6 +687,7 @@
   "two_weeks": "Deux semaines",
   "repeat_post_every_label": "Répéter la publication tous les",
   "add_new_tag": "Ajouter un nouveau tag",
+  "edit_tag": "Modifier le tag",
   "tag_name": "Nom",
   "post_save_failed": "Impossible d’enregistrer l’article",
   "post_is_too_long": "le message est trop long, veuillez le corriger",
@@ -797,5 +799,10 @@
   "preview_comment_detach_hint": "Les commentaires sur le texte sélectionné perdent leur surlignement si le texte est modifié par la suite.",
   "preview_comment_text_changed": "Texte modifié",
   "preview_no_comments_yet": "Aucun commentaire pour le moment. Sélectionnez du texte dans la publication pour le commenter, ou ajoutez un commentaire général.",
-  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer."
+  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer.",
+  "rename_channel": "Renommer le canal",
+  "channel_name": "Nom",
+  "channel_renamed": "Canal renommé",
+  "channel_name_reset": "Nom du canal réinitialisé",
+  "reset_channel_name": "Réinitialiser au nom d'origine"
 }
