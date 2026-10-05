@@ -646,6 +646,10 @@ checksums:
     channel_id_copied: 58bf6a74adf570a5daf233ce496149de
     settings_updated: 260e10a61200b581616d766f3af5ae52
     customer_updated: ab17bcd115b14b72bb2e89f2b48883a4
+    edit_group_name: 64654e2647a83d0c51e357c9ba30a962
+    group_name: 9368b5a047572b6051f334af5aa76819
+    group_updated: db3365d95da2a925566eb65a1a416883
+    could_not_save_group: 31c544cf61f16ce4f6930268a26e7192
     custom_url: f1e4e1c6a386d212abe94b937cf5e812
     picture: 14818ef364a0ecc8b738bdb23c46b3c3
     upgrade_required: 460dbea5061a1aba2080ffdecdf9544c
@@ -686,6 +690,7 @@ checksums:
     repeat_post_every_label: f3e3fd4d95a0eeaf1eab0219278ae812
     add_new_tag: 911360b396ef6db7a24eb53134f0f7d2
     tag_name: 9368b5a047572b6051f334af5aa76819
+    post_save_failed: 164475f6751549f91a5b6e7f759fbca8
     post_is_too_long: 7784c6ecca2c7e58665e83e219aff80b
     your_post_should_have_at_least_one_character_or_one_image: e7a0d63d2931ca540ceea25c6d4df7ec
     internal_edit: 04ed5d507cfed7c4f348df338c106809
@@ -701,6 +706,7 @@ checksums:
     delete_post_tooltip: bcf081392c76d2f2a8522944ddd36b78
     drop_files_here_to_upload: a7971302d02a19a461c519cffedfa5e5
     insert_emoji: 6e2ab0e239c0ee87d385b1cd17185e00
+    only_images_can_be_added_to_the_content: 39229242be2e514ce641c5edce713caa
     write_something: bc9257cede62880c411001e61310ca43
     click_channel_to_add: 7dc67c45eba252d1fa931e5a101d568b
     connect_your_channels: a8303310a9cc5f4e11510f8f55c0978d
@@ -725,6 +731,8 @@ checksums:
     chat_onboarding_description: 9da74037342cd6adb283e8205299b986
     connector: 7abb5584501ce0e3cc51ba19f0561ca8
     connector_onboarding_description: eb8027296b46bf58475f6b4925bd6351
+    official_connector: cdaaab2f023cb2eaea40b666e9859442
+    connector_self_hosted_description: c966620ed2df1d6ffeaa92969aaf30a6
     mcp_onboarding_description: 5b33036d174222d86ac50039a3a31724
     cli_onboarding_description: b4aba065e5a8410ee2c365ee4d7aa87c
     agent_settings_later: bbdd45a80cc5218809363348e0b03a32
@@ -790,3 +798,4 @@ checksums:
     preview_comment_detach_hint: 6fa385ae985c409b511cf7adea2f950a
     preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
     preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
+    some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7

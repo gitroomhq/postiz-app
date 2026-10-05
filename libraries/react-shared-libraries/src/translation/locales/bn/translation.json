@@ -642,6 +642,10 @@
   "channel_id_copied": "চ্যানেল আইডি ক্লিপবোর্ডে কপি হয়েছে",
   "settings_updated": "সেটিংস আপডেট হয়েছে",
   "customer_updated": "গ্রাহক আপডেট হয়েছে",
+  "edit_group_name": "গ্রুপের নাম সম্পাদনা করুন",
+  "group_name": "নাম",
+  "group_updated": "গ্রুপ আপডেট হয়েছে",
+  "could_not_save_group": "গ্রুপ সংরক্ষণ করা যায়নি।",
   "custom_url": "কাস্টম URL",
   "picture": "ছবি",
   "upgrade_required": "এই ফিচারটি ব্যবহার করতে আপনাকে আপগ্রেড করতে হবে",
@@ -682,6 +686,7 @@
   "repeat_post_every_label": "প্রতি কতদিন পর পোস্ট পুনরাবৃত্তি হবে",
   "add_new_tag": "নতুন ট্যাগ যোগ করুন",
   "tag_name": "নাম",
+  "post_save_failed": "পোস্ট সংরক্ষণ করা যায়নি",
   "post_is_too_long": "পোস্টটি খুব বড়, অনুগ্রহ করে ঠিক করুন",
   "your_post_should_have_at_least_one_character_or_one_image": "আপনার পোস্টে অন্তত একটি অক্ষর বা একটি ছবি থাকতে হবে।",
   "internal_edit": "অভ্যন্তরীণ সম্পাদনা",
@@ -697,6 +702,7 @@
   "delete_post_tooltip": "পোস্ট মুছুন",
   "drop_files_here_to_upload": "আপলোড করতে আপনার ফাইলগুলো এখানে ছেড়ে দিন",
   "insert_emoji": "ইমোজি যুক্ত করুন",
+  "only_images_can_be_added_to_the_content": "কনটেন্টে শুধুমাত্র ছবি যোগ করা যায়",
   "write_something": "কিছু লিখুন …",
   "click_channel_to_add": "যোগ করার জন্য একটি চ্যানেলে ক্লিক করুন",
   "connect_your_channels": "আপনার চ্যানেলগুলি সংযোগ করুন",
@@ -721,6 +727,8 @@
   "chat_onboarding_description": "MCP বা CLI সেটিংসের প্রয়োজন নেই। এটি চ্যাটে পেস্ট করুন, এজেন্টটি Postiz CLI ইনস্টল করবে এবং আপনার API কী চাইবে।",
   "connector": "কনেক্টর",
   "connector_onboarding_description": "সবচেয়ে দ্রুত উপায়: এক ক্লিকে Postiz যোগ করুন, আপনাকে সাইন ইন করতে বলা হবে",
+  "official_connector": "অফিসিয়াল কানেক্টর",
+  "connector_self_hosted_description": "অফিসিয়াল কানেক্টর সেলফ-হোস্টেড Postiz-এর সাথেও কাজ করে। সাইন ইন করতে বলা হলে, \"Use self-hosted\" বেছে নিন এবং আপনার API কী সহ {{url}} লিখুন।",
   "mcp_onboarding_description": "আপনার এজেন্টকে Postiz টুল দিন যাতে সে পোস্ট তৈরি, নির্ধারণ এবং পরিচালনা করতে পারে",
   "cli_onboarding_description": "Postiz CLI এবং সেই স্কিল ইনস্টল করুন যা আপনার এজেন্টকে এটি ব্যবহার করতে শেখায়",
   "agent_settings_later": "আরও এজেন্ট এবং সম্পূর্ণ নির্দেশিকা সেটিংস > ডেভেলপারস-এ পাওয়া যাবে",
@@ -785,5 +793,6 @@
   "preview_comment_failed": "মন্তব্যটি পোস্ট করা যায়নি",
   "preview_comment_detach_hint": "নির্বাচিত টেক্সটে মন্তব্য করলে, টেক্সট সম্পাদনার পর হাইলাইট হারিয়ে যেতে পারে।",
   "preview_comment_text_changed": "টেক্সট পরিবর্তিত হয়েছে",
-  "preview_no_comments_yet": "এখনও কোনো মন্তব্য নেই। পোস্টে কিছু টেক্সট নির্বাচন করে অথবা সাধারণ মন্তব্য যোগ করে মন্তব্য করুন।"
+  "preview_no_comments_yet": "এখনও কোনো মন্তব্য নেই। পোস্টে কিছু টেক্সট নির্বাচন করে অথবা সাধারণ মন্তব্য যোগ করে মন্তব্য করুন।",
+  "some_files_failed_to_upload": "কিছু ফাইল আপলোড করতে ব্যর্থ হয়েছে, অনুগ্রহ করে আবার চেষ্টা করুন"
 }

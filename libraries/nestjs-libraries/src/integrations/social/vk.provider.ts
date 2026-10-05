@@ -18,7 +18,7 @@ import { Integration } from '@prisma/client';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 export class VkProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 2; // VK has moderate API limits
+  override maxConcurrentJob = 5; // VK limits are per user token
   identifier = 'vk';
   name = 'VK';
   isBetweenSteps = false;

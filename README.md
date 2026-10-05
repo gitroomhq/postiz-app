@@ -108,8 +108,8 @@
 | [Hostinger](https://www.hostinger.com/vps/docker/postiz?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
 | [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
 | [ChatbotX](https://chatbotx.io/?ref=postiz) | <img src="https://github.com/user-attachments/assets/0aa6b058-9a64-46d3-bc26-337abc51737d" alt="ChatbotX" width="500"/> | The ManyChat alternative that you can self-host, white-label, and resell to your clients. Bring your own OpenClaw, Hermes, or Claude agents! |
+| [RapidProxy](https://www.rapidproxy.io/?ref=postiz) | <img width="700" height="412" alt="WP-PROXY-THUMBNAIL-41" src="https://github.com/user-attachments/assets/6cf5b2c9-2687-4181-8964-2e7b90eace4f" /> | RapidProxy provides 90M+ residential IPs for social media, browser automation, and AI workflows, with smart rotation and stable sessions. From $0.55/GB; use RAPID10 for 10% off.
 
-![Bronze Tier](https://opencollective.com/postiz/tiers/main-repository-bronze-tier.svg?avatarHeight=36&width=600&button=false)
 
 # Intro
 

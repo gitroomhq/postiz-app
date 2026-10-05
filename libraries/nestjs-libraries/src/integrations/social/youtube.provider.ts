@@ -1029,8 +1029,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
-      console.error('Error fetching YouTube post analytics:', err);
+    } catch (err: any) {
+      // Expired or revoked token, checkPostAnalytics refreshes it and retries once
+      if (err?.response?.status === 401) {
+        throw new RefreshToken(
+          this.identifier,
+          JSON.stringify(err.response.data || {}),
+          '{}'
+        );
+      }
+      console.error(
+        'Error fetching YouTube post analytics:',
+        err?.message || err
+      );
       return [];
     }
   }

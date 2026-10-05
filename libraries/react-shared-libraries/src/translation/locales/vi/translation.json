@@ -642,6 +642,10 @@
   "channel_id_copied": "Đã sao chép ID kênh vào bộ nhớ tạm",
   "settings_updated": "Đã cập nhật cài đặt",
   "customer_updated": "Đã cập nhật khách hàng",
+  "edit_group_name": "Chỉnh sửa tên nhóm",
+  "group_name": "Tên",
+  "group_updated": "Nhóm đã được cập nhật",
+  "could_not_save_group": "Không thể lưu nhóm.",
   "custom_url": "URL tùy chỉnh",
   "picture": "Hình ảnh",
   "upgrade_required": "Bạn cần nâng cấp để sử dụng tính năng này",
@@ -682,6 +686,7 @@
   "repeat_post_every_label": "Lặp lại bài đăng mỗi",
   "add_new_tag": "Thêm thẻ mới",
   "tag_name": "Tên",
+  "post_save_failed": "Không thể lưu bài viết",
   "post_is_too_long": "bài đăng quá dài, vui lòng chỉnh sửa",
   "your_post_should_have_at_least_one_character_or_one_image": "Bài đăng của bạn phải có ít nhất một ký tự hoặc một hình ảnh.",
   "internal_edit": "Chỉnh sửa nội bộ",
@@ -697,6 +702,7 @@
   "delete_post_tooltip": "Xóa bài đăng",
   "drop_files_here_to_upload": "Kéo thả tệp vào đây để tải lên",
   "insert_emoji": "Chèn biểu tượng cảm xúc",
+  "only_images_can_be_added_to_the_content": "Chỉ có thể thêm hình ảnh vào nội dung",
   "write_something": "Viết gì đó …",
   "click_channel_to_add": "Nhấp vào kênh để thêm",
   "connect_your_channels": "Kết nối các kênh của bạn",
@@ -721,6 +727,8 @@
   "chat_onboarding_description": "Không cần cài đặt MCP hoặc CLI. Dán dòng này vào chat, Agent sẽ cài đặt Postiz CLI và yêu cầu API key của bạn.",
   "connector": "Connector",
   "connector_onboarding_description": "Nhanh nhất: thêm Postiz chỉ với một cú nhấp, bạn sẽ được yêu cầu đăng nhập",
+  "official_connector": "Trình kết nối chính thức",
+  "connector_self_hosted_description": "Trình kết nối chính thức cũng hoạt động với Postiz tự lưu trữ. Khi được yêu cầu đăng nhập, hãy chọn \"Use self-hosted\" và nhập {{url}} cùng khóa API của bạn.",
   "mcp_onboarding_description": "Cung cấp cho Agent của bạn các công cụ của Postiz để tạo, lên lịch và quản lý bài đăng",
   "cli_onboarding_description": "Cài đặt Postiz CLI và kỹ năng hướng dẫn Agent của bạn cách sử dụng nó",
   "agent_settings_later": "Thêm nhiều Agent và hướng dẫn đầy đủ có tại Cài đặt > Nhà phát triển",
@@ -785,5 +793,6 @@
   "preview_comment_failed": "Không thể đăng bình luận",
   "preview_comment_detach_hint": "Bình luận trên đoạn văn bản được chọn sẽ mất nổi bật nếu văn bản bị chỉnh sửa sau đó.",
   "preview_comment_text_changed": "Nội dung đã thay đổi",
-  "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung."
+  "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung.",
+  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại"
 }

@@ -9,6 +9,9 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export interface AddEditModalProps {
   dummy?: boolean;
@@ -68,6 +71,9 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
 
 export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
+  const modal = useModals();
+  const toaster = useToaster();
+  const t = useT();
   const { addOrRemoveSelectedIntegration, selectedIntegrations, integrations } =
     useLaunchStore(
       useShallow((state) => ({
@@ -84,7 +90,9 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
           const integration = integrations.find(
             (i) => i.id === post.integration.id
           );
-          addOrRemoveSelectedIntegration(integration, post.settings);
+          if (integration) {
+            addOrRemoveSelectedIntegration(integration, post.settings);
+          }
         }
       }
     }
@@ -93,6 +101,17 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
       const integration = integrations.find(
         (i) => i.id === existingData.integration
       );
+      if (!integration) {
+        toaster.show(
+          t(
+            'we_are_experiencing_some_difficulty_try_to_refresh_the_page',
+            'We are experiencing some difficulty, try to refresh the page'
+          ),
+          'warning'
+        );
+        modal.closeAll();
+        return;
+      }
       addOrRemoveSelectedIntegration(integration, existingData.settings);
     }
 

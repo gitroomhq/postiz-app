@@ -145,4 +145,5 @@ export default withProvider({
     }
     return 280;
   },
+  inlineImages: (values) => values?.post_type === 'article',
 });

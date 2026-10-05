@@ -16,6 +16,7 @@ import {
   CopyButton,
   getMcpConfig,
   isChatOnlyMcpClient,
+  isSelfHosted,
   localCliSteps,
   McpAuth,
   McpClient,
@@ -293,6 +294,8 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   const mcpBase = mcpUrl || backendUrl;
   const apiKey = user?.publicApi || '';
   const available = !!apiKey && !!user?.tier?.public_api;
+  // the official connectors work for self-hosted installs too
+  const officialConnectors = billingEnabled || isSelfHosted;
 
   const { config, hint } =
     agent === apiTab
@@ -308,22 +311,22 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         );
 
   const connector =
-    agent === 'Claude' && billingEnabled
+    agent === 'Claude' && officialConnectors
       ? {
           href: mcpConnectorUrls.Claude,
           label: t('add_to_claude', 'Add to Claude'),
         }
-      : agent === 'ChatGPT' && billingEnabled
+      : agent === 'ChatGPT' && officialConnectors
       ? {
           href: mcpConnectorUrls.ChatGPT,
           label: t('add_to_chatgpt', 'Add to ChatGPT'),
         }
-      : agent === 'Cursor' && billingEnabled
+      : agent === 'Cursor' && officialConnectors
       ? {
           href: mcpConnectorUrls.Cursor,
           label: t('add_to_cursor', 'Add to Cursor'),
         }
-      : agent === 'Grok Bot' && billingEnabled
+      : agent === 'Grok Bot' && officialConnectors
       ? {
           href: mcpConnectorUrls['Grok Bot'],
           label: t('add_to_grok_bot', 'Add to Grok Bot'),
@@ -435,10 +438,16 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           {t('connector', 'Connector')}
         </div>
         <div className="text-[13px] text-customColor18 mt-[2px]">
-          {t(
-            'connector_onboarding_description',
-            'The fastest way: add Postiz with one click, you will be asked to sign in'
-          )}
+          {isSelfHosted
+            ? t(
+                'connector_self_hosted_description',
+                'The official connector works with self-hosted Postiz too. When asked to sign in, choose "Use self-hosted" and enter {{url}} with your API key.',
+                { url: mcpBase, interpolation: { escapeValue: false } }
+              )
+            : t(
+                'connector_onboarding_description',
+                'The fastest way: add Postiz with one click, you will be asked to sign in'
+              )}
         </div>
       </div>
       <a

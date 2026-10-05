@@ -604,6 +604,17 @@ html[dir='rtl'] [dir='ltr'] {
   color: #ae8afc;
 }
 
+.ProseMirror img:not(.ProseMirror-separator) {
+  max-height: 300px;
+  margin: 16px 0;
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--new-btn-primary);
+}
+
 .ProseMirror ul,
 .preview ul {
   list-style: disc;
@@ -635,6 +646,22 @@ html[dir='rtl'] [dir='ltr'] {
 .preview h3 {
   font-size: 18px;
   font-weight: bold;
+}
+
+// paragraphs stay tight, in most channels every line is a paragraph
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  margin: 16px 0 8px;
+  line-height: 1.3;
+}
+
+.ProseMirror ul {
+  margin: 8px 0;
+}
+
+.ProseMirror li + li {
+  margin-top: 4px;
 }
 
 .preview p {

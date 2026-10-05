@@ -642,6 +642,10 @@
   "channel_id_copied": "تم نسخ معرف القناة إلى الحافظة",
   "settings_updated": "تم تحديث الإعدادات",
   "customer_updated": "تم تحديث العميل",
+  "edit_group_name": "تعديل اسم المجموعة",
+  "group_name": "الاسم",
+  "group_updated": "تم تحديث المجموعة",
+  "could_not_save_group": "تعذّر حفظ المجموعة.",
   "custom_url": "رابط مخصص",
   "picture": "صورة",
   "upgrade_required": "تحتاج إلى الترقية لاستخدام هذه الميزة",
@@ -682,6 +686,7 @@
   "repeat_post_every_label": "تكرار النشر كل",
   "add_new_tag": "إضافة وسم جديد",
   "tag_name": "الاسم",
+  "post_save_failed": "تعذّر حفظ المنشور",
   "post_is_too_long": "المنشور طويل جدًا، يرجى تعديله",
   "your_post_should_have_at_least_one_character_or_one_image": "يجب أن يحتوي منشورك على حرف واحد على الأقل أو صورة واحدة.",
   "internal_edit": "تعديل داخلي",
@@ -697,6 +702,7 @@
   "delete_post_tooltip": "حذف المنشور",
   "drop_files_here_to_upload": "أسقط ملفاتك هنا للتحميل",
   "insert_emoji": "إدراج رمز تعبيري",
+  "only_images_can_be_added_to_the_content": "يمكن إضافة الصور فقط إلى المحتوى",
   "write_something": "اكتب شيئًا …",
   "click_channel_to_add": "انقر على قناة لإضافتها",
   "connect_your_channels": "قم بتوصيل قنواتك",
@@ -721,6 +727,8 @@
   "chat_onboarding_description": "لا حاجة لإعدادات MCP أو CLI. الصق هذا في الدردشة، سيقوم الوكيل بتثبيت Postiz CLI ويطلب منك مفتاح API الخاص بك.",
   "connector": "موصل",
   "connector_onboarding_description": "الأسرع: أضف Postiz بنقرة واحدة، سيطلب منك تسجيل الدخول",
+  "official_connector": "الموصل الرسمي",
+  "connector_self_hosted_description": "يعمل الموصل الرسمي أيضًا مع Postiz المستضاف ذاتيًا. عند طلب تسجيل الدخول، اختر \"Use self-hosted\" وأدخل {{url}} مع مفتاح API الخاص بك.",
   "mcp_onboarding_description": "زود وكيلك بأدوات Postiz لإنشاء وجدولة وإدارة المنشورات",
   "cli_onboarding_description": "ثبّت Postiz CLI والمهارة التي تعلم وكيلك كيفية استخدامها",
   "agent_settings_later": "المزيد من الوكلاء والتعليمات الكاملة متوفرة في الإعدادات > المطورون",
@@ -785,5 +793,6 @@
   "preview_comment_failed": "تعذر نشر التعليق",
   "preview_comment_detach_hint": "التعليقات على النص المحدد تفقد تمييزها إذا تم تعديل النص لاحقًا.",
   "preview_comment_text_changed": "تم تغيير النص",
-  "preview_no_comments_yet": "لا توجد تعليقات بعد. حدد بعض النص في المنشور للتعليق عليه، أو أضف تعليقًا عامًا."
+  "preview_no_comments_yet": "لا توجد تعليقات بعد. حدد بعض النص في المنشور للتعليق عليه، أو أضف تعليقًا عامًا.",
+  "some_files_failed_to_upload": "فشل تحميل بعض الملفات، يرجى المحاولة مرة أخرى"
 }

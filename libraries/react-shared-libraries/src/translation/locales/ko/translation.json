@@ -642,6 +642,10 @@
   "channel_id_copied": "채널 ID가 클립보드에 복사되었습니다",
   "settings_updated": "설정이 업데이트되었습니다",
   "customer_updated": "고객 정보가 업데이트되었습니다",
+  "edit_group_name": "그룹 이름 수정",
+  "group_name": "이름",
+  "group_updated": "그룹이 업데이트되었습니다",
+  "could_not_save_group": "그룹을 저장할 수 없습니다.",
   "custom_url": "맞춤 URL",
   "picture": "사진",
   "upgrade_required": "이 기능을 사용하려면 업그레이드가 필요합니다",
@@ -682,6 +686,7 @@
   "repeat_post_every_label": "게시 반복 주기",
   "add_new_tag": "새 태그 추가",
   "tag_name": "이름",
+  "post_save_failed": "게시물을 저장할 수 없습니다",
   "post_is_too_long": "게시글이 너무 깁니다. 수정해 주세요.",
   "your_post_should_have_at_least_one_character_or_one_image": "게시물에는 최소한 한 글자 또는 한 이미지를 포함해야 합니다.",
   "internal_edit": "내부 편집",
@@ -697,6 +702,7 @@
   "delete_post_tooltip": "게시물 삭제",
   "drop_files_here_to_upload": "여기에 파일을 끌어다 놓아 업로드하세요",
   "insert_emoji": "이모지 삽입",
+  "only_images_can_be_added_to_the_content": "콘텐츠에는 이미지만 추가할 수 있습니다",
   "write_something": "무엇인가를 작성하세요 …",
   "click_channel_to_add": "채널을 추가하려면 클릭하세요",
   "connect_your_channels": "채널 연결하기",
@@ -721,6 +727,8 @@
   "chat_onboarding_description": "MCP나 CLI 설정이 필요 없습니다. 채팅에 이 내용을 붙여넣으면 에이전트가 Postiz CLI를 설치하고 API 키를 입력받습니다.",
   "connector": "커넥터",
   "connector_onboarding_description": "가장 빠른 방법: 한 번의 클릭으로 Postiz를 추가하고, 로그인 요청을 받게 됩니다.",
+  "official_connector": "공식 커넥터",
+  "connector_self_hosted_description": "공식 커넥터는 자체 호스팅 Postiz에서도 작동합니다. 로그인하라는 메시지가 나타나면 \"Use self-hosted\"를 선택하고 {{url}}과 API 키를 입력하세요.",
   "mcp_onboarding_description": "에이전트에게 Postiz 도구를 제공해 게시물을 생성, 예약, 관리할 수 있습니다.",
   "cli_onboarding_description": "Postiz CLI와 에이전트에게 사용법을 알려주는 스킬을 설치하세요.",
   "agent_settings_later": "더 많은 에이전트와 전체 안내는 설정 > 개발자에서 볼 수 있습니다.",
@@ -785,5 +793,6 @@
   "preview_comment_failed": "댓글을 게시할 수 없습니다.",
   "preview_comment_detach_hint": "선택한 텍스트에 단 댓글은, 텍스트가 나중에 수정되면 강조가 사라집니다.",
   "preview_comment_text_changed": "텍스트가 변경됨",
-  "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요."
+  "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요.",
+  "some_files_failed_to_upload": "일부 파일을 업로드하지 못했습니다. 다시 시도해 주세요."
 }

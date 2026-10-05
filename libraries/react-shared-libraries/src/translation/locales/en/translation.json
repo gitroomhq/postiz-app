@@ -644,6 +644,10 @@
   "channel_id_copied": "Channel ID copied to clipboard",
   "settings_updated": "Settings Updated",
   "customer_updated": "Customer Updated",
+  "edit_group_name": "Edit group name",
+  "group_name": "Name",
+  "group_updated": "Group Updated",
+  "could_not_save_group": "Could not save the group.",
   "custom_url": "Custom URL",
   "picture": "Picture",
   "upgrade_required": "You need to upgrade to use this feature",
@@ -684,6 +688,7 @@
   "repeat_post_every_label": "Repeat Post Every",
   "add_new_tag": "Add New Tag",
   "tag_name": "Name",
+  "post_save_failed": "Could not save the post",
   "post_is_too_long": "post is too long, please fix it",
   "your_post_should_have_at_least_one_character_or_one_image": "Your post should have at least one character or one image.",
   "internal_edit": "Internal Edit",
@@ -699,6 +704,7 @@
   "delete_post_tooltip": "Delete Post",
   "drop_files_here_to_upload": "Drop your files here to upload",
   "insert_emoji": "Insert Emoji",
+  "only_images_can_be_added_to_the_content": "Only images can be added to the content",
   "write_something": "Write something …",
   "click_channel_to_add": "Click a channel to add it",
   "connect_your_channels": "Connect Your Channels",
@@ -723,6 +729,8 @@
   "chat_onboarding_description": "No MCP or CLI settings needed. Paste this into the chat, the agent installs the Postiz CLI and asks you for your API key.",
   "connector": "Connector",
   "connector_onboarding_description": "The fastest way: add Postiz with one click, you will be asked to sign in",
+  "official_connector": "Official connector",
+  "connector_self_hosted_description": "The official connector works with self-hosted Postiz too. When asked to sign in, choose \"Use self-hosted\" and enter {{url}} with your API key.",
   "mcp_onboarding_description": "Give your agent Postiz tools to create, schedule and manage posts",
   "cli_onboarding_description": "Install the Postiz CLI and the skill that teaches your agent how to use it",
   "agent_settings_later": "More agents and full instructions are available under Settings > Developers",
@@ -787,5 +795,6 @@
   "preview_comment_failed": "Could not post the comment",
   "preview_comment_detach_hint": "Comments on selected text lose their highlight if the text is edited later.",
   "preview_comment_text_changed": "Text changed",
-  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment."
+  "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment.",
+  "some_files_failed_to_upload": "Some files failed to upload, please try again"
 }

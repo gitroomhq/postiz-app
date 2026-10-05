@@ -12,7 +12,7 @@ import { TwitchDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settin
 import { timer } from '@gitroom/helpers/utils/timer';
 
 export class TwitchProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 1;
+  override maxConcurrentJob = 5; // Twitch limits are per user
   identifier = 'twitch';
   name = 'Twitch';
   isBetweenSteps = false;
