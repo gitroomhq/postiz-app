@@ -797,5 +797,10 @@
   "preview_comment_detach_hint": "선택한 텍스트에 단 댓글은, 텍스트가 나중에 수정되면 강조가 사라집니다.",
   "preview_comment_text_changed": "텍스트가 변경됨",
   "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요.",
-  "some_files_failed_to_upload": "일부 파일을 업로드하지 못했습니다. 다시 시도해 주세요."
+  "some_files_failed_to_upload": "일부 파일을 업로드하지 못했습니다. 다시 시도해 주세요.",
+  "rename_channel": "채널 이름 변경",
+  "channel_name": "이름",
+  "channel_renamed": "채널 이름이 변경됨",
+  "channel_name_reset": "채널 이름이 초기화됨",
+  "reset_channel_name": "원래 이름으로 되돌리기"
 }

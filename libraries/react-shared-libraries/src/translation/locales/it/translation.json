@@ -797,5 +797,10 @@
   "preview_comment_detach_hint": "I commenti su testo selezionato perdono l'evidenziazione se il testo viene modificato successivamente.",
   "preview_comment_text_changed": "Testo modificato",
   "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale.",
-  "some_files_failed_to_upload": "Alcuni file non sono stati caricati, riprova"
+  "some_files_failed_to_upload": "Alcuni file non sono stati caricati, riprova",
+  "rename_channel": "Rinomina canale",
+  "channel_name": "Nome",
+  "channel_renamed": "Canale rinominato",
+  "channel_name_reset": "Nome del canale ripristinato",
+  "reset_channel_name": "Ripristina il nome originale"
 }

@@ -31,6 +31,42 @@ import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.m
 import dayjs from 'dayjs';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import copy from 'copy-to-clipboard';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
+
+const RenameChannelModal: FC<{
+  name: string;
+  id: string;
+  close: () => void;
+  onSave: () => void;
+}> = (props) => {
+  const t = useT();
+  const { close, name, id, onSave } = props;
+  const fetch = useFetch();
+  const [channelName, setChannelName] = useState<string>(name);
+  const save = useCallback(async () => {
+    await fetch(`/integrations/${id}/custom-name`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: channelName }),
+    });
+    onSave();
+    close();
+  }, [channelName, id]);
+  return (
+    <div>
+      <Input
+        name="name"
+        disableForm={true}
+        label={t('channel_name', 'Name')}
+        value={channelName}
+        onChange={(e) => setChannelName(e.target.value)}
+      />
+      <Button onClick={save} className="mt-[16px]">
+        {t('save', 'Save')}
+      </Button>
+    </div>
+  );
+};
 
 export const Menu: FC<{
   canEnable: boolean;
@@ -325,6 +361,35 @@ export const Menu: FC<{
     });
     setShow(false);
   }, [integrations, t]);
+  const renameChannel = useCallback(() => {
+    const findIntegration = integrations.find(
+      (integration) => integration.id === id
+    );
+    modal.openModal({
+      title: t('rename_channel', 'Rename channel'),
+      children: (close) => (
+        <RenameChannelModal
+          name={findIntegration?.name || ''}
+          id={id}
+          close={close}
+          onSave={() => {
+            mutate();
+            toast.show(t('channel_renamed', 'Channel Renamed'), 'success');
+          }}
+        />
+      ),
+    });
+    setShow(false);
+  }, [integrations, t]);
+  const resetChannelName = useCallback(async () => {
+    await fetch(`/integrations/${id}/custom-name`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: '' }),
+    });
+    mutate();
+    toast.show(t('channel_name_reset', 'Channel name reset'), 'success');
+    setShow(false);
+  }, [id, t]);
   const updateCredentials = useCallback(() => {
     modal.openModal({
       title: t('custom_url', 'Custom URL'),
@@ -524,6 +589,52 @@ export const Menu: FC<{
                 ]
                   .filter((f) => f)
                   .join(' / ')}
+              </div>
+            </div>
+          )}
+          <div
+            className="flex gap-[12px] items-center py-[8px] px-[10px]"
+            onClick={renameChannel}
+          >
+            <div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={18}
+                height={18}
+                viewBox="0 0 32 32"
+                fill="none"
+              >
+                <path
+                  d="M28.4138 9.17125L22.8288 3.585C22.643 3.39924 22.4225 3.25188 22.1799 3.15134C21.9372 3.0508 21.6771 2.99905 21.4144 2.99905C21.1517 2.99905 20.8916 3.0508 20.6489 3.15134C20.4062 3.25188 20.1857 3.39924 20 3.585L4.58626 19C4.39973 19.185 4.25185 19.4053 4.15121 19.648C4.05057 19.8907 3.99917 20.151 4.00001 20.4138V26C4.00001 26.5304 4.21072 27.0391 4.58579 27.4142C4.96087 27.7893 5.46958 28 6.00001 28H11.5863C11.849 28.0008 12.1093 27.9494 12.352 27.8488C12.5947 27.7482 12.815 27.6003 13 27.4138L28.4138 12C28.5995 11.8143 28.7469 11.5938 28.8474 11.3511C28.948 11.1084 28.9997 10.8483 28.9997 10.5856C28.9997 10.3229 28.948 10.0628 28.8474 9.82015C28.7469 9.57747 28.5995 9.35698 28.4138 9.17125ZM11.5863 26H6.00001V20.4138L17 9.41375L22.5863 15L11.5863 26ZM24 13.585L18.4138 8L21.4138 5L27 10.585L24 13.585Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+            <div className="text-[14px]">
+              {t('rename_channel', 'Rename channel')}
+            </div>
+          </div>
+          {findIntegration?.name !== findIntegration?.originalName && (
+            <div
+              className="flex gap-[12px] items-center py-[8px] px-[10px]"
+              onClick={resetChannelName}
+            >
+              <div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width={18}
+                  height={18}
+                  viewBox="0 0 32 32"
+                  fill="none"
+                >
+                  <path
+                    d="M28 16C28 19.1826 26.7357 22.2348 24.4853 24.4853C22.2348 26.7357 19.1826 28 16 28C12.9 28 9.92 26.81 7.7 24.68C7.51 24.5 7.4 24.24 7.39 23.98C7.38 23.71 7.48 23.45 7.66 23.26C7.84 23.07 8.1 22.96 8.36 22.95C8.63 22.94 8.89 23.04 9.08 23.22C10.51 24.59 12.31 25.5 14.26 25.85C16.21 26.2 18.22 25.96 20.03 25.17C21.85 24.38 23.39 23.07 24.46 21.41C25.53 19.74 26.08 17.8 26.04 15.82C26 13.84 25.38 11.92 24.25 10.29C23.12 8.67 21.53 7.42 19.69 6.7C17.84 5.98 15.83 5.82 13.89 6.24C11.96 6.67 10.19 7.66 8.82 9.09L6.41 11.5H10C10.27 11.5 10.52 11.61 10.71 11.79C10.89 11.98 11 12.23 11 12.5C11 12.77 10.89 13.02 10.71 13.21C10.52 13.39 10.27 13.5 10 13.5H4C3.73 13.5 3.48 13.39 3.29 13.21C3.11 13.02 3 12.77 3 12.5V6.5C3 6.23 3.11 5.98 3.29 5.79C3.48 5.61 3.73 5.5 4 5.5C4.27 5.5 4.52 5.61 4.71 5.79C4.89 5.98 5 6.23 5 6.5V10.09L7.39 7.7C9.05 5.98 11.19 4.79 13.53 4.28C15.87 3.77 18.31 3.97 20.53 4.86C22.76 5.75 24.66 7.29 26 9.27C27.33 11.26 28.03 13.61 28 16Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
+              <div className="text-[14px]">
+                {t('reset_channel_name', 'Reset to original name')}
               </div>
             </div>
           )}

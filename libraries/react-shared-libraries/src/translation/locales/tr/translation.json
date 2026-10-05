@@ -797,5 +797,10 @@
   "preview_comment_detach_hint": "Seçili metindeki yorumlar, metin daha sonra değiştirilirse vurgusunu kaybeder.",
   "preview_comment_text_changed": "Metin değişti",
   "preview_no_comments_yet": "Henüz yorum yok. Yorum yapmak için gönderide bir metin seçin veya genel bir yorum ekleyin.",
-  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin"
+  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin",
+  "rename_channel": "Kanalı yeniden adlandır",
+  "channel_name": "Ad",
+  "channel_renamed": "Kanal yeniden adlandırıldı",
+  "channel_name_reset": "Kanal adı sıfırlandı",
+  "reset_channel_name": "Orijinal adına sıfırla"
 }

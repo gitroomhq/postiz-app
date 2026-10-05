@@ -797,5 +797,10 @@
   "preview_comment_detach_hint": "選択テキストへのコメントは、テキストが後から編集されるとハイライトが失われます。",
   "preview_comment_text_changed": "テキストが変更されました",
   "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。",
-  "some_files_failed_to_upload": "いくつかのファイルのアップロードに失敗しました。もう一度お試しください。"
+  "some_files_failed_to_upload": "いくつかのファイルのアップロードに失敗しました。もう一度お試しください。",
+  "rename_channel": "チャンネル名を変更",
+  "channel_name": "名前",
+  "channel_renamed": "チャンネル名を変更しました",
+  "channel_name_reset": "チャンネル名をリセットしました",
+  "reset_channel_name": "元の名前にリセット"
 }
