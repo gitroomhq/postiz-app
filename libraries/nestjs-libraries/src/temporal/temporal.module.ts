@@ -1,5 +1,6 @@
 import { TemporalModule } from 'nestjs-temporal-core';
 import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { emailQueues } from '@gitroom/nestjs-libraries/temporal/email.queues';
 
 export const getTemporalModule = (
   isWorkers: boolean,
@@ -38,46 +39,61 @@ export const getTemporalModule = (
     ...(isWorkers
       ? {
           workers: [
-            { identifier: 'main', maxConcurrentJob: undefined },
-            ...socialIntegrationList,
-          ]
-            .filter((f) => f.identifier.indexOf('-') === -1)
-            .map((integration) => ({
-              integration,
-              taskQueue: integration.identifier.split('-')[0],
-            }))
-            .filter(({ taskQueue }) => !excludeQueues.includes(taskQueue))
-            .map(({ integration, taskQueue }) => {
-              // Split the per-provider cap across the servers sharing this
-              // queue. Floor (never below 1) so the global total never exceeds
-              // the provider's limit. Providers whose limit is smaller than the
-              // server count must be pinned via EXCLUDE_QUEUE instead.
-              const concurrency = integration.maxConcurrentJob
-                ? Math.max(
-                    1,
-                    Math.floor(integration.maxConcurrentJob / divider)
-                  )
-                : undefined;
+            ...[
+              { identifier: 'main', maxConcurrentJob: undefined },
+              ...socialIntegrationList,
+            ]
+              .filter((f) => f.identifier.indexOf('-') === -1)
+              .map((integration) => ({
+                integration,
+                taskQueue: integration.identifier.split('-')[0],
+              }))
+              .filter(({ taskQueue }) => !excludeQueues.includes(taskQueue))
+              .map(({ integration, taskQueue }) => {
+                // Split the per-provider cap across the servers sharing this
+                // queue. Floor (never below 1) so the global total never exceeds
+                // the provider's limit. Providers whose limit is smaller than the
+                // server count must be pinned via EXCLUDE_QUEUE instead.
+                const concurrency = integration.maxConcurrentJob
+                  ? Math.max(
+                      1,
+                      Math.floor(integration.maxConcurrentJob / divider)
+                    )
+                  : undefined;
 
-              // Workflows only ever run on the `main` queue; the other Workers
-              // are activity-only, so skip the workflow bundle (webpack build,
-              // workflow thread + V8 isolate, sticky cache) on them.
-              return {
+                // Workflows only ever run on the `main` queue; the other Workers
+                // are activity-only, so skip the workflow bundle (webpack build,
+                // workflow thread + V8 isolate, sticky cache) on them.
+                return {
+                  taskQueue,
+                  ...(taskQueue === 'main' ? { workflowsPath: path! } : {}),
+                  activityClasses: activityClasses!,
+                  autoStart: true,
+                  workerOptions: {
+                    maxConcurrentActivityTaskExecutions: concurrency || 1000000,
+                    // By default the SDK throttles heartbeat sends to 60s, so
+                    // against the workflow's heartbeatTimeout one dropped send
+                    // or a minute of event-loop lag eats most of the margin.
+                    // Sending every 15s keeps the recorded heartbeat fresh even
+                    // when individual sends fail or fire late.
+                    maxHeartbeatThrottleInterval: '15s',
+                  },
+                };
+              }),
+            // Activity-only Workers for emails, rate limited server side
+            // across all workers to stay under the Resend limit
+            ...Object.values(emailQueues)
+              .filter(({ taskQueue }) => !excludeQueues.includes(taskQueue))
+              .map(({ taskQueue, perSecond }) => ({
                 taskQueue,
-                ...(taskQueue === 'main' ? { workflowsPath: path! } : {}),
                 activityClasses: activityClasses!,
                 autoStart: true,
                 workerOptions: {
-                  maxConcurrentActivityTaskExecutions: concurrency || 1000000,
-                  // By default the SDK throttles heartbeat sends to 60s, so
-                  // against the workflow's heartbeatTimeout one dropped send
-                  // or a minute of event-loop lag eats most of the margin.
-                  // Sending every 15s keeps the recorded heartbeat fresh even
-                  // when individual sends fail or fire late.
-                  maxHeartbeatThrottleInterval: '15s',
+                  maxConcurrentActivityTaskExecutions: 10,
+                  maxTaskQueueActivitiesPerSecond: perSecond,
                 },
-              };
-            }),
+              })),
+          ],
         }
       : {}),
   });

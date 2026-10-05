@@ -15,12 +15,13 @@ import {
   AnyMcpClient,
   CopyButton,
   getMcpConfig,
-  getMcpOauthUrl,
   isChatOnlyMcpClient,
+  isSelfHosted,
   localCliSteps,
   McpAuth,
   McpClient,
   mcpClients,
+  mcpConnectorUrls,
 } from '@gitroom/frontend/components/public-api/public.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 
@@ -276,24 +277,6 @@ type OnboardingTab = OnboardingAgent | typeof otherTab | typeof apiTab;
 
 const cliCommands = localCliSteps.map((step) => step.code);
 
-// Cursor one-click install: https://cursor.com/docs/mcp/install-links
-const getCursorInstallUrl = (
-  auth: McpAuth,
-  mcpBase: string,
-  apiKey: string
-) => {
-  const server =
-    auth === 'oauth'
-      ? { url: getMcpOauthUrl(mcpBase) }
-      : {
-          url: `${mcpBase}/mcp`,
-          headers: { Authorization: `Bearer ${apiKey}` },
-        };
-  return `cursor://anysphere.cursor-deeplink/mcp/install?name=postiz&config=${btoa(
-    JSON.stringify(server)
-  )}`;
-};
-
 const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   onBack,
   onNext,
@@ -311,6 +294,8 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
   const mcpBase = mcpUrl || backendUrl;
   const apiKey = user?.publicApi || '';
   const available = !!apiKey && !!user?.tier?.public_api;
+  // the official connectors work for self-hosted installs too
+  const officialConnectors = billingEnabled || isSelfHosted;
 
   const { config, hint } =
     agent === apiTab
@@ -326,15 +311,25 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         );
 
   const connector =
-    agent === 'Claude' && billingEnabled
+    agent === 'Claude' && officialConnectors
       ? {
-          href: 'https://claude.ai/directory/postiz',
+          href: mcpConnectorUrls.Claude,
           label: t('add_to_claude', 'Add to Claude'),
         }
-      : agent === 'Cursor'
+      : agent === 'ChatGPT' && officialConnectors
       ? {
-          href: getCursorInstallUrl(auth, mcpBase, apiKey),
+          href: mcpConnectorUrls.ChatGPT,
+          label: t('add_to_chatgpt', 'Add to ChatGPT'),
+        }
+      : agent === 'Cursor' && officialConnectors
+      ? {
+          href: mcpConnectorUrls.Cursor,
           label: t('add_to_cursor', 'Add to Cursor'),
+        }
+      : agent === 'Grok Bot' && officialConnectors
+      ? {
+          href: mcpConnectorUrls['Grok Bot'],
+          label: t('add_to_grok_bot', 'Add to Grok Bot'),
         }
       : null;
 
@@ -443,10 +438,16 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           {t('connector', 'Connector')}
         </div>
         <div className="text-[13px] text-customColor18 mt-[2px]">
-          {t(
-            'connector_onboarding_description',
-            'The fastest way: add Postiz with one click, you will be asked to sign in'
-          )}
+          {isSelfHosted
+            ? t(
+                'connector_self_hosted_description',
+                'The official connector works with self-hosted Postiz too. When asked to sign in, choose "Use self-hosted" and enter {{url}} with your API key.',
+                { url: mcpBase, interpolation: { escapeValue: false } }
+              )
+            : t(
+                'connector_onboarding_description',
+                'The fastest way: add Postiz with one click, you will be asked to sign in'
+              )}
         </div>
       </div>
       <a
@@ -610,7 +611,10 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
           {agent === apiTab ? (
             apiSection
           ) : isChatOnlyMcpClient(agent) ? (
-            chatSection
+            <>
+              {connectorSection}
+              {chatSection}
+            </>
           ) : (
             <>
               {connectorSection}

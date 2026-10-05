@@ -222,7 +222,11 @@ export function useUppyUploader(props: {
       });
     });
     uppy2.on('error', (result) => {
-      uppy2.clear();
+      // a single file failing leaves the batch running, 'complete' reports it with the rest
+      if (Object.keys(uppy2.getState().currentUploads).length) {
+        return;
+      }
+      uppy2.cancelAll();
       setLocked(false);
       props.onEnd();
       fileOrderIndex = 0;
@@ -232,8 +236,18 @@ export function useUppyUploader(props: {
     });
     uppy2.on('complete', async (result) => {
       console.log(result);
-      for (const file of [...result.successful]) {
+      for (const file of [...result.successful, ...(result.failed || [])]) {
         uppy2.removeFile(file.id);
+      }
+
+      if (result.failed?.length) {
+        toast.show(
+          t(
+            'some_files_failed_to_upload',
+            'Some files failed to upload, please try again'
+          ),
+          'warning'
+        );
       }
 
       props.onEnd();
@@ -298,10 +312,14 @@ export function useUppyUploader(props: {
       onUploadSuccess(sortedSuccessful.map((p) => p.response.body.saved));
     });
     uppy2.on('upload-success', (file, response) => {
+      const current = uppy2.getState().files[file.id];
+      if (!current) {
+        return;
+      }
       // @ts-ignore
       uppy2.setFileState(file.id, {
         // @ts-ignore
-        progress: uppy2.getState().files[file.id].progress,
+        progress: current.progress,
         // @ts-ignore
         uploadURL: response.body.Location,
         response: response,

@@ -126,6 +126,32 @@ export class PostsRepository {
     });
   }
 
+  // Post.error persists the raw serialized workflow failure; only curated
+  // provider messages are surfaced to the calendar and the public API —
+  // bad_body failures whose message came from a provider handleErrors
+  // mapping or a hand-written provider throw (unmapped API responses carry
+  // the 'Unknown Error' placeholder instead). Internal debug strings (e.g.
+  // 'Refresh channel needed') and unmapped failures come out as null.
+  private curatedError(error?: string | null): string | null {
+    if (!error) {
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(error);
+      const [type, message] = parsed?.cause?.failure?.message
+        ? [parsed?.cause?.type, parsed?.cause?.failure?.message]
+        : [
+            parsed?.failure?.cause?.applicationFailureInfo?.type,
+            parsed?.failure?.cause?.message,
+          ];
+      return type === 'bad_body' && message && message !== 'Unknown Error'
+        ? message
+        : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
   async getPosts(orgId: string, query: GetPostsDto) {
     // Use the provided start and end dates directly
     const startDate = dayjs.utc(query.startDate).toDate();
@@ -172,11 +198,17 @@ export class PostsRepository {
         releaseURL: true,
         releaseId: true,
         state: true,
+        error: true,
         intervalInDays: true,
         group: true,
         creationMethod: true,
         settings: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -192,7 +224,9 @@ export class PostsRepository {
       },
     });
 
-    return list.reduce((all, post) => {
+    return list
+      .map((post) => ({ ...post, error: this.curatedError(post.error) }))
+      .reduce((all, post) => {
       if (!post.intervalInDays) {
         return [...all, post];
       }
@@ -289,6 +323,11 @@ export class PostsRepository {
           group: true,
           creationMethod: true,
           tags: {
+            where: {
+              tag: {
+                deletedAt: null,
+              },
+            },
             select: {
               tag: true,
             },
@@ -348,6 +387,11 @@ export class PostsRepository {
       include: {
         integration: true,
         tags: {
+          where: {
+            tag: {
+              deletedAt: null,
+            },
+          },
           select: {
             tag: true,
           },
@@ -373,6 +417,11 @@ export class PostsRepository {
           ? {
               integration: true,
               tags: {
+                where: {
+                  tag: {
+                    deletedAt: null,
+                  },
+                },
                 select: {
                   tag: true,
                 },
@@ -406,6 +455,24 @@ export class PostsRepository {
       },
       data: {
         releaseId: String(releaseId),
+      },
+    });
+  }
+
+  updateResolvedRelease(
+    id: string,
+    orgId: string,
+    releaseId: string,
+    releaseURL: string
+  ) {
+    return this._post.model.post.update({
+      where: {
+        id,
+        organizationId: orgId,
+      },
+      data: {
+        releaseId,
+        releaseURL,
       },
     });
   }
@@ -598,6 +665,7 @@ export class PostsRepository {
           const tagsList = await this._tags.model.tags.findMany({
             where: {
               orgId: orgId,
+              deletedAt: null,
               name: {
                 in: tags.map((tag) => tag.label).filter((f) => f),
               },
@@ -867,13 +935,79 @@ export class PostsRepository {
     );
   }
 
-  async getComments(postId: string) {
+  getCommentsForPosts(postIds: string[]) {
     return this._comments.model.comments.findMany({
       where: {
-        postId,
+        postId: {
+          in: postIds,
+        },
+        deletedAt: null,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            lastName: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'asc',
+      },
+    });
+  }
+
+  getCommentById(id: string) {
+    return this._comments.model.comments.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
+      include: {
+        post: {
+          select: {
+            id: true,
+            organizationId: true,
+          },
+        },
+      },
+    });
+  }
+
+  setCommentResolved(id: string, resolvedAt: Date | null) {
+    return this._comments.model.comments.update({
+      where: {
+        id,
+      },
+      data: {
+        resolvedAt,
+      },
+    });
+  }
+
+  getAnchoredCommentsForPost(postId: string) {
+    return this._comments.model.comments.findMany({
+      where: {
+        postId,
+        deletedAt: null,
+        anchorStart: {
+          not: null,
+        },
+      },
+    });
+  }
+
+  detachAnchorsForPost(postId: string, ids: string[]) {
+    return this._comments.model.comments.updateMany({
+      where: {
+        postId,
+        id: {
+          in: ids,
+        },
+      },
+      data: {
+        anchorStart: null,
+        anchorEnd: null,
       },
     });
   }
@@ -909,8 +1043,8 @@ export class PostsRepository {
     });
   }
 
-  deleteTag(id: string, orgId: string) {
-    return this._tags.model.tags.update({
+  async deleteTag(id: string, orgId: string) {
+    const tag = await this._tags.model.tags.update({
       where: {
         id,
         orgId,
@@ -919,13 +1053,28 @@ export class PostsRepository {
         deletedAt: new Date(),
       },
     });
+
+    await this._tagsPosts.model.tagsPosts.deleteMany({
+      where: {
+        tagId: tag.id,
+      },
+    });
+
+    return tag;
   }
 
   createComment(
     orgId: string,
-    userId: string,
+    userId: string | null,
     postId: string,
-    content: string
+    content: string,
+    extra: {
+      displayName?: string;
+      parentId?: string;
+      anchorStart?: number;
+      anchorEnd?: number;
+      anchorQuote?: string;
+    } = {}
   ) {
     return this._comments.model.comments.create({
       data: {
@@ -933,6 +1082,11 @@ export class PostsRepository {
         userId,
         postId,
         content,
+        displayName: extra.displayName ?? null,
+        parentId: extra.parentId ?? null,
+        anchorStart: extra.anchorStart ?? null,
+        anchorEnd: extra.anchorEnd ?? null,
+        anchorQuote: extra.anchorQuote ?? null,
       },
     });
   }

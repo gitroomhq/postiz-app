@@ -8,7 +8,7 @@ import React, {
   useImperativeHandle,
   useMemo,
 } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, useWatch, FormProvider } from 'react-hook-form';
 import { IsOptional } from 'class-validator';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
@@ -49,6 +49,7 @@ export const withProvider = function <T extends object>(params: {
   }>;
   dto?: any;
   maximumCharacters?: number | ((settings: any) => number);
+  inlineImages?: boolean | ((values: any) => boolean);
 }) {
   const {
     postComment,
@@ -75,6 +76,7 @@ export const withProvider = function <T extends object>(params: {
       allIntegrations,
       setPostComment,
       setEditor,
+      setInlineImages,
       dummy,
       setChars,
       setComments,
@@ -97,6 +99,7 @@ export const withProvider = function <T extends object>(params: {
         setTotalChars: state.setTotalChars,
         setPostComment: state.setPostComment,
         setEditor: state.setEditor,
+        setInlineImages: state.setInlineImages,
         setChars: state.setChars,
         selectedIntegration: state.selectedIntegrations.find(
           (p) => p.integration.id === props.id
@@ -125,6 +128,7 @@ export const withProvider = function <T extends object>(params: {
         setPostComment(PostComment.ALL);
         setTotalChars(0);
         setEditor('normal');
+        setInlineImages(false);
       }
 
       if (current) {
@@ -177,6 +181,21 @@ export const withProvider = function <T extends object>(params: {
       criteriaMode: 'all',
       reValidateMode: 'onChange',
     });
+
+    // the post settings can turn inline images on, like an X article
+    const values = useWatch({
+      control: form.control,
+      disabled: typeof params.inlineImages !== 'function',
+    });
+    const inlineImages =
+      typeof params.inlineImages === 'function'
+        ? params.inlineImages(values)
+        : !!params.inlineImages;
+    useEffect(() => {
+      if (current) {
+        setInlineImages(inlineImages);
+      }
+    }, [current, inlineImages]);
 
     useImperativeHandle(
       ref,

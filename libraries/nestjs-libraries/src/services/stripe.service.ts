@@ -461,6 +461,7 @@ export class StripeService extends PaymentProviderAbstract {
         });
         cancel_at = cancel_at || updated.cancel_at;
       }
+      await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
       return {
         id,
@@ -502,6 +503,7 @@ export class StripeService extends PaymentProviderAbstract {
         cancel_at = updated.cancel_at;
       }
     }
+    await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
     return {
       id,
