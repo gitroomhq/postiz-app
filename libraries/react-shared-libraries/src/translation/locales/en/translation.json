@@ -618,6 +618,7 @@
   "sets": "Sets",
   "email_address": "Email Address",
   "invitation_link_sent": "Invitation link sent",
+  "could_not_send_invitation": "Could not send the invitation",
   "send_invitation_link": "Send Invitation Link",
   "copy_link": "Copy Link",
   "are_you_sure_remove_team_member": "Are you sure you want to remove this team member?",

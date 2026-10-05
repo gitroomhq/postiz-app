@@ -55,6 +55,12 @@ export const AddMember = () => {
         body: JSON.stringify(values),
       });
       if (!response.ok) {
+        const { message } = await response.json().catch(() => ({} as any));
+        toast.show(
+          (Array.isArray(message) ? message[0] : message) ||
+            t('could_not_send_invitation', 'Could not send the invitation'),
+          'warning'
+        );
         return;
       }
       const { url } = await response.json();

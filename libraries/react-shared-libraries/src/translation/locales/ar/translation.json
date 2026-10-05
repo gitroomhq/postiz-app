@@ -616,6 +616,7 @@
   "profile_updated": "تم تحديث الملف الشخصي",
   "sets": "مجموعات",
   "invitation_link_sent": "تم إرسال رابط الدعوة",
+  "could_not_send_invitation": "تعذّر إرسال الدعوة",
   "send_invitation_link": "إرسال رابط الدعوة",
   "copy_link": "نسخ الرابط",
   "are_you_sure_remove_team_member": "هل أنت متأكد أنك تريد إزالة هذا العضو من الفريق؟",
