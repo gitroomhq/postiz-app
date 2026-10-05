@@ -616,6 +616,7 @@
   "profile_updated": "个人资料已更新",
   "sets": "集合",
   "invitation_link_sent": "邀请链接已发送",
+  "could_not_send_invitation": "无法发送邀请",
   "send_invitation_link": "发送邀请链接",
   "copy_link": "复制链接",
   "are_you_sure_remove_team_member": "您确定要移除此团队成员吗？",

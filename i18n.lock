@@ -620,6 +620,7 @@ checksums:
     profile_updated: 4a55423a795e43ff4bd1a8b3956de4b9
     sets: a8e00731555775ef06d2d8933898c457
     invitation_link_sent: 3d67ff64ec205998378cf7c8f124799f
+    could_not_send_invitation: 808475fc63732c879eb30eac5c288d6b
     send_invitation_link: 8eccac7afd966c2bf358b9e04fb02ee8
     copy_link: 57a37acfe6d7ed71d00fbbc8079fbb35
     are_you_sure_remove_team_member: fdd24783fdaefbfcd8150d51d088cc9d

@@ -616,6 +616,7 @@
   "profile_updated": "Cập nhật hồ sơ thành công",
   "sets": "Bộ",
   "invitation_link_sent": "Đã gửi liên kết mời",
+  "could_not_send_invitation": "Không thể gửi lời mời",
   "send_invitation_link": "Gửi liên kết mời",
   "copy_link": "Sao chép liên kết",
   "are_you_sure_remove_team_member": "Bạn có chắc chắn muốn xóa thành viên này khỏi nhóm không?",

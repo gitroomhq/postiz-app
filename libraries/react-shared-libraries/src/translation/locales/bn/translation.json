@@ -616,6 +616,7 @@
   "profile_updated": "প্রোফাইল আপডেট হয়েছে",
   "sets": "সেট",
   "invitation_link_sent": "আমন্ত্রণ লিঙ্ক পাঠানো হয়েছে",
+  "could_not_send_invitation": "আমন্ত্রণপত্র পাঠানো যায়নি",
   "send_invitation_link": "আমন্ত্রণ লিঙ্ক পাঠান",
   "copy_link": "লিঙ্ক কপি করুন",
   "are_you_sure_remove_team_member": "আপনি কি নিশ্চিত এই টিম সদস্যকে সরাতে চান?",
