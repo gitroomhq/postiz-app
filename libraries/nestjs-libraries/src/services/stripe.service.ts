@@ -161,7 +161,9 @@ export class StripeService extends PaymentProviderAbstract {
             f.id < event.data.object.id))
     );
     if (isDuplicate) {
-      await stripe.subscriptions.cancel(event.data.object.id);
+      if (liveSubscriptions.some((f) => f.id === event.data.object.id)) {
+        await stripe.subscriptions.cancel(event.data.object.id);
+      }
       console.log('stripe_duplicate_subscription_cancelled', {
         stripe_event_type: event.type,
         stripe_event_id: event.id,
