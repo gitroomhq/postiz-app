@@ -137,7 +137,14 @@ export class SubscriptionService {
       allChannels.length <= totalChannels &&
       totalChannels > (getCurrentSubscription?.totalChannels || 0)
     ) {
-      await this._integrationService.enableAllIntegrations(organizationId);
+      try {
+        await this._integrationService.enableAllIntegrations(organizationId);
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -212,9 +219,16 @@ export class SubscriptionService {
       allChannels.length <= totalChannels &&
       totalChannels > (getCurrentSubscription?.totalChannels || 0)
     ) {
-      await this._integrationService.enableAllIntegrations(
-        getOrgByCustomerId?.id!
-      );
+      try {
+        await this._integrationService.enableAllIntegrations(
+          getOrgByCustomerId?.id!
+        );
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -264,6 +278,7 @@ export class SubscriptionService {
           return {};
         }
       } catch (e) {
+        console.error('Error modifying subscription:', e);
         return {};
       }
     }
@@ -308,6 +323,7 @@ export class SubscriptionService {
         return {};
       }
     } catch (e) {
+      console.error('Error modifying subscription:', e);
       return {};
     }
 
