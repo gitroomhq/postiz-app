@@ -655,6 +655,8 @@
   "payment_required": "Требуется оплата",
   "no_content": "нет содержимого",
   "select_customer_tooltip": "Выберите клиента",
+  "select_channels_tooltip": "Выберите каналы",
+  "select_all": "Выбрать все",
   "customers": "Клиенты",
   "hour": "Час",
   "minutes": "Минуты",

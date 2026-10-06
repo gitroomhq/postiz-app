@@ -655,6 +655,8 @@
   "payment_required": "Zahlung erforderlich",
   "no_content": "kein Inhalt",
   "select_customer_tooltip": "Kunden auswählen",
+  "select_channels_tooltip": "Kanäle auswählen",
+  "select_all": "Alle auswählen",
   "customers": "Kunden",
   "hour": "Stunde",
   "minutes": "Minuten",

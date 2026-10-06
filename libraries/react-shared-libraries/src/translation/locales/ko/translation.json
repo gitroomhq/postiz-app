@@ -655,6 +655,8 @@
   "payment_required": "결제가 필요합니다",
   "no_content": "내용 없음",
   "select_customer_tooltip": "고객 선택",
+  "select_channels_tooltip": "채널 선택",
+  "select_all": "모두 선택",
   "customers": "고객",
   "hour": "시간",
   "minutes": "분",

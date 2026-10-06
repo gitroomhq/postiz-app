@@ -655,6 +655,8 @@
   "payment_required": "Yêu cầu thanh toán",
   "no_content": "không có nội dung",
   "select_customer_tooltip": "Chọn khách hàng",
+  "select_channels_tooltip": "Chọn kênh",
+  "select_all": "Chọn tất cả",
   "customers": "Khách hàng",
   "hour": "Giờ",
   "minutes": "Phút",
