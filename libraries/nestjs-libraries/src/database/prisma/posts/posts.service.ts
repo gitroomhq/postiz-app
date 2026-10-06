@@ -153,7 +153,30 @@ export class PostsService {
   }
 
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
-    return this._postRepository.updateReleaseId(postId, orgId, releaseId);
+    const post = await this._postRepository.getPostById(postId, orgId);
+
+    // the URL is a bonus: connecting must not fail when it cannot be fetched
+    let releaseURL: string | undefined;
+    if (post?.releaseId === 'missing') {
+      try {
+        releaseURL = await this._integrationManager
+          .getSocialIntegration(post.integration.providerIdentifier)
+          .releaseUrl?.(
+            post.integration.token,
+            String(releaseId),
+            post.integration
+          );
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return this._postRepository.updateReleaseId(
+      postId,
+      orgId,
+      releaseId,
+      releaseURL
+    );
   }
 
   async resolveRelease(
@@ -174,7 +197,8 @@ export class PostsService {
       post.integration.token,
       post.releaseId,
       post.integration,
-      JSON.parse(post.settings || '{}')
+      JSON.parse(post.settings || '{}'),
+      post.releaseURL
     );
     if (
       !resolved ||
