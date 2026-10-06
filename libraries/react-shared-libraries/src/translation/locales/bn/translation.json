@@ -811,6 +811,7 @@
   "auth_method_local": "ইমেল এবং পাসওয়ার্ড",
   "auth_method_github": "গিটহাব",
   "auth_method_google": "গুগল",
+  "auth_method_apple": "অ্যাপল",
   "auth_method_farcaster": "ফারক্যাস্টার",
   "auth_method_wallet": "ওয়ালেট",
   "auth_method_generic": "একক সাইন-অন"

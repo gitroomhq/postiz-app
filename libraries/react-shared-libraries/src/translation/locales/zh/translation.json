@@ -811,6 +811,7 @@
   "auth_method_local": "邮箱和密码",
   "auth_method_github": "GitHub",
   "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "钱包",
   "auth_method_generic": "单点登录"

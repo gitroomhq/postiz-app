@@ -811,6 +811,7 @@
   "auth_method_local": "이메일과 비밀번호",
   "auth_method_github": "GitHub",
   "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "지갑",
   "auth_method_generic": "싱글 사인온"

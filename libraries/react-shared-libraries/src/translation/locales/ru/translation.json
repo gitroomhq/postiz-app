@@ -811,6 +811,7 @@
   "auth_method_local": "Электронная почта и пароль",
   "auth_method_github": "GitHub",
   "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Криптокошелёк",
   "auth_method_generic": "Единый вход"

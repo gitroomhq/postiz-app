@@ -815,6 +815,7 @@ checksums:
     auth_method_local: 4087f0eca4d4989ad0cdf469a1d28af8
     auth_method_github: 6e1cf3c00fa6fbe24afcc78ea3b5f3e4
     auth_method_google: 6cc462fb53d90d404f48d5a6695c1de1
+    auth_method_apple: 4e2ced07ca66bd1cf0562882d019aff2
     auth_method_farcaster: b09af25fcb497663e8594b9fc514b969
     auth_method_wallet: 4599a5c87198f2113d1e54d435a24cd5
     auth_method_generic: 58c80e21cf5e88d556ae604726c18e4d

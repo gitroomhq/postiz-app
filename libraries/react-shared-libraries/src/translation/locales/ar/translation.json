@@ -811,6 +811,7 @@
   "auth_method_local": "البريد الإلكتروني وكلمة المرور",
   "auth_method_github": "غيت هاب",
   "auth_method_google": "جوجل",
+  "auth_method_apple": "آبل",
   "auth_method_farcaster": "فاركاستر",
   "auth_method_wallet": "المحفظة",
   "auth_method_generic": "تسجيل الدخول الموحد"

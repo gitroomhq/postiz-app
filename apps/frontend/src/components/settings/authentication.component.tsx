@@ -15,6 +15,7 @@ const AuthenticationComponent = () => {
     },
     GITHUB: { label: t('auth_method_github', 'GitHub'), showEmail: true },
     GOOGLE: { label: t('auth_method_google', 'Google'), showEmail: true },
+    APPLE: { label: t('auth_method_apple', 'Apple'), showEmail: true },
     FARCASTER: {
       label: t('auth_method_farcaster', 'Farcaster'),
       showEmail: false,

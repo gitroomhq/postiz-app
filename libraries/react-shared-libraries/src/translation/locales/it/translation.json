@@ -811,6 +811,7 @@
   "auth_method_local": "Email e password",
   "auth_method_github": "GitHub",
   "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Portafoglio",
   "auth_method_generic": "Single sign-on"
