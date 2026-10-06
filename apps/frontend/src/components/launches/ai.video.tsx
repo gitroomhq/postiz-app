@@ -21,6 +21,8 @@ export const Modal: FC<{
   onChange: (params: { id: string; path: string }) => void;
 }> = (props) => {
   const { type, onChange, close, setLoading } = props;
+  const t = useT();
+  const user = useUser();
   const fetch = useFetch();
   const setLocked = useLaunchStore((state) => state.setLocked);
   const form = useForm();
@@ -113,6 +115,14 @@ export const Modal: FC<{
                 <VideoWrapper identifier={type.identifier} />
               </div>
             </div>
+            {user?.isTrailing && !type.trial && (
+              <div className="text-[12px] opacity-70 pb-[10px]">
+                {t(
+                  'video_paid_plans_only',
+                  'Paid plans only, not available during the trial'
+                )}
+              </div>
+            )}
             <div className="flex">
               <Button type="submit" className="flex-1">
                 Generate
@@ -133,6 +143,7 @@ const AiVideoModal: FC<{
 }> = (props) => {
   const { list, close, setLoading, onChange } = props;
   const t = useT();
+  const user = useUser();
   const [type, setType] = useState<any | null>(
     list.length === 1 ? list[0] : null
   );
@@ -144,9 +155,19 @@ const AiVideoModal: FC<{
           {t('choose_a_video_type', 'Choose a video type')}
         </div>
         {list.map((p) => (
-          <Button key={p.identifier} type="button" onClick={() => setType(p)}>
-            {p.title}
-          </Button>
+          <div key={p.identifier} className="flex flex-col gap-[4px]">
+            <Button type="button" onClick={() => setType(p)}>
+              {p.title}
+            </Button>
+            {user?.isTrailing && !p.trial && (
+              <div className="text-[12px] opacity-70">
+                {t(
+                  'video_paid_plans_only',
+                  'Paid plans only, not available during the trial'
+                )}
+              </div>
+            )}
+          </div>
         ))}
       </div>
     );
