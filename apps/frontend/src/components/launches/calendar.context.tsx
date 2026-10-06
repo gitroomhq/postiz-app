@@ -178,9 +178,13 @@ export const CalendarWeekProvider: FC<{
       ? { startDate: initStartDate, endDate: initEndDate }
       : getDateRange(display);
 
-  const [selectedChannels, setSelectedChannels] = useState<string[] | null>(
-    null
-  );
+  const [selectedChannels, setSelectedChannelsRaw] = useState<
+    string[] | null
+  >(null);
+  const setSelectedChannels = useCallback((next: string[] | null) => {
+    setSelectedChannelsRaw(next);
+    setListPage(0);
+  }, []);
 
   const [filters, setFilters] = useState({
     startDate: initialRange.startDate,
@@ -222,8 +226,9 @@ export const CalendarWeekProvider: FC<{
       limit: '100',
       customer: filters?.customer?.toString() || '',
       state: listState,
+      ...(selectedChannels ? { integrations: selectedChannels.join(',') } : {}),
     }).toString();
-  }, [listPage, filters.customer, listState]);
+  }, [listPage, filters.customer, listState, selectedChannels]);
 
   const loadListData = useCallback(async () => {
     const response = await fetch(`/posts/list?${listParams}`);
@@ -326,10 +331,7 @@ export const CalendarWeekProvider: FC<{
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
   // List view data
-  const listPosts = useMemo(
-    () => filterByChannels(listData?.posts || []),
-    [listData?.posts, filterByChannels]
-  );
+  const listPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
   const listTotal = listData?.total || 0;
   const listTotalPages = Math.ceil(listTotal / 100);
 
