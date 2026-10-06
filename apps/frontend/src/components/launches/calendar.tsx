@@ -201,7 +201,11 @@ const usePostActions = (onMutate?: () => void) => {
           t(
             'are_you_sure_you_want_to_delete_post',
             'Are you sure you want to delete post?'
-          )
+          ),
+          undefined,
+          undefined,
+          undefined,
+          true
         ))
       ) {
         return;
@@ -1141,12 +1145,12 @@ const CalendarItem: FC<{
         </div>
         <div
           className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
+            'hidden group-hover:block hover:underline cursor-pointer text-red-500',
             post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
           )}
-          onClick={preview}
+          onClick={deletePost}
         >
-          <Preview />
+          <DeletePost />
         </div>{' '}
         {(state === 'PUBLISHED' || state === 'ERROR') &&
           !post.intervalInDays &&
@@ -1191,9 +1195,9 @@ const CalendarItem: FC<{
             'hidden group-hover:block hover:underline cursor-pointer',
             post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
           )}
-          onClick={deletePost}
+          onClick={preview}
         >
-          <DeletePost />
+          <Preview />
         </div>
       </div>
       <div
