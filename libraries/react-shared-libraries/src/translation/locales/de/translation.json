@@ -806,5 +806,13 @@
   "channel_name": "Name",
   "channel_renamed": "Kanal umbenannt",
   "channel_name_reset": "Kanalname zurückgesetzt",
-  "reset_channel_name": "Auf ursprünglichen Namen zurücksetzen"
+  "reset_channel_name": "Auf ursprünglichen Namen zurücksetzen",
+  "authentication": "Authentifizierung",
+  "auth_method_local": "E-Mail und Passwort",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "Wallet",
+  "auth_method_generic": "Single Sign-on"
 }

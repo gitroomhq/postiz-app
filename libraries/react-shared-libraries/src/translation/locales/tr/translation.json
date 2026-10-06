@@ -806,5 +806,13 @@
   "channel_name": "Ad",
   "channel_renamed": "Kanal yeniden adlandırıldı",
   "channel_name_reset": "Kanal adı sıfırlandı",
-  "reset_channel_name": "Orijinal adına sıfırla"
+  "reset_channel_name": "Orijinal adına sıfırla",
+  "authentication": "Kimlik doğrulama",
+  "auth_method_local": "E-posta ve şifre",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "Cüzdan",
+  "auth_method_generic": "Tek oturum açma"
 }

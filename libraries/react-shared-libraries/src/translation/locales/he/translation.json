@@ -806,5 +806,13 @@
   "channel_name": "שם",
   "channel_renamed": "שם הערוץ שונה",
   "channel_name_reset": "שם הערוץ אופס",
-  "reset_channel_name": "אפס לשם המקורי"
+  "reset_channel_name": "אפס לשם המקורי",
+  "authentication": "אימות",
+  "auth_method_local": "אימייל וסיסמה",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "אפל",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "ארנק",
+  "auth_method_generic": "כניסה דרך מערכת אחת (SSO)"
 }

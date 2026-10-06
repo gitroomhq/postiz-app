@@ -806,5 +806,13 @@
   "channel_name": "이름",
   "channel_renamed": "채널 이름이 변경됨",
   "channel_name_reset": "채널 이름이 초기화됨",
-  "reset_channel_name": "원래 이름으로 되돌리기"
+  "reset_channel_name": "원래 이름으로 되돌리기",
+  "authentication": "인증",
+  "auth_method_local": "이메일과 비밀번호",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "지갑",
+  "auth_method_generic": "싱글 사인온"
 }
