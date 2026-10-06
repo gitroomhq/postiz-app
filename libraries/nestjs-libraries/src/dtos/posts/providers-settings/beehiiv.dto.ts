@@ -29,7 +29,7 @@ export class BeehiivDto {
   @IsOptional()
   @JSONSchema({
     description:
-      'draft (default) creates a draft in beehiiv, confirmed publishes it (beehiiv Max / Enterprise plans only)',
+      'draft (default) creates a draft in beehiiv, confirmed publishes it. Both require a beehiiv Pro / Enterprise plan',
   })
   status?: 'draft' | 'confirmed';
 }

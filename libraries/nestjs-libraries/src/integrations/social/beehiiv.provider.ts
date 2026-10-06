@@ -38,6 +38,8 @@ export class BeehiivProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3;
   identifier = 'beehiiv';
   name = 'beehiiv';
+  toolTip =
+    'Posting to beehiiv (including drafts) requires a beehiiv Pro or Enterprise plan.';
   isBetweenSteps = true;
   scopes = ['identify:read', 'publications:read', 'posts:write'];
   editor = 'html' as const;

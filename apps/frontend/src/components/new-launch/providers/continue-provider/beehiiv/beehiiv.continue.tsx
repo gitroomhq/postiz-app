@@ -41,11 +41,9 @@ export const BeehiivContinue = withContinueProvider<
   renderItem: (item) => (
     <>
       <div className="flex justify-center">
-        <img
-          className="w-[80px] h-[80px] object-cover rounded-full"
-          src="/icons/platforms/beehiiv.png"
-          alt={item.name}
-        />
+        <div className="w-[80px] h-[80px] bg-input rounded-full flex items-center justify-center text-[32px] font-semibold">
+          {item.name?.charAt(0)?.toUpperCase()}
+        </div>
       </div>
       <div className="text-sm font-medium">{item.name}</div>
       {item.username && (

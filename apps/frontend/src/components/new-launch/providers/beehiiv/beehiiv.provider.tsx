@@ -17,7 +17,7 @@ const status = [
     value: 'draft',
   },
   {
-    label: 'Publish (Max / Enterprise plans only)',
+    label: 'Publish',
     value: 'confirmed',
   },
 ];
@@ -27,6 +27,10 @@ const BeehiivSettings: FC = () => {
 
   return (
     <>
+      <div className="text-[14px] mb-[18px] text-balance">
+        beehiiv only allows creating posts through its API on Pro and
+        Enterprise plans. This applies to both drafts and published posts.
+      </div>
       <Input label="Title" {...register('title')} />
       <Input label="Subtitle" {...register('subtitle')} />
       <Select
