@@ -338,6 +338,7 @@ checksums:
     predicted_github_trending_change: db2e35c6bb26939186948182195e84df
     duplicate_post: 550d07a1efcab352409ecdbaa16acfcc
     preview_post: a86240c3451c3d5737b6acf358e1d056
+    open_post: 7973a6d7427806d086720278a9b5dba0
     post_statistics: 946015ed60528cf3b173135542053d3e
     draft: e8a92958ad300aacfe46c2bf6644927e
     week_number: 94b8a343e6e9a25c021e055ad974c68e
@@ -620,6 +621,7 @@ checksums:
     profile_updated: 4a55423a795e43ff4bd1a8b3956de4b9
     sets: a8e00731555775ef06d2d8933898c457
     invitation_link_sent: 3d67ff64ec205998378cf7c8f124799f
+    could_not_send_invitation: 808475fc63732c879eb30eac5c288d6b
     send_invitation_link: 8eccac7afd966c2bf358b9e04fb02ee8
     copy_link: 57a37acfe6d7ed71d00fbbc8079fbb35
     are_you_sure_remove_team_member: fdd24783fdaefbfcd8150d51d088cc9d
@@ -657,6 +659,8 @@ checksums:
     payment_required: 3acec87fe94c0bdb92b35e3081f45061
     no_content: 1d2af798c895527a7f8a4c72c2571fdd
     select_customer_tooltip: 1cd2f6f08560b7ebcc9285e845557673
+    select_channels_tooltip: 3aab82dc90ccafe55059c32c5a33c222
+    select_all: eedc7cdb02de467c15dc418a066a77f2
     customers: c31a0dfd0d92496ba6f5673781db24ef
     hour: ec3113f22fc51d01f0c615c5496f8f87
     minutes: c5442938e948e2e3937fb812cf68869c
@@ -689,6 +693,7 @@ checksums:
     two_weeks: 2535083efa302c3dde7d06cce2455b74
     repeat_post_every_label: f3e3fd4d95a0eeaf1eab0219278ae812
     add_new_tag: 911360b396ef6db7a24eb53134f0f7d2
+    edit_tag: 5a8b41a0364539c5d7c243f9d3695e9b
     tag_name: 9368b5a047572b6051f334af5aa76819
     post_save_failed: 164475f6751549f91a5b6e7f759fbca8
     post_is_too_long: 7784c6ecca2c7e58665e83e219aff80b
@@ -798,7 +803,24 @@ checksums:
     preview_comment_detach_hint: 6fa385ae985c409b511cf7adea2f950a
     preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
     preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
+    channels_still_disabled: 1a8b6447bbdfde8b7fd84fe5b87bec4a
+    channels_still_disabled_description: a869ee5b969817a13ee01e0079269477
+    channels_enabled_again: 636241055a7d339ac16f1f4f7d72d194
+    channels_enabled_again_description: 595e387b2a32d35cb2a3860b209a7bc6
     some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7
+    rename_channel: 81dff725b16582b6a13c2f0a826eb2cb
+    channel_name: 9368b5a047572b6051f334af5aa76819
+    channel_renamed: a1551cd9d9669ac7602efc3f3c888c59
+    channel_name_reset: 2c7c64bbf0fce057e61d4942f191c861
+    reset_channel_name: ac06e9718420527b4bb04cee342e60cf
+    authentication: 491fbb938cfe44df0438ad3e198d23e6
+    auth_method_local: 4087f0eca4d4989ad0cdf469a1d28af8
+    auth_method_github: 6e1cf3c00fa6fbe24afcc78ea3b5f3e4
+    auth_method_google: 6cc462fb53d90d404f48d5a6695c1de1
+    auth_method_apple: 4e2ced07ca66bd1cf0562882d019aff2
+    auth_method_farcaster: b09af25fcb497663e8594b9fc514b969
+    auth_method_wallet: 4599a5c87198f2113d1e54d435a24cd5
+    auth_method_generic: 58c80e21cf5e88d556ae604726c18e4d
     done: ffd408fa29d5bc9039ef8ea1b9b699bb
     add_tag: 2cfa04ceea966149f2b5d40d9c131141
     repeat_post: fb5ad8292bcc2fe131e69a62ff1fa9d3

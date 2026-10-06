@@ -167,12 +167,23 @@ export class IntegrationService {
     );
   }
 
+  updateCustomName(org: string, id: string, name: string) {
+    return this._integrationRepository.updateCustomName(org, id, name);
+  }
+
   updateNameAndUrl(id: string, name: string, url: string) {
     return this._integrationRepository.updateNameAndUrl(id, name, url);
   }
 
   getIntegrationById(org: string, id: string) {
     return this._integrationRepository.getIntegrationById(org, id);
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integrationRepository.getIntegrationByInternalId(
+      org,
+      internalId
+    );
   }
 
   async refreshToken(provider: SocialProvider, refresh: string) {
@@ -392,6 +403,10 @@ export class IntegrationService {
 
   async disableIntegrations(org: string, totalChannels: number) {
     return this._integrationRepository.disableIntegrations(org, totalChannels);
+  }
+
+  async enableAllIntegrations(org: string) {
+    return this._integrationRepository.enableAllIntegrations(org);
   }
 
   async checkForDeletedOnceAndUpdate(org: string, page: string) {

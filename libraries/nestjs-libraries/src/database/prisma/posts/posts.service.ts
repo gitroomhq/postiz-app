@@ -187,6 +187,64 @@ export class PostsService {
     return { releaseId: resolved.postId, releaseURL: resolved.releaseURL };
   }
 
+  async getReleaseURL(
+    orgId: string,
+    postId: string,
+    forceRefresh = false
+  ): Promise<{ releaseURL: string }> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || !post.releaseURL) {
+      return { releaseURL: '' };
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.resolveReleaseId) {
+      return { releaseURL: post.releaseURL };
+    }
+
+    const getIntegration = post.integration!;
+
+    if (
+      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      forceRefresh
+    ) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return { releaseURL: post.releaseURL };
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return { releaseURL: post.releaseURL };
+      }
+    }
+
+    try {
+      const { releaseURL } = await this.resolveRelease(orgId, post);
+      return { releaseURL };
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken) {
+        return this.getReleaseURL(orgId, postId, true);
+      }
+    }
+
+    return { releaseURL: post.releaseURL };
+  }
+
   async checkPostAnalytics(
     orgId: string,
     postId: string,
@@ -1362,8 +1420,9 @@ export class PostsService {
     );
     return this.findFreeDateTimeRecursive(
       orgId,
-      findTimes,
-      dayjs.utc().startOf('day')
+      findTimes.length ? findTimes : [120, 400, 700],
+      dayjs.utc().startOf('day'),
+      0
     );
   }
 
@@ -1379,8 +1438,17 @@ export class PostsService {
   private async findFreeDateTimeRecursive(
     orgId: string,
     times: number[],
-    date: dayjs.Dayjs
+    date: dayjs.Dayjs,
+    daysChecked: number
   ): Promise<string> {
+    // stop searching after a year so an empty times list can never recurse forever
+    if (daysChecked > 365) {
+      return date
+        .clone()
+        .add(times[0] || 0, 'minutes')
+        .format('YYYY-MM-DDTHH:mm:00');
+    }
+
     const list = await this._postRepository.getPostsCountsByDates(
       orgId,
       times,
@@ -1388,7 +1456,12 @@ export class PostsService {
     );
 
     if (!list.length) {
-      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+      return this.findFreeDateTimeRecursive(
+        orgId,
+        times,
+        date.add(1, 'day'),
+        daysChecked + 1
+      );
     }
 
     const num = list.reduce<null | number>((prev, curr) => {

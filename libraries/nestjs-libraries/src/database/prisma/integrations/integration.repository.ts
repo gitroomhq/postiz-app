@@ -104,6 +104,21 @@ export class IntegrationRepository {
     });
   }
 
+  updateCustomName(org: string, id: string, name: string) {
+    return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customName: name.trim() || null,
+      },
+    });
+  }
+
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
     return this._integration.model.integration.update({
       select: {
@@ -862,6 +877,19 @@ export class IntegrationRepository {
         },
       });
     }
+  }
+
+  enableAllIntegrations(org: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        disabled: true,
+        deletedAt: null,
+      },
+      data: {
+        disabled: false,
+      },
+    });
   }
 
   getPlugsByIntegrationId(org: string, id: string) {

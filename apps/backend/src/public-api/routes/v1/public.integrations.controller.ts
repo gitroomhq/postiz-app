@@ -269,7 +269,7 @@ export class PublicIntegrationsController {
       .filter((integration) => !group || integration.customer?.id === group)
       .map((integration) => ({
         id: integration.id,
-        name: integration.name,
+        name: integration.customName || integration.name,
         identifier: integration.providerIdentifier,
         picture: integration.picture,
         disabled: integration.disabled,
