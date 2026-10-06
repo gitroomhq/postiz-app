@@ -503,10 +503,9 @@ export class PrivacyExportRepository {
     return this._db.model.messages.findMany({
       take: 1001,
       where: {
-        OR: [
-          { from: 'BUYER', group: { buyerId: id } },
-          { from: 'SELLER', group: { sellerId: id } },
-        ],
+        group: {
+          OR: [{ buyerId: id }, { sellerId: id }],
+        },
       },
       select: personMessagesSelect,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
