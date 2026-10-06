@@ -657,6 +657,8 @@
   "payment_required": "Payment Required",
   "no_content": "no content",
   "select_customer_tooltip": "Select Customer",
+  "select_channels_tooltip": "Select Channels",
+  "select_all": "Select all",
   "customers": "Customers",
   "hour": "Hour",
   "minutes": "Minutes",
@@ -818,5 +820,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Wallet",
-  "auth_method_generic": "Single sign-on"
+  "auth_method_generic": "Single sign-on",
+  "done": "Done",
+  "add_tag": "Add Tag",
+  "repeat_post": "Repeat Post",
+  "do_not_repeat": "Do Not Repeat",
+  "change_date_or_time": "Change Date or Time",
+  "time": "Time",
+  "channels_settings": "Channel Settings",
+  "delete_selected": "Delete Selected",
+  "are_you_sure_you_want_to_delete_selected_media": "Are you sure you want to delete the selected media?"
 }

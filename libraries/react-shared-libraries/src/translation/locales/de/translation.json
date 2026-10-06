@@ -655,6 +655,8 @@
   "payment_required": "Zahlung erforderlich",
   "no_content": "kein Inhalt",
   "select_customer_tooltip": "Kunden auswählen",
+  "select_channels_tooltip": "Kanäle auswählen",
+  "select_all": "Alle auswählen",
   "customers": "Kunden",
   "hour": "Stunde",
   "minutes": "Minuten",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Wallet",
-  "auth_method_generic": "Single Sign-on"
+  "auth_method_generic": "Single Sign-on",
+  "done": "Fertig",
+  "add_tag": "Schlagwort hinzufügen",
+  "repeat_post": "Beitrag wiederholen",
+  "do_not_repeat": "Nicht wiederholen",
+  "change_date_or_time": "Datum oder Uhrzeit ändern",
+  "time": "Uhrzeit",
+  "channels_settings": "Kanaleinstellungen",
+  "delete_selected": "Ausgewählte löschen",
+  "are_you_sure_you_want_to_delete_selected_media": "Bist du sicher, dass du die ausgewählten Medien löschen möchtest?"
 }

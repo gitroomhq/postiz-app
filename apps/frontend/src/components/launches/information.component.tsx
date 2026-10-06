@@ -30,7 +30,7 @@ const Valid: FC = () => {
   );
 };
 
-const Invalid: FC = () => {
+const Invalid: FC<{ className?: string }> = ({ className }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -38,11 +38,12 @@ const Invalid: FC = () => {
       height="16"
       viewBox="0 0 16 16"
       fill="none"
+      className={className}
     >
       <g clipPath="url(#clip0_2482_97670)">
         <path
           d="M8.00049 6.00015V8.66682M8.00049 11.3335H8.00715M7.07737 2.59464L1.59411 12.0657C1.28997 12.591 1.1379 12.8537 1.16038 13.0693C1.17998 13.2573 1.2785 13.4282 1.4314 13.5394C1.60671 13.6668 1.91022 13.6668 2.51723 13.6668H13.4837C14.0908 13.6668 14.3943 13.6668 14.5696 13.5394C14.7225 13.4282 14.821 13.2573 14.8406 13.0693C14.8631 12.8537 14.711 12.591 14.4069 12.0657L8.92361 2.59463C8.62056 2.07119 8.46904 1.80947 8.27135 1.72157C8.09892 1.64489 7.90206 1.64489 7.72962 1.72157C7.53193 1.80947 7.38041 2.07119 7.07737 2.59464Z"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -184,25 +185,51 @@ export const InformationComponent: FC<{
   return (
     <div
       className={clsx(
-        'group rounded-[6px] gap-[4px] h-[30px] px-[6px] flex justify-center items-center relative',
-        isValid ? 'border border-newColColor' : 'bg-[#FF3F3F]'
+        'group rounded-[6px] gap-[4px] mobile:gap-[6px] h-[30px] px-[6px] mobile:px-0 flex justify-center items-center relative',
+        isValid
+          ? 'border border-newColColor mobile:border-0'
+          : 'bg-[#FF3F3F] mobile:bg-transparent',
+        !selectedIntegrations.length && 'mobile:hidden'
       )}
     >
-      {isValid ? <Valid /> : <Invalid />}
+      {isValid ? (
+        <Valid />
+      ) : (
+        <Invalid className="text-white mobile:text-[#FF3F3F]" />
+      )}
 
       {!isGlobal && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div
+          className={clsx(
+            'text-[10px] mobile:text-[12px] font-[600] mobile:font-[500] flex justify-center items-center',
+            isValid
+              ? 'mobile:text-newTextColor/40'
+              : 'text-white mobile:text-[#FF3F3F]'
+          )}
+        >
           {currentChars}/{totalAllowedChars}
         </div>
       )}
       {isGlobal && globalDisplayLimit !== null && (
-        <div className={clsx("text-[10px] font-[600] flex justify-center items-center", !isValid && 'text-white')}>
+        <div
+          className={clsx(
+            'text-[10px] mobile:text-[12px] font-[600] mobile:font-[500] flex justify-center items-center',
+            isValid
+              ? 'mobile:text-newTextColor/40'
+              : 'text-white mobile:text-[#FF3F3F]'
+          )}
+        >
           {globalDisplayLimit.count}/{globalDisplayLimit.limit}
         </div>
       )}
       {((isGlobal && selectedIntegrations.length) || !isValid) && (
         <svg
-          className={clsx('group-hover:rotate-180', !isValid && 'text-white')}
+          className={clsx(
+            'group-hover:rotate-180',
+            isValid
+              ? 'mobile:text-newTextColor/40'
+              : 'text-white mobile:text-[#FF3F3F]'
+          )}
           xmlns="http://www.w3.org/2000/svg"
           width="16"
           height="16"

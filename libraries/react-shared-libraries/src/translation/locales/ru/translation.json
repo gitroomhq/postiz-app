@@ -655,6 +655,8 @@
   "payment_required": "Требуется оплата",
   "no_content": "нет содержимого",
   "select_customer_tooltip": "Выберите клиента",
+  "select_channels_tooltip": "Выберите каналы",
+  "select_all": "Выбрать все",
   "customers": "Клиенты",
   "hour": "Час",
   "minutes": "Минуты",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Криптокошелёк",
-  "auth_method_generic": "Единый вход"
+  "auth_method_generic": "Единый вход",
+  "done": "Готово",
+  "add_tag": "Добавить тег",
+  "repeat_post": "Повтор поста",
+  "do_not_repeat": "Не повторять",
+  "change_date_or_time": "Изменить дату или время",
+  "time": "Время",
+  "channels_settings": "Настройки канала",
+  "delete_selected": "Удалить выбранные",
+  "are_you_sure_you_want_to_delete_selected_media": "Вы уверены, что хотите удалить выбранные медиа?"
 }

@@ -48,6 +48,7 @@ import {
   DesignMediaIcon,
   VerticalDividerIcon,
   NoMediaIcon,
+  TrashIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -57,6 +58,11 @@ const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
 const showModalEmitter = new EventEmitter();
+// on phones the media library takes the whole screen
+export const mediaLibrarySize = () =>
+  window.matchMedia('(max-width: 1025px)').matches
+    ? '100%'
+    : 'calc(100% - 80px)';
 export const Pagination: FC<{
   current: number;
   totalPages: number;
@@ -131,7 +137,8 @@ export const Pagination: FC<{
         </div>
       </li>
       {paginationItems.map((item, index) => (
-        <li key={index}>
+        // phones show "2 / 6" instead of the page numbers
+        <li key={index} className="mobile:hidden">
           {item === '...' ? (
             <span className="inline-flex items-center justify-center h-10 w-10 text-textColor select-none">
               ...
@@ -152,6 +159,9 @@ export const Pagination: FC<{
           )}
         </li>
       ))}
+      <li className="hidden mobile:flex h-10 items-center px-[8px] text-[14px] text-textColor">
+        {current + 1} / {totalPages}
+      </li>
       <li
         className={clsx(
           current + 1 === totalPages && 'opacity-20 pointer-events-none'
@@ -179,8 +189,8 @@ export const ShowMediaBoxModal: FC = () => {
         askClose: false,
         closeOnEscape: true,
         fullScreen: true,
-        size: 'calc(100% - 80px)',
-        height: 'calc(100% - 80px)',
+        size: mediaLibrarySize(),
+        height: mediaLibrarySize(),
         children: (close) => (
           <MediaBox
             setMedia={(media) => cCallback(media[0])}
@@ -253,6 +263,19 @@ export const MediaBox: FC<{
     onStart: () => setLoading(true),
     onEnd: () => setLoading(false),
   });
+
+  // uploader messages (errors, processing warnings) stay after the upload ends
+  const [uploadInfo, setUploadInfo] = useState(false);
+  useEffect(() => {
+    const show = () => setUploadInfo(true);
+    const hide = () => setUploadInfo(false);
+    uppy.on('info-visible', show);
+    uppy.on('info-hidden', hide);
+    return () => {
+      uppy.off('info-visible', show);
+      uppy.off('info-hidden', hide);
+    };
+  }, [uppy]);
 
   const addRemoveSelected = useCallback(
     (media: any) => () => {
@@ -396,6 +419,37 @@ export const MediaBox: FC<{
     [mutate]
   );
 
+  // phones have no hover, so the selected media are deleted together
+  const deleteSelected = useCallback(async () => {
+    if (
+      !(await deleteDialog(
+        t(
+          'are_you_sure_you_want_to_delete_selected_media',
+          'Are you sure you want to delete the selected media?'
+        )
+      ))
+    ) {
+      return;
+    }
+    const toDelete = selected;
+    setSelected([]);
+    try {
+      await Promise.all(
+        toDelete.map((media: any) =>
+          fetch(`/media/${media.id}`, {
+            method: 'DELETE',
+          })
+        )
+      );
+    } finally {
+      const result = await mutate();
+      // deleting a whole last page leaves nothing to show there
+      if (page >= (result?.pages || 1)) {
+        setPage(Math.max(0, (result?.pages || 1) - 1));
+      }
+    }
+  }, [selected, mutate, page, t]);
+
   const btn = useMemo(() => {
     return (
       <button
@@ -443,12 +497,35 @@ export const MediaBox: FC<{
             className="hidden"
             multiple={true}
           />
-          <div className="flex gap-[8px]">
+          <div className={clsx('flex gap-[8px]', !standalone && 'mobile:hidden')}>
             {btn}
             <ThirdPartyMediaLibrary onImported={() => mutate()} />
           </div>
+          {!standalone && !!data?.results?.length && (
+            <div className="hidden mobile:block basis-full text-[14px] font-[600]">
+              {t(
+                'select_or_upload_pictures_max_1gb',
+                'Select or upload pictures (maximum 1 GB per upload).'
+              )}
+            </div>
+          )}
+          {!!selected.length && (
+            <div
+              onClick={deleteSelected}
+              className="hidden mobile:flex basis-full justify-center items-center gap-[8px] h-[24px] text-[15px] font-[600] text-[#FF3F3F] cursor-pointer select-none"
+            >
+              <TrashIcon size={18} />
+              {t('delete_selected', 'Delete Selected')} ({selected.length})
+            </div>
+          )}
         </div>
-        <div className="w-full pointer-events-none relative mt-[5px] mb-[5px]">
+        <div
+          className={clsx(
+            'w-full pointer-events-none relative mt-[5px] mb-[5px]',
+            // phones only keep the upload progress while there is something to show
+            !loading && !uploadInfo && 'mobile:hidden'
+          )}
+        >
           <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
             <Dashboard
               height={46}
@@ -474,7 +551,7 @@ export const MediaBox: FC<{
         >
           <div
             className={clsx(
-              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
+              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner mobile:-left-[6px] mobile:-top-[6px] mobile:!w-[calc(100%+12px)] mobile:!h-[calc(100%+12px)]',
               !isLoading &&
                 !data?.results?.length &&
                 'flex justify-center items-center gap-[20px] flex-col'
@@ -505,7 +582,7 @@ export const MediaBox: FC<{
                     'You can also drag & drop pictures.'
                   )}
                 </div>
-                <div className="forceChange flex gap-[8px]">
+                <div className="forceChange flex gap-[8px] mobile:w-full mobile:max-w-[300px] mobile:child:flex-1">
                   {btn}
                   <ThirdPartyMediaLibrary onImported={() => mutate()} />
                 </div>
@@ -516,7 +593,7 @@ export const MediaBox: FC<{
                 {[...new Array(16)].map((_, i) => (
                   <div
                     className={clsx(
-                      'px-[3px] py-[3px] float-left rounded-[6px] cursor-pointer w8-max mobile:!w-1/3 mobile:!max-w-[33.333%] aspect-square'
+                      'px-[3px] py-[3px] mobile:p-[6px] float-left rounded-[6px] cursor-pointer w8-max mobile:!w-1/2 mobile:!max-w-[50%] aspect-square'
                     )}
                     key={i}
                   >
@@ -537,7 +614,7 @@ export const MediaBox: FC<{
               .map((media: any) => (
                 <div
                   className={clsx(
-                    'group px-[3px] py-[3px] float-left rounded-[6px] w8-max mobile:!w-1/3 mobile:!max-w-[33.333%] aspect-square',
+                    'group px-[3px] py-[3px] mobile:p-[6px] float-left rounded-[6px] w8-max mobile:!w-1/2 mobile:!max-w-[50%] aspect-square',
                     !standalone && 'cursor-pointer'
                   )}
                   key={media.id}
@@ -557,18 +634,30 @@ export const MediaBox: FC<{
                       </div>
                     ) : (
                       <DeleteCircleIcon
-                        className="cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]"
+                        className={clsx(
+                          'cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]',
+                          // the picker deletes the selected media on phones
+                          !standalone && 'mobile:!hidden'
+                        )}
                         onClick={deleteImage(media)}
                       />
                     )}
-                    <div className="absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]">
+                    <div
+                      className={clsx(
+                        'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]',
+                        !standalone && 'mobile:hidden'
+                      )}
+                    >
                       {media.originalName}
                     </div>
                     <div className="w-full h-full rounded-[6px] overflow-hidden relative">
                       <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
                         <div
                           onClick={maximize(media)}
-                          className="cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all"
+                          className={clsx(
+                            'cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all',
+                            !standalone && 'mobile:!hidden'
+                          )}
                         >
                           <svg
                             width="30"
@@ -609,10 +698,16 @@ export const MediaBox: FC<{
           />
         )}
         {!standalone && (
-          <div className="flex justify-end mt-[32px] gap-[8px]">
+          <div className="flex justify-end mt-[32px] gap-[8px] mobile:flex-col mobile:mt-[16px] mobile:gap-[12px]">
+            {!isLoading && !!data?.results?.length && (
+              <div className="hidden mobile:flex gap-[8px] mobile:child:flex-1">
+                {btn}
+                <ThirdPartyMediaLibrary onImported={() => mutate()} />
+              </div>
+            )}
             <button
               onClick={() => modals.closeCurrent()}
-              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px]"
+              className="cursor-pointer h-[52px] px-[20px] items-center justify-center border border-newTextColor/10 flex rounded-[10px] mobile:hidden"
             >
               {t('cancel', 'Cancel')}
             </button>
@@ -620,7 +715,7 @@ export const MediaBox: FC<{
               <button
                 onClick={standalone ? () => {} : addMedia}
                 disabled={selected.length === 0}
-                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px]"
+                className="cursor-pointer text-white disabled:opacity-80 disabled:cursor-not-allowed h-[52px] px-[20px] items-center justify-center bg-[#612BD3] flex rounded-[10px] mobile:h-[44px] mobile:rounded-[8px] mobile:font-[600] mobile:disabled:opacity-100 mobile:disabled:bg-btnSimple mobile:disabled:text-textItemBlur"
               >
                 {t('add_selected_media', 'Add selected media')}
               </button>
@@ -654,6 +749,10 @@ export const MultiMediaComponent: FC<{
   onOpen?: () => void;
   onClose?: () => void;
   toolBar?: React.ReactNode;
+  // after the tools, outside of their scroll
+  toolBarEnd?: React.ReactNode;
+  toolsClassName?: string;
+  toolsStyle?: React.CSSProperties;
   information?: React.ReactNode;
   insertInContent?: (media: Array<{ id: string; path: string }>) => void;
   onChange: (event: {
@@ -678,6 +777,9 @@ export const MultiMediaComponent: FC<{
     allData,
     dummy,
     toolBar,
+    toolBarEnd,
+    toolsClassName,
+    toolsStyle,
     information,
     mediaNotAvailable,
     insertInContent,
@@ -728,8 +830,8 @@ export const MultiMediaComponent: FC<{
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
-      size: 'calc(100% - 80px)',
-      height: 'calc(100% - 80px)',
+      size: mediaLibrarySize(),
+      height: mediaLibrarySize(),
       children: (close) => (
         <MediaBox
           setMedia={changeMedia}
@@ -769,9 +871,9 @@ export const MultiMediaComponent: FC<{
 
   return (
     <>
-      <div className="b1 flex flex-col gap-[8px] rounded-bl-[8px] select-none w-full">
-        <div className="flex gap-[10px] px-[12px]">
-          {!!currentMedia && (
+      <div className="b1 flex flex-col gap-[8px] mobile:gap-[16px] rounded-bl-[8px] select-none w-full">
+        <div className="flex gap-[10px] px-[12px] mobile:px-0 mobile:empty:hidden">
+          {!!currentMedia?.length && (
             <ReactSortable
               list={currentMedia}
               setList={(value) =>
@@ -783,7 +885,7 @@ export const MultiMediaComponent: FC<{
               handle=".dragging"
             >
               {currentMedia.map((media, index) => (
-                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] border-2 border-tableBorder relative flex transition-all">
+                  <div key={media.id} className="cursor-pointer rounded-[5px] w-[40px] h-[40px] mobile:w-[60px] mobile:h-[60px] mobile:rounded-[8px] border-2 mobile:border-0 border-tableBorder relative flex transition-all">
                     <DragHandleIcon className="z-[20] dragging absolute pe-[1px] pb-[3px] -start-[4px] -top-[4px] cursor-move" />
 
                     <div className="w-full h-full relative group">
@@ -823,7 +925,7 @@ export const MultiMediaComponent: FC<{
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img
-                          className="w-full h-full object-cover rounded-[4px]"
+                          className="w-full h-full object-cover rounded-[4px] mobile:rounded-[8px]"
                           src={mediaDirectory.set(media?.path)}
                         />
                       )}
@@ -831,69 +933,90 @@ export const MultiMediaComponent: FC<{
 
                     <CloseCircleIcon
                       onClick={clearMedia(index)}
-                      className="absolute -end-[4px] -top-[4px] z-[20] rounded-full bg-white"
+                      className="absolute -end-[4px] -top-[4px] mobile:-end-[8px] mobile:-top-[8px] mobile:w-[24px] mobile:h-[24px] z-[20] rounded-full bg-white"
                     />
                   </div>
               ))}
             </ReactSortable>
           )}
         </div>
-        <div className="flex gap-[8px] mobile:gap-x-[4px] mobile:gap-y-0 mobile:flex-wrap px-[12px] border-t border-newColColor w-full b1 text-textColor">
-          {!mediaNotAvailable && (
-            <div className="flex py-[10px] mobile:pb-0 b2 items-center gap-[4px] mobile:flex-wrap">
-              <div
-                onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-              >
-                <div className="flex gap-[8px] items-center">
-                  <div>
-                    <InsertMediaIcon />
-                  </div>
-                  <div className="text-[10px] font-[600] maxMedia:hidden block">
-                    {t('insert_media', 'Insert Media')}
+        {/* on phones the info stays with the post, the tools can move to the bottom */}
+        {information && (
+          <div className="hidden mobile:flex justify-end">{information}</div>
+        )}
+        <div
+          className={clsx(
+            'flex gap-[8px] px-[12px] mobile:px-0 border-t border-newColColor mobile:border-t-0 w-full b1 text-textColor',
+            toolsClassName
+          )}
+          style={toolsStyle}
+        >
+          <div className="flex gap-[8px] mobile:gap-[4px] mobile:flex-1 mobile:min-w-0 mobile:overflow-x-auto mobile:scrollbar-none b1">
+            {!mediaNotAvailable && (
+              <div className="flex py-[10px] mobile:py-0 mobile:shrink-0 b2 items-center gap-[4px]">
+                <div
+                  onClick={showModal}
+                  className="cursor-pointer h-[30px] mobile:h-[40px] mobile:min-w-[40px] rounded-[6px] mobile:rounded-[8px] justify-center items-center flex bg-newColColor mobile:bg-newSettings px-[8px]"
+                >
+                  <div className="flex gap-[8px] items-center">
+                    <div>
+                      <InsertMediaIcon className="mobile:w-[20px] mobile:h-[20px]" />
+                    </div>
+                    <div className="text-[10px] font-[600] maxMedia:hidden block">
+                      {t('insert_media', 'Insert Media')}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div
-                onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
-              >
-                <div className="flex gap-[5px] items-center">
-                  <div>
-                    <DesignMediaIcon />
-                  </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
-                    {t('design_media', 'Design Media')}
+                <div
+                  onClick={designMedia}
+                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px] mobile:hidden"
+                >
+                  <div className="flex gap-[5px] items-center">
+                    <div>
+                      <DesignMediaIcon />
+                    </div>
+                    <div className="text-[10px] font-[600] iconBreak:hidden block">
+                      {t('design_media', 'Design Media')}
+                    </div>
                   </div>
                 </div>
+
+                {!insertInContent && (
+                  <ThirdPartyMedia allData={allData} onChange={changeMedia} />
+                )}
+
+                {!!user?.tier?.ai && (
+                  <>
+                    <AiImage value={text} onChange={changeMedia} />
+                    {!insertInContent && (
+                      <AiVideo value={text} onChange={changeMedia} />
+                    )}
+                  </>
+                )}
               </div>
-
-              {!insertInContent && (
-                <ThirdPartyMedia allData={allData} onChange={changeMedia} />
-              )}
-
-              {!!user?.tier?.ai && (
-                <>
-                  <AiImage value={text} onChange={changeMedia} />
-                  {!insertInContent && (
-                    <AiVideo value={text} onChange={changeMedia} />
-                  )}
-                </>
-              )}
-            </div>
-          )}
-          {!mediaNotAvailable && (
-            <div className="text-newColColor h-full flex items-center mobile:hidden">
-              <VerticalDividerIcon />
-            </div>
-          )}
-          {!!toolBar && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
-              {toolBar}
-            </div>
-          )}
+            )}
+            {!mediaNotAvailable && (
+              <div
+                className={clsx(
+                  'text-newColColor h-full flex items-center mobile:shrink-0 mobile:px-[4px]',
+                  !toolBar && 'mobile:hidden'
+                )}
+              >
+                <VerticalDividerIcon />
+              </div>
+            )}
+            {!!toolBar && (
+              <div className="flex py-[10px] mobile:py-0 mobile:shrink-0 b2 items-center gap-[4px]">
+                {toolBar}
+              </div>
+            )}
+            {!!toolBar && (
+              <div className="hidden mobile:block sticky end-0 shrink-0 w-[40px] pointer-events-none bg-gradient-to-l rtl:bg-gradient-to-r from-newBgColorInner" />
+            )}
+          </div>
+          {toolBarEnd}
           {information && (
-            <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex-1 justify-end flex py-[10px] mobile:hidden b2 items-center gap-[4px]">
               {information}
             </div>
           )}
@@ -973,8 +1096,8 @@ export const MediaComponent: FC<{
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
-      size: 'calc(100% - 80px)',
-      height: 'calc(100% - 80px)',
+      size: mediaLibrarySize(),
+      height: mediaLibrarySize(),
       children: (close) => (
         <MediaBox setMedia={changeMedia} closeModal={close} type={type} />
       ),
@@ -1004,7 +1127,10 @@ export const MediaComponent: FC<{
       )}
       <div className="flex gap-[5px]">
         <Button onClick={showModal}>{t('select', 'Select')}</Button>
-        <Button onClick={showDesignModal} className="!bg-customColor45">
+        <Button
+          onClick={showDesignModal}
+          className="!bg-customColor45 mobile:hidden"
+        >
           {t('editor', 'Editor')}
         </Button>
         <Button secondary={true} onClick={clearMedia}>

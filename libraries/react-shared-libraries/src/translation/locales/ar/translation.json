@@ -655,6 +655,8 @@
   "payment_required": "الدفع مطلوب",
   "no_content": "لا يوجد محتوى",
   "select_customer_tooltip": "اختر العميل",
+  "select_channels_tooltip": "اختر القنوات",
+  "select_all": "تحديد الكل",
   "customers": "العملاء",
   "hour": "ساعة",
   "minutes": "دقائق",
@@ -816,5 +818,14 @@
   "auth_method_apple": "آبل",
   "auth_method_farcaster": "فاركاستر",
   "auth_method_wallet": "المحفظة",
-  "auth_method_generic": "تسجيل الدخول الموحد"
+  "auth_method_generic": "تسجيل الدخول الموحد",
+  "done": "تم",
+  "add_tag": "إضافة وسم",
+  "repeat_post": "تكرار المنشور",
+  "do_not_repeat": "عدم التكرار",
+  "change_date_or_time": "تغيير التاريخ أو الوقت",
+  "time": "الوقت",
+  "channels_settings": "إعدادات القناة",
+  "delete_selected": "حذف المحدد",
+  "are_you_sure_you_want_to_delete_selected_media": "هل أنت متأكد أنك تريد حذف الوسائط المحددة؟"
 }

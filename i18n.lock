@@ -659,6 +659,8 @@ checksums:
     payment_required: 3acec87fe94c0bdb92b35e3081f45061
     no_content: 1d2af798c895527a7f8a4c72c2571fdd
     select_customer_tooltip: 1cd2f6f08560b7ebcc9285e845557673
+    select_channels_tooltip: 3aab82dc90ccafe55059c32c5a33c222
+    select_all: eedc7cdb02de467c15dc418a066a77f2
     customers: c31a0dfd0d92496ba6f5673781db24ef
     hour: ec3113f22fc51d01f0c615c5496f8f87
     minutes: c5442938e948e2e3937fb812cf68869c
@@ -821,3 +823,12 @@ checksums:
     auth_method_farcaster: b09af25fcb497663e8594b9fc514b969
     auth_method_wallet: 4599a5c87198f2113d1e54d435a24cd5
     auth_method_generic: 58c80e21cf5e88d556ae604726c18e4d
+    done: ffd408fa29d5bc9039ef8ea1b9b699bb
+    add_tag: 2cfa04ceea966149f2b5d40d9c131141
+    repeat_post: fb5ad8292bcc2fe131e69a62ff1fa9d3
+    do_not_repeat: 4b92afcdc3206cb17da5257809c21fb6
+    change_date_or_time: 76fcdf62ab2834115a1bea54d2ef0779
+    time: b504a03d52e8001bfdc5cb6205364f42
+    channels_settings: 770e5ae7cec0a83e1454246b52591093
+    delete_selected: adad57b0659260858fbf786ef31e9612
+    are_you_sure_you_want_to_delete_selected_media: 2fcf9a6ddcd40aa74d2cf914730ecc4b

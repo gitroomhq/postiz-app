@@ -15,10 +15,17 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { PicksSocialsComponent } from '@gitroom/frontend/components/new-launch/picks.socials.component';
 import { EditorWrapper } from '@gitroom/frontend/components/new-launch/editor';
 import { SelectCurrent } from '@gitroom/frontend/components/new-launch/select.current';
-import { ShowAllProviders } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
+import {
+  Providers,
+  ShowAllProviders,
+} from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
+import { getProviderSettingsMeta } from '@gitroom/frontend/components/new-launch/providers/high.order.provider';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
-import { DatePicker } from '@gitroom/frontend/components/launches/helpers/date.picker';
+import {
+  DatePicker,
+  DatePickerPanel,
+} from '@gitroom/frontend/components/launches/helpers/date.picker';
 import { useShallow } from 'zustand/react/shallow';
 import { RepeatComponent } from '@gitroom/frontend/components/launches/repeat.component';
 import { TagsComponent } from '@gitroom/frontend/components/launches/tags.component';
@@ -34,11 +41,26 @@ import { DummyCodeComponent } from '@gitroom/frontend/components/new-launch/dumm
 import { CreationMethodBadge } from '@gitroom/frontend/components/launches/creation.method.badge';
 import {
   SettingsIcon,
+  SettingsOutlineIcon,
   ChevronDownIcon,
   CloseIcon,
   TrashIcon,
   DropdownArrowSmallIcon,
+  PlusIcon,
+  EyeIcon,
+  TagIcon,
+  RepeatIcon,
 } from '@gitroom/frontend/components/ui/icons';
+import {
+  MobileTopBar,
+  MobileTopBarAction,
+} from '@gitroom/frontend/components/new-launch/mobile.top.bar';
+import {
+  BottomSheet,
+  BottomSheetButton,
+  BottomSheetHeader,
+  BottomSheetRow,
+} from '@gitroom/frontend/components/ui/bottom.sheet.component';
 import { useHasScroll } from '@gitroom/frontend/components/ui/is.scroll.hook';
 import { useShortlinkPreference } from '@gitroom/frontend/components/settings/shortlink-preference.component';
 import dayjs from 'dayjs';
@@ -55,6 +77,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const modal = useModals();
   const [showSettings, setShowSettings] = useState(false);
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit');
+  const [mobileSheet, setMobileSheet] = useState<
+    'channels' | 'settings' | 'tags' | 'repeat' | 'date' | null
+  >(null);
   const [showPostNow, setShowPostNow] = useState(false);
   const postNowRef = useClickOutside<HTMLDivElement>(() => {
     setShowPostNow(false);
@@ -96,6 +121,8 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       activateExitButton: state.activateExitButton,
     }))
   );
+  // the date sheet applies its changes only on save
+  const [dateDraft, setDateDraft] = useState(date);
 
   useEffect(() => {
     if (hide) {
@@ -107,10 +134,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     if (current === 'global') {
       return (
         <div className="flex items-center gap-[10px]">
-          <div className="relative">
+          <div className="relative mobile:hidden">
             <SettingsIcon size={15} className="text-white" />
           </div>
-          <div>Settings</div>
+          <div>{t('settings', 'Settings')}</div>
         </div>
       );
     }
@@ -119,7 +146,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
     return (
       <div className="flex items-center gap-[10px]">
-        <div className="relative">
+        <div className="relative mobile:hidden">
           <img
             src={`/icons/platforms/${currentIntegration.identifier}.png`}
             className="w-[20px] h-[20px] rounded-[4px]"
@@ -515,55 +542,136 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
   );
 
+  const scheduleLabel = dummy
+    ? t('create_output', 'Create output')
+    : !existingData?.integration
+    ? t('add_to_calendar', 'Add to calendar')
+    : existingData?.posts?.[0]?.state === 'DRAFT'
+    ? t('schedule', 'Schedule')
+    : t('update', 'Update');
+
+  const mobileActions: MobileTopBarAction[] = addEditSets
+    ? [
+        {
+          label: t('save_set', 'Save Set'),
+          variant: 'primary',
+          onClick: schedule('draft'),
+        },
+      ]
+    : [
+        {
+          label: scheduleLabel,
+          variant: 'primary',
+          onClick: schedule('schedule'),
+        },
+        ...(!dummy
+          ? [
+              {
+                label: t('post_now', 'Post Now'),
+                variant: 'secondary' as const,
+                onClick: schedule('now'),
+              },
+            ]
+          : []),
+        {
+          label: t('save_as_draft', 'Save as Draft'),
+          variant: 'tertiary',
+          onClick: schedule('draft'),
+        },
+      ];
+
+  // the settings sheet links to the channel settings only when there are any
+  const hasChannelSettings = useMemo(() => {
+    const identifiers =
+      current === 'global'
+        ? selectedIntegrations.map((p) => p.integration.identifier)
+        : [integrations.find((p) => p.id === current)?.identifier];
+
+    return identifiers.some(
+      (identifier) =>
+        !!getProviderSettingsMeta(
+          Providers.find((p) => p.identifier === identifier)?.component
+        )?.SettingsComponent
+    );
+  }, [current, selectedIntegrations, integrations]);
+
+  // on phones, the settings, tags, repeat and delete live in a settings sheet
+  const settingsButton = !dummy && (
+    <div
+      onClick={() => setMobileSheet('settings')}
+      className="hidden mobile:flex shrink-0 w-[32px] h-[44px] justify-end items-center cursor-pointer text-[#A3A3A3]"
+    >
+      <SettingsOutlineIcon />
+    </div>
+  );
+
+  // phones have no room for the preview column, it replaces the editor instead
+  const previewButton = (
+    <div
+      onClick={() => setMobileTab(mobileTab === 'preview' ? 'edit' : 'preview')}
+      className={clsx(
+        'hidden mobile:flex shrink-0 w-[32px] h-[44px] justify-end items-center cursor-pointer',
+        mobileTab === 'preview' ? 'text-[#FC69FF]' : 'text-[#A3A3A3]'
+      )}
+    >
+      <EyeIcon />
+    </div>
+  );
+
   return (
     <div className="w-full h-full flex-1 p-[40px] mobile:p-0 mobile:h-auto mobile:min-h-full flex relative">
       <div className="flex flex-1 min-w-0 bg-newBgColorInner rounded-[20px] mobile:rounded-none flex-col">
+        <MobileTopBar
+          onBack={askClose}
+          actions={mobileActions}
+          disabled={selectedIntegrations.length === 0 || loading || locked}
+          loading={loading}
+        >
+          <DatePicker
+            onChange={setDate}
+            date={date}
+            onOpen={() => {
+              setDateDraft(date);
+              setMobileSheet('date');
+            }}
+          />
+        </MobileTopBar>
         <div className="flex-1 flex mobile:contents">
-          <div className="flex flex-col flex-1 min-w-0 border-e border-newBorder mobile:border-e-0 mobile:flex-none">
-            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] mobile:rounded-none flex items-center gap-[12px] px-[20px] mobile:px-[16px] text-[20px] font-[600]">
+          <div
+            className={clsx(
+              'flex flex-col flex-1 min-w-0 border-e border-newBorder mobile:border-e-0',
+              mobileTab === 'preview' && 'mobile:flex-none'
+            )}
+          >
+            <div className="bg-newBgColor h-[65px] rounded-s-[20px] !rounded-b-[0] mobile:hidden flex items-center gap-[12px] px-[20px] text-[20px] font-[600]">
               {t('create_post_title', 'Create Post')}
               <CreationMethodBadge
                 creationMethod={existingData?.posts?.[0]?.creationMethod}
                 size="sm"
               />
-              <div className="hidden mobile:block ms-auto cursor-pointer">
-                <CloseIcon onClick={askClose} className="text-[#A3A3A3]" />
-              </div>
             </div>
-            <div className="hidden mobile:flex mx-[12px] mt-[12px] p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500]">
-              {(['edit', 'preview'] as const).map((tab) => (
-                <div
-                  key={tab}
-                  onClick={() => setMobileTab(tab)}
-                  className={clsx(
-                    'flex-1 pt-[6px] pb-[5px] cursor-pointer text-center rounded-[6px]',
-                    mobileTab === tab && 'text-textItemFocused bg-boxFocused'
-                  )}
-                >
-                  {tab === 'edit'
-                    ? t('edit', 'Edit')
-                    : t('post_preview', 'Post Preview')}
-                </div>
-              ))}
-            </div>
-            <div
-              className={clsx(
-                'flex-1 flex flex-col gap-[16px]',
-                mobileTab === 'preview' && 'mobile:hidden'
-              )}
-            >
+            <div className="flex-1 flex flex-col gap-[16px]">
               <div
-                className={clsx('flex-1 relative', showSettings && 'hidden')}
+                className={clsx(
+                  // mobile:flex wins over hidden, the settings sheet opens above the editor on phones
+                  'flex-1 relative mobile:flex mobile:flex-col',
+                  showSettings && 'hidden'
+                )}
               >
                 <div
                   id="social-content"
-                  className="gap-[32px] flex flex-col pe-[8px] pt-[20px] ps-[20px] mobile:px-[12px] mobile:static absolute top-0 left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                  className="gap-[32px] mobile:gap-[16px] flex flex-col pe-[8px] pt-[20px] ps-[20px] mobile:px-[16px] mobile:pt-[12px] mobile:static mobile:flex-1 absolute top-0 left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
                 >
-                  <div className="flex w-full">
+                  <div
+                    className={clsx(
+                      'flex w-full',
+                      !existingData.integration && 'mobile:hidden'
+                    )}
+                  >
                     <div className="flex flex-1">
                       <PicksSocialsComponent toolTip={true} />
                     </div>
-                    <div>
+                    <div className="mobile:hidden">
                       {!dummy && (
                         <SelectCustomer
                           onChange={changeCustomer}
@@ -571,71 +679,131 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         />
                       )}
                     </div>
+                    {!!existingData.integration && (
+                      <>
+                        <div className="hidden mobile:flex items-center">
+                          <CreationMethodBadge
+                            creationMethod={
+                              existingData?.posts?.[0]?.creationMethod
+                            }
+                            size="sm"
+                          />
+                        </div>
+                        {previewButton}
+                        {settingsButton}
+                      </>
+                    )}
                   </div>
-                  <div className="flex flex-1 gap-[6px] flex-col">
-                    <div>{!existingData.integration && <SelectCurrent />}</div>
-                    <div className="flex-1 flex">
+                  <div className="flex flex-1 gap-[6px] mobile:gap-[16px] flex-col">
+                    <div className="flex mobile:items-center mobile:gap-[4px]">
+                      <div className="flex-1 mobile:flex-initial mobile:min-w-0">
+                        {!existingData.integration && <SelectCurrent />}
+                      </div>
+                      {!existingData.integration && (
+                        <>
+                          <div
+                            onClick={() => setMobileSheet('channels')}
+                            className="hidden mobile:flex shrink-0 w-[44px] h-[44px] rounded-[8px] bg-btnSimple justify-center items-center cursor-pointer"
+                          >
+                            <PlusIcon size={24} />
+                          </div>
+                          <div className="hidden mobile:block flex-1" />
+                          {previewButton}
+                          {settingsButton}
+                        </>
+                      )}
+                    </div>
+                    <div
+                      className={clsx(
+                        'flex-1 flex',
+                        mobileTab === 'preview' && 'mobile:hidden'
+                      )}
+                    >
                       {!hide && <EditorWrapper totalPosts={1} value="" />}
                     </div>
                     <div
                       id="social-empty"
                       className={clsx(
-                        'pb-[16px]'
+                        'pb-[16px] mobile:pb-0'
                         // current !== 'global' && 'hidden'
                       )}
                     />
                   </div>
                 </div>
               </div>
+              {/* on phones the settings open as a bottom sheet */}
               <div
-                id="wrapper-settings"
-                className={clsx(
-                  'pb-[20px] px-[20px] mobile:px-[12px] select-none',
-                  showSettings && 'flex-1 flex pt-[20px]',
-                  current === 'global' && 'hidden'
-                )}
+                className={clsx('contents', !showSettings && 'mobile:hidden')}
               >
-                <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings">
+                {showSettings && (
                   <div
-                    onClick={() => setShowSettings(!showSettings)}
-                    className={clsx(
-                      'bg-[#612BD3] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px]',
-                      showSettings ? '!rounded-b-none' : ''
-                    )}
-                  >
-                    <div className="flex-1 text-[14px] font-[600] text-white">
-                      {currentIntegrationText}
-                    </div>
-                    <div>
-                      <ChevronDownIcon
-                        rotated={showSettings}
-                        className="text-white"
+                    onClick={() => setShowSettings(false)}
+                    className="hidden mobile:block fixed inset-0 z-[599] bg-popup backdrop-blur-[8px] animate-fadeIn touch-none"
+                  />
+                )}
+                <div
+                  id="wrapper-settings"
+                  className={clsx(
+                    'pb-[20px] px-[20px] select-none',
+                    showSettings &&
+                      'flex-1 flex pt-[20px] mobile:fixed mobile:inset-x-0 mobile:bottom-0 mobile:z-[600] mobile:max-h-[90%] mobile:p-0',
+                    current === 'global' && 'hidden'
+                  )}
+                >
+                  <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings mobile:rounded-none mobile:rounded-t-[24px] mobile:gap-0 mobile:pt-[8px] mobile:pb-[24px] mobile:bg-newBgColorInner mobile:animate-fade">
+                    <div className="hidden mobile:contents">
+                      <BottomSheetHeader
+                        title={currentIntegrationText}
+                        onClose={() => setShowSettings(false)}
                       />
                     </div>
-                  </div>
-                  <div
-                    className={clsx(
-                      !showSettings ? 'hidden' : 'flex-1',
-                      'text-[14px] text-textColor font-[500] relative'
-                    )}
-                  >
-                    <div className="absolute mobile:static left-0 top-0 w-full h-full mobile:h-auto flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
-                      <div
-                        id="social-settings"
-                        className="flex flex-col gap-[20px] bg-newBgColor"
+                    <div
+                      onClick={() => setShowSettings(!showSettings)}
+                      className={clsx(
+                        'bg-[#612BD3] rounded-[12px] flex items-center gap-[8px] cursor-pointer p-[12px] mobile:hidden',
+                        showSettings ? '!rounded-b-none' : ''
+                      )}
+                    >
+                      <div className="flex-1 text-[14px] font-[600] text-white">
+                        {currentIntegrationText}
+                      </div>
+                      <div>
+                        <ChevronDownIcon
+                          rotated={showSettings}
+                          className="text-white"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      className={clsx(
+                        !showSettings ? 'hidden' : 'flex-1',
+                        'text-[14px] text-textColor font-[500] relative mobile:min-h-0 mobile:overflow-y-auto mobile:overscroll-contain'
+                      )}
+                    >
+                      <div className="absolute mobile:static left-0 top-0 w-full h-full mobile:h-auto flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                        <div
+                          id="social-settings"
+                          className="flex flex-col gap-[20px] bg-newBgColor mobile:bg-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="hidden mobile:contents">
+                      <BottomSheetButton
+                        label={t('done', 'Done')}
+                        onClick={() => setShowSettings(false)}
                       />
                     </div>
+                    <style>
+                      {`#social-settings [data-id="${current}"] {display: block !important;}`}
+                    </style>
                   </div>
-                  <style>
-                    {`#social-settings [data-id="${current}"] {display: block !important;}`}
-                  </style>
                 </div>
               </div>
             </div>
           </div>
           <div
             className={clsx(
-              'w-[580px] tablet:w-[440px] mobile:!w-full flex flex-col mobile:order-3 mobile:flex-1',
+              'w-[580px] tablet:w-[440px] mobile:!w-full flex flex-col mobile:flex-1',
               mobileTab === 'edit' && 'mobile:hidden'
             )}
           >
@@ -648,21 +816,17 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             <div className="flex-1 relative">
               <Scrollable
                 scrollClasses="!pe-[20px]"
-                className="absolute mobile:static top-0 p-[20px] pe-[8px] mobile:p-[12px] left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
+                className="absolute mobile:static top-0 p-[20px] pe-[8px] mobile:p-[16px] left-0 w-full h-full mobile:h-auto overflow-x-hidden overflow-y-scroll mobile:overflow-y-visible scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner"
               >
                 <ShowAllProviders ref={ref} />
               </Scrollable>
             </div>
           </div>
         </div>
-        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center mobile:contents">
-          <div
-            className={clsx(
-              'flex-1 flex ps-[20px] gap-[8px] mobile:order-2 mobile:flex-wrap mobile:flex-none mobile:p-[12px]',
-              mobileTab === 'preview' && 'mobile:hidden'
-            )}
-          >
-            {!dummy && (
+        <div className="select-none h-[84px] py-[20px] border-t border-newBorder flex items-center mobile:hidden">
+          <div className="flex-1 flex ps-[20px] gap-[8px]">
+            {/* keep a single tags component mounted, the tags sheet has its own */}
+            {!dummy && mobileSheet !== 'tags' && (
               <TagsComponent
                 name="tags"
                 label={t('tags', 'Tags')}
@@ -677,7 +841,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               <RepeatComponent repeat={repeater} onChange={setRepeater} />
             )}
           </div>
-          <div className="pe-[20px] flex items-center justify-end gap-[8px] mobile:order-4 mobile:sticky mobile:bottom-0 mobile:z-[20] mobile:mt-auto mobile:flex-wrap mobile:p-[12px] mobile:bg-newBgColorInner mobile:border-t mobile:border-newBorder">
+          <div className="pe-[20px] flex items-center justify-end gap-[8px]">
             {existingData?.integration && (
               <button
                 onClick={deletePost}
@@ -710,7 +874,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
             )}
             {addEditSets && (
               <button
-                className="text-white text-[15px] font-[600] min-w-[180px] mobile:basis-full btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
+                className="text-white text-[15px] font-[600] min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 disabled={
                   selectedIntegrations.length === 0 || loading || locked
                 }
@@ -720,16 +884,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
               </button>
             )}
             {!addEditSets && (
-              <div
-                ref={postNowRef}
-                className="group cursor-pointer relative mobile:basis-full"
-              >
+              <div ref={postNowRef} className="group cursor-pointer relative">
                 <button
                   disabled={
                     selectedIntegrations.length === 0 || loading || locked
                   }
                   onClick={schedule('schedule')}
-                  className="text-white relative min-w-[180px] mobile:w-full btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
+                  className="text-white relative min-w-[180px] btnSub disabled:cursor-not-allowed disabled:opacity-80 outline-none gap-[8px] flex justify-center items-center h-[44px] rounded-[8px] bg-[#612BD3] ps-[20px] pe-[16px]"
                 >
                   {loading && (
                     <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%]">
@@ -738,19 +899,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                   )}
                   <div
                     className={clsx(
-                      'text-[15px] font-[600] mobile:flex-1',
+                      'text-[15px] font-[600]',
                       loading && 'invisible'
                     )}
                   >
                     {selectedIntegrations.length === 0
                       ? t('check_circles_above', 'Check the circles above')
-                      : dummy
-                      ? t('create_output', 'Create output')
-                      : !existingData?.integration
-                      ? t('add_to_calendar', 'Add to calendar')
-                      : existingData?.posts?.[0]?.state === 'DRAFT'
-                      ? t('schedule', 'Schedule')
-                      : t('update', 'Update')}
+                      : scheduleLabel}
                   </div>
                   {!dummy && (
                     <div
@@ -758,7 +913,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                         e.stopPropagation();
                         setShowPostNow(!showPostNow);
                       }}
-                      className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] mobile:pt-0 mobile:h-[44px] mobile:w-[44px] mobile:-me-[16px] mobile:border-s mobile:border-white/20 arrow-change"
+                      className="flex justify-center items-center h-[20px] w-[20px] pt-[4px] arrow-change"
                     >
                       <DropdownArrowSmallIcon
                         className={clsx(
@@ -777,7 +932,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       selectedIntegrations.length === 0 || loading || locked
                     }
                     className={clsx(
-                      'rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 absolute bottom-[100%] -left-[12px] mobile:left-0 p-[12px] mobile:px-0 w-[206px] mobile:w-full bg-newBgColorInner',
+                      'rounded-[8px] z-[300] disabled:cursor-not-allowed disabled:opacity-80 absolute bottom-[100%] -left-[12px] p-[12px] w-[206px] bg-newBgColorInner',
                       showPostNow ? 'flex' : 'hidden group-hover:flex'
                     )}
                   >
@@ -791,8 +946,131 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           </div>
         </div>
       </div>
+      {mobileSheet === 'channels' && (
+        <BottomSheet
+          title={t('select_channels', 'Select Channels')}
+          onClose={() => setMobileSheet(null)}
+          button={{
+            label: t('done', 'Done'),
+            onClick: () => setMobileSheet(null),
+            disabled: selectedIntegrations.length === 0,
+          }}
+        >
+          {!dummy && (
+            <div className="flex pb-[8px] empty:hidden">
+              <SelectCustomer
+                onChange={changeCustomer}
+                integrations={integrations}
+              />
+            </div>
+          )}
+          <PicksSocialsComponent list={true} />
+        </BottomSheet>
+      )}
+      {mobileSheet === 'settings' && (
+        <BottomSheet
+          title={t('settings', 'Settings')}
+          onClose={() => setMobileSheet(null)}
+        >
+          <div className="flex flex-col gap-[12px] pb-[30px]">
+            {hasChannelSettings && (
+              <BottomSheetRow
+                icon={<SettingsOutlineIcon size={24} />}
+                label={
+                  current === 'global'
+                    ? t('channels_settings', 'Channel Settings')
+                    : `${integrations.find((p) => p.id === current)?.name} ${t(
+                        'channel_settings',
+                        'Settings'
+                      )}`
+                }
+                onClick={() => {
+                  setMobileSheet(null);
+                  setShowSettings(true);
+                }}
+              />
+            )}
+            <BottomSheetRow
+              icon={<TagIcon width={24} height={24} />}
+              label={t('add_tag', 'Add Tag')}
+              onClick={() => setMobileSheet('tags')}
+            />
+            <BottomSheetRow
+              icon={<RepeatIcon size={24} />}
+              label={t('repeat_post', 'Repeat Post')}
+              onClick={() => setMobileSheet('repeat')}
+            />
+            {existingData?.integration && (
+              <div
+                onClick={deletePost}
+                className="flex items-center gap-[12px] py-[8px] cursor-pointer text-[#FF3F3F]"
+              >
+                <TrashIcon size={24} />
+                <div className="text-[15px] font-[600]">
+                  {t('delete_post', 'Delete Post')}
+                </div>
+              </div>
+            )}
+          </div>
+        </BottomSheet>
+      )}
+      {mobileSheet === 'tags' && (
+        <BottomSheet
+          title={t('add_tag', 'Add Tag')}
+          onClose={() => setMobileSheet(null)}
+          button={{
+            label: t('done', 'Done'),
+            onClick: () => setMobileSheet(null),
+          }}
+        >
+          <TagsComponent
+            name="tags"
+            label={t('tags', 'Tags')}
+            initial={tags}
+            onChange={(e) => {
+              setTags(e.target.value);
+            }}
+            list={true}
+          />
+        </BottomSheet>
+      )}
+      {mobileSheet === 'date' && (
+        <BottomSheet
+          title={t('change_date_or_time', 'Change Date or Time')}
+          onClose={() => setMobileSheet(null)}
+          button={{
+            label: t('save', 'Save'),
+            onClick: () => {
+              setDate(dateDraft);
+              setMobileSheet(null);
+            },
+          }}
+        >
+          <DatePickerPanel
+            date={dateDraft}
+            onChange={setDateDraft}
+            sheet={true}
+          />
+        </BottomSheet>
+      )}
+      {mobileSheet === 'repeat' && (
+        <BottomSheet
+          title={t('repeat_post', 'Repeat Post')}
+          onClose={() => setMobileSheet(null)}
+          button={{
+            label: t('done', 'Done'),
+            onClick: () => setMobileSheet(null),
+          }}
+        >
+          <RepeatComponent
+            repeat={repeater}
+            onChange={setRepeater}
+            list={true}
+          />
+        </BottomSheet>
+      )}
       <CopilotPopup
-        className="mobile:!bottom-[136px]"
+        className="mobile:!z-[460] mobile:!bottom-[112px]"
         hitEscapeToClose={false}
         clickOutsideToClose={true}
         instructions={`

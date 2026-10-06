@@ -655,6 +655,8 @@
   "payment_required": "Yêu cầu thanh toán",
   "no_content": "không có nội dung",
   "select_customer_tooltip": "Chọn khách hàng",
+  "select_channels_tooltip": "Chọn kênh",
+  "select_all": "Chọn tất cả",
   "customers": "Khách hàng",
   "hour": "Giờ",
   "minutes": "Phút",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Ví",
-  "auth_method_generic": "Đăng nhập một lần"
+  "auth_method_generic": "Đăng nhập một lần",
+  "done": "Xong",
+  "add_tag": "Thêm thẻ",
+  "repeat_post": "Lặp lại bài đăng",
+  "do_not_repeat": "Không lặp lại",
+  "change_date_or_time": "Thay đổi ngày hoặc giờ",
+  "time": "Giờ",
+  "channels_settings": "Cài đặt kênh",
+  "delete_selected": "Xóa mục đã chọn",
+  "are_you_sure_you_want_to_delete_selected_media": "Bạn có chắc muốn xóa phương tiện đã chọn không?"
 }

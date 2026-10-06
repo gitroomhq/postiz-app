@@ -655,6 +655,8 @@
   "payment_required": "Pagamento Necessário",
   "no_content": "sem conteúdo",
   "select_customer_tooltip": "Selecionar cliente",
+  "select_channels_tooltip": "Selecionar canais",
+  "select_all": "Selecionar todos",
   "customers": "Clientes",
   "hour": "Hora",
   "minutes": "Minutos",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "Carteira",
-  "auth_method_generic": "Login único"
+  "auth_method_generic": "Login único",
+  "done": "Concluído",
+  "add_tag": "Adicionar tag",
+  "repeat_post": "Repetir post",
+  "do_not_repeat": "Não repetir",
+  "change_date_or_time": "Alterar data ou hora",
+  "time": "Hora",
+  "channels_settings": "Configurações do canal",
+  "delete_selected": "Excluir selecionados",
+  "are_you_sure_you_want_to_delete_selected_media": "Tem certeza de que deseja excluir as mídias selecionadas?"
 }

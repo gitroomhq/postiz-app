@@ -655,6 +655,8 @@
   "payment_required": "需要付款",
   "no_content": "无内容",
   "select_customer_tooltip": "选择客户",
+  "select_channels_tooltip": "选择频道",
+  "select_all": "全选",
   "customers": "客户",
   "hour": "小时",
   "minutes": "分钟",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "钱包",
-  "auth_method_generic": "单点登录"
+  "auth_method_generic": "单点登录",
+  "done": "完成",
+  "add_tag": "添加标签",
+  "repeat_post": "重复发布",
+  "do_not_repeat": "不重复",
+  "change_date_or_time": "更改日期或时间",
+  "time": "时间",
+  "channels_settings": "频道设置",
+  "delete_selected": "删除所选",
+  "are_you_sure_you_want_to_delete_selected_media": "你确定要删除所选媒体吗？"
 }

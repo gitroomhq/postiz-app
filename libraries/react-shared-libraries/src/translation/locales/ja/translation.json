@@ -655,6 +655,8 @@
   "payment_required": "お支払いが必要です",
   "no_content": "内容なし",
   "select_customer_tooltip": "顧客を選択",
+  "select_channels_tooltip": "チャンネルを選択",
+  "select_all": "すべて選択",
   "customers": "顧客",
   "hour": "時間",
   "minutes": "分",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "ウォレット",
-  "auth_method_generic": "シングルサインオン"
+  "auth_method_generic": "シングルサインオン",
+  "done": "完了",
+  "add_tag": "タグを追加",
+  "repeat_post": "投稿を繰り返す",
+  "do_not_repeat": "繰り返さない",
+  "change_date_or_time": "日付または時刻を変更",
+  "time": "時刻",
+  "channels_settings": "チャンネル設定",
+  "delete_selected": "選択したものを削除",
+  "are_you_sure_you_want_to_delete_selected_media": "選択したメディアを削除してもよろしいですか？"
 }

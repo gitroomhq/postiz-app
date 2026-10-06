@@ -655,6 +655,8 @@
   "payment_required": "결제가 필요합니다",
   "no_content": "내용 없음",
   "select_customer_tooltip": "고객 선택",
+  "select_channels_tooltip": "채널 선택",
+  "select_all": "모두 선택",
   "customers": "고객",
   "hour": "시간",
   "minutes": "분",
@@ -816,5 +818,14 @@
   "auth_method_apple": "Apple",
   "auth_method_farcaster": "Farcaster",
   "auth_method_wallet": "지갑",
-  "auth_method_generic": "싱글 사인온"
+  "auth_method_generic": "싱글 사인온",
+  "done": "완료",
+  "add_tag": "태그 추가",
+  "repeat_post": "게시물 반복",
+  "do_not_repeat": "반복 안 함",
+  "change_date_or_time": "날짜 또는 시간 변경",
+  "time": "시간",
+  "channels_settings": "채널 설정",
+  "delete_selected": "선택 항목 삭제",
+  "are_you_sure_you_want_to_delete_selected_media": "선택한 미디어를 삭제하시겠습니까?"
 }

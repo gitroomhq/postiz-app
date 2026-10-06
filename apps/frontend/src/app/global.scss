@@ -599,6 +599,19 @@ html[dir='rtl'] [dir='ltr'] {
   outline: none;
 }
 
+// the composer on phones follows the app typography
+@media (max-width: 1025px) {
+  .flat-editor .ProseMirror {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .flat-editor .tiptap p.is-editor-empty:first-child::before {
+    color: #656464;
+  }
+}
+
 .ProseMirror .mention {
   font-weight: bold;
   color: #ae8afc;

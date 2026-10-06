@@ -196,7 +196,7 @@ export const Component: FC<{
                 ? modal.top
                   ? ''
                   : 'min-h-full pt-[100px] pb-[100px] mobile:pt-[24px] mobile:pb-[24px] mobile:px-[8px]'
-                : 'h-screen',
+                : 'h-screen mobile:h-dvh',
               modal.size && modal.height
                 ? 'flex justify-center items-center'
                 : 'top-0 left-0'

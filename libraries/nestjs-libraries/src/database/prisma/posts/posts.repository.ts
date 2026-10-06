@@ -302,6 +302,11 @@ export class PostsRepository {
               customerId: query.customer,
             }
           : {}),
+        ...(query.integrations
+          ? {
+              id: { in: query.integrations },
+            }
+          : {}),
       },
     };
 
