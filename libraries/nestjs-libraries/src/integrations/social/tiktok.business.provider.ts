@@ -491,7 +491,7 @@ export class TiktokBusinessProvider
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
-          : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
+          : this.postUrl(integration, pendingData.publishId, publicPostId),
         postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
@@ -931,6 +931,13 @@ export class TiktokBusinessProvider
     return videoListData?.data?.videos;
   }
 
+  // photo posts (p_pub_...) live under /photo/, TikTok rejects /video/ for them
+  private postUrl(integration: Integration, publishId: string, postId: string) {
+    return `https://www.tiktok.com/@${integration.profile}/${
+      publishId.indexOf('p_pub_') === 0 ? 'photo' : 'video'
+    }/${postId}`;
+  }
+
   // post_ids holds int64 ids that exceed Number.MAX_SAFE_INTEGER, so the id
   // must be read from the raw body instead of the parsed JSON
   private publicPostId(body: string) {
@@ -1112,10 +1119,20 @@ export class TiktokBusinessProvider
   async resolveReleaseId(
     accessToken: string,
     releaseId: string,
-    integration: Integration
+    integration: Integration,
+    settings: any
   ) {
     if (releaseId.indexOf('_pub_') === -1) {
       return undefined;
+    }
+
+    // privacy_level only applies to photo posts here, and TikTok only gives a
+    // post id to posts published for public viewership
+    if (
+      releaseId.indexOf('p_pub_') === 0 &&
+      ['SELF_ONLY', 'MUTUAL_FOLLOW_FRIENDS'].includes(settings?.privacy_level)
+    ) {
+      return { unavailable: true as const };
     }
 
     const body = await (
@@ -1136,12 +1153,12 @@ export class TiktokBusinessProvider
 
     const publicPostId = this.publicPostId(body);
     if (!publicPostId) {
-      return undefined;
+      return { pending: true as const };
     }
 
     return {
       postId: publicPostId,
-      releaseURL: `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
+      releaseURL: this.postUrl(integration, releaseId, publicPostId),
     };
   }
 
