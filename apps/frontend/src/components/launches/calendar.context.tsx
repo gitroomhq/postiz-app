@@ -84,6 +84,10 @@ export const CalendarContext = createContext({
   setListState: (state: ListStateFilter) => {
     /** empty **/
   },
+  selectedChannels: null as string[] | null,
+  setSelectedChannels: (channels: string[] | null) => {
+    /** empty **/
+  },
 });
 
 export interface Integrations {
@@ -174,12 +178,20 @@ export const CalendarWeekProvider: FC<{
       ? { startDate: initStartDate, endDate: initEndDate }
       : getDateRange(display);
 
+  const [selectedChannels, setSelectedChannels] = useState<string[] | null>(
+    null
+  );
+
   const [filters, setFilters] = useState({
     startDate: initialRange.startDate,
     endDate: initialRange.endDate,
     customer: initCustomer || null,
     display,
   });
+
+  useEffect(() => {
+    setSelectedChannels(null);
+  }, [filters.customer]);
 
   const params = useMemo(() => {
     return new URLSearchParams({
@@ -302,11 +314,22 @@ export const CalendarWeekProvider: FC<{
     []
   );
 
+  const filterByChannels = useCallback(
+    (list: any[]) =>
+      selectedChannels
+        ? list.filter((p) => selectedChannels.includes(p.integration.id))
+        : list,
+    [selectedChannels]
+  );
+
   const posts = useMemo(() => calendarData?.posts || [], [calendarData?.posts]);
   const comments = useMemo(() => calendarData?.comments || [], [calendarData?.comments]);
 
   // List view data
-  const listPosts = useMemo(() => listData?.posts || [], [listData?.posts]);
+  const listPosts = useMemo(
+    () => filterByChannels(listData?.posts || []),
+    [listData?.posts, filterByChannels]
+  );
   const listTotal = listData?.total || 0;
   const listTotalPages = Math.ceil(listTotal / 100);
 
@@ -348,7 +371,7 @@ export const CalendarWeekProvider: FC<{
         trendings,
         reloadCalendarView,
         ...filters,
-        posts: calendarIsLoading ? [] : internalData,
+        posts: calendarIsLoading ? [] : filterByChannels(internalData),
         loading,
         integrations,
         setFilters: setFiltersWrapper,
@@ -363,6 +386,8 @@ export const CalendarWeekProvider: FC<{
         setListPage,
         listState,
         setListState,
+        selectedChannels,
+        setSelectedChannels,
       }}
     >
       {children}
