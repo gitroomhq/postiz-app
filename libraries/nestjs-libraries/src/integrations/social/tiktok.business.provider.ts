@@ -1177,6 +1177,16 @@ export class TiktokBusinessProvider
     };
   }
 
+  // a post connected by hand: /video/<id> also reaches photo posts, TikTok
+  // redirects it to /photo/<id>
+  async releaseUrl(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration
+  ) {
+    return `https://www.tiktok.com/@${integration.profile}/video/${releaseId}`;
+  }
+
   async postAnalytics(
     integrationId: string,
     accessToken: string,
