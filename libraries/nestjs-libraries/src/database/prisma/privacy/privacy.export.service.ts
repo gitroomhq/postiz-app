@@ -22,10 +22,7 @@ export class PrivacyExportService {
         'The export target must be the authorized workspace.'
       );
     }
-    const data =
-      input.target === 'person'
-        ? await this.person(input.targetId)
-        : await this._exports.workspace(input.targetId);
+    const data = await this._exports.snapshot(input.target, input.targetId);
     if (!data) throw new NotFoundException('Export target not found.');
     this.checkSize(data, input.target === 'workspace' ? 'workspace' : '');
     const result = {
@@ -77,15 +74,5 @@ export class PrivacyExportService {
         this.checkSize(item, path ? `${path}.${key}` : key);
       }
     }
-  }
-
-  private async person(id: string) {
-    const person = await this._exports.person(id);
-    if (!person) return null;
-    const [messages, orders] = await Promise.all([
-      this._exports.personMessages(id),
-      this._exports.personOrders(id),
-    ]);
-    return { person, messages, orders };
   }
 }

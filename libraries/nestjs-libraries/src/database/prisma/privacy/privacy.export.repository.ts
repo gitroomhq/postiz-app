@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, PayloadTooLargeException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 
@@ -479,6 +479,7 @@ const workspaceSelect = {
 export class PrivacyExportRepository {
   constructor(
     private _db: PrismaRepository<
+      | '$transaction'
       | 'user'
       | 'organization'
       | 'comments'
@@ -490,8 +491,8 @@ export class PrivacyExportRepository {
     >
   ) {}
 
-  person(id: string) {
-    return this._db.model.user.findUnique({
+  private person(id: string, tx: Prisma.TransactionClient) {
+    return tx.user.findUnique({
       where: {
         id,
       },
@@ -499,8 +500,11 @@ export class PrivacyExportRepository {
     });
   }
 
-  personMessages(id: string) {
-    return this._db.model.messages.findMany({
+  personMessages(
+    id: string,
+    tx: Pick<Prisma.TransactionClient, 'messages'> = this._db.model
+  ) {
+    return tx.messages.findMany({
       take: 1001,
       where: {
         group: {
@@ -512,8 +516,8 @@ export class PrivacyExportRepository {
     });
   }
 
-  personOrders(id: string) {
-    return this._db.model.orders.findMany({
+  private personOrders(id: string, tx: Prisma.TransactionClient) {
+    return tx.orders.findMany({
       take: 1001,
       where: {
         OR: [{ buyerId: id }, { sellerId: id }],
@@ -523,12 +527,111 @@ export class PrivacyExportRepository {
     });
   }
 
-  workspace(id: string) {
-    return this._db.model.organization.findUnique({
-      where: {
-        id,
+  // Counts and contents must share a snapshot: writes between preflight and
+  // retrieval must not expand the graph after it has passed the row budget.
+  snapshot(target: 'person' | 'workspace', id: string) {
+    return this._db.model.$transaction(
+      async (tx) => {
+        if (target === 'workspace') {
+          const root = await tx.organization.findUnique({
+            where: { id },
+            select: {
+              _count: {
+                select: {
+                  users: true,
+                  post: true,
+                  media: true,
+                  Integration: true,
+                  Comments: true,
+                  tags: true,
+                  notifications: true,
+                  signatures: true,
+                  sets: true,
+                  customers: true,
+                  credits: true,
+                  clippings: true,
+                  github: true,
+                  thirdParty: true,
+                  oauthApp: true,
+                  oauthAuthorizations: true,
+                },
+              },
+            },
+          });
+          if (!root) return null;
+          this.checkCounts(root._count);
+          const [postTags, clips] = await Promise.all([
+            tx.tagsPosts.count({ where: { post: { organizationId: id } } }),
+            tx.clippingClip.count({
+              where: { clipping: { organizationId: id } },
+            }),
+          ]);
+          this.checkBudget([...Object.values(root._count), postTags, clips], 2);
+          return tx.organization.findUnique({
+            where: { id },
+            select: workspaceSelect,
+          });
+        }
+
+        const root = await tx.user.findUnique({
+          where: { id },
+          select: {
+            _count: {
+              select: {
+                organizations: true,
+                comments: true,
+                items: true,
+                payoutProblems: true,
+                oauthAuthorizations: true,
+              },
+            },
+            agencies: { select: { _count: { select: { niches: true } } } },
+          },
+        });
+        if (!root) return null;
+        const participant = { OR: [{ buyerId: id }, { sellerId: id }] };
+        const [messages, orders, orderItems] = await Promise.all([
+          tx.messages.count({ where: { group: participant } }),
+          tx.orders.count({ where: participant }),
+          tx.orderItems.count({ where: { order: participant } }),
+        ]);
+        const counts = {
+          ...root._count,
+          niches: root.agencies?._count.niches ?? 0,
+          messages,
+          orders,
+        };
+        this.checkCounts(counts);
+        // Four covers the user, profile picture, agency and agency logo.
+        this.checkBudget([...Object.values(counts), orderItems], 4);
+        const person = await this.person(id, tx);
+        const correspondence = await this.personMessages(id, tx);
+        const purchases = await this.personOrders(id, tx);
+        return { person, messages: correspondence, orders: purchases };
       },
-      select: workspaceSelect,
-    });
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+    );
+  }
+
+  private checkCounts(counts: Record<string, number>) {
+    for (const [category, count] of Object.entries(counts)) {
+      if (count > 1000) {
+        throw new PayloadTooLargeException(
+          `Data category ${category} exceeds 1,000 records. Request a complete manual controller export.`
+        );
+      }
+    }
+  }
+
+  private checkBudget(counts: number[], singleRecords: number) {
+    // Include nested join rows, rather than applying 1,001 independently to
+    // every parent and potentially loading millions of child rows.
+    if (
+      counts.reduce((total, count) => total + count, singleRecords) > 10_000
+    ) {
+      throw new PayloadTooLargeException(
+        'This export exceeds 10,000 total records including nested relations. Request a complete manual controller export.'
+      );
+    }
   }
 }
