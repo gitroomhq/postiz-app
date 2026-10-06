@@ -655,6 +655,8 @@
   "payment_required": "נדרש תשלום",
   "no_content": "אין תוכן",
   "select_customer_tooltip": "בחר לקוח",
+  "select_channels_tooltip": "בחר ערוצים",
+  "select_all": "בחר הכל",
   "customers": "לקוחות",
   "hour": "שעה",
   "minutes": "דקות",

@@ -659,6 +659,8 @@ checksums:
     payment_required: 3acec87fe94c0bdb92b35e3081f45061
     no_content: 1d2af798c895527a7f8a4c72c2571fdd
     select_customer_tooltip: 1cd2f6f08560b7ebcc9285e845557673
+    select_channels_tooltip: 3aab82dc90ccafe55059c32c5a33c222
+    select_all: eedc7cdb02de467c15dc418a066a77f2
     customers: c31a0dfd0d92496ba6f5673781db24ef
     hour: ec3113f22fc51d01f0c615c5496f8f87
     minutes: c5442938e948e2e3937fb812cf68869c

@@ -655,6 +655,8 @@
   "payment_required": "الدفع مطلوب",
   "no_content": "لا يوجد محتوى",
   "select_customer_tooltip": "اختر العميل",
+  "select_channels_tooltip": "اختر القنوات",
+  "select_all": "تحديد الكل",
   "customers": "العملاء",
   "hour": "ساعة",
   "minutes": "دقائق",

@@ -657,6 +657,8 @@
   "payment_required": "Payment Required",
   "no_content": "no content",
   "select_customer_tooltip": "Select Customer",
+  "select_channels_tooltip": "Select Channels",
+  "select_all": "Select all",
   "customers": "Customers",
   "hour": "Hour",
   "minutes": "Minutes",

@@ -391,6 +391,27 @@ export const UserIcon: FC<IconProps> = ({ size = 20, className, ...props }) => (
   </svg>
 );
 
+// Filter Icon
+export const FilterIcon: FC<IconProps> = ({ size = 20, className, ...props }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 20 20"
+    fill="none"
+    className={className}
+    {...props}
+  >
+    <path
+      d="M2.5 4.16667H17.5L11.6667 10.8333V15.8333L8.33333 14.1667V10.8333L2.5 4.16667Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 // Expand Icon
 export const ExpandIcon: FC<IconProps> = ({
   size = 24,

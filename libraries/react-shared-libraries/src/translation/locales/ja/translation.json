@@ -655,6 +655,8 @@
   "payment_required": "お支払いが必要です",
   "no_content": "内容なし",
   "select_customer_tooltip": "顧客を選択",
+  "select_channels_tooltip": "チャンネルを選択",
+  "select_all": "すべて選択",
   "customers": "顧客",
   "hour": "時間",
   "minutes": "分",

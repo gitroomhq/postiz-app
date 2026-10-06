@@ -655,6 +655,8 @@
   "payment_required": "পেমেন্ট প্রয়োজন",
   "no_content": "কোনো বিষয়বস্তু নেই",
   "select_customer_tooltip": "গ্রাহক নির্বাচন করুন",
+  "select_channels_tooltip": "চ্যানেলগুলি নির্বাচন করুন",
+  "select_all": "সমস্ত নির্বাচন করুন",
   "customers": "গ্রাহকগণ",
   "hour": "ঘণ্টা",
   "minutes": "মিনিট",
