@@ -796,5 +796,14 @@
   "preview_comment_detach_hint": "Comments on selected text lose their highlight if the text is edited later.",
   "preview_comment_text_changed": "Text changed",
   "preview_no_comments_yet": "No comments yet. Select some text in the post to comment on it, or add a general comment.",
-  "some_files_failed_to_upload": "Some files failed to upload, please try again"
+  "some_files_failed_to_upload": "Some files failed to upload, please try again",
+  "done": "Done",
+  "add_tag": "Add Tag",
+  "repeat_post": "Repeat Post",
+  "do_not_repeat": "Do Not Repeat",
+  "change_date_or_time": "Change Date or Time",
+  "time": "Time",
+  "channels_settings": "Channel Settings",
+  "delete_selected": "Delete Selected",
+  "are_you_sure_you_want_to_delete_selected_media": "Are you sure you want to delete the selected media?"
 }

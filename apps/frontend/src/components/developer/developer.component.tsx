@@ -5,7 +5,10 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useDecisionModal, useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { MediaBox } from '@gitroom/frontend/components/media/media.component';
+import {
+  MediaBox,
+  mediaLibrarySize,
+} from '@gitroom/frontend/components/media/media.component';
 import copy from 'copy-to-clipboard';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
@@ -102,8 +105,8 @@ export const DeveloperComponent: FC = () => {
       askClose: false,
       closeOnEscape: true,
       fullScreen: true,
-      size: 'calc(100% - 80px)',
-      height: 'calc(100% - 80px)',
+      size: mediaLibrarySize(),
+      height: mediaLibrarySize(),
       children: (close: () => void) => (
         <MediaBox
           setMedia={changeMedia}

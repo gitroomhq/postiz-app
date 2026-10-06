@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "선택한 텍스트에 단 댓글은, 텍스트가 나중에 수정되면 강조가 사라집니다.",
   "preview_comment_text_changed": "텍스트가 변경됨",
   "preview_no_comments_yet": "아직 댓글이 없습니다. 게시물에서 텍스트를 선택해 댓글을 남기거나, 일반 댓글을 추가하세요.",
-  "some_files_failed_to_upload": "일부 파일을 업로드하지 못했습니다. 다시 시도해 주세요."
+  "some_files_failed_to_upload": "일부 파일을 업로드하지 못했습니다. 다시 시도해 주세요.",
+  "done": "완료",
+  "add_tag": "태그 추가",
+  "repeat_post": "게시물 반복",
+  "do_not_repeat": "반복 안 함",
+  "change_date_or_time": "날짜 또는 시간 변경",
+  "time": "시간",
+  "channels_settings": "채널 설정",
+  "delete_selected": "선택 항목 삭제",
+  "are_you_sure_you_want_to_delete_selected_media": "선택한 미디어를 삭제하시겠습니까?"
 }

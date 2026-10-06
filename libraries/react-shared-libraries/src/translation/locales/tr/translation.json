@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "Seçili metindeki yorumlar, metin daha sonra değiştirilirse vurgusunu kaybeder.",
   "preview_comment_text_changed": "Metin değişti",
   "preview_no_comments_yet": "Henüz yorum yok. Yorum yapmak için gönderide bir metin seçin veya genel bir yorum ekleyin.",
-  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin"
+  "some_files_failed_to_upload": "Bazı dosyalar yüklenemedi, lütfen tekrar deneyin",
+  "done": "Bitti",
+  "add_tag": "Etiket Ekle",
+  "repeat_post": "Gönderiyi Tekrarla",
+  "do_not_repeat": "Tekrarlama",
+  "change_date_or_time": "Tarihi veya Saati Değiştir",
+  "time": "Saat",
+  "channels_settings": "Kanal Ayarları",
+  "delete_selected": "Seçilenleri sil",
+  "are_you_sure_you_want_to_delete_selected_media": "Seçili medyayı silmek istediğinizden emin misiniz?"
 }

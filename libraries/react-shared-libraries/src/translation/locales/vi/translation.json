@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "Bình luận trên đoạn văn bản được chọn sẽ mất nổi bật nếu văn bản bị chỉnh sửa sau đó.",
   "preview_comment_text_changed": "Nội dung đã thay đổi",
   "preview_no_comments_yet": "Chưa có bình luận nào. Chọn một đoạn văn bản trong bài viết để bình luận, hoặc thêm bình luận chung.",
-  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại"
+  "some_files_failed_to_upload": "Một số tệp không tải lên được, vui lòng thử lại",
+  "done": "Xong",
+  "add_tag": "Thêm thẻ",
+  "repeat_post": "Lặp lại bài đăng",
+  "do_not_repeat": "Không lặp lại",
+  "change_date_or_time": "Thay đổi ngày hoặc giờ",
+  "time": "Giờ",
+  "channels_settings": "Cài đặt kênh",
+  "delete_selected": "Xóa mục đã chọn",
+  "are_you_sure_you_want_to_delete_selected_media": "Bạn có chắc muốn xóa phương tiện đã chọn không?"
 }

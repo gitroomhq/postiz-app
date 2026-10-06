@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "Kommentare zu ausgewähltem Text verlieren ihre Markierung, wenn der Text später bearbeitet wird.",
   "preview_comment_text_changed": "Text geändert",
   "preview_no_comments_yet": "Noch keine Kommentare. Wählen Sie einen Text im Beitrag aus, um ihn zu kommentieren, oder fügen Sie einen allgemeinen Kommentar hinzu.",
-  "some_files_failed_to_upload": "Einige Dateien konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut."
+  "some_files_failed_to_upload": "Einige Dateien konnten nicht hochgeladen werden. Bitte versuchen Sie es erneut.",
+  "done": "Fertig",
+  "add_tag": "Schlagwort hinzufügen",
+  "repeat_post": "Beitrag wiederholen",
+  "do_not_repeat": "Nicht wiederholen",
+  "change_date_or_time": "Datum oder Uhrzeit ändern",
+  "time": "Uhrzeit",
+  "channels_settings": "Kanaleinstellungen",
+  "delete_selected": "Ausgewählte löschen",
+  "are_you_sure_you_want_to_delete_selected_media": "Bist du sicher, dass du die ausgewählten Medien löschen möchtest?"
 }

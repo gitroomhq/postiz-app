@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "Les commentaires sur le texte sélectionné perdent leur surlignement si le texte est modifié par la suite.",
   "preview_comment_text_changed": "Texte modifié",
   "preview_no_comments_yet": "Aucun commentaire pour le moment. Sélectionnez du texte dans la publication pour le commenter, ou ajoutez un commentaire général.",
-  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer."
+  "some_files_failed_to_upload": "Échec du téléversement de certains fichiers, veuillez réessayer.",
+  "done": "Terminé",
+  "add_tag": "Ajouter un tag",
+  "repeat_post": "Répéter la publication",
+  "do_not_repeat": "Ne pas répéter",
+  "change_date_or_time": "Modifier la date ou l'heure",
+  "time": "Heure",
+  "channels_settings": "Paramètres des canaux",
+  "delete_selected": "Supprimer la sélection",
+  "are_you_sure_you_want_to_delete_selected_media": "Êtes-vous sûr de vouloir supprimer les médias sélectionnés ?"
 }

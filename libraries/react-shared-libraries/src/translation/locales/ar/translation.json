@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "التعليقات على النص المحدد تفقد تمييزها إذا تم تعديل النص لاحقًا.",
   "preview_comment_text_changed": "تم تغيير النص",
   "preview_no_comments_yet": "لا توجد تعليقات بعد. حدد بعض النص في المنشور للتعليق عليه، أو أضف تعليقًا عامًا.",
-  "some_files_failed_to_upload": "فشل تحميل بعض الملفات، يرجى المحاولة مرة أخرى"
+  "some_files_failed_to_upload": "فشل تحميل بعض الملفات، يرجى المحاولة مرة أخرى",
+  "done": "تم",
+  "add_tag": "إضافة وسم",
+  "repeat_post": "تكرار المنشور",
+  "do_not_repeat": "عدم التكرار",
+  "change_date_or_time": "تغيير التاريخ أو الوقت",
+  "time": "الوقت",
+  "channels_settings": "إعدادات القناة",
+  "delete_selected": "حذف المحدد",
+  "are_you_sure_you_want_to_delete_selected_media": "هل أنت متأكد أنك تريد حذف الوسائط المحددة؟"
 }

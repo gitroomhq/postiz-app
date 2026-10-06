@@ -181,7 +181,7 @@ export const ThirdPartyMedia: FC<{
 
   return (
     <>
-      <div className="relative group">
+      <div className="relative group mobile:hidden">
         <div
           className={clsx(
             'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]'

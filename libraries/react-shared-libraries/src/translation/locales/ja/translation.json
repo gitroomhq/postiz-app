@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "選択テキストへのコメントは、テキストが後から編集されるとハイライトが失われます。",
   "preview_comment_text_changed": "テキストが変更されました",
   "preview_no_comments_yet": "まだコメントはありません。投稿内のテキストを選択してコメントするか、一般的なコメントを追加してください。",
-  "some_files_failed_to_upload": "いくつかのファイルのアップロードに失敗しました。もう一度お試しください。"
+  "some_files_failed_to_upload": "いくつかのファイルのアップロードに失敗しました。もう一度お試しください。",
+  "done": "完了",
+  "add_tag": "タグを追加",
+  "repeat_post": "投稿を繰り返す",
+  "do_not_repeat": "繰り返さない",
+  "change_date_or_time": "日付または時刻を変更",
+  "time": "時刻",
+  "channels_settings": "チャンネル設定",
+  "delete_selected": "選択したものを削除",
+  "are_you_sure_you_want_to_delete_selected_media": "選択したメディアを削除してもよろしいですか？"
 }

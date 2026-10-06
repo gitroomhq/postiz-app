@@ -241,6 +241,13 @@ export const EditorWrapper: FC<{
     return global;
   }, [internal, global]);
 
+  // phones show one toolbar, for the post that is being edited
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
+  // without comments only the first post is shown
+  const last = comments ? items.length - 1 : 0;
+  const active = canEdit ? Math.min(activeIndex ?? last, last) : -1;
+
   const setValue = useCallback(
     (value: string[]) => {
       const newValue = value.map((p, index) => {
@@ -317,6 +324,7 @@ export const EditorWrapper: FC<{
 
   const changeOrder = useCallback(
     (index: number) => (direction: 'up' | 'down') => {
+      setFocusIndex(null);
       if (internal) {
         changeOrderInternal(current, index, direction);
         return setLoaded(false);
@@ -351,6 +359,10 @@ export const EditorWrapper: FC<{
           top: document.querySelector('#social-content').scrollHeight,
         });
       }, 20);
+      setActiveIndex(index + 1);
+      if (window.matchMedia('(max-width: 1025px)').matches) {
+        setFocusIndex(index + 1);
+      }
       if (internal) {
         return addInternalValue(index, current, [
           {
@@ -388,6 +400,8 @@ export const EditorWrapper: FC<{
         return;
       }
 
+      setActiveIndex((p) => (p !== null && p > index ? p - 1 : p));
+      setFocusIndex(null);
       if (internal) {
         deleteInternalValue(current, index);
         return setLoaded(false);
@@ -399,6 +413,41 @@ export const EditorWrapper: FC<{
     [current, global, internal, t]
   );
 
+  const postButtons = (index: number) => (
+    <div className="flex items-center mobile:flex-row-reverse mobile:gap-[8px]">
+      <div className="flex-1 mobile:flex-none mobile:empty:hidden">
+        {comments && (
+          <AddPostButton
+            num={index}
+            onClick={addValue(index)}
+            postComment={postComment}
+          />
+        )}
+      </div>
+      {!!internal && !existingData?.integration && (
+        <div
+          className="mt-[12px] flex gap-[20px] items-center cursor-pointer select-none mobile:mt-0 mobile:w-[40px] mobile:h-[40px] mobile:justify-center mobile:rounded-[8px] mobile:bg-btnSimple"
+          onClick={goBackToGlobal}
+        >
+          <div className="flex gap-[6px] items-center mobile:hidden">
+            <div className="w-[8px] h-[8px] rounded-full bg-[#FC69FF]" />
+            <div className="text-[14px] font-[600]">
+              {t('editing_a_specific_network', 'Editing a Specific Network')}
+            </div>
+          </div>
+          <div className="flex gap-[6px] items-center">
+            <div>
+              <ResetIcon />
+            </div>
+            <div className="text-[13px] font-[600] mobile:hidden">
+              {t('back_to_global', 'Back to global')}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   if (!loaded || !loadedState) {
     return null;
   }
@@ -406,10 +455,11 @@ export const EditorWrapper: FC<{
   return (
     <div
       className={clsx(
-        'relative flex-col gap-[20px] flex-1 min-w-0',
+        // on phones the toolbar is fixed at the bottom, the posts leave room for it
+        'relative flex-col gap-[20px] flex-1 min-w-0 mobile:flex mobile:gap-0 mobile:pb-[64px]',
         (items.length === 1 || !canEdit || !comments) && 'flex',
         ((!canEdit && !isCreateSet) || !comments) &&
-          'bg-newSettings rounded-[12px]'
+          'bg-newSettings mobile:bg-transparent rounded-[12px]'
       )}
     >
       {isCreateSet && current !== 'global' && (
@@ -419,16 +469,16 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
                 <LockIcon />
               </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80 mobile:bg-newBgColorInner mobile:opacity-100" />
             </div>
-            <div className="text-[14px] font-[600] text-white">
+            <div className="text-[14px] font-[600] text-white mobile:text-textColor">
               {t(
                 'cant_edit_networks_when_creating_set',
                 "You can't edit networks when creating a set"
               )}
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 mobile:bg-newSettings mobile:opacity-100 z-[100] rounded-[12px]" />
         </>
       )}
       {!canEdit && !isCreateSet && (
@@ -444,9 +494,9 @@ export const EditorWrapper: FC<{
               <div className="w-[54px] h-[54px] rounded-full absolute z-[101] flex justify-center items-center">
                 <LockIcon />
               </div>
-              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80" />
+              <div className="w-[54px] h-[54px] rounded-full bg-newSettings opacity-80 mobile:bg-newBgColorInner mobile:opacity-100" />
             </div>
-            <div className="text-[14px] font-[600] text-white">
+            <div className="text-[14px] font-[600] text-white mobile:text-textColor">
               {t(
                 'click_to_exit_global_editing',
                 'Click this button to exit global editing and customize the post for this channel'
@@ -458,28 +508,36 @@ export const EditorWrapper: FC<{
               </div>
             </div>
           </div>
-          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 z-[100] rounded-[12px]" />
+          <div className="absolute w-full h-full left-0 top-0 bg-newBackdrop opacity-60 mobile:bg-newSettings mobile:opacity-100 z-[100] rounded-[12px]" />
         </>
       )}
       {items.map((g, index) => (
         <div
           key={g.id}
           className={clsx(
-            'relative flex flex-col gap-[20px] flex-1 bg-newSettings',
+            'relative flex flex-col gap-[20px] flex-1 bg-newSettings mobile:bg-transparent',
+            index !== last && 'mobile:flex-none',
             index === 0 && 'rounded-t-[12px]',
             (index === items.length - 1 || !comments) && 'rounded-b-[12px]',
             !canEdit && !isCreateSet && 'blur-s',
             ((!canEdit && index > 0) || (!comments && index > 0)) && 'hidden'
           )}
         >
-          <div className="flex gap-[5px] flex-1 w-full min-w-0">
+          <div className="flex gap-[5px] mobile:gap-[16px] flex-1 w-full min-w-0">
             <div className="flex-1 flex w-full min-w-0">
               {index > 0 && (
-                <div className="flex justify-center pl-[12px] text-newSep">
+                <div className="flex justify-center pl-[12px] text-newSep mobile:hidden">
                   <ConnectionLineIcon />
                 </div>
               )}
               <Editor
+                flat={true}
+                active={active === index}
+                autoFocus={focusIndex === index}
+                onActive={() => {
+                  setActiveIndex(index);
+                  setFocusIndex(null);
+                }}
                 comments={comments}
                 editorType={editor}
                 inlineImages={editor === 'html' && inlineImages && index === 0}
@@ -500,55 +558,29 @@ export const EditorWrapper: FC<{
                 selectedIntegration={selectedIntegration}
                 chars={chars}
                 childButton={
-                  <>
-                    {(canEdit && items.length - 1 === index) || !comments ? (
-                      <div className="flex items-center">
-                        <div className="flex-1">
-                          {comments && (
-                            <AddPostButton
-                              num={index}
-                              onClick={addValue(index)}
-                              postComment={postComment}
-                            />
-                          )}
-                        </div>
-                        {!!internal && !existingData?.integration && (
-                          <div
-                            className="mt-[12px] flex gap-[20px] items-center cursor-pointer select-none"
-                            onClick={goBackToGlobal}
-                          >
-                            <div className="flex gap-[6px] items-center">
-                              <div className="w-[8px] h-[8px] rounded-full bg-[#FC69FF]" />
-                              <div className="text-[14px] font-[600]">
-                                {t(
-                                  'editing_a_specific_network',
-                                  'Editing a Specific Network'
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex gap-[6px] items-center">
-                              <div>
-                                <ResetIcon />
-                              </div>
-                              <div className="text-[13px] font-[600]">
-                                {t('back_to_global', 'Back to global')}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-                  </>
+                  (canEdit && items.length - 1 === index) || !comments
+                    ? postButtons(index)
+                    : null
                 }
+                toolBarEnd={active === index ? postButtons(index) : undefined}
               />
             </div>
             {comments && (
-              <div className="flex flex-col items-center gap-[10px] pe-[12px]">
-                <UpDownArrow
-                  isUp={index !== 0}
-                  isDown={index !== items.length - 1}
-                  onChange={changeOrder(index)}
-                />
+              <div
+                className={clsx(
+                  // on phones the icons sit in the corner, next to the first line
+                  'flex flex-col items-center gap-[10px] pe-[12px] mobile:absolute mobile:top-[24px] mobile:end-0 mobile:z-[100] mobile:flex-row-reverse mobile:gap-[12px] mobile:pe-0',
+                  // the first post can't be deleted on phones, like the app
+                  index === 0 && 'mobile:hidden'
+                )}
+              >
+                <div className="mobile:hidden">
+                  <UpDownArrow
+                    isUp={index !== 0}
+                    isDown={index !== items.length - 1}
+                    onChange={changeOrder(index)}
+                  />
+                </div>
                 {items.length > 1 && (
                   <TrashIcon
                     onClick={deletePost(index)}
@@ -573,6 +605,12 @@ export const EditorWrapper: FC<{
 };
 
 export const Editor: FC<{
+  flat?: boolean;
+  // phones: the post that is being edited shows the toolbar
+  active?: boolean;
+  autoFocus?: boolean;
+  onActive?: () => void;
+  toolBarEnd?: React.ReactNode;
   editorType?: 'none' | 'normal' | 'markdown' | 'html';
   inlineImages?: boolean;
   totalPosts: number;
@@ -594,6 +632,11 @@ export const Editor: FC<{
   childButton?: React.ReactNode;
 }> = (props) => {
   const {
+    flat,
+    active,
+    autoFocus,
+    onActive,
+    toolBarEnd,
     editorType = 'normal',
     inlineImages = false,
     allValues,
@@ -832,16 +875,63 @@ export const Editor: FC<{
     }, 20);
   }, [showEditor]);
 
+  // phones: a tap on an empty part of the post starts typing in it
+  const focusOnEmpty = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const control = (e.target as HTMLElement).closest(
+      '.ProseMirror, .cursor-pointer, .group, .post-toolbar, button, input, aside, img, video'
+    );
+    if (
+      !window.matchMedia('(max-width: 1025px)').matches ||
+      editorRef?.current?.editor?.isFocused ||
+      (control && e.currentTarget.contains(control))
+    ) {
+      return;
+    }
+    editorRef?.current?.editor?.commands?.focus('end');
+  }, []);
+
+  // phones: the toolbar of the edited post sits right above the on-screen keyboard
+  const [keyboard, setKeyboard] = useState(0);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!flat || !active || !viewport) {
+      return;
+    }
+
+    const update = () => {
+      setKeyboard(
+        Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+      );
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+    };
+  }, [flat, active]);
+
   if (!showEditor) {
     return null;
   }
 
   return (
-    <div className="flex flex-col gap-[20px] flex-1 min-w-0">
+    <div
+      className={clsx(
+        'flex flex-col gap-[20px] flex-1 min-w-0',
+        flat && 'flat-editor'
+      )}
+      onClick={flat ? focusOnEmpty : undefined}
+    >
       <div
         className={clsx(
           'relative flex-1 px-[12px] pt-[12px] pb-[12px] flex flex-col',
-          num > 0 && '!rounded-bs-[0]'
+          num > 0 && '!rounded-bs-[0]',
+          // the composer has no cards on phones, the text lines up with the page
+          flat && 'mobile:px-0 mobile:pb-0',
+          // the space above a comment belongs to it, so a tap there types in it
+          flat && (num ? 'mobile:pt-[24px]' : 'mobile:pt-0')
         )}
         id={id}
       >
@@ -855,18 +945,31 @@ export const Editor: FC<{
             >
               {t('drop_files_here_to_upload', 'Drop your files here to upload')}
             </div>
-            <div className="px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]">
+            <div
+              onFocus={onActive}
+              className={clsx(
+                'px-[10px] pt-[10px] bg-newBgColorInner rounded-t-[6px] relative z-[99]',
+                flat && 'mobile:px-0 mobile:pt-0',
+                flat && !active && 'mobile:text-textItemBlur',
+                // room for the delay and delete icons of a comment
+                flat && !!num && 'mobile:pe-[68px]'
+              )}
+            >
               <OnlyEditor
                 value={props.value}
                 editorType={editorType}
                 inlineImages={inlineImages}
                 onChange={props.onChange}
                 paste={paste}
+                autoFocus={autoFocus}
                 ref={editorRef}
               />
             </div>
             <div
-              className="bg-newBgColorInner flex-1"
+              className={clsx(
+                'bg-newBgColorInner flex-1',
+                flat && 'mobile:hidden'
+              )}
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
@@ -875,7 +978,7 @@ export const Editor: FC<{
               }}
             />
             <div className="w-full pointer-events-none">
-              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange">
+              <div className="w-full h-[46px] overflow-hidden absolute left-0 bg-newBgColorInner uppyChange mobile:isolate">
                 <Dashboard
                   height={46}
                   uppy={uppy}
@@ -890,7 +993,11 @@ export const Editor: FC<{
               </div>
             </div>
             <div
-              className="w-full h-[46px] bg-newBgColorInner cursor-text"
+              className={clsx(
+                'w-full h-[46px] bg-newBgColorInner cursor-text',
+                // the upload progress shows over this space
+                flat && !loading && 'mobile:hidden'
+              )}
               onClick={() => {
                 if (editorRef?.current?.editor?.isFocused) {
                   return;
@@ -898,106 +1005,141 @@ export const Editor: FC<{
                 editorRef?.current?.editor?.commands?.focus('end');
               }}
             />
-            <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
-              {setImages && (
-                <MultiMediaComponent
-                  mediaNotAvailable={num > 0 && comments === 'no-media'}
-                  allData={allValues}
-                  text={valueWithoutHtml}
-                  label={t('attachments', 'Attachments')}
-                  description=""
-                  value={props.pictures}
-                  dummy={dummy}
-                  name="image"
-                  insertInContent={
-                    inlineImages
-                      ? (media) =>
-                          insertImages(editorRef?.current?.editor, media)
-                      : undefined
-                  }
-                  information={
-                    <InformationComponent
-                      isPicture={pictures?.length > 0}
-                      chars={chars}
-                      totalChars={valueWithoutHtml.length}
-                      totalAllowedChars={props.totalChars}
-                      text={valueWithoutHtml}
-                    />
-                  }
-                  toolBar={
-                    <div className="flex gap-[5px] mobile:flex-wrap">
-                      <SignatureBox editor={editorRef?.current?.editor} />
-                      {editorType !== 'none' && (
-                        <>
-                          <UText
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
-                          <BoldText
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
-                        </>
-                      )}
-                      {(editorType === 'markdown' || editorType === 'html') &&
-                        identifier !== 'telegram' && (
+            <div className={clsx('flex flex-col', flat && 'mobile:pt-[16px]')}>
+              <div className="flex bg-newBgColorInner rounded-b-[6px] cursor-default">
+                {setImages && (
+                  <MultiMediaComponent
+                    mediaNotAvailable={num > 0 && comments === 'no-media'}
+                    allData={allValues}
+                    text={valueWithoutHtml}
+                    label={t('attachments', 'Attachments')}
+                    description=""
+                    value={props.pictures}
+                    dummy={dummy}
+                    name="image"
+                    insertInContent={
+                      inlineImages
+                        ? (media) =>
+                            insertImages(editorRef?.current?.editor, media)
+                        : undefined
+                    }
+                    information={
+                      <InformationComponent
+                        isPicture={pictures?.length > 0}
+                        chars={chars}
+                        totalChars={valueWithoutHtml.length}
+                        totalAllowedChars={props.totalChars}
+                        text={valueWithoutHtml}
+                      />
+                    }
+                    toolBar={
+                      <div className="flex gap-[5px] mobile:gap-[4px]">
+                        <SignatureBox editor={editorRef?.current?.editor} />
+                        {editorType !== 'none' && (
                           <>
-                            <AComponent
+                            <UText
                               editor={editorRef?.current?.editor}
                               currentValue={props.value!}
                             />
-                            <Bullets
-                              editor={editorRef?.current?.editor}
-                              currentValue={props.value!}
-                            />
-                            <HeadingComponent
+                            <BoldText
                               editor={editorRef?.current?.editor}
                               currentValue={props.value!}
                             />
                           </>
                         )}
-                      <div
-                        data-tooltip-id="tooltip"
-                        data-tooltip-content={t('insert_emoji', 'Insert Emoji')}
-                        className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
-                        onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
-                      >
-                        <EmojiIcon />
-                      </div>
-                      <div className="relative">
-                        <div
-                          className={clsx(
-                            'absolute z-[500] -start-[50px]',
-                            num === 0 && allValues?.length > 1
-                              ? 'top-[35px]'
-                              : 'bottom-[35px]'
+                        {(editorType === 'markdown' || editorType === 'html') &&
+                          identifier !== 'telegram' && (
+                            <>
+                              <AComponent
+                                editor={editorRef?.current?.editor}
+                                currentValue={props.value!}
+                              />
+                              <Bullets
+                                editor={editorRef?.current?.editor}
+                                currentValue={props.value!}
+                              />
+                              <HeadingComponent
+                                editor={editorRef?.current?.editor}
+                                currentValue={props.value!}
+                              />
+                            </>
                           )}
+                        <div
+                          data-tooltip-id="tooltip"
+                          data-tooltip-content={t(
+                            'insert_emoji',
+                            'Insert Emoji'
+                          )}
+                          className="select-none cursor-pointer rounded-[6px] mobile:rounded-[8px] w-[30px] h-[30px] mobile:w-[40px] mobile:h-[40px] bg-newColColor mobile:bg-newSettings flex justify-center items-center"
+                          onClick={() => setEmojiPickerOpen(!emojiPickerOpen)}
                         >
-                          <EmojiPicker
-                            height={400}
-                            theme={
-                              (localStorage.getItem('mode') as Theme) ||
-                              Theme.DARK
-                            }
-                            onEmojiClick={(e) => {
-                              addText(e.emoji);
-                              setEmojiPickerOpen(false);
-                            }}
-                            open={emojiPickerOpen}
-                          />
+                          <EmojiIcon className="mobile:w-[20px] mobile:h-[20px]" />
+                        </div>
+                        <div className="relative">
+                          {emojiPickerOpen && (
+                            <div
+                              className="hidden mobile:block fixed inset-0 z-[499]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEmojiPickerOpen(false);
+                              }}
+                            />
+                          )}
+                          <div
+                            className={clsx(
+                              'absolute z-[500] -start-[50px]',
+                              num === 0 && allValues?.length > 1
+                                ? 'top-[35px]'
+                                : 'bottom-[35px]',
+                              // the toolbar scrolls on phones and would cut the picker
+                              'mobile:fixed mobile:inset-x-0 mobile:top-auto mobile:bottom-[72px] mobile:flex mobile:justify-center mobile:pointer-events-none mobile:child:pointer-events-auto'
+                            )}
+                          >
+                            <EmojiPicker
+                              height={400}
+                              theme={
+                                (localStorage.getItem('mode') as Theme) ||
+                                Theme.DARK
+                              }
+                              onEmojiClick={(e) => {
+                                addText(e.emoji);
+                                setEmojiPickerOpen(false);
+                              }}
+                              open={emojiPickerOpen}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  }
-                  onChange={(value) => {
-                    setImages(value.target.value);
-                  }}
-                  onOpen={() => {}}
-                  onClose={() => {}}
-                />
-              )}
+                    }
+                    toolsClassName={
+                      flat
+                        ? active
+                          ? clsx(
+                              'post-toolbar mobile:fixed mobile:bottom-0 mobile:inset-x-0 mobile:items-center mobile:px-[16px] mobile:py-[12px] mobile:bg-newBgColorInner',
+                              // the picker opens from the bar and has to cover the top bar
+                              emojiPickerOpen ? 'mobile:z-[500]' : 'mobile:z-[440]'
+                            )
+                          : 'mobile:hidden'
+                        : undefined
+                    }
+                    toolsStyle={
+                      flat && active && keyboard ? { bottom: keyboard } : undefined
+                    }
+                    toolBarEnd={
+                      flat && active ? (
+                        <div className="hidden mobile:flex">{toolBarEnd}</div>
+                      ) : undefined
+                    }
+                    onChange={(value) => {
+                      setImages(value.target.value);
+                    }}
+                    onOpen={() => {}}
+                    onClose={() => {}}
+                  />
+                )}
+              </div>
+              <div className="mobile:hidden">{childButton}</div>
             </div>
-            <div>{childButton}</div>
           </div>
         </div>
       </div>
@@ -1013,8 +1155,9 @@ export const OnlyEditor = forwardRef<
     value: string;
     onChange: (value: string) => void;
     paste?: (event: ClipboardEvent | File[], slice?: Slice) => boolean;
+    autoFocus?: boolean;
   }
->(({ editorType, inlineImages, value, onChange, paste }, ref) => {
+>(({ editorType, inlineImages, value, onChange, paste, autoFocus }, ref) => {
   const t = useT();
   const fetch = useFetch();
 
@@ -1195,6 +1338,7 @@ export const OnlyEditor = forwardRef<
       }),
     ],
     content: value || '',
+    autofocus: autoFocus ? 'end' : false,
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
     editorProps: {

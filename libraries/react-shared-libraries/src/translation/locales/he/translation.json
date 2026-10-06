@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "תגובות על טקסט נבחר מאבדות הדגשה אם הטקסט נערך מאוחר יותר.",
   "preview_comment_text_changed": "הטקסט השתנה",
   "preview_no_comments_yet": "עדיין אין תגובות. בחר טקסט בפוסט כדי להגיב עליו, או הוסף תגובה כללית.",
-  "some_files_failed_to_upload": "חלק מהקבצים לא הועלו, אנא נסה שוב"
+  "some_files_failed_to_upload": "חלק מהקבצים לא הועלו, אנא נסה שוב",
+  "done": "סיום",
+  "add_tag": "הוסף תגית",
+  "repeat_post": "חזרה על הפוסט",
+  "do_not_repeat": "ללא חזרה",
+  "change_date_or_time": "שינוי תאריך או שעה",
+  "time": "שעה",
+  "channels_settings": "הגדרות ערוץ",
+  "delete_selected": "מחק את הנבחרים",
+  "are_you_sure_you_want_to_delete_selected_media": "האם אתה בטוח שברצונך למחוק את המדיה שנבחרה?"
 }

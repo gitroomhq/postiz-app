@@ -794,5 +794,14 @@
   "preview_comment_detach_hint": "I commenti su testo selezionato perdono l'evidenziazione se il testo viene modificato successivamente.",
   "preview_comment_text_changed": "Testo modificato",
   "preview_no_comments_yet": "Nessun commento ancora. Seleziona del testo nel post per commentarlo, oppure aggiungi un commento generale.",
-  "some_files_failed_to_upload": "Alcuni file non sono stati caricati, riprova"
+  "some_files_failed_to_upload": "Alcuni file non sono stati caricati, riprova",
+  "done": "Fatto",
+  "add_tag": "Aggiungi tag",
+  "repeat_post": "Ripeti post",
+  "do_not_repeat": "Non ripetere",
+  "change_date_or_time": "Cambia data o ora",
+  "time": "Ora",
+  "channels_settings": "Impostazioni del canale",
+  "delete_selected": "Elimina selezionati",
+  "are_you_sure_you_want_to_delete_selected_media": "Sei sicuro di voler eliminare i media selezionati?"
 }

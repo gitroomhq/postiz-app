@@ -799,3 +799,12 @@ checksums:
     preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
     preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
     some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7
+    done: ffd408fa29d5bc9039ef8ea1b9b699bb
+    add_tag: 2cfa04ceea966149f2b5d40d9c131141
+    repeat_post: fb5ad8292bcc2fe131e69a62ff1fa9d3
+    do_not_repeat: 4b92afcdc3206cb17da5257809c21fb6
+    change_date_or_time: 76fcdf62ab2834115a1bea54d2ef0779
+    time: b504a03d52e8001bfdc5cb6205364f42
+    channels_settings: 770e5ae7cec0a83e1454246b52591093
+    delete_selected: adad57b0659260858fbf786ef31e9612
+    are_you_sure_you_want_to_delete_selected_media: 2fcf9a6ddcd40aa74d2cf914730ecc4b
