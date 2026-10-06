@@ -808,5 +808,13 @@
   "channel_name": "名前",
   "channel_renamed": "チャンネル名を変更しました",
   "channel_name_reset": "チャンネル名をリセットしました",
-  "reset_channel_name": "元の名前にリセット"
+  "reset_channel_name": "元の名前にリセット",
+  "authentication": "認証",
+  "auth_method_local": "メールアドレスとパスワード",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "ウォレット",
+  "auth_method_generic": "シングルサインオン"
 }

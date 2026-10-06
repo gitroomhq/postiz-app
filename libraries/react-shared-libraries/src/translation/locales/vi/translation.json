@@ -808,5 +808,13 @@
   "channel_name": "Tên",
   "channel_renamed": "Đã đổi tên kênh",
   "channel_name_reset": "Đã đặt lại tên kênh",
-  "reset_channel_name": "Đặt lại tên gốc"
+  "reset_channel_name": "Đặt lại tên gốc",
+  "authentication": "Xác thực",
+  "auth_method_local": "Email và mật khẩu",
+  "auth_method_github": "GitHub",
+  "auth_method_google": "Google",
+  "auth_method_apple": "Apple",
+  "auth_method_farcaster": "Farcaster",
+  "auth_method_wallet": "Ví",
+  "auth_method_generic": "Đăng nhập một lần"
 }
