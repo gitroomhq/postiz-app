@@ -179,6 +179,13 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationById(org, id);
   }
 
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integrationRepository.getIntegrationByInternalId(
+      org,
+      internalId
+    );
+  }
+
   async refreshToken(provider: SocialProvider, refresh: string) {
     try {
       const { refreshToken, accessToken, expiresIn } =
