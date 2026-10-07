@@ -828,5 +828,8 @@
   "time": "שעה",
   "channels_settings": "הגדרות ערוץ",
   "delete_selected": "מחק את הנבחרים",
-  "are_you_sure_you_want_to_delete_selected_media": "האם אתה בטוח שברצונך למחוק את המדיה שנבחרה?"
+  "are_you_sure_you_want_to_delete_selected_media": "האם אתה בטוח שברצונך למחוק את המדיה שנבחרה?",
+  "delete_post_from_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך למחוק אותו מכולם?",
+  "delete_from_all_channels": "מחק מכל הערוצים",
+  "delete_only_from": "רק מהערוץ"
 }

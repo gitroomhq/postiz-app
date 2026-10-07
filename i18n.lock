@@ -833,3 +833,6 @@ checksums:
     channels_settings: 770e5ae7cec0a83e1454246b52591093
     delete_selected: adad57b0659260858fbf786ef31e9612
     are_you_sure_you_want_to_delete_selected_media: 2fcf9a6ddcd40aa74d2cf914730ecc4b
+    delete_post_from_all_channels_question: f37374b458fa43056a019397f342ea04
+    delete_from_all_channels: 39a7f754c6a1f730cd511307e483e13d
+    delete_only_from: 819a30bf30916eba1d5ced11efc16fde

@@ -50,7 +50,10 @@ export const PicksSocialsComponent: FC<{
 
   const availableIntegrations = integrations.filter((f) => {
     if (exising.integration) {
-      return f.id === exising.integration;
+      return (
+        f.id === exising.integration ||
+        !!exising.siblings?.some((sibling) => sibling.integration === f.id)
+      );
     }
     return !f.inBetweenSteps && !f.disabled;
   });

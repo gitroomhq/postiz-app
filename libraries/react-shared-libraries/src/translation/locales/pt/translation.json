@@ -828,5 +828,8 @@
   "time": "Hora",
   "channels_settings": "Configurações do canal",
   "delete_selected": "Excluir selecionados",
-  "are_you_sure_you_want_to_delete_selected_media": "Tem certeza de que deseja excluir as mídias selecionadas?"
+  "are_you_sure_you_want_to_delete_selected_media": "Tem certeza de que deseja excluir as mídias selecionadas?",
+  "delete_post_from_all_channels_question": "Esta publicação foi criada para mais de um canal. Deseja excluí-la de todos?",
+  "delete_from_all_channels": "Excluir de todos os canais",
+  "delete_only_from": "Apenas de"
 }

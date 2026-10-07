@@ -828,5 +828,8 @@
   "time": "시간",
   "channels_settings": "채널 설정",
   "delete_selected": "선택 항목 삭제",
-  "are_you_sure_you_want_to_delete_selected_media": "선택한 미디어를 삭제하시겠습니까?"
+  "are_you_sure_you_want_to_delete_selected_media": "선택한 미디어를 삭제하시겠습니까?",
+  "delete_post_from_all_channels_question": "이 게시글은 여러 채널용으로 만들어졌습니다. 모든 채널에서 삭제하시겠습니까?",
+  "delete_from_all_channels": "모든 채널에서 삭제",
+  "delete_only_from": "다음 채널에서만:"
 }

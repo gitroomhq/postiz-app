@@ -828,5 +828,8 @@
   "time": "Время",
   "channels_settings": "Настройки канала",
   "delete_selected": "Удалить выбранные",
-  "are_you_sure_you_want_to_delete_selected_media": "Вы уверены, что хотите удалить выбранные медиа?"
+  "are_you_sure_you_want_to_delete_selected_media": "Вы уверены, что хотите удалить выбранные медиа?",
+  "delete_post_from_all_channels_question": "Этот пост создан для нескольких каналов. Удалить его из всех?",
+  "delete_from_all_channels": "Удалить из всех каналов",
+  "delete_only_from": "Только из канала"
 }

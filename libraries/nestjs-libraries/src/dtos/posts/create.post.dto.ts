@@ -68,6 +68,11 @@ export class Post {
   @IsString()
   group: string;
 
+  // a channel that keeps a date of its own, the others use the post date
+  @IsOptional()
+  @IsDateString()
+  date?: string;
+
   @ValidateIf((o) => o.type !== 'draft')
   @ValidateNested()
   @Type(() => EmptySettings, {

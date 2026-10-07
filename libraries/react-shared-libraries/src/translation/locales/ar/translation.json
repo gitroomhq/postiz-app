@@ -828,5 +828,8 @@
   "time": "الوقت",
   "channels_settings": "إعدادات القناة",
   "delete_selected": "حذف المحدد",
-  "are_you_sure_you_want_to_delete_selected_media": "هل أنت متأكد أنك تريد حذف الوسائط المحددة؟"
+  "are_you_sure_you_want_to_delete_selected_media": "هل أنت متأكد أنك تريد حذف الوسائط المحددة؟",
+  "delete_post_from_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد حذفه منها جميعًا؟",
+  "delete_from_all_channels": "حذف من جميع القنوات",
+  "delete_only_from": "فقط من"
 }
