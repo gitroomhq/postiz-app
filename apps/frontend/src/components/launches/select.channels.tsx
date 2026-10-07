@@ -2,13 +2,18 @@
 
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import clsx from 'clsx';
+import { uniqBy } from 'lodash';
 import { useClickOutside } from '@mantine/hooks';
 import { useCalendar } from '@gitroom/frontend/components/launches/calendar.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Checkbox } from '@gitroom/react/form/checkbox';
 import { FilterIcon } from '@gitroom/frontend/components/ui/icons';
+import { Check } from '@gitroom/frontend/components/launches/tags.component';
+import { IntegrationListRow } from '@gitroom/frontend/components/new-launch/picks.socials.component';
 
-export const SelectChannels: FC = () => {
+export const SelectChannels: FC<{
+  list?: boolean;
+}> = ({ list }) => {
   const { integrations, customer, selectedChannels, setSelectedChannels } =
     useCalendar();
   const t = useT();
@@ -56,6 +61,38 @@ export const SelectChannels: FC = () => {
 
   if (channels.length <= 1) {
     return null;
+  }
+
+  if (list) {
+    // the customers are listed above the channels when there are any
+    const hasCustomers =
+      uniqBy(integrations, (i) => i?.customer?.id).length > 1;
+    return (
+      <div className="flex flex-col gap-[4px]">
+        {hasCustomers && (
+          <div className="text-[14px] font-[600] text-textItemBlur">
+            {t('channels', 'Channels')}
+          </div>
+        )}
+        <div
+          onClick={toggleAll}
+          className="flex items-center gap-[12px] py-[8px] cursor-pointer select-none"
+        >
+          <div className="flex-1 text-[14px] font-[600]">
+            {t('select_all', 'Select all')}
+          </div>
+          <Check onChange={() => {}} value={allSelected} />
+        </div>
+        {channels.map((p) => (
+          <IntegrationListRow
+            key={p.id}
+            integration={p}
+            selected={selectedIds.includes(p.id)}
+            onClick={toggle(p.id)}
+          />
+        ))}
+      </div>
+    );
   }
 
   return (

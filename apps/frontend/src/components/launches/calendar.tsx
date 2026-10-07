@@ -59,6 +59,7 @@ import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
+import { ChevronUpIcon } from '@gitroom/frontend/components/ui/icons';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -489,7 +490,10 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(newDayjs().day(i).format('dddd'));
+      days.push({
+        name: newDayjs().day(i).format('dddd'),
+        short: newDayjs().day(i).format('ddd'),
+      });
     }
     return days;
   }, [i18next.resolvedLanguage]);
@@ -529,19 +533,21 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 tablet:[grid-template-columns:repeat(7,_minmax(100px,_1fr))] grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        {/* on phones the whole month fits the width, posts show as channel avatars */}
+        <div className="grid grid-cols-7 tablet:[grid-template-columns:repeat(7,_minmax(100px,_1fr))] mobile:!grid-cols-7 grid-rows-[62px_auto] mobile:grid-rows-[36px_auto] gap-[4px] mobile:gap-[2px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
-              key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              key={day.name}
+              className="z-[20] p-2 mobile:p-0 bg-newTableHeader flex justify-center items-center flex-col h-[62px] mobile:h-[36px] rounded-[8px] sticky top-0"
             >
-              <div>{day}</div>
+              <div className="mobile:hidden">{day.name}</div>
+              <div className="hidden mobile:block text-[13px]">{day.short}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="text-center items-center justify-center flex"
+              className="text-center items-center justify-center flex mobile:min-w-0"
             >
               <CalendarColumn
                 getDate={newDayjs(date.day).endOf('day')}
@@ -925,11 +931,18 @@ export const CalendarColumn: FC<{
       ref={drop as any}
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div
+          className={clsx(
+            'pt-[6px] text-[14px] mobile:pt-[4px] mobile:text-[12px]'
+          )}
+        >
+          {getDate.date()}
+        </div>
       )}
       <div
         className={clsx(
           'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
+          display === 'month' && 'mobile:min-h-[44px]',
           canDrop && 'border border-[#612BD3]'
         )}
       >
@@ -937,7 +950,9 @@ export const CalendarColumn: FC<{
           className={clsx(
             'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             isBeforeNow ? 'flex-1' : 'cursor-pointer',
-            isBeforeNow && postList.length === 0 && 'col-calendar'
+            isBeforeNow && postList.length === 0 && 'col-calendar',
+            // the "Date passed" hint is wider than a phone month cell
+            display === 'month' && 'mobile:before:hidden'
           )}
         >
           {loading && (
@@ -952,7 +967,12 @@ export const CalendarColumn: FC<{
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px]">
+              <div
+                className={clsx(
+                  'relative w-full flex flex-col items-center p-[2.5px]',
+                  display === 'month' && 'mobile:p-0'
+                )}
+              >
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
@@ -976,7 +996,14 @@ export const CalendarColumn: FC<{
               className="text-center hover:underline py-[5px] text-textColor"
               onClick={showAllFunc}
             >
-              {t('show_more', '+ Show more')} ({postList.length - 3})
+              <span className={clsx(display === 'month' && 'mobile:hidden')}>
+                {t('show_more', '+ Show more')} ({postList.length - 3})
+              </span>
+              {display === 'month' && (
+                <span className="hidden mobile:inline">
+                  +{postList.length - 3}
+                </span>
+              )}
             </div>
           )}
           {showAll && postList.length > 3 && (
@@ -984,7 +1011,12 @@ export const CalendarColumn: FC<{
               className="text-center hover:underline py-[5px]"
               onClick={showLessFunc}
             >
-              {t('show_less', '- Show less')}
+              <span className={clsx(display === 'month' && 'mobile:hidden')}>
+                {t('show_less', '- Show less')}
+              </span>
+              {display === 'month' && (
+                <ChevronUpIcon size={16} className="hidden mobile:inline" />
+              )}
             </div>
           )}
         </div>
@@ -1140,7 +1172,10 @@ const CalendarItem: FC<{
     >
       {state === 'ERROR' && (
         <div
-          className="absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          className={clsx(
+            'absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer',
+            display === 'month' && 'mobile:hidden'
+          )}
           data-tooltip-id="tooltip"
           data-tooltip-class-name="!max-w-[400px] break-words"
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
@@ -1149,7 +1184,12 @@ const CalendarItem: FC<{
         </div>
       )}
       {state === 'PUBLISHED' && (
-        <div className="absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-white text-[11px] font-bold">
+        <div
+          className={clsx(
+            'absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-white text-[11px] font-bold',
+            display === 'month' && 'mobile:hidden'
+          )}
+        >
           ✓
         </div>
       )}
@@ -1163,7 +1203,8 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[6px] px-[5px] bg-btnPrimary'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[6px] px-[5px] bg-btnPrimary',
+          display === 'month' && 'mobile:hidden'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -1259,6 +1300,8 @@ const CalendarItem: FC<{
         className={clsx(
           'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
           'relative',
+          display === 'month' &&
+            'mobile:p-[4px] mobile:rounded-[10px] mobile:justify-center',
           isBeforeNow && '!grayscale'
         )}
       >
@@ -1272,7 +1315,12 @@ const CalendarItem: FC<{
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
-        <div className="w-full flex-1 flex flex-col min-h-[40px]">
+        <div
+          className={clsx(
+            'w-full flex-1 flex flex-col min-h-[40px]',
+            display === 'month' && 'mobile:hidden'
+          )}
+        >
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>

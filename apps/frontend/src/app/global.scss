@@ -526,7 +526,10 @@ div div .set-font-family {
 
 .hideChatbase #chatbase-bubble-button,
 .hideChatbase #chatbase-bubble-window,
-.hideChatbase #chatbase-message-bubbles {
+.hideChatbase #chatbase-message-bubbles,
+.bottomSheetOpen #chatbase-bubble-button,
+.bottomSheetOpen #chatbase-bubble-window,
+.bottomSheetOpen #chatbase-message-bubbles {
   display: none !important;
 }
 
