@@ -20,7 +20,12 @@ Use the returned path as an attachment URL in integrationSchedulePostTool instea
           .string()
           .optional()
           .describe('Filter by original filename (case-insensitive contains)'),
-        page: z.number().optional().describe('Page number, starting at 1'),
+        page: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .describe('Page number, starting at 1'),
       }),
       mcp: {
         annotations: {
