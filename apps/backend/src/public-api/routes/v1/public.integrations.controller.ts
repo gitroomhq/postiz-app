@@ -232,12 +232,27 @@ export class PublicIntegrationsController {
   }
 
   @Get('/media')
-  getMedia(
+  async getMedia(
     @GetOrgFromRequest() org: Organization,
     @Query() query: GetMediaDto
   ) {
     Sentry.metrics.count('public_api-request', 1);
-    return this._mediaService.getMedia(org.id, query.page, query.search);
+    const { pages, results } = await this._mediaService.getMedia(
+      org.id,
+      query.page,
+      query.search
+    );
+
+    return {
+      pages,
+      results: results.map((p) => ({
+        id: p.id,
+        name: p.name,
+        originalName: p.originalName,
+        path: p.path,
+        createdAt: p.createdAt,
+      })),
+    };
   }
 
   // `user` is only known for OAuth app tokens; an API key belongs to the

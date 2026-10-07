@@ -40,7 +40,6 @@ Use the returned path as an attachment URL in integrationSchedulePostTool instea
             originalName: z.string().nullable(),
             path: z.string(),
             createdAt: z.string(),
-            thumbnail: z.string().nullable(),
           })
         ),
       }),
@@ -64,7 +63,6 @@ Use the returned path as an attachment URL in integrationSchedulePostTool instea
             originalName: p.originalName,
             path: p.path,
             createdAt: p.createdAt.toISOString(),
-            thumbnail: p.thumbnail,
           })),
         };
       },
