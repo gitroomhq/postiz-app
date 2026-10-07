@@ -175,6 +175,7 @@
   "day": "Day",
   "week": "Week",
   "month": "Month",
+  "list": "List",
   "remove_from_customer": "Remove from customer",
   "show_more": "+ Show more",
   "show_less": "- Show less",

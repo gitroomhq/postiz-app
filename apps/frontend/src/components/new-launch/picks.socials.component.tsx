@@ -28,6 +28,36 @@ const PlatformBadge: FC<{ integration: Integrations }> = ({ integration }) => {
   );
 };
 
+// a channel row with a checkbox, for the phone sheets
+export const IntegrationListRow: FC<{
+  integration: Integrations;
+  selected: boolean;
+  onClick: () => void;
+}> = ({ integration, selected, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      className="flex items-center gap-[12px] py-[8px] cursor-pointer select-none"
+    >
+      <div className="relative">
+        <ImageWithFallback
+          fallbackSrc="/no-picture.jpg"
+          src={integration.picture || '/no-picture.jpg'}
+          className="rounded-[8px] min-w-[40px] min-h-[40px]"
+          alt={integration.identifier}
+          width={40}
+          height={40}
+        />
+        <PlatformBadge integration={integration} />
+      </div>
+      <div className="flex-1 min-w-0 truncate text-[14px] font-[600]">
+        {integration.name}
+      </div>
+      <Check onChange={() => {}} value={selected} />
+    </div>
+  );
+};
+
 export const PicksSocialsComponent: FC<{
   toolTip?: boolean;
   list?: boolean;
@@ -73,35 +103,16 @@ export const PicksSocialsComponent: FC<{
           locked && 'opacity-50 pointer-events-none'
         )}
       >
-        {availableIntegrations.map((integration) => {
-          const selected = selectedIntegrations.some(
-            (p) => p.integration.id === integration.id
-          );
-
-          return (
-            <div
-              key={integration.id}
-              onClick={toggleIntegration(integration)}
-              className="flex items-center gap-[12px] py-[8px] cursor-pointer select-none"
-            >
-              <div className="relative">
-                <ImageWithFallback
-                  fallbackSrc="/no-picture.jpg"
-                  src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-[8px] min-w-[40px] min-h-[40px]"
-                  alt={integration.identifier}
-                  width={40}
-                  height={40}
-                />
-                <PlatformBadge integration={integration} />
-              </div>
-              <div className="flex-1 min-w-0 truncate text-[14px] font-[600]">
-                {integration.name}
-              </div>
-              <Check onChange={() => {}} value={selected} />
-            </div>
-          );
-        })}
+        {availableIntegrations.map((integration) => (
+          <IntegrationListRow
+            key={integration.id}
+            integration={integration}
+            selected={selectedIntegrations.some(
+              (p) => p.integration.id === integration.id
+            )}
+            onClick={toggleIntegration(integration)}
+          />
+        ))}
       </div>
     );
   }
