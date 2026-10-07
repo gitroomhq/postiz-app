@@ -29,6 +29,10 @@ import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
+type SubscriptionWithPlatform = Subscription & {
+  platform?: 'web' | 'mobile';
+};
+
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
   pack: 'STANDARD' | 'PRO';
@@ -108,6 +112,11 @@ export const Features: FC<{
     if (currentPricing?.generate_videos) {
       list.push(`${currentPricing?.generate_videos} AI Videos per month`);
     }
+    if (currentPricing?.clipping_minutes) {
+      list.push(
+        `${currentPricing?.clipping_minutes} minutes of AI video clipping per month`
+      );
+    }
     return list;
   }, [pack]);
   return (
@@ -128,7 +137,7 @@ export const Features: FC<{
               />
             </svg>
           </div>
-          <div>{feature}</div>
+          <div className="text-start">{feature}</div>
         </div>
       ))}
     </div>
@@ -209,7 +218,7 @@ const Info: FC<{
   );
 };
 export const MainBillingComponent: FC<{
-  sub?: Subscription;
+  sub?: SubscriptionWithPlatform;
 }> = (props) => {
   const { sub } = props;
   const { isGeneral } = useVariables();
@@ -228,7 +237,7 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
-  const [subscription, setSubscription] = useState<Subscription | undefined>(
+  const [subscription, setSubscription] = useState<SubscriptionWithPlatform | undefined>(
     sub
   );
   const [loading, setLoading] = useState<boolean>(false);
@@ -290,7 +299,11 @@ export const MainBillingComponent: FC<{
             cancelAt: cancel_at,
           }));
 
-          toast.show('Subscription reactivated successfully');
+          toast.show(
+            cancel_at
+              ? 'Your subscription was already active, so it is now set to cancel. Click Reactivate subscription again to keep it.'
+              : 'Subscription reactivated successfully'
+          );
           setLoading(false);
           return;
         }
@@ -366,8 +379,11 @@ export const MainBillingComponent: FC<{
               ...subs!,
               cancelAt: cancel_at,
             }));
-            if (cancel_at)
-              toast.show('Subscription set to canceled successfully');
+            toast.show(
+              cancel_at
+                ? 'Subscription set to canceled successfully'
+                : 'Your subscription was already set to cancel, so it has been reactivated. Click Cancel subscription again to cancel it.'
+            );
             setLoading(false);
           }
           return;
@@ -448,6 +464,30 @@ export const MainBillingComponent: FC<{
   if (user?.isLifetime) {
     router.replace('/');
     return null;
+  }
+  if (subscription?.platform && subscription.platform !== 'web') {
+    return (
+      <div className="flex flex-col gap-[16px]">
+        <div className="text-[20px]">{t('plans', 'Plans')}</div>
+        <div className="flex flex-col items-center gap-[8px] rounded-[8px] bg-newBgColorInner p-[24px] text-center">
+          <div className="text-[18px]">
+            {t('subscription_managed_by', 'Your subscription is managed by')}{' '}
+            <span className="capitalize">{subscription.provider}</span>
+          </div>
+          <div className="text-[14px] opacity-70">
+            {t(
+              'subscription_manage_on_platform',
+              'Please go to {{platform}} to manage it',
+              { platform: subscription.platform }
+            )}
+          </div>
+        </div>
+        <FAQComponent />
+        <div className="flex justify-center mt-[20px]">
+          <LogoutComponent />
+        </div>
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-[16px]">
@@ -550,8 +590,11 @@ export const MainBillingComponent: FC<{
           ))}
       </div>
       {!!subscription?.id && (
-        <div className="flex justify-center mt-[20px] gap-[10px]">
-          <Button onClick={updatePayment}>
+        <div className="flex justify-center mt-[20px] gap-[10px] mobile:flex-col">
+          <Button
+            onClick={updatePayment}
+            className="mobile:h-auto mobile:min-h-[40px] mobile:py-[8px] mobile:text-center"
+          >
             {t(
               'update_payment_method_invoices_history',
               'Update Payment Method / Invoices History'

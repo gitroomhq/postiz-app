@@ -1,5 +1,7 @@
-import { IUploadProvider } from './upload.interface';
-import { mkdirSync, unlink, writeFileSync } from 'fs';
+import { IUploadProvider, UploadedStream } from './upload.interface';
+import { createWriteStream, mkdirSync, unlink, writeFileSync } from 'fs';
+import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
@@ -22,6 +24,30 @@ const LOCAL_STORAGE_ALLOWED_MIME = new Set<string>([
 ]);
 export class LocalStorage implements IUploadProvider {
   constructor(private uploadDirectory: string) {}
+
+  // Files live under /YYYY/MM/DD with a random name; creates the folder
+  private newFilePath(ext: string) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const innerPath = `/${year}/${month}/${day}`;
+    const dir = `${this.uploadDirectory}${innerPath}`;
+    mkdirSync(dir, { recursive: true });
+
+    const randomName = Array(32)
+      .fill(null)
+      .map(() => Math.round(Math.random() * 16).toString(16))
+      .join('');
+
+    const filename = `${randomName}.${ext}`;
+    return {
+      filename,
+      filePath: `${dir}/${filename}`,
+      path: process.env.FRONTEND_URL + '/uploads' + `${innerPath}/${filename}`,
+    };
+  }
 
   async uploadSimple(path: string) {
     const dataUrl = path.startsWith('data:') ? parseDataUrl(path) : null;
@@ -49,28 +75,12 @@ export class LocalStorage implements IUploadProvider {
     if (!detected || !LOCAL_STORAGE_ALLOWED_MIME.has(detected.mime)) {
       throw new Error('Unsupported file type.');
     }
-    const findExtension = detected.ext;
 
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-
-    const innerPath = `/${year}/${month}/${day}`;
-    const dir = `${this.uploadDirectory}${innerPath}`;
-    mkdirSync(dir, { recursive: true });
-
-    const randomName = Array(32)
-      .fill(null)
-      .map(() => Math.round(Math.random() * 16).toString(16))
-      .join('');
-
-    const filePath = `${dir}/${randomName}.${findExtension}`;
-    const publicPath = `${innerPath}/${randomName}.${findExtension}`;
+    const { filePath, path: publicUrl } = this.newFilePath(detected.ext);
     // Logic to save the file to the filesystem goes here
     writeFileSync(filePath, body);
 
-    return process.env.FRONTEND_URL + '/uploads' + publicPath;
+    return publicUrl;
   }
 
   async uploadFile(file: Express.Multer.File): Promise<any> {
@@ -79,33 +89,16 @@ export class LocalStorage implements IUploadProvider {
       if (!detected || !LOCAL_STORAGE_ALLOWED_MIME.has(detected.mime)) {
         throw new Error('Unsupported file type.');
       }
-      const safeExt = `.${detected.ext}`;
       const safeMime = detected.mime;
 
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-
-      const innerPath = `/${year}/${month}/${day}`;
-      const dir = `${this.uploadDirectory}${innerPath}`;
-      mkdirSync(dir, { recursive: true });
-
-      const randomName = Array(32)
-        .fill(null)
-        .map(() => Math.round(Math.random() * 16).toString(16))
-        .join('');
-
-      const filePath = `${dir}/${randomName}${safeExt}`;
-      const publicPath = `${innerPath}/${randomName}${safeExt}`;
-
+      const { filename, filePath, path } = this.newFilePath(detected.ext);
       writeFileSync(filePath, file.buffer);
 
       return {
-        filename: `${randomName}${safeExt}`,
-        path: process.env.FRONTEND_URL + '/uploads' + publicPath,
+        filename,
+        path,
         mimetype: safeMime,
-        originalname: `${randomName}${safeExt}`,
+        originalname: filename,
       };
     } catch (err) {
       console.error('Error uploading file to Local Storage:', err);
@@ -113,10 +106,46 @@ export class LocalStorage implements IUploadProvider {
     }
   }
 
+  async uploadStream(
+    stream: Readable,
+    mimetype: string,
+    ext: string
+  ): Promise<UploadedStream> {
+    try {
+      if (!LOCAL_STORAGE_ALLOWED_MIME.has(mimetype)) {
+        throw new Error('Unsupported file type.');
+      }
+
+      const { filename, filePath, path } = this.newFilePath(ext);
+      try {
+        await pipeline(stream, createWriteStream(filePath));
+      } catch (err) {
+        // Don't leave a truncated file behind (size cap hit, remote closed, ...)
+        await this.removeFile(filePath).catch(() => {});
+        throw err;
+      }
+
+      return {
+        filename,
+        path,
+        mimetype,
+        originalname: filename,
+      };
+    } catch (err) {
+      console.error('Error streaming file to Local Storage:', err);
+      throw err;
+    }
+  }
+
+  // Accepts either the public URL or the filesystem path
   async removeFile(filePath: string): Promise<void> {
+    const publicPrefix = process.env.FRONTEND_URL + '/uploads';
+    const localPath = filePath.startsWith(publicPrefix)
+      ? this.uploadDirectory + filePath.slice(publicPrefix.length)
+      : filePath;
     // Logic to remove the file from the filesystem goes here
     return new Promise((resolve, reject) => {
-      unlink(filePath, (err) => {
+      unlink(localPath, (err) => {
         if (err) {
           reject(err);
         } else {

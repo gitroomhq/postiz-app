@@ -338,6 +338,7 @@ checksums:
     predicted_github_trending_change: db2e35c6bb26939186948182195e84df
     duplicate_post: 550d07a1efcab352409ecdbaa16acfcc
     preview_post: a86240c3451c3d5737b6acf358e1d056
+    open_post: 7973a6d7427806d086720278a9b5dba0
     post_statistics: 946015ed60528cf3b173135542053d3e
     draft: e8a92958ad300aacfe46c2bf6644927e
     week_number: 94b8a343e6e9a25c021e055ad974c68e
@@ -509,6 +510,7 @@ checksums:
     delete_integration: ccc879ccfcf7f85bcfe09f2bc3fa0dd3
     start_writing_your_post: 471efc4f2a7e2cf02a065a2de34e7213
     billing_other_account_subscribed: 6c12b4a726d55ee88b0594bd22ec556c
+    billing_stripe_load_failed: b578d90bcd0abe8bacc2c1e6d37ddc1a
     already_subscribed: 3694e02bcb0a41286ea6b79615e6cdbf
     ok: e2d6579a83aba07c4180c21c5fe9893d
     billing_join_over: 6e1c237241ba00ddbb07fd603344c5c3
@@ -534,6 +536,7 @@ checksums:
     billing_advanced_picture_editor: 329a6c2e8b2685f81609859a4de07b0f
     billing_ai_images_per_month: 5073aa90b32654abe6200d426a97f03e
     billing_ai_videos_per_month: c786199d8dc9bded54fab8f92c350b19
+    billing_clipping_minutes_per_month: e8337650fb3b1836ba1194e5e7730fd6
     billing_billing_address: 48980a775bfc7292b0c4f9b74b4d352e
     billing_payment: 95142d3fd8b6a6f551aba771842e9c11
     billing_powered_by_stripe: f2767a22c2cd93d4e8fe5c5d6ee05ad1
@@ -579,7 +582,16 @@ checksums:
     email_address: 0ee22bbbe989a0c61a18023407d12dc2
     email_already_exists: ad25f0ca7a16c0d37e566a9c090a0fd2
     google: 6cc462fb53d90d404f48d5a6695c1de1
+    apple: 4e2ced07ca66bd1cf0562882d019aff2
     farcaster: b09af25fcb497663e8594b9fc514b969
+    farcaster_approve_instructions: 97061425f4de396ed7fdbca1f59fe702
+    farcaster_open_in_farcaster: cc32bd29fef8129fbd9a30385b163c49
+    farcaster_waiting_for_approval: 2ee1cd6c0ff8d0db1a4924c08b80e498
+    farcaster_signer_revoked: 0eff3e12951a952f8db78f54be25cf2d
+    farcaster_signer_failed: d3274186449d73fb6ffb37b2f47bb9d4
+    farcaster_scan_instructions: 28fdf8386de75fc770b3c2585a3cf8bc
+    farcaster_copy_link: 3bf926fddc31ea08755160e6abce8674
+    farcaster_approval_timeout: 2a434e0962661820d56dba28a88ec18d
     edit_autopost: 2cde36144cddda0acc069e6913e095f9
     add_autopost_title: d018d5d12c9f41c0b610da4b101d77e9
     webhook_deleted_successfully: fcefd247ec76a372002d2cffac3c5b0f
@@ -609,6 +621,7 @@ checksums:
     profile_updated: 4a55423a795e43ff4bd1a8b3956de4b9
     sets: a8e00731555775ef06d2d8933898c457
     invitation_link_sent: 3d67ff64ec205998378cf7c8f124799f
+    could_not_send_invitation: 808475fc63732c879eb30eac5c288d6b
     send_invitation_link: 8eccac7afd966c2bf358b9e04fb02ee8
     copy_link: 57a37acfe6d7ed71d00fbbc8079fbb35
     are_you_sure_remove_team_member: fdd24783fdaefbfcd8150d51d088cc9d
@@ -635,6 +648,10 @@ checksums:
     channel_id_copied: 58bf6a74adf570a5daf233ce496149de
     settings_updated: 260e10a61200b581616d766f3af5ae52
     customer_updated: ab17bcd115b14b72bb2e89f2b48883a4
+    edit_group_name: 64654e2647a83d0c51e357c9ba30a962
+    group_name: 9368b5a047572b6051f334af5aa76819
+    group_updated: db3365d95da2a925566eb65a1a416883
+    could_not_save_group: 31c544cf61f16ce4f6930268a26e7192
     custom_url: f1e4e1c6a386d212abe94b937cf5e812
     picture: 14818ef364a0ecc8b738bdb23c46b3c3
     upgrade_required: 460dbea5061a1aba2080ffdecdf9544c
@@ -642,6 +659,8 @@ checksums:
     payment_required: 3acec87fe94c0bdb92b35e3081f45061
     no_content: 1d2af798c895527a7f8a4c72c2571fdd
     select_customer_tooltip: 1cd2f6f08560b7ebcc9285e845557673
+    select_channels_tooltip: 3aab82dc90ccafe55059c32c5a33c222
+    select_all: eedc7cdb02de467c15dc418a066a77f2
     customers: c31a0dfd0d92496ba6f5673781db24ef
     hour: ec3113f22fc51d01f0c615c5496f8f87
     minutes: c5442938e948e2e3937fb812cf68869c
@@ -674,7 +693,9 @@ checksums:
     two_weeks: 2535083efa302c3dde7d06cce2455b74
     repeat_post_every_label: f3e3fd4d95a0eeaf1eab0219278ae812
     add_new_tag: 911360b396ef6db7a24eb53134f0f7d2
+    edit_tag: 5a8b41a0364539c5d7c243f9d3695e9b
     tag_name: 9368b5a047572b6051f334af5aa76819
+    post_save_failed: 164475f6751549f91a5b6e7f759fbca8
     post_is_too_long: 7784c6ecca2c7e58665e83e219aff80b
     your_post_should_have_at_least_one_character_or_one_image: e7a0d63d2931ca540ceea25c6d4df7ec
     internal_edit: 04ed5d507cfed7c4f348df338c106809
@@ -690,6 +711,7 @@ checksums:
     delete_post_tooltip: bcf081392c76d2f2a8522944ddd36b78
     drop_files_here_to_upload: a7971302d02a19a461c519cffedfa5e5
     insert_emoji: 6e2ab0e239c0ee87d385b1cd17185e00
+    only_images_can_be_added_to_the_content: 39229242be2e514ce641c5edce713caa
     write_something: bc9257cede62880c411001e61310ca43
     click_channel_to_add: 7dc67c45eba252d1fa931e5a101d568b
     connect_your_channels: a8303310a9cc5f4e11510f8f55c0978d
@@ -697,10 +719,33 @@ checksums:
     connected_channels: b64d400364bb3ccb4b1d4b547673f4c3
     continue: 3cfba90b4600131e82fc4260c568d044
     continue_without_channels: fa9c2e19c59e2eac86c1fcac35611337
+    connect_agents: 3272e6e7b043cd9bd5626dc57892b4b2
+    connect_your_ai_agent: 29cfdf27911e816ade81f5dc3ba948eb
+    connect_agent_description: 087b814876d35ea71d2f63d54cc39788
+    agent_access_unavailable: 80a529742f86d7cacb9bb44d5e06be04
+    sign_in_no_api_key: b17680d7465d120632114d25217e0e2e
+    oauth_sign_in_hint: 92797174fbc54b56b7c81f485dc9008b
+    add_to_cursor: da1a4472a29f82361b48e26842c05a0e
+    cli: 6bfaaf925aa1c902820f2059a234e467
+    other_agents: e85458e10eb4bd29157a1f77568a3845
+    documentation: 1563fcb5ddb5037b0709ccd3dd384a92
+    read_the_api_docs: 016e8f560539f8c57727cab2b2e4fc1d
+    api_key_onboarding_description: 426162950cd838b5ebd90d22151ae4b0
+    api_onboarding_description: 97cc31ad6bfe6ef3f479e72987ea69a4
+    chat: 1171b63c16b3431dca319af1804de2a0
+    chat_onboarding_description: 9da74037342cd6adb283e8205299b986
+    connector: 7abb5584501ce0e3cc51ba19f0561ca8
+    connector_onboarding_description: eb8027296b46bf58475f6b4925bd6351
+    official_connector: cdaaab2f023cb2eaea40b666e9859442
+    connector_self_hosted_description: c966620ed2df1d6ffeaa92969aaf30a6
+    mcp_onboarding_description: 5b33036d174222d86ac50039a3a31724
+    cli_onboarding_description: b4aba065e5a8410ee2c365ee4d7aa87c
+    agent_settings_later: bbdd45a80cc5218809363348e0b03a32
     watch_tutorial: 7f202b82c805285109187f099d22e863
     watch_tutorial_title: c3c0d814f10a3325a7fd52a7fb44ae38
     watch_tutorial_description: 25dd65235d9603f6d65d62f953791722
     back: f541015a827e37cb3b1234e56bc2aa3c
+    continue_skip: 82edfa21507a88b8788d33cc632d64af
     get_started: 1d5f030c4ec9c869e647ae060518b948
     kick_select_channel: 13fa95c439addeb6674e571e37c96b79
     annual: 5d4f1c56f4e9e579ec9967ca68cc64ac
@@ -742,3 +787,46 @@ checksums:
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
+    comment: 1be52fc8cdfb25a4c4abe2482fc478aa
+    reply: 37a07e1dbda9841da3feb16c9e1e63b5
+    add_a_comment: 92a18f71e9cef81fdbdb39ee69b0b771
+    add_a_comment_placeholder: c28cfccc0cc69a2a2487e37eb9988028
+    write_a_reply: e15bb5e29e4ad42490d0f9d40d17e21e
+    reviewer: 882ff4831ea1d7d9eeb7d19575006be8
+    resolve: 47362c1e812b301e132d9c4be5f0329e
+    reopen: 0066d9cce35e2f7a6cec3af252ce6580
+    resolved: a1de202e0c3b352731a33bea1897bdb8
+    collapse: d64b33ae34d2ff729b0232220dbd9a99
+    preview_comment_name_required: fa36cde1b98dc2a86671b5d732cc4cae
+    preview_comment_your_name: b00c01deec0af9a441331a5134210de1
+    preview_comment_failed: f12e2f9e71c2ef3d2848c6ed5a16b99b
+    preview_comment_detach_hint: 6fa385ae985c409b511cf7adea2f950a
+    preview_comment_text_changed: 6a4298cc0304d150e0d150689fa049f4
+    preview_no_comments_yet: e9bda0977d617e8ee0079feba73b3c3a
+    channels_still_disabled: 1a8b6447bbdfde8b7fd84fe5b87bec4a
+    channels_still_disabled_description: a869ee5b969817a13ee01e0079269477
+    channels_enabled_again: 636241055a7d339ac16f1f4f7d72d194
+    channels_enabled_again_description: 595e387b2a32d35cb2a3860b209a7bc6
+    some_files_failed_to_upload: 87c15cf17373c535da85470188df68c7
+    rename_channel: 81dff725b16582b6a13c2f0a826eb2cb
+    channel_name: 9368b5a047572b6051f334af5aa76819
+    channel_renamed: a1551cd9d9669ac7602efc3f3c888c59
+    channel_name_reset: 2c7c64bbf0fce057e61d4942f191c861
+    reset_channel_name: ac06e9718420527b4bb04cee342e60cf
+    authentication: 491fbb938cfe44df0438ad3e198d23e6
+    auth_method_local: 4087f0eca4d4989ad0cdf469a1d28af8
+    auth_method_github: 6e1cf3c00fa6fbe24afcc78ea3b5f3e4
+    auth_method_google: 6cc462fb53d90d404f48d5a6695c1de1
+    auth_method_apple: 4e2ced07ca66bd1cf0562882d019aff2
+    auth_method_farcaster: b09af25fcb497663e8594b9fc514b969
+    auth_method_wallet: 4599a5c87198f2113d1e54d435a24cd5
+    auth_method_generic: 58c80e21cf5e88d556ae604726c18e4d
+    done: ffd408fa29d5bc9039ef8ea1b9b699bb
+    add_tag: 2cfa04ceea966149f2b5d40d9c131141
+    repeat_post: fb5ad8292bcc2fe131e69a62ff1fa9d3
+    do_not_repeat: 4b92afcdc3206cb17da5257809c21fb6
+    change_date_or_time: 76fcdf62ab2834115a1bea54d2ef0779
+    time: b504a03d52e8001bfdc5cb6205364f42
+    channels_settings: 770e5ae7cec0a83e1454246b52591093
+    delete_selected: adad57b0659260858fbf786ef31e9612
+    are_you_sure_you_want_to_delete_selected_media: 2fcf9a6ddcd40aa74d2cf914730ecc4b

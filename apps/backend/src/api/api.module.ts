@@ -3,8 +3,11 @@ import { AuthController } from '@gitroom/backend/api/routes/auth.controller';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { UsersController } from '@gitroom/backend/api/routes/users.controller';
 import { AuthMiddleware } from '@gitroom/backend/services/auth/auth.middleware';
-import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { PaymentController } from '@gitroom/backend/api/routes/payment.controller';
+import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
+import { PaymentProviderManager } from '@gitroom/nestjs-libraries/services/payment/payment.provider.manager';
+import { RevenueCatProvider } from '@gitroom/nestjs-libraries/services/payment/providers/revenuecat.provider';
 import { AnalyticsController } from '@gitroom/backend/api/routes/analytics.controller';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PermissionsService } from '@gitroom/backend/services/auth/permissions/permissions.service';
@@ -13,6 +16,11 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
+import { ClippingController } from '@gitroom/backend/api/routes/clipping.controller';
+import { MediaWidgetController } from '@gitroom/backend/api/routes/media.widget.controller';
+import { UploadWidgetAuthMiddleware } from '@gitroom/backend/services/auth/upload.widget.auth.middleware';
+import { ClippingWidgetController } from '@gitroom/backend/api/routes/clipping.widget.controller';
+import { ClippingWidgetAuthMiddleware } from '@gitroom/backend/services/auth/clipping.widget.auth.middleware';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { BillingController } from '@gitroom/backend/api/routes/billing.controller';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
@@ -47,6 +55,7 @@ import { AppleProvider } from '@gitroom/backend/services/auth/providers/apple.pr
 import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
+import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
 
 const authenticatedController = [
   UsersController,
@@ -55,6 +64,7 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
+  ClippingController,
   BillingController,
   NotificationsController,
   CopilotController,
@@ -72,9 +82,15 @@ const authenticatedController = [
 @Module({
   imports: [UploadModule],
   controllers: process.env.MCP_ONLY
-    ? [RootController, OAuthController]
+    ? [
+        RootController,
+        OAuthController,
+        MediaWidgetController,
+        ClippingWidgetController,
+      ]
     : [
         RootController,
+        PaymentController,
         StripeController,
         AuthController,
         PublicController,
@@ -82,14 +98,20 @@ const authenticatedController = [
         EnterpriseController,
         NoAuthIntegrationsController,
         OAuthController,
+        MediaWidgetController,
+        ClippingWidgetController,
         ...authenticatedController,
       ],
   providers: [
     AuthService,
     StripeService,
+    PaymentService,
+    PaymentProviderManager,
+    RevenueCatProvider,
     OpenaiService,
     ExtractContentService,
     AuthMiddleware,
+    UploadWidgetAuthMiddleware,
     PoliciesGuard,
     PermissionsService,
     CodesService,
@@ -111,5 +133,9 @@ const authenticatedController = [
 export class ApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(AuthMiddleware).forRoutes(...authenticatedController);
+    consumer.apply(UploadWidgetAuthMiddleware).forRoutes(MediaWidgetController);
+    consumer
+      .apply(ClippingWidgetAuthMiddleware)
+      .forRoutes(ClippingWidgetController);
   }
 }

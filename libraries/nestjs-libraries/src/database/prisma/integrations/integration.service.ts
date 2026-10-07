@@ -154,6 +154,10 @@ export class IntegrationService {
     return this._integrationRepository.getIntegrationsList(org);
   }
 
+  getChannelHealth(org: string, includeDeleted = false) {
+    return this._integrationRepository.getChannelHealth(org, includeDeleted);
+  }
+
   getIntegrationForOrder(id: string, order: string, user: string, org: string) {
     return this._integrationRepository.getIntegrationForOrder(
       id,
@@ -163,12 +167,23 @@ export class IntegrationService {
     );
   }
 
+  updateCustomName(org: string, id: string, name: string) {
+    return this._integrationRepository.updateCustomName(org, id, name);
+  }
+
   updateNameAndUrl(id: string, name: string, url: string) {
     return this._integrationRepository.updateNameAndUrl(id, name, url);
   }
 
   getIntegrationById(org: string, id: string) {
     return this._integrationRepository.getIntegrationById(org, id);
+  }
+
+  getIntegrationByInternalId(org: string, internalId: string) {
+    return this._integrationRepository.getIntegrationByInternalId(
+      org,
+      internalId
+    );
   }
 
   async refreshToken(provider: SocialProvider, refresh: string) {
@@ -390,6 +405,10 @@ export class IntegrationService {
     return this._integrationRepository.disableIntegrations(org, totalChannels);
   }
 
+  async enableAllIntegrations(org: string) {
+    return this._integrationRepository.enableAllIntegrations(org);
+  }
+
   async checkForDeletedOnceAndUpdate(org: string, page: string) {
     return this._integrationRepository.checkForDeletedOnceAndUpdate(org, page);
   }
@@ -445,6 +464,8 @@ export class IntegrationService {
     date: string,
     forceRefresh = false
   ): Promise<AnalyticsData[]> {
+    // Days to load, missing or invalid on some public API calls (same default as the app)
+    const days = Number(date) > 0 ? Number(date) : 7;
     const getIntegration = await this.getIntegrationById(org.id, integration);
 
     if (!getIntegration) {
@@ -485,7 +506,7 @@ export class IntegrationService {
     }
 
     const getIntegrationData = await ioRedis.get(
-      `integration:${org.id}:${integration}:${date}`
+      `integration:${org.id}:${integration}:${days}`
     );
     if (getIntegrationData) {
       return JSON.parse(getIntegrationData);
@@ -496,10 +517,10 @@ export class IntegrationService {
         const loadAnalytics = await integrationProvider.analytics(
           getIntegration.internalId,
           getIntegration.token,
-          +date
+          days
         );
         await ioRedis.set(
-          `integration:${org.id}:${integration}:${date}`,
+          `integration:${org.id}:${integration}:${days}`,
           JSON.stringify(loadAnalytics),
           'EX',
           !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
@@ -519,6 +540,20 @@ export class IntegrationService {
 
   customers(orgId: string) {
     return this._integrationRepository.customers(orgId);
+  }
+
+  async updateCustomerName(orgId: string, id: string, name: string) {
+    const exists = await this._integrationRepository.getCustomerByName(
+      orgId,
+      name
+    );
+    if (exists && exists.id !== id) {
+      throw new HttpException(
+        'A group with this name already exists',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    return this._integrationRepository.updateCustomerName(orgId, id, name);
   }
 
   getPlugsByIntegrationId(org: string, integrationId: string) {

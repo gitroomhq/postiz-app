@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { FC, useCallback, useState } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';
@@ -8,8 +8,9 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { TrashIcon } from '@gitroom/frontend/components/ui/icons';
 
-const DeleteAccountComponent = () => {
+const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
@@ -56,22 +57,39 @@ const DeleteAccountComponent = () => {
     }
   }, [isSecured]);
 
+  const loadingOverlay = loading && (
+    <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[500] w-full h-full animate-fade flex flex-col items-center justify-center gap-[24px]">
+      <div className="w-[48px] h-[48px] border-[3px] border-forth border-t-transparent rounded-full animate-spin" />
+      <div className="text-[20px] font-semibold">
+        {t('deleting_your_account', 'Deleting your account...')}
+      </div>
+      <div className="text-[14px] text-textItemBlur">
+        {t(
+          'deleting_your_account_description',
+          'We are removing your channels and posts, this can take a while. Please don’t close this window.'
+        )}
+      </div>
+    </div>
+  );
+
+  if (isLink) {
+    return (
+      <>
+        {loadingOverlay}
+        <div
+          className="cursor-pointer flex items-center gap-[8px] text-red-400 hover:text-red-500 text-[14px]"
+          onClick={deleteAccount}
+        >
+          <TrashIcon size={16} />
+          <div>{t('delete_account', 'Delete Account')}</div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-      {loading && (
-        <div className="text-textColor fixed start-0 top-0 bg-primary/80 z-[500] w-full h-full animate-fade flex flex-col items-center justify-center gap-[24px]">
-          <div className="w-[48px] h-[48px] border-[3px] border-forth border-t-transparent rounded-full animate-spin" />
-          <div className="text-[20px] font-semibold">
-            {t('deleting_your_account', 'Deleting your account...')}
-          </div>
-          <div className="text-[14px] text-textItemBlur">
-            {t(
-              'deleting_your_account_description',
-              'We are removing your channels and posts, this can take a while. Please don’t close this window.'
-            )}
-          </div>
-        </div>
-      )}
+      {loadingOverlay}
       <div className="mt-[4px]">{t('delete_account', 'Delete Account')}</div>
       <div className="flex items-center justify-between">
         <div className="flex flex-col">

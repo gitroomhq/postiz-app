@@ -1,10 +1,18 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Upload } from '@aws-sdk/lib-storage';
+import { Readable } from 'stream';
 import 'multer';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import mime from 'mime-types';
 // @ts-ignore
 import { getExtension } from 'mime';
-import { IUploadProvider } from './upload.interface';
+import { IUploadProvider, UploadedStream } from './upload.interface';
 import axios from 'axios';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -154,14 +162,100 @@ class CloudflareStorage implements IUploadProvider {
     }
   }
 
-  // Implement the removeFile method from IUploadProvider
+  async uploadStream(
+    stream: Readable,
+    mimetype: string,
+    ext: string
+  ): Promise<UploadedStream> {
+    try {
+      if (!ALLOWED_MIME_TYPES.has(mimetype)) {
+        throw new Error('Unsupported file type.');
+      }
+      const id = makeId(10);
+      const key = `${id}.${ext}`;
+
+      // Multipart upload holds only a few parts in memory at a time instead
+      // of the whole body, and does not need to know the length up front
+      const upload = new Upload({
+        client: this._client,
+        params: {
+          Bucket: this._bucketName,
+          ACL: 'public-read',
+          Key: key,
+          Body: stream,
+          ContentType: mimetype,
+        },
+      });
+      await upload.done();
+
+      return {
+        filename: key,
+        mimetype,
+        originalname: key,
+        path: `${this._uploadUrl}/${key}`,
+      };
+    } catch (err) {
+      console.error('Error streaming file to Cloudflare R2:', err);
+      throw err;
+    }
+  }
+
+  async signDownloadUrl(fileName: string) {
+    return getSignedUrl(
+      this._client,
+      new GetObjectCommand({ Bucket: this._bucketName, Key: fileName }),
+      { expiresIn: 3 * 3600 }
+    );
+  }
+
+  async signUploadUrl(fileName: string, contentType: string) {
+    return getSignedUrl(
+      this._client,
+      new PutObjectCommand({
+        Bucket: this._bucketName,
+        Key: fileName,
+        ContentType: contentType,
+      }),
+      { expiresIn: 3 * 3600 }
+    );
+  }
+
+  publicUrl(fileName: string) {
+    return `${this._uploadUrl}/${fileName}`;
+  }
+
+  async readFile(fileName: string) {
+    const { Body } = await this._client.send(
+      new GetObjectCommand({ Bucket: this._bucketName, Key: fileName })
+    );
+
+    return Body!.transformToString();
+  }
+
+  async writeFile(fileName: string, body: string, contentType: string) {
+    await this._client.send(
+      new PutObjectCommand({
+        Bucket: this._bucketName,
+        Key: fileName,
+        Body: body,
+        ContentType: contentType,
+      })
+    );
+  }
+
+  // Accepts either the public URL or the bare key
   async removeFile(filePath: string): Promise<void> {
-    // const fileName = filePath.split('/').pop(); // Extract the filename from the path
-    // const command = new DeleteObjectCommand({
-    //   Bucket: this._bucketName,
-    //   Key: fileName,
-    // });
-    // await this._client.send(command);
+    const fileName = filePath.split('/').pop();
+    if (!fileName) {
+      return;
+    }
+
+    await this._client.send(
+      new DeleteObjectCommand({
+        Bucket: this._bucketName,
+        Key: fileName,
+      })
+    );
   }
 }
 

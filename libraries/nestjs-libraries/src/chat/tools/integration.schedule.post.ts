@@ -60,6 +60,7 @@ A single LinkedIn post with one comment
 - postsAndComments array length will be one
 
 Do not use this to update or delete existing posts.
+On success, each item in output contains a previewUrl the user can open to see the post.
 If validation fails, the result contains output.errors describing what to fix; the call can be retried with corrected parameters.
 `,
       inputSchema: z.object({
@@ -91,7 +92,7 @@ If validation fails, the result contains output.errors describing what to fix; t
                     content: z
                       .string()
                       .describe(
-                        "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together)"
+                        "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together), and img (<img src=\"...\">) only when the integration rules say pictures go inside the content"
                       ),
                     attachments: z
                       .array(attachmentUrl)
@@ -110,7 +111,7 @@ If validation fails, the result contains output.errors describing what to fix; t
                     value: z
                       .any()
                       .describe(
-                        'Value of the key, always prefer the id then label if possible'
+                        'Value of the key, always prefer the id then label if possible. When the settings schema says a field is an id, pass the id returned by the channel tools, never the display label'
                       ),
                   })
                 )
@@ -127,6 +128,11 @@ If validation fails, the result contains output.errors describing what to fix; t
             z.object({
               postId: z.string(),
               integration: z.string(),
+              previewUrl: z
+                .string()
+                .describe(
+                  'Public preview page of the created post, share it with the user'
+                ),
             })
           )
           .or(z.object({ errors: z.string() })),
@@ -246,7 +252,13 @@ If validation fails, the result contains output.errors describing what to fix; t
               },
             ],
           }, 'MCP');
-          finalOutput.push(...output);
+          // Same public preview page the calendar "Preview Post" button opens.
+          finalOutput.push(
+            ...output.map((p) => ({
+              ...p,
+              previewUrl: `${process.env.FRONTEND_URL}/p/${p.postId}?share=true`,
+            }))
+          );
         }
 
         return {

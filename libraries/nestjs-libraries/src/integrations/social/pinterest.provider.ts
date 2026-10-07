@@ -7,7 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { PinterestSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/pinterest.dto';
 import FormData from 'form-data';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -61,7 +61,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
-  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
+  override maxConcurrentJob = 10; // Pinterest limits are per user
   maxLength() {
     return 500;
   }
@@ -128,7 +128,10 @@ export class PinterestProvider
           'Pinterest was unable to reach the URL provided. Please check the link and try again.',
       };
     }
-    if (body.indexOf(`does not match '^\\\\\\\\\\\\\\\\d+$'`) > -1) {
+    if (
+      body.indexOf("does not match '^") > -1 &&
+      body.indexOf("d+$'") > -1
+    ) {
       return {
         type: 'bad-body' as const,
         value:
@@ -139,6 +142,13 @@ export class PinterestProvider
       return {
         type: 'bad-body' as const,
         value: 'The specified board was not found. Please check the board ID.',
+      };
+    }
+    if (body.indexOf('You are not permitted to access that resource') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The connected Pinterest account is not permitted to post to this board. Please check the board ID and that the account owns or can write to the board.',
       };
     }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {
@@ -192,7 +202,7 @@ export class PinterestProvider
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: `https://www.pinterest.com/oauth/?client_id=${
         process.env.PINTEREST_CLIENT_ID
@@ -201,7 +211,7 @@ export class PinterestProvider
       )}&response_type=code&scope=${encodeURIComponent(
         'boards:read,boards:write,pins:read,pins:write,user_accounts:read'
       )}&state=${state}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
@@ -639,40 +649,43 @@ export class PinterestProvider
       const result: AnalyticsData[] = [];
       const metrics = data.all;
 
-      if (metrics.lifetime_metrics) {
-        const lifetimeMetrics = metrics.lifetime_metrics;
+      // The requested metric types are period metrics: Pinterest returns them
+      // in summary_metrics, never in lifetime_metrics (that only ever carries
+      // TOTAL_COMMENTS / TOTAL_REACTIONS).
+      if (metrics.summary_metrics) {
+        const summaryMetrics = metrics.summary_metrics;
 
-        if (lifetimeMetrics.IMPRESSION !== undefined) {
+        if (summaryMetrics.IMPRESSION !== undefined) {
           result.push({
             label: 'Impressions',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.IMPRESSION), date: today }],
+            data: [{ total: String(summaryMetrics.IMPRESSION), date: today }],
           });
         }
 
-        if (lifetimeMetrics.PIN_CLICK !== undefined) {
+        if (summaryMetrics.PIN_CLICK !== undefined) {
           result.push({
             label: 'Pin Clicks',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.PIN_CLICK), date: today }],
+            data: [{ total: String(summaryMetrics.PIN_CLICK), date: today }],
           });
         }
 
-        if (lifetimeMetrics.OUTBOUND_CLICK !== undefined) {
+        if (summaryMetrics.OUTBOUND_CLICK !== undefined) {
           result.push({
             label: 'Outbound Clicks',
             percentageChange: 0,
             data: [
-              { total: String(lifetimeMetrics.OUTBOUND_CLICK), date: today },
+              { total: String(summaryMetrics.OUTBOUND_CLICK), date: today },
             ],
           });
         }
 
-        if (lifetimeMetrics.SAVE !== undefined) {
+        if (summaryMetrics.SAVE !== undefined) {
           result.push({
             label: 'Saves',
             percentageChange: 0,
-            data: [{ total: String(lifetimeMetrics.SAVE), date: today }],
+            data: [{ total: String(summaryMetrics.SAVE), date: today }],
           });
         }
       }

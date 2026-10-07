@@ -1,7 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
@@ -51,16 +51,20 @@ export const FirstBillingComponent = () => {
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
+  const [stripeFailed, setStripeFailed] = useState(false);
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
+  const { mutate } = useSWRConfig();
   const modals = useModals();
   const t = useT();
   const [datafast_visitor_id] = useCookie('datafast_visitor_id', '');
   const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
-    setStripe(loadStripe(stripeClient));
+    const stripePromise = loadStripe(stripeClient);
+    stripePromise.catch(() => setStripeFailed(true));
+    setStripe(stripePromise);
   }, []);
 
   const loadCheckout = useCallback(async () => {
@@ -105,6 +109,12 @@ export const FirstBillingComponent = () => {
       refreshWhenHidden: false,
     }
   );
+
+  useEffect(() => {
+    if (data?.blocked) {
+      mutate('/user/self');
+    }
+  }, [data?.blocked, mutate]);
 
   const price = useMemo(
     () => Object.entries(pricing).filter(([key, value]) => key !== 'FREE'),
@@ -210,6 +220,13 @@ export const FirstBillingComponent = () => {
               {t(
                 'billing_other_account_subscribed',
                 'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
+              )}
+            </div>
+          ) : stripeFailed ? (
+            <div className="mt-[24px] p-[24px] rounded-[20px] border-[1.5px] border-newColColor text-[16px] font-[500]">
+              {t(
+                'billing_stripe_load_failed',
+                'The payment form could not be loaded. Please disable ad blockers or privacy extensions for this page and reload.'
               )}
             </div>
           ) : !isLoading && data && stripe ? (
@@ -372,6 +389,13 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
         key: 'billing_ai_videos_per_month',
         defaultValue: 'AI Videos per month',
         prefix: currentPricing?.generate_videos,
+      });
+    }
+    if (currentPricing?.clipping_minutes) {
+      list.push({
+        key: 'billing_clipping_minutes_per_month',
+        defaultValue: 'minutes of AI video clipping per month',
+        prefix: currentPricing?.clipping_minutes,
       });
     }
     return list;

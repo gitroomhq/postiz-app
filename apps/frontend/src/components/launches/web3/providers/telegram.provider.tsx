@@ -1,6 +1,5 @@
 'use client';
 
-import '@neynar/react/dist/style.css';
 import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { Web3ProviderInterface } from '@gitroom/frontend/components/launches/web3/web3.provider.interface';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';

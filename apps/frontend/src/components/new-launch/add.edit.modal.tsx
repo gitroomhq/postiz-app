@@ -9,6 +9,9 @@ import { Integrations } from '@gitroom/frontend/components/launches/calendar.con
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 export interface AddEditModalProps {
   dummy?: boolean;
@@ -52,6 +55,13 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
     setIsCreateSet(!!props.addEditSets);
   }, []);
 
+  useEffect(() => {
+    document.querySelector('body')?.classList.add('hideChatbase');
+    return () => {
+      document.querySelector('body')?.classList.remove('hideChatbase');
+    };
+  }, []);
+
   if (!integrations.length) {
     return null;
   }
@@ -61,6 +71,9 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
 
 export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
+  const modal = useModals();
+  const toaster = useToaster();
+  const t = useT();
   const { addOrRemoveSelectedIntegration, selectedIntegrations, integrations } =
     useLaunchStore(
       useShallow((state) => ({
@@ -77,7 +90,9 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
           const integration = integrations.find(
             (i) => i.id === post.integration.id
           );
-          addOrRemoveSelectedIntegration(integration, post.settings);
+          if (integration) {
+            addOrRemoveSelectedIntegration(integration, post.settings);
+          }
         }
       }
     }
@@ -86,6 +101,17 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
       const integration = integrations.find(
         (i) => i.id === existingData.integration
       );
+      if (!integration) {
+        toaster.show(
+          t(
+            'we_are_experiencing_some_difficulty_try_to_refresh_the_page',
+            'We are experiencing some difficulty, try to refresh the page'
+          ),
+          'warning'
+        );
+        modal.closeAll();
+        return;
+      }
       addOrRemoveSelectedIntegration(integration, existingData.settings);
     }
 
@@ -150,7 +176,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         existingData.posts.map((post) => ({
           delay: post.delay,
           content:
-            post.content.indexOf('<p>') > -1
+            /<p[\s>]/i.test(post.content)
               ? post.content
               : post.content
                   .split('\n')
@@ -175,7 +201,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
             content:
-              p.content.indexOf('<p>') > -1
+              /<p[\s>]/i.test(p.content)
                 ? p.content
                 : p.content
                     .split('\n')
@@ -188,7 +214,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
             content:
-              p.content.indexOf('<p>') > -1
+              /<p[\s>]/i.test(p.content)
                 ? p.content
                 : p.content
                     .split('\n')
