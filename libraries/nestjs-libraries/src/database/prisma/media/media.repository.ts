@@ -160,8 +160,6 @@ export class MediaRepository {
         thumbnail: true,
         alt: true,
         thumbnailTimestamp: true,
-        type: true,
-        fileSize: true,
         createdAt: true,
       },
       skip: pageNum * 18,
