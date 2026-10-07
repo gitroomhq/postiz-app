@@ -170,6 +170,15 @@ const personMessagesSelect = {
   deletedAt: true,
 } satisfies Prisma.MessagesSelect;
 
+const personMessageGroupsSelect = {
+  id: true,
+  buyerId: true,
+  sellerId: true,
+  buyerOrganizationId: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.MessagesGroupSelect;
+
 const personOrdersOrdersItemsSelect = {
   id: true,
   integrationId: true,
@@ -500,6 +509,23 @@ const {
   ...workspaceRootSelect
 } = workspaceSelect;
 
+const batchSize = 100;
+
+type Id = { id: string };
+
+type Category = [string, AsyncIterable<object>];
+
+const page = <W extends object, S extends object>(
+  where: W,
+  select: S,
+  last?: Id
+) => ({
+  where: last ? { ...where, id: { gt: last.id } } : where,
+  select,
+  take: batchSize,
+  orderBy: { id: 'asc' as const },
+});
+
 @Injectable()
 export class PrivacyExportRepository {
   constructor(
@@ -525,10 +551,18 @@ export class PrivacyExportRepository {
     });
   }
 
-  personMessages(
-    id: string,
-    tx: Pick<Prisma.TransactionClient, 'messages'> = this._db.model
-  ) {
+  private personMessageGroups(id: string, tx: Prisma.TransactionClient) {
+    return tx.messagesGroup.findMany({
+      take: 1001,
+      where: {
+        OR: [{ buyerId: id }, { sellerId: id }],
+      },
+      select: personMessageGroupsSelect,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+  }
+
+  private personMessages(id: string, tx: Prisma.TransactionClient) {
     return tx.messages.findMany({
       take: 1001,
       where: {
@@ -635,14 +669,18 @@ export class PrivacyExportRepository {
         });
         if (!root) return null;
         const participant = { OR: [{ buyerId: id }, { sellerId: id }] };
-        const [messages, orders, orderItems] = await Promise.all([
-          tx.messages.count({ where: { group: participant } }),
-          tx.orders.count({ where: participant }),
-          tx.orderItems.count({ where: { order: participant } }),
-        ]);
+        const [messageGroups, messages, orders, orderItems] = await Promise.all(
+          [
+            tx.messagesGroup.count({ where: participant }),
+            tx.messages.count({ where: { group: participant } }),
+            tx.orders.count({ where: participant }),
+            tx.orderItems.count({ where: { order: participant } }),
+          ]
+        );
         const counts = {
           ...root._count,
           niches: root.agencies?._count.niches ?? 0,
+          messageGroups,
           messages,
           orders,
         };
@@ -658,9 +696,15 @@ export class PrivacyExportRepository {
         // Four covers the user, profile picture, agency and agency logo.
         this.checkBudget([...Object.values(counts), orderItems], 4);
         const person = await this.person(id, tx);
+        const groups = await this.personMessageGroups(id, tx);
         const correspondence = await this.personMessages(id, tx);
         const purchases = await this.personOrders(id, tx);
-        return { person, messages: correspondence, orders: purchases };
+        return {
+          person,
+          messageGroups: groups,
+          messages: correspondence,
+          orders: purchases,
+        };
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
     );
@@ -687,438 +731,12 @@ export class PrivacyExportRepository {
         if (!root) return false;
         await begin();
         await emit(target, root);
-        const page = async <T extends { id: string }>(
-          category: string,
-          query: (after: string | undefined) => Promise<T[]>,
-          keepId = true
-        ) => {
-          let after: string | undefined;
-          for (;;) {
-            const rows = await query(after);
-            if (!rows.length) break;
-            for (const row of rows) {
-              if (keepId) await emit(category, row);
-              else {
-                const { id: _id, ...value } = row;
-                await emit(category, value);
-              }
-            }
-            after = rows[rows.length - 1].id;
-            if (rows.length < 100) break;
-          }
-        };
-        const participant = { OR: [{ buyerId: id }, { sellerId: id }] };
-        if (target === 'person') {
-          await page(
-            'person.organizations',
-            (after) =>
-              tx.userOrganization.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personOrganizationsSelect },
-              }),
-            false
-          );
-          await page(
-            'person.comments',
-            (after) =>
-              tx.comments.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...commentSelect },
-              }),
-            true
-          );
-          await page(
-            'person.items',
-            (after) =>
-              tx.itemUser.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personItemsSelect },
-              }),
-            true
-          );
-          await page(
-            'person.agencies',
-            (after) =>
-              tx.socialMediaAgency.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personAgencyFlatSelect },
-              }),
-            true
-          );
-          await page(
-            'person.payoutProblems',
-            (after) =>
-              tx.payoutProblems.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personPayoutProblemsSelect },
-              }),
-            true
-          );
-          await page(
-            'person.oauthAuthorizations',
-            (after) =>
-              tx.oAuthAuthorization.findMany({
-                where: {
-                  ...{ userId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personOauthAuthorizationsSelect },
-              }),
-            true
-          );
-          await page(
-            'person.messages',
-            (after) =>
-              tx.messages.findMany({
-                where: {
-                  ...{ group: participant },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personMessagesSelect },
-              }),
-            true
-          );
-          await page(
-            'person.orders',
-            (after) =>
-              tx.orders.findMany({
-                where: {
-                  ...participant,
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...personOrderFlatSelect },
-              }),
-            true
-          );
-          await page(
-            'person.orderItems',
-            (after) =>
-              tx.orderItems.findMany({
-                where: {
-                  ...{ order: participant },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: {
-                  id: true,
-                  ...{ orderId: true, ...personOrdersOrdersItemsSelect },
-                },
-              }),
-            true
-          );
-          let niche: string | undefined;
-          for (;;) {
-            const rows = await tx.socialMediaAgencyNiche.findMany({
-              where: {
-                agency: { userId: id },
-                ...(niche ? { niche: { gt: niche } } : {}),
-              },
-              take: 100,
-              orderBy: { niche: 'asc' },
-              select: personAgenciesNichesSelect,
-            });
-            if (!rows.length) break;
-            for (const row of rows) await emit('person.agencyNiches', row);
-            niche = rows[rows.length - 1].niche;
-            if (rows.length < 100) break;
-          }
-        } else {
-          await page(
-            'workspace.users',
-            (after) =>
-              tx.userOrganization.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceUsersSelect },
-              }),
-            false
-          );
-          await page(
-            'workspace.post',
-            (after) =>
-              tx.post.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspacePostFlatSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.media',
-            (after) =>
-              tx.media.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...mediaSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.Integration',
-            (after) =>
-              tx.integration.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceIntegrationSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.Comments',
-            (after) =>
-              tx.comments.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...commentSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.tags',
-            (after) =>
-              tx.tags.findMany({
-                where: {
-                  ...{ orgId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceTagsSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.notifications',
-            (after) =>
-              tx.notifications.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceNotificationsSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.signatures',
-            (after) =>
-              tx.signatures.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceSignaturesSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.sets',
-            (after) =>
-              tx.sets.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceSetsSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.customers',
-            (after) =>
-              tx.customer.findMany({
-                where: {
-                  ...{ orgId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceCustomersSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.credits',
-            (after) =>
-              tx.credits.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceCreditsSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.clippings',
-            (after) =>
-              tx.clipping.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceClippingFlatSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.github',
-            (after) =>
-              tx.gitHub.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceGithubSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.thirdParty',
-            (after) =>
-              tx.thirdParty.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceThirdPartySelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.oauthApp',
-            (after) =>
-              tx.oAuthApp.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceOauthAppSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.oauthAuthorizations',
-            (after) =>
-              tx.oAuthAuthorization.findMany({
-                where: {
-                  ...{ organizationId: id },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: { id: true, ...workspaceOauthAuthorizationsSelect },
-              }),
-            true
-          );
-          await page(
-            'workspace.clips',
-            (after) =>
-              tx.clippingClip.findMany({
-                where: {
-                  ...{ clipping: { organizationId: id } },
-                  ...(after ? { id: { gt: after } } : {}),
-                },
-                take: 100,
-                orderBy: { id: 'asc' },
-                select: {
-                  id: true,
-                  ...{ clippingId: true, ...workspaceClippingsClipsSelect },
-                },
-              }),
-            true
-          );
-          let last: { postId: string; tagId: string } | undefined;
-          for (;;) {
-            const rows = await tx.tagsPosts.findMany({
-              where: {
-                post: { organizationId: id },
-                ...(last
-                  ? {
-                      OR: [
-                        { postId: { gt: last.postId } },
-                        { postId: last.postId, tagId: { gt: last.tagId } },
-                      ],
-                    }
-                  : {}),
-              },
-              take: 100,
-              orderBy: [{ postId: 'asc' }, { tagId: 'asc' }],
-              select: { postId: true, ...workspacePostTagsSelect },
-            });
-            if (!rows.length) break;
-            for (const row of rows) await emit('workspace.postTags', row);
-            last = rows[rows.length - 1];
-            if (rows.length < 100) break;
-          }
+        const categories =
+          target === 'person'
+            ? this.personCategories(tx, id)
+            : this.workspaceCategories(tx, id);
+        for (const [category, rows] of categories) {
+          for await (const row of rows) await emit(category, row);
         }
         return true;
       },
@@ -1127,6 +745,296 @@ export class PrivacyExportRepository {
         timeout: 15 * 60_000,
       }
     );
+  }
+
+  private async *batches<T>(find: (last?: T) => Promise<T[]>) {
+    let last: T | undefined;
+    for (;;) {
+      const rows = await find(last);
+      yield* rows;
+      if (rows.length < batchSize) return;
+      last = rows[rows.length - 1];
+    }
+  }
+
+  private personCategories(
+    tx: Prisma.TransactionClient,
+    id: string
+  ): Category[] {
+    const participant = { OR: [{ buyerId: id }, { sellerId: id }] };
+    return [
+      [
+        'person.organizations',
+        this.batches((last?: { organizationId: string }) =>
+          tx.userOrganization.findMany({
+            where: {
+              userId: id,
+              ...(last && { organizationId: { gt: last.organizationId } }),
+            },
+            take: batchSize,
+            orderBy: { organizationId: 'asc' },
+            select: personOrganizationsSelect,
+          })
+        ),
+      ],
+      [
+        'person.comments',
+        this.batches((last?: Id) =>
+          tx.comments.findMany(page({ userId: id }, commentSelect, last))
+        ),
+      ],
+      [
+        'person.items',
+        this.batches((last?: Id) =>
+          tx.itemUser.findMany(page({ userId: id }, personItemsSelect, last))
+        ),
+      ],
+      [
+        'person.agencies',
+        this.batches((last?: Id) =>
+          tx.socialMediaAgency.findMany(
+            page({ userId: id }, personAgencyFlatSelect, last)
+          )
+        ),
+      ],
+      [
+        'person.payoutProblems',
+        this.batches((last?: Id) =>
+          tx.payoutProblems.findMany(
+            page({ userId: id }, personPayoutProblemsSelect, last)
+          )
+        ),
+      ],
+      [
+        'person.oauthAuthorizations',
+        this.batches((last?: Id) =>
+          tx.oAuthAuthorization.findMany(
+            page({ userId: id }, personOauthAuthorizationsSelect, last)
+          )
+        ),
+      ],
+      [
+        'person.messageGroups',
+        this.batches((last?: Id) =>
+          tx.messagesGroup.findMany(
+            page(participant, personMessageGroupsSelect, last)
+          )
+        ),
+      ],
+      [
+        'person.messages',
+        this.batches((last?: Id) =>
+          tx.messages.findMany(
+            page({ group: participant }, personMessagesSelect, last)
+          )
+        ),
+      ],
+      [
+        'person.orders',
+        this.batches((last?: Id) =>
+          tx.orders.findMany(page(participant, personOrderFlatSelect, last))
+        ),
+      ],
+      [
+        'person.orderItems',
+        this.batches((last?: Id) =>
+          tx.orderItems.findMany(
+            page(
+              { order: participant },
+              { orderId: true, ...personOrdersOrdersItemsSelect },
+              last
+            )
+          )
+        ),
+      ],
+      [
+        'person.agencyNiches',
+        this.batches((last?: { niche: string }) =>
+          tx.socialMediaAgencyNiche.findMany({
+            where: {
+              agency: { userId: id },
+              ...(last && { niche: { gt: last.niche } }),
+            },
+            take: batchSize,
+            orderBy: { niche: 'asc' },
+            select: personAgenciesNichesSelect,
+          })
+        ),
+      ],
+    ];
+  }
+
+  private workspaceCategories(
+    tx: Prisma.TransactionClient,
+    id: string
+  ): Category[] {
+    return [
+      [
+        'workspace.users',
+        this.batches((last?: { userId: string }) =>
+          tx.userOrganization.findMany({
+            where: {
+              organizationId: id,
+              ...(last && { userId: { gt: last.userId } }),
+            },
+            take: batchSize,
+            orderBy: { userId: 'asc' },
+            select: workspaceUsersSelect,
+          })
+        ),
+      ],
+      [
+        'workspace.post',
+        this.batches((last?: Id) =>
+          tx.post.findMany(
+            page({ organizationId: id }, workspacePostFlatSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.media',
+        this.batches((last?: Id) =>
+          tx.media.findMany(page({ organizationId: id }, mediaSelect, last))
+        ),
+      ],
+      [
+        'workspace.Integration',
+        this.batches((last?: Id) =>
+          tx.integration.findMany(
+            page({ organizationId: id }, workspaceIntegrationSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.Comments',
+        this.batches((last?: Id) =>
+          tx.comments.findMany(
+            page({ organizationId: id }, commentSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.tags',
+        this.batches((last?: Id) =>
+          tx.tags.findMany(page({ orgId: id }, workspaceTagsSelect, last))
+        ),
+      ],
+      [
+        'workspace.notifications',
+        this.batches((last?: Id) =>
+          tx.notifications.findMany(
+            page({ organizationId: id }, workspaceNotificationsSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.signatures',
+        this.batches((last?: Id) =>
+          tx.signatures.findMany(
+            page({ organizationId: id }, workspaceSignaturesSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.sets',
+        this.batches((last?: Id) =>
+          tx.sets.findMany(
+            page({ organizationId: id }, workspaceSetsSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.customers',
+        this.batches((last?: Id) =>
+          tx.customer.findMany(
+            page({ orgId: id }, workspaceCustomersSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.credits',
+        this.batches((last?: Id) =>
+          tx.credits.findMany(
+            page({ organizationId: id }, workspaceCreditsSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.clippings',
+        this.batches((last?: Id) =>
+          tx.clipping.findMany(
+            page({ organizationId: id }, workspaceClippingFlatSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.github',
+        this.batches((last?: Id) =>
+          tx.gitHub.findMany(
+            page({ organizationId: id }, workspaceGithubSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.thirdParty',
+        this.batches((last?: Id) =>
+          tx.thirdParty.findMany(
+            page({ organizationId: id }, workspaceThirdPartySelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.oauthApp',
+        this.batches((last?: Id) =>
+          tx.oAuthApp.findMany(
+            page({ organizationId: id }, workspaceOauthAppSelect, last)
+          )
+        ),
+      ],
+      [
+        'workspace.oauthAuthorizations',
+        this.batches((last?: Id) =>
+          tx.oAuthAuthorization.findMany(
+            page(
+              { organizationId: id },
+              workspaceOauthAuthorizationsSelect,
+              last
+            )
+          )
+        ),
+      ],
+      [
+        'workspace.clips',
+        this.batches((last?: Id) =>
+          tx.clippingClip.findMany(
+            page(
+              { clipping: { organizationId: id } },
+              { clippingId: true, ...workspaceClippingsClipsSelect },
+              last
+            )
+          )
+        ),
+      ],
+      [
+        'workspace.postTags',
+        this.batches((last?: { postId: string; tagId: string }) =>
+          tx.tagsPosts.findMany({
+            where: {
+              post: { organizationId: id },
+              ...(last && {
+                OR: [
+                  { postId: { gt: last.postId } },
+                  { postId: last.postId, tagId: { gt: last.tagId } },
+                ],
+              }),
+            },
+            take: batchSize,
+            orderBy: [{ postId: 'asc' }, { tagId: 'asc' }],
+            select: { postId: true, ...workspacePostTagsSelect },
+          })
+        ),
+      ],
+    ];
   }
 
   private checkCounts(counts: Record<string, number>) {

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Logger,
   Post,
   UseGuards,
   Res,
@@ -14,11 +15,19 @@ import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guar
 import { PrivacyExportDto } from '@gitroom/nestjs-libraries/dtos/users/privacy.export.dto';
 import { PrivacyExportService } from '@gitroom/nestjs-libraries/database/prisma/privacy/privacy.export.service';
 
+class ExportReaderDisconnected extends Error {
+  constructor() {
+    super('Export reader disconnected');
+  }
+}
+
 @ApiTags('Privacy exports')
 @Controller('/public/v1/privacy')
 // Person exports are platform-wide and require the platform SuperAdminGuard.
 @UseGuards(SuperAdminGuard)
 export class PublicPrivacyController {
+  private readonly _logger = new Logger(PublicPrivacyController.name);
+
   constructor(private _exports: PrivacyExportService) {}
 
   @Post('/export')
@@ -56,7 +65,7 @@ export class PublicPrivacyController {
     response.setHeader('X-Accel-Buffering', 'no');
     try {
       await this._exports.stream(org.id, body, async (line) => {
-        if (response.destroyed) throw new Error('Export reader disconnected');
+        if (response.destroyed) throw new ExportReaderDisconnected();
         if (response.write(line)) return;
         await new Promise<void>((resolve, reject) => {
           const cleanup = () => {
@@ -70,7 +79,7 @@ export class PublicPrivacyController {
           };
           const close = () => {
             cleanup();
-            reject(new Error('Export reader disconnected'));
+            reject(new ExportReaderDisconnected());
           };
           const fail = (error: Error) => {
             cleanup();
@@ -84,6 +93,12 @@ export class PublicPrivacyController {
       response.end();
     } catch (error) {
       if (response.headersSent) {
+        if (!(error instanceof ExportReaderDisconnected)) {
+          this._logger.error(
+            `Privacy export stream failed for ${body.target} ${body.targetId}`,
+            error
+          );
+        }
         response.destroy();
         return;
       }

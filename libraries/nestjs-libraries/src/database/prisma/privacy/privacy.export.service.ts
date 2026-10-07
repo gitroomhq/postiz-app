@@ -112,9 +112,18 @@ export class PrivacyExportService {
         'Backups and media storage, including availability of soft-deleted files',
         'AutoPost feed URLs and configurations require controller review because URLs may embed credentials',
         'Workspace marketplace orders and buyer correspondence require controller retrieval and third-party privacy review',
+        'Person marketplace messages, message groups and orders contain the counterparty identity and words and require controller third-party privacy review before release',
         'Clipping source URLs, error diagnostics and thumbnails on source records require controller review for embedded credentials',
         'AI conversations and traces require controller attribution review; opaque runtime payloads can contain credentials',
         'Opaque integration settings, plug configuration, error bodies and webhook URLs are withheld because they can contain credentials; controller must review any attributable non-secret data',
+      ],
+      withheldFields: [
+        'Post.settings and Post.error: opaque provider settings and error bodies that can contain credentials',
+        'Post.submittedForOrderId, Post.submittedForOrganizationId, Post.approvedSubmitForOrder and Post.lastMessageId: marketplace links, covered by the marketplace review above',
+        'Messages.special: opaque marketplace message payload that can contain credentials or third-party data',
+        'Orders.captureId, Organization.paymentId and Subscription.identifier: payment provider references, retrieved from the payment provider',
+        'User.account, User.connectedAccount and User.inviteId: payment provider account reference and state, and invitation reference',
+        'UsedCodes: redeemed purchase and promotional code rows of a workspace',
       ],
     };
   }
