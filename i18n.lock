@@ -339,6 +339,9 @@ checksums:
     duplicate_post: 550d07a1efcab352409ecdbaa16acfcc
     preview_post: a86240c3451c3d5737b6acf358e1d056
     open_post: 7973a6d7427806d086720278a9b5dba0
+    post_link_not_ready: b27af79911e6028b2276a1e45b7c3dfe
+    post_has_no_public_link: e003c7de40911d49922d9f668bffc280
+    post_link_reconnect_channel: 98822b4b34a2625a70d308938cdcb78a
     post_statistics: 946015ed60528cf3b173135542053d3e
     draft: e8a92958ad300aacfe46c2bf6644927e
     week_number: 94b8a343e6e9a25c021e055ad974c68e
