@@ -830,5 +830,8 @@
   "time": "সময়",
   "channels_settings": "চ্যানেল সেটিংস",
   "delete_selected": "নির্বাচিতগুলো মুছে ফেলুন",
-  "are_you_sure_you_want_to_delete_selected_media": "আপনি কি নিশ্চিত যে আপনি নির্বাচিত মিডিয়া মুছে ফেলতে চান?"
+  "are_you_sure_you_want_to_delete_selected_media": "আপনি কি নিশ্চিত যে আপনি নির্বাচিত মিডিয়া মুছে ফেলতে চান?",
+  "delete_post_from_all_channels_question": "এই পোস্টটি একাধিক চ্যানেলের জন্য তৈরি করা হয়েছে। আপনি কি এটি সবগুলো থেকে মুছে ফেলতে চান?",
+  "delete_from_all_channels": "সব চ্যানেল থেকে মুছে ফেলুন",
+  "delete_only_from": "শুধুমাত্র চ্যানেল থেকে:"
 }

@@ -830,5 +830,8 @@
   "time": "Saat",
   "channels_settings": "Kanal Ayarları",
   "delete_selected": "Seçilenleri sil",
-  "are_you_sure_you_want_to_delete_selected_media": "Seçili medyayı silmek istediğinizden emin misiniz?"
+  "are_you_sure_you_want_to_delete_selected_media": "Seçili medyayı silmek istediğinizden emin misiniz?",
+  "delete_post_from_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsinden silmek istiyor musunuz?",
+  "delete_from_all_channels": "Tüm kanallardan sil",
+  "delete_only_from": "Yalnızca şu kanaldan:"
 }

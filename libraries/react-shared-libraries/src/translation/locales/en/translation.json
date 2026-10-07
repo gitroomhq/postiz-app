@@ -832,5 +832,8 @@
   "time": "Time",
   "channels_settings": "Channel Settings",
   "delete_selected": "Delete Selected",
-  "are_you_sure_you_want_to_delete_selected_media": "Are you sure you want to delete the selected media?"
+  "are_you_sure_you_want_to_delete_selected_media": "Are you sure you want to delete the selected media?",
+  "delete_post_from_all_channels_question": "This post was created for more than one channel. Do you want to delete it from all of them?",
+  "delete_from_all_channels": "Delete from all channels",
+  "delete_only_from": "Only from"
 }

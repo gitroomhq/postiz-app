@@ -830,5 +830,8 @@
   "time": "時刻",
   "channels_settings": "チャンネル設定",
   "delete_selected": "選択したものを削除",
-  "are_you_sure_you_want_to_delete_selected_media": "選択したメディアを削除してもよろしいですか？"
+  "are_you_sure_you_want_to_delete_selected_media": "選択したメディアを削除してもよろしいですか？",
+  "delete_post_from_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルから削除しますか？",
+  "delete_from_all_channels": "すべてのチャンネルから削除",
+  "delete_only_from": "このチャンネルのみ:"
 }

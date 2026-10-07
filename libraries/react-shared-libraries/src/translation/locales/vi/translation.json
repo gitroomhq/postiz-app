@@ -830,5 +830,8 @@
   "time": "Giờ",
   "channels_settings": "Cài đặt kênh",
   "delete_selected": "Xóa mục đã chọn",
-  "are_you_sure_you_want_to_delete_selected_media": "Bạn có chắc muốn xóa phương tiện đã chọn không?"
+  "are_you_sure_you_want_to_delete_selected_media": "Bạn có chắc muốn xóa phương tiện đã chọn không?",
+  "delete_post_from_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn xóa nó khỏi tất cả các kênh không?",
+  "delete_from_all_channels": "Xóa khỏi tất cả các kênh",
+  "delete_only_from": "Chỉ từ"
 }

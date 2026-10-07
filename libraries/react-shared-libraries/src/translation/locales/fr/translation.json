@@ -830,5 +830,8 @@
   "time": "Heure",
   "channels_settings": "Paramètres des canaux",
   "delete_selected": "Supprimer la sélection",
-  "are_you_sure_you_want_to_delete_selected_media": "Êtes-vous sûr de vouloir supprimer les médias sélectionnés ?"
+  "are_you_sure_you_want_to_delete_selected_media": "Êtes-vous sûr de vouloir supprimer les médias sélectionnés ?",
+  "delete_post_from_all_channels_question": "Ce post a été créé pour plusieurs canaux. Voulez-vous le supprimer de tous ?",
+  "delete_from_all_channels": "Supprimer de tous les canaux",
+  "delete_only_from": "Uniquement sur"
 }

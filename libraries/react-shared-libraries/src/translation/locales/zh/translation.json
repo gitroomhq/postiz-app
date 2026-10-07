@@ -830,5 +830,8 @@
   "time": "时间",
   "channels_settings": "频道设置",
   "delete_selected": "删除所选",
-  "are_you_sure_you_want_to_delete_selected_media": "你确定要删除所选媒体吗？"
+  "are_you_sure_you_want_to_delete_selected_media": "你确定要删除所选媒体吗？",
+  "delete_post_from_all_channels_question": "此帖子是为多个频道创建的。要从所有频道中删除它吗？",
+  "delete_from_all_channels": "从所有频道删除",
+  "delete_only_from": "只删除"
 }

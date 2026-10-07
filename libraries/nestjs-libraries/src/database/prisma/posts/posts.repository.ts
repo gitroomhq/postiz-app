@@ -406,6 +406,26 @@ export class PostsRepository {
     });
   }
 
+  // the posts of the other channels in the batch, without the given group
+  getPostsByBatch(orgId: string, batchId: string, exceptGroup: string) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        batchId,
+        group: {
+          not: exceptGroup,
+        },
+        deletedAt: null,
+        integration: {
+          deletedAt: null,
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
+
   getPost(
     id: string,
     includeIntegration = false,
@@ -610,11 +630,39 @@ export class PostsRepository {
     // Keep the existing group instead of rotating it, so open clients
     // (calendar) holding the group stay valid. Used by out-of-band updates
     // (agent / MCP / public API); the dashboard keeps the rotate-and-sweep.
-    keepGroup = false
+    keepGroup = false,
+    // Shared by the posts saved together for several channels, so opening one
+    // of them in the editor brings the others.
+    batchId?: string
   ) {
     const posts: Post[] = [];
     const uuid = uuidv4();
     const group = keepGroup && body.group ? body.group : uuid;
+
+    // an edited post stays in the batch it was created in, even when it is
+    // saved on its own or with a group that was rotated since
+    const ids = body.value.map((value) => value.id).filter(Boolean);
+    const existingBatchId =
+      body.group || ids.length
+        ? (
+            await this._post.model.post.findFirst({
+              where: {
+                organizationId: orgId,
+                deletedAt: null,
+                batchId: {
+                  not: null,
+                },
+                OR: [
+                  ...(body.group ? [{ group: body.group }] : []),
+                  ...(ids.length ? [{ id: { in: ids } }] : []),
+                ],
+              },
+              select: {
+                batchId: true,
+              },
+            })
+          )?.batchId
+        : undefined;
 
     for (const value of body.value) {
       const updateData = (type: 'create' | 'update') => ({
@@ -643,6 +691,7 @@ export class PostsRepository {
         content: value.content,
         delay: value.delay || 0,
         group,
+        batchId: existingBatchId || batchId,
         intervalInDays: inter ? +inter : null,
         approvedSubmitForOrder: APPROVED_SUBMIT_FOR_ORDER.NO,
         ...(type === 'create' ? { creationMethod } : {}),
