@@ -37,8 +37,20 @@ export interface IAuthenticator {
   resolveReleaseId?(
     accessToken: string,
     releaseId: string,
+    integration: Integration,
+    settings: any,
+    releaseURL: string
+  ): Promise<
+    | { postId: string; releaseURL: string }
+    | { pending: true }
+    | { unavailable: true }
+    | undefined
+  >; // Final id + URL to persist when the stored releaseId is still a publish id, pending when the platform has no final id yet, unavailable when the post will never get one, undefined when nothing to resolve
+  releaseUrl?(
+    accessToken: string,
+    releaseId: string,
     integration: Integration
-  ): Promise<{ postId: string; releaseURL: string } | undefined>; // Final id + URL to persist when the stored releaseId is still a publish id, undefined when nothing to resolve (yet)
+  ): Promise<string | undefined>; // URL of a post the user connected by hand
   changeNickname?(
     id: string,
     accessToken: string,

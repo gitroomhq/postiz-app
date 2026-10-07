@@ -38,6 +38,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -269,17 +270,55 @@ const usePostActions = (onMutate?: () => void) => {
         return;
       }
       tab.opener = null;
-      let releaseURL = post.releaseURL;
+      let release = {
+        releaseURL: '',
+        pending: true,
+        unavailable: false,
+        reconnect: false,
+      };
       try {
-        releaseURL =
-          (await (await fetch(`/posts/${post.id}/release-url`)).json())
-            .releaseURL || releaseURL;
+        release = await Promise.race([
+          fetch(`/posts/${post.id}/release-url`).then((r) => r.json()),
+          timer(5000).then(() => release),
+        ]);
       } catch (e) {}
+      if (release.unavailable) {
+        tab.close();
+        toaster.show(
+          t('post_has_no_public_link', 'This post has no public link'),
+          'warning'
+        );
+        return;
+      }
+      if (release.reconnect) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_reconnect_channel',
+            'Reconnect this channel to open the post link'
+          ),
+          'warning'
+        );
+        return;
+      }
+      // the platform has not released the post link yet, or the request
+      // failed or took too long
+      if (release.pending) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_not_ready',
+            'The post link is not available yet, please try again in a minute'
+          ),
+          'warning'
+        );
+        return;
+      }
       // multi-target posts (several subreddits / communities / channels)
       // join their URLs with commas: open the first one
-      tab.location.href = releaseURL.split(',')[0];
+      tab.location.href = (release.releaseURL || post.releaseURL).split(',')[0];
     },
-    [fetch]
+    [fetch, toaster, t]
   );
 
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
