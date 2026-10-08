@@ -5,7 +5,6 @@ import React, {
   Fragment,
   memo,
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -13,6 +12,7 @@ import {
   CalendarContext,
   Integrations,
   useCalendar,
+  useNow,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
@@ -42,11 +42,10 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, random, sortBy } from 'lodash';
+import { groupBy, sortBy } from 'lodash';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -93,6 +92,75 @@ export const hours = Array.from(
     length: 24,
   },
   (_, i) => i
+);
+
+// The current time badge at the start of the now line
+const NowTime: FC<{ time: string }> = ({ time }) => (
+  <div className="rounded-[6px] bg-newTableTextFocused px-[6px] text-[12px] leading-[20px] font-[500] text-black whitespace-nowrap">
+    {time}
+  </div>
+);
+
+// Current time line across the week. It ticks on its own so the grid doesn't
+// re-render every minute. An absolute grid child is placed inside the grid area
+// it names, here the current hour row (after the header row).
+const WeekNowLine: FC<{ days: dayjs.Dayjs[] }> = ({ days }) => {
+  const now = useNow();
+  const todayIndex = days.findIndex((day) => day.isSame(now, 'day'));
+  if (todayIndex === -1) {
+    return null;
+  }
+
+  const gridRow = `${now.hour() + 2} / ${now.hour() + 3}`;
+  const top = `${(now.minute() / 60) * 100}%`;
+  return (
+    <>
+      {/* covers this hour's label with the calendar background, the time takes its place */}
+      <div
+        className="absolute inset-0 bg-newBgColorInner pointer-events-none"
+        style={{ gridColumn: '1 / 2', gridRow }}
+      >
+        <div className="absolute end-0 -translate-y-1/2" style={{ top }}>
+          {/* same format as the hour labels */}
+          <NowTime time={now.format(isUSCitizen() ? 'h:mm A' : 'H:mm')} />
+        </div>
+      </div>
+      {/* a piece per day, so nothing shows through the gaps of the sticky header */}
+      {days.map((day, index) => (
+        <div
+          key={day.format('YYYY-MM-DD')}
+          className="absolute start-0 end-0 h-0 flex items-center z-[15] pointer-events-none"
+          style={{ gridColumn: `${index + 2} / ${index + 3}`, gridRow, top }}
+        >
+          {index === todayIndex ? (
+            <>
+              <div className="w-[3px] h-[12px] rounded-full bg-newTableTextFocused" />
+              <div className="flex-1 h-[3px] bg-newTableTextFocused" />
+            </>
+          ) : (
+            <div className="flex-1 h-[1px] bg-newTableTextFocused opacity-40" />
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
+// Current time line between the slots of the day view, as tall as the slot's bottom margin
+const DayNowLine: FC<{ now: dayjs.Dayjs; className?: string }> = ({
+  now,
+  className,
+}) => (
+  <div
+    className={clsx(
+      'flex items-center h-[20px] shrink-0 pointer-events-none',
+      className
+    )}
+  >
+    {/* same format as the slot labels */}
+    <NowTime time={now.format(isUSCitizen() ? 'hh:mm A' : 'LT')} />
+    <div className="flex-1 h-[3px] bg-newTableTextFocused" />
+  </div>
 );
 
 // Shared hook for post actions (edit, delete, statistics)
@@ -325,6 +393,29 @@ const usePostActions = (onMutate?: () => void) => {
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
 };
 
+// One day view slot. Memoized, so the now line's minute tick doesn't re-render the slots
+const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
+  ({ option, startDate }) => {
+    const calendar = useCalendar();
+    return (
+      <CalendarContext.Provider
+        value={{
+          ...calendar,
+          integrations: option.flatMap((p) => p.integration),
+        }}
+      >
+        <CalendarColumn
+          getDate={dayjs
+            .utc(startDate)
+            .startOf('day')
+            .add(option[0].time, 'minute')
+            .local()}
+        />
+      </CalendarContext.Provider>
+    );
+  }
+);
+
 export const DayView = () => {
   const calendar = useCalendar();
   const { integrations, posts, startDate } = calendar;
@@ -332,8 +423,6 @@ export const DayView = () => {
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
-
-  const currentDay = dayjs.utc(startDate);
 
   const options = useMemo(() => {
     const createdPosts = posts.map((post) => ({
@@ -369,11 +458,40 @@ export const DayView = () => {
     );
   }, [integrations, posts]);
 
+  // the now line goes right before the first upcoming slot
+  const now = useNow();
+  const nowIndex = useMemo(() => {
+    const upcoming = options.findIndex((option) =>
+      dayjs
+        .utc(startDate)
+        .startOf('day')
+        .add(option[0].time, 'minute')
+        .isAfter(now)
+    );
+    // now is between two slots of this page (the slots follow the UTC day,
+    // so outside UTC it can be the page next to today)
+    if (upcoming > 0) {
+      return upcoming;
+    }
+    // before the first or after the last slot, only shown on today
+    if (!options.length || !newDayjs(startDate).isSame(now, 'day')) {
+      return -1;
+    }
+    return upcoming === -1 ? options.length : upcoming;
+  }, [options, startDate, now]);
+
   return (
     <div className="flex flex-col gap-[10px] flex-1 relative">
       <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {options.map((option) => (
+        {options.map((option, index) => (
           <Fragment key={option[0].time}>
+            {/* sits in the 20px gap under the previous slot */}
+            {index === nowIndex && (
+              <DayNowLine
+                now={now}
+                className={clsx(index > 0 && '-mt-[20px]')}
+              />
+            )}
             <div className="text-center text-[14px] min-h-[21px] shrink-0">
               {newDayjs()
                 .utc()
@@ -386,22 +504,13 @@ export const DayView = () => {
               key={option[0].time}
               className="min-h-[60px] shrink-0 rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
             >
-              <CalendarContext.Provider
-                value={{
-                  ...calendar,
-                  integrations: option.flatMap((p) => p.integration),
-                }}
-              >
-                <CalendarColumn
-                  getDate={currentDay
-                    .startOf('day')
-                    .add(option[0].time, 'minute')
-                    .local()}
-                />
-              </CalendarContext.Provider>
+              <DaySlotColumn option={option} startDate={startDate} />
             </div>
           </Fragment>
         ))}
+        {nowIndex === options.length && (
+          <DayNowLine now={now} className="-mt-[20px]" />
+        )}
       </div>
     </div>
   );
@@ -473,6 +582,7 @@ export const WeekView = () => {
               ))}
             </Fragment>
           ))}
+          <WeekNowLine days={localizedDays.map((day) => day.date)} />
         </div>
       </div>
     </div>
@@ -664,7 +774,6 @@ export const CalendarColumn: FC<{
   const t = useT();
 
   const { getDate, randomHour } = props;
-  const [num, setNum] = useState(0);
   const user = useUser();
   const {
     integrations,
@@ -675,6 +784,7 @@ export const CalendarColumn: FC<{
     sets,
     signature,
     loading,
+    currentHour,
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
@@ -710,29 +820,13 @@ export const CalendarColumn: FC<{
     return postList.slice(0, 3);
   }, [postList, showAll]);
 
-  const isBeforeNow = useMemo(() => {
-    const originalUtc = getDate.startOf('hour');
-    return originalUtc
-      .startOf('hour')
-      .isBefore(newDayjs().startOf('hour').utc());
-  }, [getDate, num]);
-
-  const { start, stop } = useInterval(
-    useCallback(() => {
-      if (isBeforeNow) {
-        return;
-      }
-      setNum(num + 1);
-    }, [isBeforeNow]),
-    random(120000, 150000)
+  // currentHour comes from one shared clock, so passed hours get blocked
+  // while the calendar stays open
+  const isBeforeNow = useMemo(
+    () => getDate.startOf('hour').isBefore(currentHour),
+    [getDate, currentHour]
   );
 
-  useEffect(() => {
-    start();
-    return () => {
-      stop();
-    };
-  }, []);
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
     drop: async (item: any) => {
@@ -841,7 +935,7 @@ export const CalendarColumn: FC<{
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
-  }), [posts]);
+  }), [posts, isBeforeNow]);
 
   const addModal = useCallback(async () => {
     const set: any = !sets.length
@@ -933,10 +1027,19 @@ export const CalendarColumn: FC<{
       {display === 'month' && (
         <div
           className={clsx(
-            'pt-[6px] text-[14px] mobile:pt-[4px] mobile:text-[12px]'
+            'pt-[3px] text-[14px] mobile:pt-[2px] mobile:text-[12px] flex justify-center'
           )}
         >
-          {getDate.date()}
+          {/* every day number gets the same box so only today's is filled */}
+          <div
+            className={clsx(
+              'h-[24px] min-w-[24px] px-[5px] mobile:h-[20px] mobile:min-w-[20px] mobile:px-[4px] rounded-[6px] flex items-center justify-center',
+              getDate.isSame(currentHour, 'day') &&
+                'bg-newTableTextFocused text-black font-[600]'
+            )}
+          >
+            {getDate.date()}
+          </div>
         </div>
       )}
       <div
@@ -1041,8 +1144,9 @@ export const CalendarColumn: FC<{
                     'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
                   )}
                 >
+                  {/* z-[16]: above the now line (z-[15]), under the sticky day headers (z-[20]) */}
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px] relative z-[16]`}
                   />
                 </div>
               )}
