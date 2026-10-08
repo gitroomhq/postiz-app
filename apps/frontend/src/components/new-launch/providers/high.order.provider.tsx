@@ -218,14 +218,6 @@ export const withProvider = function <T extends object>(params: {
                       selectedIntegration.integration.additionalSettings || '[]'
                     )
                   ),
-            fix: () => {
-              setCurrent(props.id);
-              setHide(true);
-            },
-            preview: () => {
-              setCurrent(props.id);
-              setHide(true);
-            },
           };
         },
         getValues: () => {
@@ -238,6 +230,17 @@ export const withProvider = function <T extends object>(params: {
         },
         trigger: () => {
           return form.trigger();
+        },
+        // a save that failed on this channel brings it into view, with its
+        // settings showing what is wrong
+        fix: () => {
+          setCurrent(props.id);
+          setHide(true);
+          form.trigger();
+        },
+        preview: () => {
+          setCurrent(props.id);
+          setHide(true);
         },
       }),
       [value]

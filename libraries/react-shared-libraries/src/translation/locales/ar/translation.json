@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "هل أنت متأكد أنك تريد حذف الوسائط المحددة؟",
   "delete_post_from_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد حذفه منها جميعًا؟",
   "delete_from_all_channels": "حذف من جميع القنوات",
-  "delete_only_from": "فقط من"
+  "delete_only_from": "فقط من",
+  "draft_post_in_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد نقلها جميعًا إلى المسودات؟",
+  "draft_all_channels": "نقل جميع القنوات إلى المسودات",
+  "post_now_in_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد نشرها جميعًا الآن؟",
+  "post_now_all_channels": "النشر الآن على جميع القنوات",
+  "schedule_post_in_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد جدولتها جميعًا؟",
+  "schedule_all_channels": "جدولة جميع القنوات",
+  "only_channel": "فقط"
 }

@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "Seçili medyayı silmek istediğinizden emin misiniz?",
   "delete_post_from_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsinden silmek istiyor musunuz?",
   "delete_from_all_channels": "Tüm kanallardan sil",
-  "delete_only_from": "Yalnızca şu kanaldan:"
+  "delete_only_from": "Yalnızca şu kanaldan:",
+  "draft_post_in_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsini taslaklara taşımak istiyor musunuz?",
+  "draft_all_channels": "Tüm kanalları taslaklara taşı",
+  "post_now_in_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsini şimdi paylaşmak istiyor musunuz?",
+  "post_now_all_channels": "Tüm kanallarda şimdi paylaş",
+  "schedule_post_in_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsini zamanlamak istiyor musunuz?",
+  "schedule_all_channels": "Tüm kanalları zamanla",
+  "only_channel": "Yalnızca şu kanal:"
 }

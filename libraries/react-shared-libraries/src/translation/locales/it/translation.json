@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "Sei sicuro di voler eliminare i media selezionati?",
   "delete_post_from_all_channels_question": "Questo post è stato creato per più di un canale. Vuoi eliminarlo da tutti?",
   "delete_from_all_channels": "Elimina da tutti i canali",
-  "delete_only_from": "Solo da"
+  "delete_only_from": "Solo da",
+  "draft_post_in_all_channels_question": "Questo post è stato creato per più di un canale. Vuoi spostarli tutti nelle bozze?",
+  "draft_all_channels": "Sposta tutti i canali nelle bozze",
+  "post_now_in_all_channels_question": "Questo post è stato creato per più di un canale. Vuoi pubblicarli tutti ora?",
+  "post_now_all_channels": "Pubblica ora su tutti i canali",
+  "schedule_post_in_all_channels_question": "Questo post è stato creato per più di un canale. Vuoi programmarli tutti?",
+  "schedule_all_channels": "Programma tutti i canali",
+  "only_channel": "Solo"
 }

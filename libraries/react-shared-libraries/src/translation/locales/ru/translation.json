@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "Вы уверены, что хотите удалить выбранные медиа?",
   "delete_post_from_all_channels_question": "Этот пост создан для нескольких каналов. Удалить его из всех?",
   "delete_from_all_channels": "Удалить из всех каналов",
-  "delete_only_from": "Только из канала"
+  "delete_only_from": "Только из канала",
+  "draft_post_in_all_channels_question": "Этот пост создан для нескольких каналов. Перенести его в черновики во всех?",
+  "draft_all_channels": "Перенести все каналы в черновики",
+  "post_now_in_all_channels_question": "Этот пост создан для нескольких каналов. Опубликовать его сейчас во всех?",
+  "post_now_all_channels": "Опубликовать сейчас во всех каналах",
+  "schedule_post_in_all_channels_question": "Этот пост создан для нескольких каналов. Запланировать его во всех?",
+  "schedule_all_channels": "Запланировать во всех каналах",
+  "only_channel": "Только"
 }

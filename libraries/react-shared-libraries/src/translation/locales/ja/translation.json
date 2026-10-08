@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "選択したメディアを削除してもよろしいですか？",
   "delete_post_from_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルから削除しますか？",
   "delete_from_all_channels": "すべてのチャンネルから削除",
-  "delete_only_from": "このチャンネルのみ:"
+  "delete_only_from": "このチャンネルのみ:",
+  "draft_post_in_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルを下書きに移動しますか？",
+  "draft_all_channels": "すべてのチャンネルを下書きに移動",
+  "post_now_in_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルに今すぐ投稿しますか？",
+  "post_now_all_channels": "すべてのチャンネルに今すぐ投稿",
+  "schedule_post_in_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルでスケジュールしますか？",
+  "schedule_all_channels": "すべてのチャンネルでスケジュール",
+  "only_channel": "このチャンネルのみ:"
 }

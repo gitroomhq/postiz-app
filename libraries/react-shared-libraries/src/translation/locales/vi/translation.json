@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "Bạn có chắc muốn xóa phương tiện đã chọn không?",
   "delete_post_from_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn xóa nó khỏi tất cả các kênh không?",
   "delete_from_all_channels": "Xóa khỏi tất cả các kênh",
-  "delete_only_from": "Chỉ từ"
+  "delete_only_from": "Chỉ từ",
+  "draft_post_in_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn chuyển tất cả sang bản nháp không?",
+  "draft_all_channels": "Chuyển tất cả các kênh sang bản nháp",
+  "post_now_in_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn đăng ngay trên tất cả các kênh không?",
+  "post_now_all_channels": "Đăng ngay trên tất cả các kênh",
+  "schedule_post_in_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn lên lịch cho tất cả các kênh không?",
+  "schedule_all_channels": "Lên lịch cho tất cả các kênh",
+  "only_channel": "Chỉ"
 }

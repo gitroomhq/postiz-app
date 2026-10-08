@@ -839,3 +839,10 @@ checksums:
     delete_post_from_all_channels_question: f37374b458fa43056a019397f342ea04
     delete_from_all_channels: 39a7f754c6a1f730cd511307e483e13d
     delete_only_from: 819a30bf30916eba1d5ced11efc16fde
+    draft_post_in_all_channels_question: 042b07c5150e2dc8b37553301cb2aa73
+    draft_all_channels: c9008358b4c607d26973eb08fb961424
+    post_now_in_all_channels_question: aba83099c4258ae0d2272b16d835b2b4
+    post_now_all_channels: c4a25fc5f6abc7fb2c584d22e5bea01c
+    schedule_post_in_all_channels_question: 8fd19c2e5e74c4a8438ba180beaed615
+    schedule_all_channels: 2c761cc9d12ac53696ddfbdabdff1088
+    only_channel: 5687ae99e7f5b168e35532f895efd2e8
