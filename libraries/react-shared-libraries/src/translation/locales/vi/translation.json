@@ -571,7 +571,7 @@
   "select_channels": "Chọn kênh",
   "start_a_new_chat": "Bắt đầu cuộc trò chuyện mới",
   "your_assistant": "Trợ lý của bạn",
-  "agent_welcome_message": "Xin chào, tôi là trợ lý Postiz của bạn 🙌🏻.\n\nTôi có thể lên lịch đăng một hoặc nhiều bài lên nhiều kênh khác nhau và tạo hình ảnh, video.\n\nBạn có thể chọn các kênh muốn sử dụng từ menu bên trái.\n\nBạn có thể xem các cuộc trò chuyện trước đó từ menu bên phải.\n\nBạn cũng có thể sử dụng tôi như một MCP Server, kiểm tra Cài đặt >> Public API",
+  "agent_welcome_message": "Xin chào, tôi là trợ lý Postiz của bạn 🙌🏻.\n\nTôi có thể lên lịch đăng một hoặc nhiều bài lên nhiều kênh khác nhau và tạo hình ảnh, video.\n\nBạn có thể chọn các kênh muốn sử dụng từ menu bên trái.\n\nBạn có thể xem các cuộc trò chuyện trước đó từ menu bên phải.\n\nBạn cũng có thể sử dụng tôi như một MCP Server, kiểm tra Cài đặt >> Agent",
   "last_github_trending": "Xu hướng Github gần đây",
   "next_predicted_github_trending": "Dự đoán xu hướng Github tiếp theo",
   "repository": "Kho lưu trữ",

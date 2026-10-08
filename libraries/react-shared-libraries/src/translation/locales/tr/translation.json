@@ -571,7 +571,7 @@
   "select_channels": "Kanalları Seç",
   "start_a_new_chat": "Yeni bir sohbet başlat",
   "your_assistant": "Asistanınız",
-  "agent_welcome_message": "Merhaba, ben Postiz ajanınızım 🙌🏻.\n\nBir veya birden fazla gönderiyi birden fazla kanala zamanlayabilir, resim ve video oluşturabilirim.\n\nKullanmak istediğiniz kanalları sol menüden seçebilirsiniz.\n\nÖnceki konuşmalarınızı sağ menüden görebilirsiniz.\n\nAyrıca beni bir MCP Sunucusu olarak da kullanabilirsiniz, Ayarlar >> Genel API bölümünü kontrol edin.",
+  "agent_welcome_message": "Merhaba, ben Postiz ajanınızım 🙌🏻.\n\nBir veya birden fazla gönderiyi birden fazla kanala zamanlayabilir, resim ve video oluşturabilirim.\n\nKullanmak istediğiniz kanalları sol menüden seçebilirsiniz.\n\nÖnceki konuşmalarınızı sağ menüden görebilirsiniz.\n\nAyrıca beni bir MCP Sunucusu olarak da kullanabilirsiniz, Ayarlar >> Ajanlar bölümünü kontrol edin.",
   "last_github_trending": "Son Github Trendleri",
   "next_predicted_github_trending": "Sonraki Tahmini Github Trendleri",
   "repository": "Depo",

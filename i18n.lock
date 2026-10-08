@@ -575,7 +575,7 @@ checksums:
     select_channels: 3aab82dc90ccafe55059c32c5a33c222
     start_a_new_chat: 65b9067206fa4e4929d48ce242d879a6
     your_assistant: bd6422d1c2a2ba461e1da169b082bf7b
-    agent_welcome_message: 21c75c6cdb64a5e2d4d9ac6a9b04b7ad
+    agent_welcome_message: 6a9eabbe5f318e2b8047020fabd31858
     last_github_trending: 893235fc69e91abe15960108dcd77d7b
     next_predicted_github_trending: 2e718a5c1acdad0c058440d0a70a0ea6
     repository: 28c2debe822a225389ff8710934abff4

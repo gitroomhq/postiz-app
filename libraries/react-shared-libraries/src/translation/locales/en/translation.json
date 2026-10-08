@@ -571,7 +571,7 @@
   "select_channels": "Select Channels",
   "start_a_new_chat": "Start a new chat",
   "your_assistant": "Your Assistant",
-  "agent_welcome_message": "Hello, I am your Postiz agent 🙌🏻.\n\nI can schedule a post or multiple posts to multiple channels and generate pictures and videos.\n\nYou can select the channels you want to use from the left menu.\n\nYou can see your previous conversations from the right menu.\n\nYou can also use me as an MCP Server, check Settings >> Public API",
+  "agent_welcome_message": "Hello, I am your Postiz agent 🙌🏻.\n\nI can schedule a post or multiple posts to multiple channels and generate pictures and videos.\n\nYou can select the channels you want to use from the left menu.\n\nYou can see your previous conversations from the right menu.\n\nYou can also use me as an MCP Server, check Settings >> Agents",
   "last_github_trending": "Last Github Trending",
   "next_predicted_github_trending": "Next Predicted GitHub Trending",
   "repository": "Repository",

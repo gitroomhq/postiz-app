@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useState, useCallback } from 'react';
+import { useSWRConfig } from 'swr';
 import { useUser } from '../layout/user.context';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -923,27 +923,10 @@ const PublicApiContent = () => {
 
 export const PublicComponent = () => {
   const t = useT();
-  const fetch = useFetch();
-  const user = useUser();
-  const loadOrganizations = useCallback(async () => {
-    return await (await fetch('/user/organizations')).json();
-  }, []);
-  const { data: organizations } = useSWR('organizations', loadOrganizations, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    revalidateOnReconnect: false,
-  });
-  const currentOrg = useMemo(() => {
-    return organizations?.find((org: any) => org?.id === user?.orgId);
-  }, [organizations, user?.orgId]);
 
   return (
     <div className="flex flex-col gap-[20px]">
-      <h3 className="text-[20px]">
-        {t('agents', 'Agents')}
-      </h3>
+      <h3 className="text-[20px]">{t('agents', 'Agents')}</h3>
       <PublicApiContent />
     </div>
   );

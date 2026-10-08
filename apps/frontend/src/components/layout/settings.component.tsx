@@ -232,7 +232,10 @@ export const SettingsPopup: FC<{
                 <div>
                   <AppsComponent
                     canManageApps={
-                      !!user?.tier?.public_api && isGeneral && showLogout
+                      !!user?.tier?.public_api &&
+                      isGeneral &&
+                      showLogout &&
+                      user?.role !== 'USER'
                     }
                   />
                 </div>

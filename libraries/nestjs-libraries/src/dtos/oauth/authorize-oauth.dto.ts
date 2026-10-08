@@ -102,13 +102,13 @@ export class AuthorizeSelfHostedDto {
   resource?: string;
 
   // The instance as the person knows it: its address, its backend address or
-  // the MCP URL from Settings > Developers (resolved in McpRelayService)
+  // the MCP URL from Settings > Agents (resolved in McpRelayService)
   @IsString()
   @IsDefined()
   @MaxLength(2048)
   instance_url: string;
 
-  // Optional because the MCP URL from Settings > Developers carries the key
+  // Optional because the MCP URL from Settings > Agents carries the key
   @IsString()
   @IsOptional()
   @MaxLength(512)
