@@ -334,7 +334,7 @@ type FeatureItem = {
   prefix?: string | number;
 };
 
-export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
+export const useBillingFeatures = (tier: string) => {
   const t = useT();
   const features = useMemo(() => {
     const currentPricing = pricing[tier];
@@ -412,6 +412,15 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
     return translatedText;
   };
 
+  return features.map((feature) => ({
+    key: feature.key,
+    label: renderFeature(feature),
+  }));
+};
+
+export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
+  const features = useBillingFeatures(tier);
+
   return (
     <div className="grid grid-cols-2 mobile:grid-cols-1 gap-y-[8px] gap-x-[32px]">
       {features.map((feature) => (
@@ -430,7 +439,7 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
               />
             </svg>
           </div>
-          <div>{renderFeature(feature)}</div>
+          <div>{feature.label}</div>
         </div>
       ))}
     </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { Slider } from '@gitroom/react/form/slider';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
@@ -11,8 +10,11 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
+import { capitalize } from 'lodash';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
+import { useBillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
+import { BillingHistory } from '@gitroom/frontend/components/billing/billing.history.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -65,81 +67,182 @@ export const Prorate: FC<{
   }, [period, pack]);
   if (loading) {
     return (
-      <div className="pt-[12px]">
-        <ReactLoading type="spin" color="#fff" width={20} height={20} />
-      </div>
+      <ReactLoading type="spin" color="currentColor" width={14} height={14} />
     );
   }
-  if (price === false) {
+  // the price is missing when the preview request fails
+  if (typeof price !== 'number') {
     return null;
   }
   return (
-    <div className="text-[12px] flex pt-[12px]">
-      ({t('pay_today', 'Pay Today')} ${(price < 0 ? 0 : price)?.toFixed(1)})
-    </div>
+    <>
+      {t('pay_today', 'Pay Today')} ${Math.max(price, 0).toFixed(2)}
+    </>
   );
 };
-export const Features: FC<{
-  pack: 'FREE' | 'STANDARD' | 'PRO';
+
+type PlanAction = {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant: 'primary' | 'simple' | 'current' | 'danger';
+};
+
+const planButton = {
+  primary: 'bg-btnPrimary text-white hover:bg-[#5023b8]',
+  simple: 'bg-btnSimple text-btnText hover:opacity-80',
+  current: 'bg-newBgLineColor text-textItemBlur',
+  danger: 'bg-red-500 text-white hover:bg-red-600',
+};
+
+const PlanCard: FC<{
+  name: string;
+  price: number;
+  yearly: boolean;
+  current: boolean;
+  action: PlanAction;
+  loading: boolean;
+  disabled: boolean;
+  note?: React.ReactNode;
 }> = (props) => {
-  const { pack } = props;
-  const features = useMemo(() => {
-    const currentPricing = pricing[pack];
-    const channelsOr = currentPricing.channel;
-    const list = [];
-    list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
-    list.push(
-      `${
-        currentPricing.posts_per_month > 10000
-          ? 'Unlimited'
-          : currentPricing.posts_per_month
-      } posts per month`
-    );
-    if (currentPricing.team_members) {
-      list.push(`Unlimited team members`);
-    }
-    if (currentPricing?.ai) {
-      list.push(`AI auto-complete`);
-      list.push(`AI copilots`);
-      list.push(`AI Autocomplete`);
-    }
-    list.push(`Advanced Picture Editor`);
-    if (currentPricing?.image_generator) {
-      list.push(
-        `${currentPricing?.image_generation_count} AI Images per month`
-      );
-    }
-    if (currentPricing?.generate_videos) {
-      list.push(`${currentPricing?.generate_videos} AI Videos per month`);
-    }
-    if (currentPricing?.clipping_minutes) {
-      list.push(
-        `${currentPricing?.clipping_minutes} minutes of AI video clipping per month`
-      );
-    }
-    return list;
-  }, [pack]);
+  const { name, price, yearly, current, action, loading, disabled, note } =
+    props;
+  const t = useT();
+  const features = useBillingFeatures(name);
+
   return (
-    <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
-      {features.map((feature) => (
-        <div key={feature} className="flex gap-[20px]">
-          <div>
+    <div
+      className={clsx(
+        'relative flex flex-col gap-[20px] rounded-[12px] border p-[24px] mobile:p-[20px]',
+        current
+          ? 'border-transparent bg-gradient-to-b from-seventh to-btnPrimary text-white shadow-lg shadow-purple-500/25'
+          : 'border-newTableBorder bg-newBgColorInner shadow-previewShadow'
+      )}
+    >
+      {[
+        'top-[10px] start-[10px]',
+        'top-[10px] end-[10px]',
+        'bottom-[10px] start-[10px]',
+        'bottom-[10px] end-[10px]',
+      ].map((position) => (
+        <span
+          key={position}
+          className={clsx(
+            'absolute w-[8px] h-[8px] rounded-full border pointer-events-none',
+            position,
+            current
+              ? 'border-white/25 bg-white/10'
+              : 'border-newTableBorder bg-newBgColor'
+          )}
+        />
+      ))}
+      <div className="flex items-center justify-between gap-[8px] min-h-[26px]">
+        <div className="text-[18px] font-[600]">{capitalize(name)}</div>
+        {current && (
+          <div className="flex items-center gap-[6px] h-[26px] px-[10px] rounded-full bg-white/15 text-[12px] font-[600] uppercase whitespace-nowrap">
+            <span className="w-[6px] h-[6px] rounded-full bg-[#32D583]" />
+            {t('active', 'Active')}
+          </div>
+        )}
+      </div>
+      <div className="flex items-baseline gap-[6px]">
+        <div className="text-[40px] leading-[48px] font-[600] tracking-tight">
+          ${price}
+        </div>
+        <div
+          className={clsx(
+            'text-[14px]',
+            current ? 'text-white/70' : 'text-textItemBlur'
+          )}
+        >
+          {yearly
+            ? t('billing_per_year', '/ year')
+            : t('billing_per_month', '/ month')}
+        </div>
+      </div>
+      <div className="relative flex flex-col mb-[8px]">
+        <button
+          type="button"
+          onClick={action.onClick}
+          disabled={disabled}
+          className={clsx(
+            'h-[44px] px-[16px] rounded-[8px] text-[15px] font-[600] flex items-center justify-center transition-all',
+            current
+              ? action.variant === 'current'
+                ? 'bg-white/15 text-white'
+                : 'bg-white text-btnPrimary hover:bg-white/90'
+              : planButton[action.variant],
+            disabled ? 'cursor-default' : 'cursor-pointer',
+            disabled && action.variant !== 'current' && 'opacity-50'
+          )}
+        >
+          {loading ? (
+            <ReactLoading
+              type="spin"
+              color="currentColor"
+              width={18}
+              height={18}
+            />
+          ) : (
+            action.label
+          )}
+        </button>
+        {!!note && (
+          <div
+            className={clsx(
+              'absolute top-full inset-x-0 h-[28px] flex items-center justify-center text-[12px]',
+              current ? 'text-white/70' : 'text-textItemBlur'
+            )}
+          >
+            {note}
+          </div>
+        )}
+      </div>
+      <div
+        className={clsx(
+          'h-[1px]',
+          current ? 'bg-white/15' : 'bg-newTableBorder'
+        )}
+      />
+      <div className="flex flex-col gap-[12px] text-[14px] leading-[20px]">
+        {features.map((feature) => (
+          <div
+            key={feature.key}
+            className={clsx(
+              'flex gap-[10px]',
+              current ? 'text-white' : 'text-newTextColor/90'
+            )}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
               fill="none"
+              className={clsx(
+                'shrink-0',
+                current ? 'text-white/75' : 'text-[#8b5cf6]'
+              )}
             >
+              <circle
+                cx="10"
+                cy="10"
+                r="7.75"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
               <path
-                d="M16.2806 9.21937C16.3504 9.28903 16.4057 9.37175 16.4434 9.46279C16.4812 9.55384 16.5006 9.65144 16.5006 9.75C16.5006 9.84856 16.4812 9.94616 16.4434 10.0372C16.4057 10.1283 16.3504 10.211 16.2806 10.2806L11.0306 15.5306C10.961 15.6004 10.8783 15.6557 10.7872 15.6934C10.6962 15.7312 10.5986 15.7506 10.5 15.7506C10.4014 15.7506 10.3038 15.7312 10.2128 15.6934C10.1218 15.6557 10.039 15.6004 9.96938 15.5306L7.71938 13.2806C7.57865 13.1399 7.49959 12.949 7.49959 12.75C7.49959 12.551 7.57865 12.3601 7.71938 12.2194C7.86011 12.0786 8.05098 11.9996 8.25 11.9996C8.44903 11.9996 8.6399 12.0786 8.78063 12.2194L10.5 13.9397L15.2194 9.21937C15.289 9.14964 15.3718 9.09432 15.4628 9.05658C15.5538 9.01884 15.6514 8.99941 15.75 8.99941C15.8486 8.99941 15.9462 9.01884 16.0372 9.05658C16.1283 9.09432 16.211 9.14964 16.2806 9.21937ZM21.75 12C21.75 13.9284 21.1782 15.8134 20.1068 17.4168C19.0355 19.0202 17.5127 20.2699 15.7312 21.0078C13.9496 21.7458 11.9892 21.9389 10.0979 21.5627C8.20656 21.1865 6.46928 20.2579 5.10571 18.8943C3.74215 17.5307 2.81355 15.7934 2.43735 13.9021C2.06114 12.0108 2.25422 10.0504 2.99218 8.26884C3.73013 6.48726 4.97982 4.96451 6.58319 3.89317C8.18657 2.82183 10.0716 2.25 12 2.25C14.585 2.25273 17.0634 3.28084 18.8913 5.10872C20.7192 6.93661 21.7473 9.41498 21.75 12ZM20.25 12C20.25 10.3683 19.7661 8.77325 18.8596 7.41655C17.9531 6.05984 16.6646 5.00242 15.1571 4.37799C13.6497 3.75357 11.9909 3.59019 10.3905 3.90852C8.79017 4.22685 7.32016 5.01259 6.16637 6.16637C5.01259 7.32015 4.22685 8.79016 3.90853 10.3905C3.5902 11.9908 3.75358 13.6496 4.378 15.1571C5.00242 16.6646 6.05984 17.9531 7.41655 18.8596C8.77326 19.7661 10.3683 20.25 12 20.25C14.1873 20.2475 16.2843 19.3775 17.8309 17.8309C19.3775 16.2843 20.2475 14.1873 20.25 12Z"
-                fill="#06ff00"
+                d="M7 10.25L9 12.25L13 8.25"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
             </svg>
+            <div>{feature.label}</div>
           </div>
-          <div className="text-start">{feature}</div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };
@@ -241,6 +344,8 @@ export const MainBillingComponent: FC<{
     sub
   );
   const [loading, setLoading] = useState<boolean>(false);
+  // which button started the request, so only that one shows a spinner
+  const [clicked, setClicked] = useState('');
   const [period, setPeriod] = useState<'MONTHLY' | 'YEARLY'>(
     subscription?.period || 'MONTHLY'
   );
@@ -455,6 +560,7 @@ export const MainBillingComponent: FC<{
               revalidate: false,
             }
           );
+          mutate('/billing/invoices');
           toast.show('Subscription updated successfully');
         }
         setLoading(false);
@@ -489,142 +595,220 @@ export const MainBillingComponent: FC<{
       </div>
     );
   }
+  const yearly = monthlyOrYearly === 'on';
+  const tiers = Object.keys(pricing);
+  const currentTier = subscription?.subscriptionTier || 'FREE';
+  const plans = tiers.filter((name) => !isGeneral || name !== 'FREE');
+
+  const planAction = (name: string): PlanAction => {
+    if (currentPackage === name && subscription?.cancelAt) {
+      return {
+        label: t('reactivate_subscription', 'Reactivate subscription'),
+        onClick: moveToCheckout('FREE', true),
+        variant: 'primary',
+      };
+    }
+    if (currentPackage === name) {
+      return {
+        label: t('billing_current_plan', 'Current Plan'),
+        disabled: true,
+        variant: 'current',
+      };
+    }
+    if (name === 'FREE') {
+      return {
+        label: subscription?.cancelAt
+          ? t('billing_downgrade_on', 'Downgrade on {{date}}', {
+              date: dayjs
+                .utc(subscription.cancelAt)
+                .local()
+                .format('D MMM, YYYY'),
+            })
+          : t('cancel_subscription_1', 'Cancel subscription'),
+        onClick: moveToCheckout('FREE'),
+        disabled: !!subscription?.cancelAt,
+        variant: 'danger',
+      };
+    }
+    const direction = tiers.indexOf(name) - tiers.indexOf(currentTier);
+    return {
+      label: !subscription
+        ? user?.tier?.current === 'FREE' && user.allowTrial
+          ? t('start_7_days_free_trial', 'Start 7 days free trial')
+          : t('billing_purchase', 'Purchase')
+        : direction > 0
+        ? t('billing_upgrade', 'Upgrade')
+        : direction < 0
+        ? t('billing_downgrade', 'Downgrade')
+        : yearly
+        ? t('billing_switch_to_yearly', 'Switch to yearly')
+        : t('billing_switch_to_monthly', 'Switch to monthly'),
+      onClick: moveToCheckout(name as 'STANDARD' | 'PRO'),
+      variant: !!subscription && direction < 0 ? 'simple' : 'primary',
+    };
+  };
+
   return (
-    <div className="flex flex-col gap-[16px]">
-      <div className="flex flex-row">
-        <div className="flex-1 text-[20px]">{t('plans', 'Plans')}</div>
-        <div className="flex items-center gap-[16px]">
-          <div>{t('monthly', 'MONTHLY')}</div>
-          <div>
-            <Slider value={monthlyOrYearly} onChange={setMonthlyOrYearly} />
+    <div className="flex flex-col gap-[24px]">
+      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+      <div className="flex items-center gap-[16px] mobile:flex-col mobile:items-stretch">
+        <div className="flex-1 flex flex-col gap-[4px]">
+          <div className="text-[20px] font-[600]">
+            {t('billing_and_subscription', 'Billing & Subscription')}
           </div>
-          <div>{t('yearly', 'YEARLY')}</div>
+          <div className="text-[14px] text-textItemBlur">
+            {t(
+              'billing_and_subscription_description',
+              'Keep track of your subscription, update your payment method and download your invoices'
+            )}
+          </div>
+        </div>
+        <div className="flex p-[4px] border border-newTableBorder rounded-[8px] text-[14px] font-[500] select-none">
+          <div
+            onClick={() => setMonthlyOrYearly('off')}
+            className={clsx(
+              'h-[34px] px-[16px] rounded-[6px] flex items-center justify-center mobile:flex-1',
+              !yearly ? 'bg-boxFocused text-textItemFocused' : 'cursor-pointer'
+            )}
+          >
+            {t('billing_monthly', 'Monthly')}
+          </div>
+          <div
+            onClick={() => setMonthlyOrYearly('on')}
+            className={clsx(
+              'h-[34px] px-[16px] rounded-[6px] flex items-center justify-center gap-[8px] mobile:flex-1',
+              yearly ? 'bg-boxFocused text-textItemFocused' : 'cursor-pointer'
+            )}
+          >
+            {t('billing_yearly', 'Yearly')}
+            <div className="bg-[#AA0FA4] text-white text-[12px] px-[6px] rounded-[4px]">
+              {t('billing_20_percent_off', '20% Off')}
+            </div>
+          </div>
         </div>
       </div>
-
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
-      <div className="flex gap-[16px] [@media(max-width:1024px)]:flex-col [@media(max-width:1024px)]:text-center">
-        {Object.entries(pricing)
-          .filter((f) => !isGeneral || f[0] !== 'FREE')
-          .map(([name, values]) => (
-            <div
+      {subscription?.cancelAt && isGeneral && (
+        <div className="flex items-center gap-[12px] rounded-[12px] border border-[#FFAC30]/30 bg-[#FFAC30]/10 px-[16px] py-[12px] text-[14px]">
+          <div className="w-[8px] h-[8px] rounded-full bg-[#FFAC30] shrink-0" />
+          <div>
+            {t(
+              'your_subscription_will_be_canceled_at',
+              'Your subscription will be canceled at'
+            )}{' '}
+            <bdi className="font-[600]">
+              {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+            </bdi>
+            {'. '}
+            {t(
+              'you_will_never_be_charged_again',
+              'You will never be charged again'
+            )}
+          </div>
+        </div>
+      )}
+      <div
+        className={clsx(
+          'grid gap-[16px] tablet:grid-cols-2 mobile:!grid-cols-1',
+          plans.length > 4 ? 'grid-cols-5' : 'grid-cols-4'
+        )}
+      >
+        {plans.map((name) => {
+          const action = planAction(name);
+          return (
+            <PlanCard
               key={name}
-              className="flex-1 bg-sixth border border-customColor6 rounded-[4px] p-[24px] gap-[16px] flex flex-col [@media(max-width:1024px)]:items-center"
-            >
-              <div className="text-[18px]">{name}</div>
-              <div className="text-[38px] flex gap-[2px] items-center">
-                <div>
-                  $
-                  {monthlyOrYearly === 'on'
-                    ? values.year_price
-                    : values.month_price}
-                </div>
-                <div className={`text-[14px] text-customColor18`}>
-                  {monthlyOrYearly === 'on' ? '/year' : '/month'}
-                </div>
-              </div>
-              <div className="text-[14px] flex gap-[10px]">
-                {currentPackage === name.toUpperCase() &&
-                subscription?.cancelAt ? (
-                  <div className="gap-[3px] flex flex-col">
-                    <div>
-                      <Button
-                        onClick={moveToCheckout('FREE', true)}
-                        loading={loading}
-                      >
-                        {t(
-                          'reactivate_subscription',
-                          'Reactivate subscription'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    loading={loading}
-                    disabled={
-                      (!!subscription?.cancelAt &&
-                        name.toUpperCase() === 'FREE') ||
-                      currentPackage === name.toUpperCase()
-                    }
-                    className={clsx(
-                      subscription &&
-                        name.toUpperCase() === 'FREE' &&
-                        '!bg-red-500'
-                    )}
-                    onClick={moveToCheckout(
-                      name.toUpperCase() as 'STANDARD' | 'PRO'
-                    )}
-                  >
-                    {currentPackage === name.toUpperCase()
-                      ? 'Current Plan'
-                      : name.toUpperCase() === 'FREE'
-                      ? subscription?.cancelAt
-                        ? `Downgrade on ${dayjs
-                            .utc(subscription?.cancelAt)
-                            .local()
-                            .format('D MMM, YYYY')}`
-                        : 'Cancel subscription'
-                      : // @ts-ignore
-                      (user?.tier === 'FREE' ||
-                          user?.tier?.current === 'FREE') &&
-                        user.allowTrial
-                      ? t('start_7_days_free_trial', 'Start 7 days free trial')
-                      : 'Purchase'}
-                  </Button>
-                )}
-                {subscription &&
-                  currentPackage !== name.toUpperCase() &&
-                  name !== 'FREE' &&
-                  !!name && (
-                    <Prorate
-                      period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                      pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
-                    />
-                  )}
-              </div>
-              <Features
-                pack={name.toUpperCase() as 'FREE' | 'STANDARD' | 'PRO'}
-              />
-            </div>
-          ))}
+              name={name}
+              price={
+                yearly ? pricing[name].year_price : pricing[name].month_price
+              }
+              yearly={yearly}
+              current={currentPackage === name}
+              action={{
+                ...action,
+                onClick: () => {
+                  setClicked(name);
+                  action.onClick?.();
+                },
+              }}
+              loading={loading && clicked === name}
+              disabled={!!action.disabled || loading}
+              note={
+                !!subscription &&
+                currentPackage !== name &&
+                name !== 'FREE' && (
+                  <Prorate
+                    period={yearly ? 'YEARLY' : 'MONTHLY'}
+                    pack={name as 'STANDARD' | 'PRO'}
+                  />
+                )
+              }
+            />
+          );
+        })}
       </div>
       {!!subscription?.id && (
-        <div className="flex justify-center mt-[20px] gap-[10px] mobile:flex-col">
-          <Button
-            onClick={updatePayment}
-            className="mobile:h-auto mobile:min-h-[40px] mobile:py-[8px] mobile:text-center"
-          >
-            {t(
-              'update_payment_method_invoices_history',
-              'Update Payment Method / Invoices History'
-            )}
-          </Button>
-          {isGeneral && !subscription?.cancelAt && (
-            <Button
-              className="bg-red-500"
-              loading={loading}
-              onClick={moveToCheckout('FREE')}
+        <div className="flex items-center gap-[16px] rounded-[12px] border border-newTableBorder bg-newBgColorInner shadow-previewShadow px-[24px] py-[20px] mobile:flex-col mobile:items-stretch mobile:p-[16px]">
+          <div className="w-[48px] h-[48px] rounded-full bg-[#612bd3]/10 text-[#612bd3] flex items-center justify-center shrink-0 mobile:hidden">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {t('cancel_subscription_1', 'Cancel subscription')}
-            </Button>
-          )}
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <path d="M2 10h20M6 15h4" />
+            </svg>
+          </div>
+          <div className="flex-1 flex flex-col gap-[4px]">
+            <div className="text-[16px] font-[600]">
+              {t('billing_payment_method', 'Payment method')}
+            </div>
+            <div className="text-[14px] text-textItemBlur">
+              {t(
+                'billing_payment_method_description',
+                'Update your card, billing address and tax details in the secure billing portal'
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-[8px] mobile:flex-col-reverse mobile:items-stretch">
+            {isGeneral && !subscription?.cancelAt && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setClicked('CANCEL');
+                  moveToCheckout('FREE')();
+                }}
+                className="h-[44px] px-[16px] rounded-[8px] border border-red-500/40 text-red-500 text-[14px] font-[500] flex items-center justify-center hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                {loading && clicked === 'CANCEL' ? (
+                  <ReactLoading
+                    type="spin"
+                    color="currentColor"
+                    width={18}
+                    height={18}
+                  />
+                ) : (
+                  t('cancel_subscription_1', 'Cancel subscription')
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={updatePayment}
+              className="h-[44px] px-[16px] rounded-[8px] bg-btnSimple text-btnText text-[14px] font-[500] hover:opacity-80 transition-opacity"
+            >
+              {t('billing_update_payment_method', 'Update payment method')}
+            </button>
+          </div>
         </div>
       )}
-      {subscription?.cancelAt && isGeneral && (
-        <div className="text-center">
-          {t(
-            'your_subscription_will_be_canceled_at',
-            'Your subscription will be canceled at'
-          )}{' '}
-          {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
-          <br />
-          {t(
-            'you_will_never_be_charged_again',
-            'You will never be charged again'
-          )}
-        </div>
-      )}
+      {!!subscription?.id && <BillingHistory />}
       <FAQComponent />
       <div className="flex justify-center mt-[20px]">
         <LogoutComponent />
