@@ -598,7 +598,6 @@
   "billing_download_invoice": "Download invoice",
   "billing_view_invoice": "View invoice",
   "billing_no_matching_invoices": "No invoices match your search",
-  "billing_invoices_failed": "Could not load your invoices",
   "select_channels": "Select Channels",
   "start_a_new_chat": "Start a new chat",
   "your_assistant": "Your Assistant",

@@ -598,7 +598,6 @@
   "billing_download_invoice": "Скачать счёт",
   "billing_view_invoice": "Просмотреть счёт",
   "billing_no_matching_invoices": "Нет счетов, соответствующих поиску",
-  "billing_invoices_failed": "Не удалось загрузить счета",
   "select_channels": "Выберите каналы",
   "start_a_new_chat": "Начать новый чат",
   "your_assistant": "Ваш помощник",

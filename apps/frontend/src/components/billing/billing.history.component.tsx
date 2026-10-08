@@ -25,6 +25,8 @@ interface Invoice {
 }
 
 const PAGE_SIZE = 10;
+// invoices under $10 (trial starts, proration leftovers) are left out of the history
+const MIN_AMOUNT = 1000;
 
 const useInvoices = () => {
   const fetch = useFetch();
@@ -112,22 +114,24 @@ export const BillingHistory: FC = () => {
 
   const rows = useMemo(
     () =>
-      (data || []).map((invoice) => ({
-        ...invoice,
-        plan: invoice.tier
-          ? capitalize(invoice.tier)
-          : invoice.description || t('billing_subscription', 'Subscription'),
-        periodLabel:
-          invoice.period === 'YEARLY'
-            ? t('billing_yearly', 'Yearly')
-            : invoice.period === 'MONTHLY'
-            ? t('billing_monthly', 'Monthly')
-            : '',
-        amountLabel: formatAmount(invoice.amount, invoice.currency),
-        purchaseDate: formatDate(invoice.created),
-        endDate: formatDate(invoice.periodEnd),
-        statusInfo: statuses[invoice.status] || statuses.void,
-      })),
+      (data || [])
+        .filter((invoice) => invoice.amount >= MIN_AMOUNT)
+        .map((invoice) => ({
+          ...invoice,
+          plan: invoice.tier
+            ? capitalize(invoice.tier)
+            : invoice.description || t('billing_subscription', 'Subscription'),
+          periodLabel:
+            invoice.period === 'YEARLY'
+              ? t('billing_yearly', 'Yearly')
+              : invoice.period === 'MONTHLY'
+              ? t('billing_monthly', 'Monthly')
+              : '',
+          amountLabel: formatAmount(invoice.amount, invoice.currency),
+          purchaseDate: formatDate(invoice.created),
+          endDate: formatDate(invoice.periodEnd),
+          statusInfo: statuses[invoice.status] || statuses.void,
+        })),
     [data, statuses, t]
   );
 
@@ -188,7 +192,7 @@ export const BillingHistory: FC = () => {
   const columns =
     'grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_88px] gap-x-[16px] items-center px-[16px]';
 
-  if (isLoading || (!error && !rows.length)) {
+  if (isLoading || error || !rows.length) {
     return null;
   }
 
@@ -290,7 +294,7 @@ export const BillingHistory: FC = () => {
           <div>{t('billing_action', 'Action')}</div>
         </div>
 
-        {error || !filtered.length ? (
+        {!filtered.length ? (
           <div className="flex flex-col items-center justify-center gap-[12px] py-[40px] px-[16px] text-center">
             <div className="w-[48px] h-[48px] rounded-full bg-[#612bd3]/10 flex items-center justify-center text-[#612bd3]">
               <svg
@@ -309,12 +313,10 @@ export const BillingHistory: FC = () => {
               </svg>
             </div>
             <div className="text-[15px] text-newTableText">
-              {error
-                ? t('billing_invoices_failed', 'Could not load your invoices')
-                : t(
-                    'billing_no_matching_invoices',
-                    'No invoices match your search'
-                  )}
+              {t(
+                'billing_no_matching_invoices',
+                'No invoices match your search'
+              )}
             </div>
           </div>
         ) : (

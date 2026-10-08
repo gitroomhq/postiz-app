@@ -602,7 +602,6 @@ checksums:
     billing_download_invoice: 8c50fd826a446b01ef4fcdb16abef365
     billing_view_invoice: 6362bd0415ff4803ab99c2b454e07940
     billing_no_matching_invoices: d40a4a30fb9ebe36ba7203b961d00de0
-    billing_invoices_failed: d1d1391d1091114af3fb946833fc46f2
     select_channels: 3aab82dc90ccafe55059c32c5a33c222
     start_a_new_chat: 65b9067206fa4e4929d48ce242d879a6
     your_assistant: bd6422d1c2a2ba461e1da169b082bf7b

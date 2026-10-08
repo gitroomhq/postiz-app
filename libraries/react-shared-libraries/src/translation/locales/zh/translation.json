@@ -598,7 +598,6 @@
   "billing_download_invoice": "下载发票",
   "billing_view_invoice": "查看发票",
   "billing_no_matching_invoices": "没有与搜索匹配的发票",
-  "billing_invoices_failed": "无法加载您的发票",
   "select_channels": "选择频道",
   "start_a_new_chat": "开始新聊天",
   "your_assistant": "你的助手",

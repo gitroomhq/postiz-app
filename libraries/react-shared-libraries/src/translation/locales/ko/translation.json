@@ -598,7 +598,6 @@
   "billing_download_invoice": "인보이스 다운로드",
   "billing_view_invoice": "인보이스 보기",
   "billing_no_matching_invoices": "검색과 일치하는 인보이스가 없습니다",
-  "billing_invoices_failed": "인보이스를 불러올 수 없습니다",
   "select_channels": "채널 선택",
   "start_a_new_chat": "새 채팅 시작",
   "your_assistant": "당신의 어시스턴트",

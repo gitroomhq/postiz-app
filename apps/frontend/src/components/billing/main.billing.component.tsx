@@ -42,10 +42,8 @@ export const Prorate: FC<{
   const { period, pack } = props;
   const t = useT();
   const fetch = useFetch();
-  const [price, setPrice] = useState<number | false>(0);
-  const [loading, setLoading] = useState(false);
+  const [price, setPrice] = useState<number | false>(false);
   const calculatePrice = useDebouncedCallback(async () => {
-    setLoading(true);
     setPrice(
       (
         await (
@@ -59,25 +57,19 @@ export const Prorate: FC<{
         ).json()
       ).price
     );
-    setLoading(false);
   }, 500);
   useEffect(() => {
     setPrice(false);
     calculatePrice();
   }, [period, pack]);
-  if (loading) {
-    return (
-      <ReactLoading type="spin" color="currentColor" width={14} height={14} />
-    );
-  }
-  // the price is missing when the preview request fails
+  // nothing is shown while the preview loads, the price is missing when it fails
   if (typeof price !== 'number') {
     return null;
   }
   return (
-    <>
+    <div className="animate-fadeIn">
       {t('pay_today', 'Pay Today')} ${Math.max(price, 0).toFixed(2)}
-    </>
+    </div>
   );
 };
 

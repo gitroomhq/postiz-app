@@ -598,7 +598,6 @@
   "billing_download_invoice": "Télécharger la facture",
   "billing_view_invoice": "Voir la facture",
   "billing_no_matching_invoices": "Aucune facture ne correspond à votre recherche",
-  "billing_invoices_failed": "Impossible de charger vos factures",
   "select_channels": "Sélectionner les canaux",
   "start_a_new_chat": "Démarrer une nouvelle conversation",
   "your_assistant": "Votre assistant",

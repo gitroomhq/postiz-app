@@ -598,7 +598,6 @@
   "billing_download_invoice": "請求書をダウンロード",
   "billing_view_invoice": "請求書を表示",
   "billing_no_matching_invoices": "検索に一致する請求書はありません",
-  "billing_invoices_failed": "請求書を読み込めませんでした",
   "select_channels": "チャンネルを選択",
   "start_a_new_chat": "新しいチャットを開始",
   "your_assistant": "あなたのアシスタント",

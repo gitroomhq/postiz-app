@@ -598,7 +598,6 @@
   "billing_download_invoice": "ইনভয়েস ডাউনলোড করুন",
   "billing_view_invoice": "ইনভয়েস দেখুন",
   "billing_no_matching_invoices": "আপনার অনুসন্ধানের সাথে কোনো ইনভয়েস মেলেনি",
-  "billing_invoices_failed": "আপনার ইনভয়েস লোড করা যায়নি",
   "select_channels": "চ্যানেল নির্বাচন করুন",
   "start_a_new_chat": "নতুন চ্যাট শুরু করুন",
   "your_assistant": "আপনার সহকারী",
