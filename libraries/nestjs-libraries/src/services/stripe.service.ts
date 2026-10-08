@@ -13,6 +13,7 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 import {
+  PaymentInvoice,
   PaymentPlatform,
   PaymentProvider,
   PaymentProviderAbstract,
@@ -785,6 +786,50 @@ export class StripeService extends PaymentProviderAbstract {
   async portalLink(organizationId: string) {
     const customer = await this.getCustomerByOrganizationId(organizationId);
     return this.createBillingPortalLink(customer);
+  }
+
+  async getInvoices(organizationId: string): Promise<PaymentInvoice[]> {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    if (!customer || !customer.startsWith('cus_')) {
+      return [];
+    }
+
+    const invoices = await stripe.invoices.list({
+      customer,
+      limit: 100,
+    });
+
+    return invoices.data
+      .filter((invoice) => invoice.status !== 'draft')
+      .map((invoice) => {
+        // snapshot of the subscription metadata ({ billing, period }) when the invoice was finalized
+        const metadata = invoice.parent?.subscription_details?.metadata;
+        return {
+          id: invoice.id,
+          number: invoice.number,
+          tier: metadata?.billing || null,
+          period: metadata?.period || null,
+          description: invoice.lines.data[0]?.description || null,
+          amount: invoice.total,
+          currency: invoice.currency,
+          created: invoice.created,
+          periodEnd: Math.max(
+            invoice.period_end,
+            ...invoice.lines.data.map((line) => line.period.end)
+          ),
+          // an open invoice that was already attempted is a failed charge waiting for a retry
+          status:
+            invoice.status === 'paid'
+              ? 'paid'
+              : invoice.status === 'void'
+              ? 'void'
+              : invoice.status === 'uncollectible' || invoice.attempted
+              ? 'failed'
+              : 'pending',
+          downloadUrl: invoice.invoice_pdf || null,
+          viewUrl: invoice.hosted_invoice_url || null,
+        };
+      });
   }
 
   async finishTrial(organization: Organization) {

@@ -572,6 +572,36 @@ checksums:
     billing_apply: 0f03e8e3752eb120bf8ea0b8f8f5d244
     billing_subscription: ba9f3675e18987d067d48533c8897343
     billing_cancel_notice: bc2edd49b3c0a51f8e11bb93f56c5571
+    billing_and_subscription: 54d901b131228b512d31922bfed6f49e
+    billing_and_subscription_description: 4458136515c80304af208b3eedc057e9
+    billing_current_plan: 7497746eb3b4897ff953b1aa8c7c9f63
+    billing_upgrade: 63c3b52882e0d779859307d672c178c2
+    billing_downgrade: 91f6c79623592b9dc186159b3b665b65
+    billing_switch_to_yearly: 4c70dcc918ed45af62c8374117aa1a16
+    billing_switch_to_monthly: dc4ca8b36aa6d3b6fef9a65c9ade75cf
+    billing_purchase: 8047e4f1fa2c312dde88dc0f7003eb4b
+    billing_downgrade_on: 23e133b7c3a3098b7a27d3b304708e32
+    billing_payment_method: 84bb851608b200dc843c7801218ca039
+    billing_payment_method_description: 73fecbfa75b88d901a316dc3b1160c72
+    billing_update_payment_method: bd941bb1afc2e2f707529042d9cc45de
+    billing_history: 2c2802bfaca8774325efb30773ab89a1
+    billing_search: fe877a75eac472fc5b188c135c78a558
+    billing_all_statuses: 041202586d00c28bcfb30bfd38105e58
+    billing_export: 709afbc86c5fdca279a111ea8e49d1c9
+    billing_plan: c6a08c771f97d86b02cf10d8f5f2d788
+    billing_amount: a0ae9c6ff98b57475cdce56f66066aa4
+    billing_purchase_date: 3f197b4ba86da213210683efc5df2326
+    billing_end_date: 2d1d5e06cf23156dfc49718d9455dd48
+    billing_status: 4e1fcce15854d824919b4a582c697c90
+    billing_action: c92af0bdf1698b0d10cf5b28d2ad4945
+    billing_invoice: eeda4ece45623519011ea5c83091f431
+    billing_status_paid: 5e2fa7af50cd5d877d9c54fd87bb3bb5
+    billing_status_open: 030a6f3395d5d4efddd3cc67d6009039
+    billing_status_failed: 99f87615af1fffa2b8802866b096705a
+    billing_status_void: 244428fc68aa883114c61ab85ff8fdd8
+    billing_download_invoice: 8c50fd826a446b01ef4fcdb16abef365
+    billing_view_invoice: 6362bd0415ff4803ab99c2b454e07940
+    billing_no_matching_invoices: d40a4a30fb9ebe36ba7203b961d00de0
     select_channels: 3aab82dc90ccafe55059c32c5a33c222
     start_a_new_chat: 65b9067206fa4e4929d48ce242d879a6
     your_assistant: bd6422d1c2a2ba461e1da169b082bf7b
