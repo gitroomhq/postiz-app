@@ -9,7 +9,6 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
-import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 import clsx from 'clsx';
 
@@ -926,7 +925,6 @@ export const PublicComponent = () => {
   const t = useT();
   const fetch = useFetch();
   const user = useUser();
-  const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
   const loadOrganizations = useCallback(async () => {
     return await (await fetch('/user/organizations')).json();
   }, []);
@@ -944,30 +942,9 @@ export const PublicComponent = () => {
   return (
     <div className="flex flex-col gap-[20px]">
       <h3 className="text-[20px]">
-        {t('developers', 'Developers')}
-        {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
+        {t('agents', 'Agents')}
       </h3>
-      <div className="flex gap-[6px]">
-        {(['api', 'developer'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
-              subTab === tab
-                ? 'bg-[#612BD3] text-white'
-                : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
-            )}
-            onClick={() => setSubTab(tab)}
-          >
-            {tab === 'api'
-              ? t('access', 'Access')
-              : t('apps', 'Apps')}
-          </button>
-        ))}
-      </div>
-      {subTab === 'api' && <PublicApiContent />}
-      {subTab === 'developer' && <DeveloperComponent />}
+      <PublicApiContent />
     </div>
   );
 };

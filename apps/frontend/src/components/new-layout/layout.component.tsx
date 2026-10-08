@@ -131,12 +131,14 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                       <div
                         id="left-menu"
                         className={clsx(
-                          'fixed h-full w-[64px] start-[17px] flex flex-1 top-0 mobile:static mobile:h-auto mobile:min-h-full mobile:mx-auto',
-                          user?.admin && 'pt-[60px] max-h-[1000px]:w-[500px]'
+                          'fixed h-full w-[64px] start-[20px] flex flex-1 top-0 mobile:static mobile:h-auto mobile:min-h-full mobile:mx-auto',
+                          user?.admin && 'pt-[52px] max-h-[1000px]:w-[500px]'
                         )}
                       >
-                        <div className="flex flex-col h-full gap-[32px] mobile:gap-[16px] flex-1 py-[12px]">
-                          <Logo />
+                        <div className="flex flex-col h-full gap-[32px] mobile:gap-[16px] flex-1 pt-[12px] pb-[20px] mobile:pb-[12px]">
+                          <div className="flex justify-center">
+                            <Logo />
+                          </div>
                           <TopMenu />
                         </div>
                       </div>

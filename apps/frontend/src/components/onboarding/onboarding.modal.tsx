@@ -629,7 +629,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         <div className="bg-newTableHeader rounded-[8px] p-[16px] text-[14px] text-customColor18 text-center w-full max-w-[860px] mx-auto">
           {t(
             'agent_access_unavailable',
-            'Agent access is not available for your current plan or role. You can set it up later under Settings > Developers.'
+            'Agent access is not available for your current plan or role. You can set it up later under Settings > Agents.'
           )}
         </div>
       )}
@@ -660,7 +660,7 @@ const OnboardingStep2: FC<{ onBack: () => void; onNext: () => void }> = ({
         <div className="text-[13px] text-customColor18 text-center">
           {t(
             'agent_settings_later',
-            'More agents and full instructions are available under Settings > Developers'
+            'More agents and full instructions are available under Settings > Agents'
           )}
         </div>
         <button
