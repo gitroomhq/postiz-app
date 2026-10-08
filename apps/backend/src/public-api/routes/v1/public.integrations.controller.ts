@@ -56,6 +56,8 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
+import { ResetCreditsDto } from '@gitroom/nestjs-libraries/dtos/billing/reset.credits.dto';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import dayjs from 'dayjs';
 
 @ApiTags('Public API')
@@ -71,7 +73,8 @@ export class PublicIntegrationsController {
     private _usersService: UsersService,
     private _adminStatsService: AdminStatsService,
     private _organizationService: OrganizationService,
-    private _clippingService: ClippingService
+    private _clippingService: ClippingService,
+    private _subscriptionService: SubscriptionService
   ) {}
 
   @Post('/upload')
@@ -442,6 +445,25 @@ export class PublicIntegrationsController {
       to: to.endOf('day').toDate(),
       includeDeleted,
     });
+  }
+
+  @Post('/credits/reset')
+  @UseGuards(SuperAdminGuard)
+  async resetCredits(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: ResetCreditsDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    const reset = await this._subscriptionService.resetCredits(
+      org.id,
+      body.type
+    );
+
+    if (!reset) {
+      throw new HttpException({ msg: 'No subscription found' }, 404);
+    }
+
+    return reset;
   }
 
   @Get('/notifications')
