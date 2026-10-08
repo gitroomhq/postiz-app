@@ -1324,24 +1324,6 @@ const CalendarItem: FC<{
             <CopyDebug />
           </div>
         )}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
-          )}
-          onClick={duplicatePost}
-        >
-          <Duplicate />
-        </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer text-red-500',
-            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
-          )}
-          onClick={deletePost}
-        >
-          <DeletePost />
-        </div>{' '}
         {(state === 'PUBLISHED' || state === 'ERROR') &&
           !post.intervalInDays &&
           post.releaseURL?.startsWith('http') && (
@@ -1388,6 +1370,24 @@ const CalendarItem: FC<{
           onClick={preview}
         >
           <Preview />
+        </div>
+        <div
+          className={clsx(
+            'hidden group-hover:block hover:underline cursor-pointer',
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
+          )}
+          onClick={duplicatePost}
+        >
+          <Duplicate />
+        </div>
+        <div
+          className={clsx(
+            'hidden group-hover:block hover:underline cursor-pointer text-red-500',
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
+          )}
+          onClick={deletePost}
+        >
+          <DeletePost />
         </div>
       </div>
       <div
