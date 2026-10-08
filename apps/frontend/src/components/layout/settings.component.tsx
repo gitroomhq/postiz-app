@@ -31,7 +31,9 @@ import { Autopost } from '@gitroom/frontend/components/autopost/autopost';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import { GlobalSettings } from '@gitroom/frontend/components/settings/global.settings';
-import { ApprovedAppsComponent } from '@gitroom/frontend/components/approved-apps/approved-apps.component';
+import { AppsComponent } from '@gitroom/frontend/components/settings/apps.component';
+import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
+import { Plugs } from '@gitroom/frontend/components/plugs/plugs';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -81,13 +83,14 @@ export const SettingsPopup: FC<{
     close();
   }, []);
 
-  const [tab, setTab] = useState('global_settings');
-
   const t = useT();
   const list = useMemo(() => {
     const arr = [];
     arr.push({ tab: 'global_settings', label: t('global_settings', 'Global Settings') });
     // Populate tabs based on user permissions
+    if (user?.tier?.public_api && isGeneral && showLogout) {
+      arr.push({ tab: 'agents', label: t('agents', 'Agents') });
+    }
     if (user?.tier?.team_members && isGeneral && user?.role !== 'USER') {
       arr.push({ tab: 'teams', label: t('teams', 'Teams') });
     }
@@ -103,13 +106,19 @@ export const SettingsPopup: FC<{
     if (user?.tier.current !== 'FREE') {
       arr.push({ tab: 'signatures', label: t('signatures', 'Signatures') });
     }
-    if (user?.tier?.public_api && isGeneral && showLogout) {
-      arr.push({ tab: 'api', label: t('developers', 'Developers') });
-    }
-    arr.push({ tab: 'approved_apps', label: t('approved_apps', 'Approved Apps') });
+    arr.push({ tab: 'integrations', label: t('integrations', 'Integrations') });
+    arr.push({ tab: 'plugs', label: t('plugs', 'Plugs') });
+    arr.push({ tab: 'apps', label: t('apps', 'Apps') });
 
     return arr;
   }, [user, isGeneral, showLogout, t]);
+
+  const [tab, setTab] = useState(() => {
+    const requested = url.get('tab');
+    return list.some((p) => p.tab === requested)
+      ? requested!
+      : 'global_settings';
+  });
 
   useEffect(() => {
     loadProfile();
@@ -198,7 +207,19 @@ export const SettingsPopup: FC<{
                 </div>
               )}
 
-              {tab === 'api' &&
+              {tab === 'integrations' && (
+                <div>
+                  <ThirdPartyComponent />
+                </div>
+              )}
+
+              {tab === 'plugs' && (
+                <div>
+                  <Plugs />
+                </div>
+              )}
+
+              {tab === 'agents' &&
                 !!user?.tier?.public_api &&
                 isGeneral &&
                 showLogout && (
@@ -207,9 +228,16 @@ export const SettingsPopup: FC<{
                   </div>
                 )}
 
-              {tab === 'approved_apps' && (
+              {tab === 'apps' && (
                 <div>
-                  <ApprovedAppsComponent />
+                  <AppsComponent
+                    canManageApps={
+                      !!user?.tier?.public_api &&
+                      isGeneral &&
+                      showLogout &&
+                      user?.role !== 'USER'
+                    }
+                  />
                 </div>
               )}
             </div>

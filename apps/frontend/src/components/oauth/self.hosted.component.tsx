@@ -107,13 +107,13 @@ export const OAuthSelfHosted: FC<{
           removeError={true}
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Settings > Developers on your instance"
+          placeholder="Settings > Agents on your instance"
           autoComplete="off"
           spellCheck={false}
         />
         <div className="text-[12px] text-gray-400">
-          You can also paste the MCP URL from Settings &gt; Developers in the
-          Instance URL, it includes the key.
+          You can also paste the MCP URL from Settings &gt; Agents (Developers or
+          Public API on older versions) in the Instance URL, it includes the key.
         </div>
       </div>
 

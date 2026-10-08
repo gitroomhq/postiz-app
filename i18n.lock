@@ -575,7 +575,7 @@ checksums:
     select_channels: 3aab82dc90ccafe55059c32c5a33c222
     start_a_new_chat: 65b9067206fa4e4929d48ce242d879a6
     your_assistant: bd6422d1c2a2ba461e1da169b082bf7b
-    agent_welcome_message: 21c75c6cdb64a5e2d4d9ac6a9b04b7ad
+    agent_welcome_message: 6a9eabbe5f318e2b8047020fabd31858
     last_github_trending: 893235fc69e91abe15960108dcd77d7b
     next_predicted_github_trending: 2e718a5c1acdad0c058440d0a70a0ea6
     repository: 28c2debe822a225389ff8710934abff4
@@ -726,7 +726,7 @@ checksums:
     connect_agents: 3272e6e7b043cd9bd5626dc57892b4b2
     connect_your_ai_agent: 29cfdf27911e816ade81f5dc3ba948eb
     connect_agent_description: 087b814876d35ea71d2f63d54cc39788
-    agent_access_unavailable: 80a529742f86d7cacb9bb44d5e06be04
+    agent_access_unavailable: e4bcc518fa6b95d12354c17073191312
     sign_in_no_api_key: b17680d7465d120632114d25217e0e2e
     oauth_sign_in_hint: 92797174fbc54b56b7c81f485dc9008b
     add_to_cursor: da1a4472a29f82361b48e26842c05a0e
@@ -744,7 +744,8 @@ checksums:
     connector_self_hosted_description: c966620ed2df1d6ffeaa92969aaf30a6
     mcp_onboarding_description: 5b33036d174222d86ac50039a3a31724
     cli_onboarding_description: b4aba065e5a8410ee2c365ee4d7aa87c
-    agent_settings_later: bbdd45a80cc5218809363348e0b03a32
+    agent_settings_later: aade9be6157c4f95d9a6361bcbb613d2
+    agents: f902c551bd769a3ae2f65b44305b1976
     watch_tutorial: 7f202b82c805285109187f099d22e863
     watch_tutorial_title: c3c0d814f10a3325a7fd52a7fb44ae38
     watch_tutorial_description: 25dd65235d9603f6d65d62f953791722

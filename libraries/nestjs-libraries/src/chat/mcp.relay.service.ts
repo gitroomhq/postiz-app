@@ -108,7 +108,7 @@ export class McpRelayService {
       );
     }
 
-    // The MCP URL from Settings > Developers carries the API key:
+    // The MCP URL from Settings > Agents carries the API key:
     // <backend>/mcp/<key>
     const fromSettings = url.pathname.match(/^(.*?)\/mcp\/([^/]+)\/?$/);
     const key =
@@ -185,7 +185,7 @@ export class McpRelayService {
     }
 
     throw new HttpException(
-      `Could not find a Postiz MCP server at ${url.origin}. Paste the MCP URL from Settings > Developers of your instance, and make sure it runs Postiz v2.19.0 or newer`,
+      `Could not find a Postiz MCP server at ${url.origin}. Paste the MCP URL from Settings > Agents (Developers or Public API on older versions) of your instance, and make sure it runs Postiz v2.19.0 or newer`,
       HttpStatus.BAD_REQUEST
     );
   }
