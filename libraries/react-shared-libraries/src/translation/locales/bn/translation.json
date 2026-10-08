@@ -832,5 +832,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "আপনি কি নিশ্চিত যে আপনি নির্বাচিত মিডিয়া মুছে ফেলতে চান?",
   "delete_post_from_all_channels_question": "এই পোস্টটি একাধিক চ্যানেলের জন্য তৈরি করা হয়েছে। আপনি কি এটি সবগুলো থেকে মুছে ফেলতে চান?",
   "delete_from_all_channels": "সব চ্যানেল থেকে মুছে ফেলুন",
-  "delete_only_from": "শুধুমাত্র চ্যানেল থেকে:"
+  "delete_only_from": "শুধুমাত্র চ্যানেল থেকে:",
+  "draft_post_in_all_channels_question": "এই পোস্টটি একাধিক চ্যানেলের জন্য তৈরি করা হয়েছে। আপনি কি সবগুলোকে খসড়ায় সরাতে চান?",
+  "draft_all_channels": "সব চ্যানেল খসড়ায় সরান",
+  "post_now_in_all_channels_question": "এই পোস্টটি একাধিক চ্যানেলের জন্য তৈরি করা হয়েছে। আপনি কি সবগুলো এখনই পোস্ট করতে চান?",
+  "post_now_all_channels": "সব চ্যানেলে এখনই পোস্ট করুন",
+  "schedule_post_in_all_channels_question": "এই পোস্টটি একাধিক চ্যানেলের জন্য তৈরি করা হয়েছে। আপনি কি সবগুলোর সময়সূচী করতে চান?",
+  "schedule_all_channels": "সব চ্যানেলের সময়সূচী করুন",
+  "only_channel": "শুধুমাত্র চ্যানেল:"
 }

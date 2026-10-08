@@ -832,5 +832,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "האם אתה בטוח שברצונך למחוק את המדיה שנבחרה?",
   "delete_post_from_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך למחוק אותו מכולם?",
   "delete_from_all_channels": "מחק מכל הערוצים",
-  "delete_only_from": "רק מהערוץ"
+  "delete_only_from": "רק מהערוץ",
+  "draft_post_in_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך להעביר את כולם לטיוטות?",
+  "draft_all_channels": "העבר את כל הערוצים לטיוטות",
+  "post_now_in_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך לפרסם את כולם עכשיו?",
+  "post_now_all_channels": "פרסם עכשיו בכל הערוצים",
+  "schedule_post_in_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך לתזמן את כולם?",
+  "schedule_all_channels": "תזמן את כל הערוצים",
+  "only_channel": "רק"
 }

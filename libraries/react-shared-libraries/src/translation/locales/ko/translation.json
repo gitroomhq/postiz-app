@@ -832,5 +832,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "선택한 미디어를 삭제하시겠습니까?",
   "delete_post_from_all_channels_question": "이 게시글은 여러 채널용으로 만들어졌습니다. 모든 채널에서 삭제하시겠습니까?",
   "delete_from_all_channels": "모든 채널에서 삭제",
-  "delete_only_from": "다음 채널에서만:"
+  "delete_only_from": "다음 채널에서만:",
+  "draft_post_in_all_channels_question": "이 게시글은 여러 채널용으로 만들어졌습니다. 모든 채널을 임시 저장으로 옮기시겠습니까?",
+  "draft_all_channels": "모든 채널을 임시 저장으로 옮기기",
+  "post_now_in_all_channels_question": "이 게시글은 여러 채널용으로 만들어졌습니다. 모든 채널에 지금 게시하시겠습니까?",
+  "post_now_all_channels": "모든 채널에 지금 게시",
+  "schedule_post_in_all_channels_question": "이 게시글은 여러 채널용으로 만들어졌습니다. 모든 채널에 예약하시겠습니까?",
+  "schedule_all_channels": "모든 채널에 예약",
+  "only_channel": "다음 채널만:"
 }

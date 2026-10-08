@@ -834,5 +834,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "Are you sure you want to delete the selected media?",
   "delete_post_from_all_channels_question": "This post was created for more than one channel. Do you want to delete it from all of them?",
   "delete_from_all_channels": "Delete from all channels",
-  "delete_only_from": "Only from"
+  "delete_only_from": "Only from",
+  "draft_post_in_all_channels_question": "This post was created for more than one channel. Do you want to move all of them to drafts?",
+  "draft_all_channels": "Move all channels to drafts",
+  "post_now_in_all_channels_question": "This post was created for more than one channel. Do you want to post all of them now?",
+  "post_now_all_channels": "Post all channels now",
+  "schedule_post_in_all_channels_question": "This post was created for more than one channel. Do you want to schedule all of them?",
+  "schedule_all_channels": "Schedule all channels",
+  "only_channel": "Only"
 }

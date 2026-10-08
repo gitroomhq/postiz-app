@@ -832,5 +832,12 @@
   "are_you_sure_you_want_to_delete_selected_media": "你确定要删除所选媒体吗？",
   "delete_post_from_all_channels_question": "此帖子是为多个频道创建的。要从所有频道中删除它吗？",
   "delete_from_all_channels": "从所有频道删除",
-  "delete_only_from": "只删除"
+  "delete_only_from": "只删除",
+  "draft_post_in_all_channels_question": "此帖子是为多个频道创建的。要将所有频道都移至草稿吗？",
+  "draft_all_channels": "将所有频道移至草稿",
+  "post_now_in_all_channels_question": "此帖子是为多个频道创建的。要立即在所有频道发布吗？",
+  "post_now_all_channels": "立即在所有频道发布",
+  "schedule_post_in_all_channels_question": "此帖子是为多个频道创建的。要在所有频道安排发布吗？",
+  "schedule_all_channels": "在所有频道安排发布",
+  "only_channel": "仅"
 }

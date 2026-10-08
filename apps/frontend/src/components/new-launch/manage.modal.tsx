@@ -144,6 +144,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
   // the channels the post already has, each with its own post
   const existingPosts = [existingData, ...(existingData.siblings || [])];
+  // the channel in view, or the one that was opened
+  const channel =
+    existingPosts.find((p) => p.integration === current) || existingData;
 
   useEffect(() => {
     if (hide) {
@@ -225,9 +228,6 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const deletePost = useCallback(async () => {
     setLoading(true);
     if (existingData.siblings?.length) {
-      // the channel in view, or the one that was opened
-      const channel =
-        existingPosts.find((p) => p.integration === current) || existingData;
       const groups = await new Promise<string[]>((resolve) => {
         modal.openModal({
           id: 'delete-post-channels',
@@ -317,8 +317,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
   const schedule = useCallback(
     (type: 'draft' | 'now' | 'schedule' | 'update') => async () => {
       let republish = false;
-      // channels saved without changing their state, the rest are saved as `type`
-      let updateOnly: string[] = [];
+      // the channels saved as another type, the rest are saved as `type`
+      const saveAs: Record<string, 'draft' | 'schedule' | 'update'> = {};
+      const saveTypeOf = (id: string) => saveAs[id] || type;
       // the channels that already went out, or are going out right now
       const published = existingPosts.filter(
         (p) =>
@@ -326,9 +327,137 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           (p.posts?.[0]?.state === 'QUEUE' &&
             dayjs().isAfter((channelDates[p.integration] || date).utc()))
       );
+      const others = existingPosts.filter((p) => p !== channel);
 
-      if ((type === 'now' || type === 'schedule') && published.length) {
-        const channels = published
+      // another channel whose date already passed would go out right away, it
+      // only gets its details saved
+      if (type === 'schedule') {
+        for (const p of others) {
+          if (
+            !published.includes(p) &&
+            dayjs().isAfter((channelDates[p.integration] || date).utc())
+          ) {
+            saveAs[p.integration] = 'update';
+          }
+        }
+      }
+
+      // a draft of a post with other channels leaves the published ones as they are
+      if (type === 'draft' && existingData.siblings?.length) {
+        for (const p of published) {
+          if (p.posts[0].state === 'PUBLISHED') {
+            saveAs[p.integration] = 'update';
+          }
+        }
+      }
+
+      // the save that leaves a channel in its state
+      const asItIs = (p: (typeof existingPosts)[number]) =>
+        p.posts?.[0]?.state === 'DRAFT'
+          ? 'draft'
+          : p.posts?.[0]?.state === 'QUEUE' && !published.includes(p)
+          ? 'schedule'
+          : 'update';
+
+      // like the delete, a save that changes the state of the other channels
+      // (scheduling their drafts, moving them to drafts) can do it only for
+      // the channel in view, the others keep their state
+      if (
+        type !== 'update' &&
+        others.some(
+          (p) =>
+            !saveAs[p.integration] &&
+            // the republish question covers the published ones
+            (type === 'draft' || !published.includes(p)) &&
+            asItIs(p) !== type
+        )
+      ) {
+        const question =
+          type === 'draft'
+            ? t(
+                'draft_post_in_all_channels_question',
+                'This post was created for more than one channel. Do you want to move all of them to drafts?'
+              )
+            : type === 'now'
+            ? t(
+                'post_now_in_all_channels_question',
+                'This post was created for more than one channel. Do you want to post all of them now?'
+              )
+            : t(
+                'schedule_post_in_all_channels_question',
+                'This post was created for more than one channel. Do you want to schedule all of them?'
+              );
+
+        const allChannels =
+          type === 'draft'
+            ? t('draft_all_channels', 'Move all channels to drafts')
+            : type === 'now'
+            ? t('post_now_all_channels', 'Post all channels now')
+            : t('schedule_all_channels', 'Schedule all channels');
+
+        const whichChannels = await new Promise((resolve) => {
+          modal.openModal({
+            id: 'change-post-channels',
+            title: t('what_do_you_want_to_do', 'What do you want to do?'),
+            onClose: () => resolve(undefined),
+            children: (
+              <div className="flex flex-col">
+                <div className="text-[20px] mb-[20px]">{question}</div>
+                <div className="flex w-full gap-[10px]">
+                  <div className="flex-1 flex">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      onClick={() => {
+                        modal.closeById('change-post-channels');
+                        resolve('all');
+                      }}
+                    >
+                      {allChannels}
+                    </Button>
+                  </div>
+                  {/* a published channel in view stays published on a draft */}
+                  {!saveAs[channel.integration] && (
+                    <div className="flex-1 flex">
+                      <Button
+                        type="button"
+                        secondary
+                        className="flex-1"
+                        onClick={() => {
+                          modal.closeById('change-post-channels');
+                          resolve('only');
+                        }}
+                      >
+                        {t('only_channel', 'Only')}{' '}
+                        {
+                          integrations.find((p) => p.id === channel.integration)
+                            ?.name
+                        }
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ),
+          });
+        });
+
+        if (!whichChannels) {
+          return;
+        }
+
+        if (whichChannels === 'only') {
+          for (const p of others) {
+            saveAs[p.integration] = asItIs(p);
+          }
+        }
+      }
+
+      // the published channels that would go out again
+      const republishing = published.filter((p) => !saveAs[p.integration]);
+
+      if ((type === 'now' || type === 'schedule') && republishing.length) {
+        const channels = republishing
           .map(
             (p) =>
               `${integrations.find((i) => i.id === p.integration)?.name} ${t(
@@ -342,9 +471,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         const isRecurring =
           !!repeater || !!existingData?.posts?.[0]?.intervalInDays;
 
+        // it closes on a choice, so a save that then fails its checks shows
+        // the channel to fix
         const whatToDo = await new Promise((resolve) => {
           modal.openModal({
+            id: 'republish-post',
             title: t('what_do_you_want_to_do', 'What do you want to do?'),
+            onClose: () => resolve(undefined),
             children: (
               <div className="flex flex-col">
                 <div className="text-[20px] mb-[20px]">
@@ -367,7 +500,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Button
                       type="button"
                       className="flex-1"
-                      onClick={() => resolve('update')}
+                      onClick={() => {
+                        modal.closeById('republish-post');
+                        resolve('update');
+                      }}
                     >
                       {t(
                         'just_update_post_details',
@@ -379,7 +515,10 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     <Button
                       type="button"
                       className="flex-1"
-                      onClick={() => resolve('republish')}
+                      onClick={() => {
+                        modal.closeById('republish-post');
+                        resolve('republish');
+                      }}
                     >
                       {t('republish_the_post', 'Republish the post')}
                     </Button>
@@ -390,36 +529,19 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           });
         });
 
+        if (!whatToDo) {
+          return;
+        }
+
         if (whatToDo === 'update') {
-          updateOnly = published.map((p) => p.integration);
+          for (const p of republishing) {
+            saveAs[p.integration] = 'update';
+          }
         }
 
         if (whatToDo === 'republish') {
           republish = true;
         }
-      }
-
-      // another channel whose date already passed would go out right away, it
-      // only gets its details saved
-      if (type === 'schedule') {
-        updateOnly = [
-          ...updateOnly,
-          ...existingPosts
-            .filter(
-              (p) =>
-                p.integration !== existingData.integration &&
-                !published.includes(p) &&
-                dayjs().isAfter((channelDates[p.integration] || date).utc())
-            )
-            .map((p) => p.integration),
-        ];
-      }
-
-      // a draft of a post with other channels leaves the published ones as they are
-      if (type === 'draft' && existingData.siblings?.length) {
-        updateOnly = published
-          .filter((p) => p.posts[0].state === 'PUBLISHED')
-          .map((p) => p.integration);
       }
 
       setLoading(true);
@@ -493,47 +615,50 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           return;
         }
 
-        if (type !== 'draft') {
-          for (const item of checkAllValid) {
-            if (item.valid === false) {
-              toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.settingsError ||
-                  t('please_fix_your_settings', 'Please fix your settings')
-                }`,
-                'warning'
-              );
-              focus(item.id, 'fix');
-              setLoading(false);
-              setShowSettings(true);
-              return;
-            }
+        // a channel saved as a draft gets these checks once it's scheduled
+        const notDrafts = checkAllValid.filter(
+          (p: any) => saveTypeOf(p.id) !== 'draft'
+        );
 
-            if (item.errors !== true) {
-              toaster.show(
-                `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
-                  item.errors
-                }`,
-                'warning'
-              );
-              focus(item.id, 'preview');
-              setLoading(false);
-              setShowSettings(false);
-              return;
-            }
+        for (const item of notDrafts) {
+          if (item.valid === false) {
+            toaster.show(
+              `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                item.settingsError ||
+                t('please_fix_your_settings', 'Please fix your settings')
+              }`,
+              'warning'
+            );
+            focus(item.id, 'fix');
+            setLoading(false);
+            setShowSettings(true);
+            return;
+          }
 
-            if (item.tooLong) {
-              toaster.show(
-                `${item.name} (${item.identifier}) ${t(
-                  'post_is_too_long',
-                  'post is too long, please fix it'
-                )}`,
-                'warning'
-              );
-              focus(item.id, 'preview');
-              setLoading(false);
-              return;
-            }
+          if (item.errors !== true) {
+            toaster.show(
+              `${capitalize(item.identifier.split('-')[0])} (${item.name}): ${
+                item.errors
+              }`,
+              'warning'
+            );
+            focus(item.id, 'preview');
+            setLoading(false);
+            setShowSettings(false);
+            return;
+          }
+
+          if (item.tooLong) {
+            toaster.show(
+              `${item.name} (${item.identifier}) ${t(
+                'post_is_too_long',
+                'post is too long, please fix it'
+              )}`,
+              'warning'
+            );
+            focus(item.id, 'preview');
+            setLoading(false);
+            return;
           }
         }
       }
@@ -606,23 +731,16 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
         if (addEditSets) {
           addEditSets(data);
         } else {
-          // the channels that only update their details are saved apart, first,
-          // since a draft save skips the checks their update still runs
+          // every type of save is its own request, the drafts last, since a
+          // draft save skips the checks the others still run
           let saved = false;
-          for (const request of [
-            {
-              type: 'update',
-              posts: posts.filter((p: any) =>
-                updateOnly.includes(p.integration.id)
-              ),
-            },
-            {
-              type,
+          for (const requestType of ['update', 'schedule', 'now', 'draft']) {
+            const request = {
+              type: requestType,
               posts: posts.filter(
-                (p: any) => !updateOnly.includes(p.integration.id)
+                (p: any) => saveTypeOf(p.integration.id) === requestType
               ),
-            },
-          ]) {
+            };
             if (!request.posts.length) {
               continue;
             }
@@ -678,7 +796,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       tags,
       date,
       channelDates,
+      current,
       integrations,
+      selectedIntegrations,
       addEditSets,
       dummy,
       shortlinkPreferenceData,
