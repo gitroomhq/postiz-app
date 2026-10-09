@@ -248,7 +248,7 @@ export class NoAuthIntegrationsController {
         expiresIn,
         username,
         refresh ? false : integrationProvider.isBetweenSteps,
-        body.refresh,
+        refresh || body.refresh,
         +body.timezone,
         details
           ? AuthService.fixedEncryption(details)
@@ -269,9 +269,13 @@ export class NoAuthIntegrationsController {
         console.log(err);
       });
 
-    // Fetch pages if this is a two-step provider and not a refresh
+    // Fetch pages if this is a two-step provider and not a refresh, or a
+    // refresh of a channel that never finished picking its page
     let pages: any[] = [];
-    if (integrationProvider.isBetweenSteps && !refresh) {
+    if (
+      integrationProvider.isBetweenSteps &&
+      (!refresh || createUpdate.inBetweenSteps)
+    ) {
       try {
         // Check which method the provider uses (pages or companies)
         const fetchMethod =
