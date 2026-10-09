@@ -1,3 +1,5 @@
+import { PrivacyExportRepository } from './privacy/privacy.export.repository';
+import { PrivacyExportService } from './privacy/privacy.export.service';
 import { Global, Module } from '@nestjs/common';
 import { PrismaRepository, PrismaService, PrismaTransaction } from './prisma.service';
 import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.repository';
@@ -56,6 +58,8 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
   imports: [],
   controllers: [],
   providers: [
+    PrivacyExportRepository,
+    PrivacyExportService,
     PrismaService,
     PrismaRepository,
     PrismaTransaction,
