@@ -320,7 +320,7 @@ export class IntegrationService {
   ) {
     await this._notificationService.inAppNotification(
       orgId,
-      `Could not refresh your ${integration.providerIdentifier} channel ${err}`,
+      `Could not refresh your ${integration.providerIdentifier} channel`,
       `Could not refresh your ${integration.providerIdentifier} channel ${err}. Please go back to the system and connect it again ${process.env.FRONTEND_URL}/launches`,
       true,
       false,
