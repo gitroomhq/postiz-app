@@ -365,7 +365,6 @@ export const ContinueIntegration: FC<{
             >
               <Provider
                 onSave={onSave}
-                existingId={[]}
                 initialData={twoStepState.pages}
                 isSaving={isSaving}
               />
