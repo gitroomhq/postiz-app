@@ -92,7 +92,11 @@ export class UsersService {
 
     for (const org of ownedOrgs) {
       const team = await this._organizationRepository.getTeam(org.id);
-      if (team?.users?.some((member) => member.user.id !== userId)) {
+      if (
+        team?.users?.some(
+          (member) => member.user.id !== userId && !member.disabled
+        )
+      ) {
         throw new HttpException(
           'Please remove your team members before deleting your account',
           400
