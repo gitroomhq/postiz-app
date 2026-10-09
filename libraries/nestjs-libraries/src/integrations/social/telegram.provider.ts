@@ -205,6 +205,50 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  formatMessage(rawMessage: string): string {
+    if (!rawMessage) {
+      return '';
+    }
+
+    const text = striptags(
+      rawMessage
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<p>([\s\S]*?)<\/p>/gi, '$1\n'),
+      [
+        'b',
+        'strong',
+        'i',
+        'em',
+        'u',
+        'ins',
+        's',
+        'strike',
+        'del',
+        'span',
+        'tg-spoiler',
+        'tg-emoji',
+        'a',
+        'code',
+        'pre',
+        'blockquote',
+      ]
+    );
+
+    return text
+      .replace(/<strong>/gi, '<b>')
+      .replace(/<\/strong>/gi, '</b>')
+      .replace(/<em>/gi, '<i>')
+      .replace(/<\/em>/gi, '</i>')
+      .replace(/<ins>/gi, '<u>')
+      .replace(/<\/ins>/gi, '</u>')
+      .replace(/<del>/gi, '<s>')
+      .replace(/<\/del>/gi, '</s>')
+      .replace(/<strike>/gi, '<s>')
+      .replace(/<\/strike>/gi, '</s>')
+      .replace(/&nbsp;/gi, ' ')
+      .trim();
+  }
+
   private async sendMessageInternal(
     accessToken: string,
     message: PostDetails,
@@ -212,10 +256,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   ): Promise<number | null> {
     let messageId: number | null = null;
     const mediaFiles = message.media || [];
-    const text = striptags(message.message || '', ['u', 'strong', 'p'])
-      .replace(/<strong>/g, '<b>')
-      .replace(/<\/strong>/g, '</b>')
-      .replace(/<p>(.*?)<\/p>/g, '$1\n');
+    const text = this.formatMessage(message.message || '');
 
     const processedMedia = this.processMedia(mediaFiles);
 
