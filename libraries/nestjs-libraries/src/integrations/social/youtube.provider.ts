@@ -7,21 +7,22 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
-import axios from 'axios';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  stripQuery,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
@@ -97,8 +98,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     if (body.includes('invalidTags')) {
       return {
         type: 'bad-body',
-        value:
-          'The maximum allowed is 500 characters in total.',
+        value: 'The maximum allowed is 500 characters in total.',
       };
     }
 
@@ -296,7 +296,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(7);
+    const state = makeSecureId(7);
     const { client } = clientAndYoutube();
     return {
       url: client.generateAuthUrl({
@@ -306,7 +306,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
       }),
-      codeVerifier: makeId(11),
+      codeVerifier: makeSecureId(11),
       state,
     };
   }
@@ -454,6 +454,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`youtube: media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -482,6 +483,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range: a transformed (compressed) response loses
       // its length, and a length-less object is answered with the full body.
+      setHeartbeatDetails(
+        `youtube: read media ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -516,6 +520,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     uploadUri: string,
     videoSize: number
   ): Promise<{ videoId: string } | { uploadedBytes: number }> {
+    setHeartbeatDetails('youtube: probe resumable session');
     const probe = await fetch(uploadUri, {
       method: 'PUT',
       headers: {
@@ -732,6 +737,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             end
           );
 
+          setHeartbeatDetails('youtube: upload chunk to google');
           const upload = await fetch(pendingData.uploadUri, {
             method: 'PUT',
             headers: {
@@ -814,7 +820,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           videoId,
           media: {
             body: (
-              await axios({
+              await this.getSsrfSafeAxios()({
                 url: pendingData.thumbnail,
                 method: 'GET',
                 responseType: 'stream',
@@ -1043,8 +1049,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
-      console.error('Error fetching YouTube post analytics:', err);
+    } catch (err: any) {
+      // Expired or revoked token, checkPostAnalytics refreshes it and retries once
+      if (err?.response?.status === 401) {
+        throw new RefreshToken(
+          this.identifier,
+          JSON.stringify(err.response.data || {}),
+          '{}'
+        );
+      }
+      console.error(
+        'Error fetching YouTube post analytics:',
+        err?.message || err
+      );
       return [];
     }
   }

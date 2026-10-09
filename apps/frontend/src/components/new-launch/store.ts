@@ -27,8 +27,11 @@ export interface SelectedIntegrations {
 
 interface StoreState {
   editor: undefined | 'none' | 'normal' | 'markdown' | 'html';
+  inlineImages: boolean;
   loaded: boolean;
   date: dayjs.Dayjs;
+  // the other channels of an existing post, each with its own date
+  channelDates: Record<string, dayjs.Dayjs>;
   postComment: PostComment;
   dummy: boolean;
   repeater?: number;
@@ -112,6 +115,7 @@ interface StoreState {
   setTab: (tab: 0 | 1) => void;
   setHide: (hide: boolean) => void;
   setDate: (date: dayjs.Dayjs) => void;
+  setChannelDate: (integrationId: string, date: dayjs.Dayjs) => void;
   setRepeater: (repeater: number) => void;
   setTags: (tags: { label: string; value: string }[]) => void;
   setIsCreateSet: (isCreateSet: boolean) => void;
@@ -129,6 +133,7 @@ interface StoreState {
   setActivateExitButton?: (activateExitButton: boolean) => void;
   setDummy: (dummy: boolean) => void;
   setEditor: (editor: 'none' | 'normal' | 'markdown' | 'html') => void;
+  setInlineImages: (inlineImages: boolean) => void;
   setLoaded?: (loaded: boolean) => void;
   setChars: (id: string, chars: number) => void;
   chars: Record<string, number>;
@@ -137,11 +142,13 @@ interface StoreState {
 
 const initialState = {
   editor: undefined as undefined,
+  inlineImages: false,
   loaded: true,
   dummy: false,
   comments: true,
   activateExitButton: true,
   date: newDayjs(),
+  channelDates: {} as Record<string, dayjs.Dayjs>,
   postComment: PostComment.ALL,
   tags: [] as { label: string; value: string }[],
   totalChars: 0,
@@ -187,6 +194,7 @@ export const useLaunchStore = create<StoreState>()((set) => ({
             ? {
                 current: 'global',
                 editor: 'normal',
+                inlineImages: false,
               }
             : {}),
         };
@@ -533,6 +541,13 @@ export const useLaunchStore = create<StoreState>()((set) => ({
     set((state) => ({
       date,
     })),
+  setChannelDate: (integrationId: string, date: dayjs.Dayjs) =>
+    set((state) => ({
+      channelDates: {
+        ...state.channelDates,
+        [integrationId]: date,
+      },
+    })),
   setRepeater: (repeater: number) =>
     set((state) => ({
       repeater,
@@ -616,6 +631,10 @@ export const useLaunchStore = create<StoreState>()((set) => ({
   setEditor: (editor: 'none' | 'normal' | 'markdown' | 'html') =>
     set((state) => ({
       editor,
+    })),
+  setInlineImages: (inlineImages: boolean) =>
+    set((state) => ({
+      inlineImages,
     })),
   setLoaded: (loaded: boolean) =>
     set((state) => ({

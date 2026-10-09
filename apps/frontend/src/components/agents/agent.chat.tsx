@@ -9,11 +9,12 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { CopilotChat, CopilotKitCSSProperties } from '@copilotkit/react-ui';
 import {
+  CopilotChat,
+  CopilotKitCSSProperties,
   InputProps,
   UserMessageProps,
-} from '@copilotkit/react-ui/dist/components/chat/props';
+} from '@copilotkit/react-ui';
 import { Input } from '@gitroom/frontend/components/agents/agent.input';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
@@ -50,6 +51,7 @@ export const AgentChat: FC = () => {
       {...(params.id === 'new' ? {} : { threadId: params.id })}
       credentials="include"
       runtimeUrl={backendUrl + '/copilot/agent'}
+      useSingleEndpoint={true}
       showDevConsole={false}
       agent="postiz"
       properties={{
@@ -80,7 +82,7 @@ You can select the channels you want to use from the left menu.
 
 You can see your previous conversations from the right menu.
 
-You can also use me as an MCP Server, check Settings >> Public API
+You can also use me as an MCP Server, check Settings >> Agents
 `),
             }}
             UserMessage={Message}
@@ -104,7 +106,11 @@ const LoadMessages: FC<{ id: string }> = ({ id }) => {
     const data = await (await fetch(`/copilot/${idToSet}/list`)).json();
     const list = data.messages.map((p: any) => {
       return new TextMessage({
-        content: p.content.content,
+        content:
+          p.content.content ||
+          (p.content.parts || [])
+            .map((part: any) => (part.type === 'text' ? part.text : ''))
+            .join(''),
         role: p.role,
       });
     });
@@ -150,7 +156,13 @@ const LoadMessages: FC<{ id: string }> = ({ id }) => {
 
 const Message: FC<UserMessageProps> = (props) => {
   const convertContentToImagesAndVideo = useMemo(() => {
-    return (props.message?.content || '')
+    const content = props.message?.content || '';
+    const text =
+      typeof content === 'string'
+        ? content
+        : content.map((p) => (p.type === 'text' ? p.text : '')).join('');
+
+    return text
       .replace(/Video: (http.*mp4\n)/g, (match, p1) => {
         return `<video controls class="h-[150px] w-[150px] rounded-[8px] mb-[10px]"><source src="${p1.trim()}" type="video/mp4">Your browser does not support the video tag.</video>`;
       })

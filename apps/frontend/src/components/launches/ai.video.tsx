@@ -90,7 +90,7 @@ export const Modal: FC<{
           <div>
             <div className="relative h-[400px]">
               <div className="absolute left-0 top-0 w-full h-full overflow-hidden overflow-y-auto">
-                <div className="mt-[10px] flex w-full justify-center items-center gap-[10px]">
+                <div className="mt-[10px] flex w-full justify-center items-center gap-[10px] mobile:flex-col mobile:items-stretch">
                   <div className="flex-1 flex">
                     <Button
                       className="!flex-1"
@@ -100,7 +100,7 @@ export const Modal: FC<{
                       Vertical (Stories, Reels)
                     </Button>
                   </div>
-                  <div className="flex-1 flex mt-[10px]">
+                  <div className="flex-1 flex mt-[10px] mobile:mt-0">
                     <Button
                       className="!flex-1"
                       onClick={() => setPosition('horizontal')}
@@ -213,7 +213,7 @@ export const AiVideo: FC<{
       <div
         onClick={openVideoModal}
         className={clsx(
-          'cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]'
+          'cursor-pointer h-[30px] mobile:h-[40px] mobile:min-w-[40px] rounded-[6px] mobile:rounded-[8px] justify-center items-center flex bg-newColColor mobile:bg-newSettings px-[8px]'
         )}
       >
         {loading && (
@@ -229,6 +229,7 @@ export const AiVideo: FC<{
               xmlns="http://www.w3.org/2000/svg"
               width="16"
               height="16"
+              className="mobile:w-[20px] mobile:h-[20px]"
               viewBox="0 0 16 16"
               fill="none"
             >

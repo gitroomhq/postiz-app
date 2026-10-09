@@ -60,16 +60,11 @@ export const ApprovedAppsComponent: FC = () => {
 
   return (
     <div className="flex flex-col gap-[20px]">
-      <div className="flex flex-col">
-        <h3 className="text-[20px]">
-          {t('approved_apps', 'Approved Apps')}
-        </h3>
-        <div className="text-customColor18 mt-[4px]">
-          {t(
-            'apps_you_have_authorized',
-            'Applications you have authorized to access your Postiz account.'
-          )}
-        </div>
+      <div className="text-customColor18">
+        {t(
+          'apps_you_have_authorized',
+          'Applications you have authorized to access your Postiz account.'
+        )}
       </div>
 
       <div className="bg-sixth border-fifth border rounded-[4px] p-[24px]">

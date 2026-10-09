@@ -13,13 +13,14 @@ export const HeadingComponent: FC<{
   };
 
   return (
-    <div className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center group relative">
+    <div className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center group relative mobile:w-auto mobile:h-auto mobile:bg-transparent">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
         height="16"
         viewBox="0 0 16 16"
         fill="none"
+        className="mobile:hidden"
       >
         <path
           d="M3.9974 2.66602V13.3327M11.9974 2.66602V13.3327M5.33073 2.66602H2.66406M11.9974 7.99935L3.9974 7.99935M5.33073 13.3327H2.66406M13.3307 13.3327H10.6641M13.3307 2.66602H10.6641"
@@ -32,12 +33,16 @@ export const HeadingComponent: FC<{
       <div
         data-tooltip-id="tooltip"
         data-tooltip-content="Title"
-        className="flex p-[10px] gap-[5px] -left-[50%] rounded-[6px] bottom-[100%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-newColColor border border-newColColor z-[100] absolute transition-all"
+        className="flex p-[10px] gap-[5px] -left-[50%] rounded-[6px] bottom-[100%] opacity-0 pointer-events-none group-hover:pointer-events-auto group-hover:opacity-100 bg-newColColor border border-newColColor z-[100] absolute transition-all mobile:static mobile:p-0 mobile:gap-[4px] mobile:opacity-100 mobile:pointer-events-auto mobile:bg-transparent mobile:border-0"
       >
-        <div onClick={setHeading(1)}>
+        <div
+          onClick={setHeading(1)}
+          className="mobile:w-[40px] mobile:h-[40px] mobile:rounded-[8px] mobile:bg-newSettings mobile:flex mobile:justify-center mobile:items-center"
+        >
           <svg
             width="20"
             height="16"
+            className="mobile:w-[20px] mobile:h-[20px]"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -48,10 +53,14 @@ export const HeadingComponent: FC<{
             />
           </svg>
         </div>
-        <div onClick={setHeading(2)}>
+        <div
+          onClick={setHeading(2)}
+          className="mobile:w-[40px] mobile:h-[40px] mobile:rounded-[8px] mobile:bg-newSettings mobile:flex mobile:justify-center mobile:items-center"
+        >
           <svg
             width="20"
             height="16"
+            className="mobile:w-[20px] mobile:h-[20px]"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -62,10 +71,14 @@ export const HeadingComponent: FC<{
             />
           </svg>
         </div>
-        <div onClick={setHeading(3)}>
+        <div
+          onClick={setHeading(3)}
+          className="mobile:w-[40px] mobile:h-[40px] mobile:rounded-[8px] mobile:bg-newSettings mobile:flex mobile:justify-center mobile:items-center"
+        >
           <svg
             width="20"
             height="16"
+            className="mobile:w-[20px] mobile:h-[20px]"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"

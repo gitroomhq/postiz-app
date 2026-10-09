@@ -5,7 +5,8 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 export class OAuthRepository {
   constructor(
     private _oauthApp: PrismaRepository<'oAuthApp'>,
-    private _oauthAuth: PrismaRepository<'oAuthAuthorization'>
+    private _oauthAuth: PrismaRepository<'oAuthAuthorization'>,
+    private _oauthSelfHosted: PrismaRepository<'oAuthSelfHostedAuthorization'>
   ) {}
 
   getAppByOrgId(orgId: string) {
@@ -55,6 +56,40 @@ export class OAuthRepository {
       },
       include: {
         picture: true,
+      },
+    });
+  }
+
+  createDynamicApp(data: {
+    name: string;
+    redirectUrl: string;
+    redirectUris: string;
+    clientId: string;
+    clientSecret?: string;
+    tokenEndpointAuthMethod: string;
+  }) {
+    return this._oauthApp.model.oAuthApp.create({
+      data: {
+        name: data.name,
+        redirectUrl: data.redirectUrl,
+        redirectUris: data.redirectUris,
+        clientId: data.clientId,
+        clientSecret: data.clientSecret,
+        tokenEndpointAuthMethod: data.tokenEndpointAuthMethod,
+        dynamic: true,
+      },
+    });
+  }
+
+  // Dynamic clients register before the consent screen, so abandoned flows
+  // leave orphan rows; prune the ones no user ever authorized
+  deleteStaleDynamicApps(olderThan: Date) {
+    return this._oauthApp.model.oAuthApp.deleteMany({
+      where: {
+        dynamic: true,
+        createdAt: { lt: olderThan },
+        authorizations: { none: {} },
+        selfHostedAuthorizations: { none: {} },
       },
     });
   }
@@ -128,6 +163,9 @@ export class OAuthRepository {
     organizationId: string;
     authorizationCode: string;
     codeExpiresAt: Date;
+    codeChallenge?: string;
+    codeChallengeMethod?: string;
+    redirectUri?: string;
   }) {
     return this._oauthAuth.model.oAuthAuthorization.upsert({
       where: {
@@ -143,10 +181,16 @@ export class OAuthRepository {
         organizationId: data.organizationId,
         authorizationCode: data.authorizationCode,
         codeExpiresAt: data.codeExpiresAt,
+        codeChallenge: data.codeChallenge || null,
+        codeChallengeMethod: data.codeChallengeMethod || null,
+        redirectUri: data.redirectUri || null,
       },
       update: {
         authorizationCode: data.authorizationCode,
         codeExpiresAt: data.codeExpiresAt,
+        codeChallenge: data.codeChallenge || null,
+        codeChallengeMethod: data.codeChallengeMethod || null,
+        redirectUri: data.redirectUri || null,
         accessToken: null,
         revokedAt: null,
       },
@@ -177,6 +221,9 @@ export class OAuthRepository {
         accessToken: encryptedToken,
         authorizationCode: null,
         codeExpiresAt: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
+        redirectUri: null,
       },
     });
   }
@@ -188,6 +235,13 @@ export class OAuthRepository {
         revokedAt: null,
       },
       include: {
+        oauthApp: {
+          select: {
+            clientId: true,
+            dynamic: true,
+            redirectUris: true,
+          },
+        },
         organization: {
           include: {
             subscription: {
@@ -200,7 +254,11 @@ export class OAuthRepository {
           },
         },
         user: {
-          select: { id: true },
+          select: {
+            id: true,
+            email: true,
+            activated: true,
+          },
         },
       },
     });
@@ -238,7 +296,17 @@ export class OAuthRepository {
     });
   }
 
-  revokeAllForApp(oauthAppId: string) {
+  async revokeAllForApp(oauthAppId: string) {
+    await this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.updateMany({
+      where: {
+        oauthAppId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
     return this._oauthAuth.model.oAuthAuthorization.updateMany({
       where: {
         oauthAppId,
@@ -248,5 +316,122 @@ export class OAuthRepository {
         revokedAt: new Date(),
       },
     });
+  }
+
+  // holds the instance API key, so only the id comes back
+  createSelfHostedAuthorization(data: {
+    oauthAppId: string;
+    mcpUrl: string;
+    apiKey: string;
+    email?: string;
+    authorizationCode: string;
+    codeExpiresAt: Date;
+    codeChallenge?: string;
+    codeChallengeMethod?: string;
+    redirectUri?: string;
+  }) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.create({
+      select: {
+        id: true,
+      },
+      data: {
+        oauthAppId: data.oauthAppId,
+        mcpUrl: data.mcpUrl,
+        apiKey: data.apiKey,
+        email: data.email || null,
+        authorizationCode: data.authorizationCode,
+        codeExpiresAt: data.codeExpiresAt,
+        codeChallenge: data.codeChallenge || null,
+        codeChallengeMethod: data.codeChallengeMethod || null,
+        redirectUri: data.redirectUri || null,
+      },
+    });
+  }
+
+  // Abandoned consent flows leave rows (and API keys) that never got a token
+  deleteAbandonedSelfHostedAuthorizations(olderThan: Date) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.deleteMany(
+      {
+        where: {
+          accessToken: null,
+          createdAt: { lt: olderThan },
+        },
+      }
+    );
+  }
+
+  findSelfHostedByCode(encryptedCode: string) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.findFirst({
+      where: {
+        authorizationCode: encryptedCode,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        oauthAppId: true,
+        codeExpiresAt: true,
+        codeChallenge: true,
+        redirectUri: true,
+      },
+    });
+  }
+
+  exchangeSelfHostedCodeForToken(id: string, encryptedToken: string) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.update({
+      where: { id },
+      select: {
+        id: true,
+      },
+      data: {
+        accessToken: encryptedToken,
+        authorizationCode: null,
+        codeExpiresAt: null,
+        codeChallenge: null,
+        codeChallengeMethod: null,
+        redirectUri: null,
+      },
+    });
+  }
+
+  findSelfHostedByAccessToken(encryptedToken: string) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.findFirst({
+      where: {
+        accessToken: encryptedToken,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        mcpUrl: true,
+        apiKey: true,
+      },
+    });
+  }
+
+  findSelfHostedUserInfo(encryptedToken: string) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.findFirst({
+      where: {
+        accessToken: encryptedToken,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        oauthApp: {
+          select: {
+            clientId: true,
+            dynamic: true,
+            redirectUris: true,
+          },
+        },
+      },
+    });
+  }
+
+  deleteSelfHostedAuthorization(id: string) {
+    return this._oauthSelfHosted.model.oAuthSelfHostedAuthorization.deleteMany(
+      {
+        where: { id },
+      }
+    );
   }
 }

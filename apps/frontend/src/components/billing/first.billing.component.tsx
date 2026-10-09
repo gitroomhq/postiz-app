@@ -1,7 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
@@ -51,16 +51,20 @@ export const FirstBillingComponent = () => {
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
+  const [stripeFailed, setStripeFailed] = useState(false);
   const [tier, setTier] = useState('STANDARD');
   const [period, setPeriod] = useState('MONTHLY');
   const fetch = useFetch();
+  const { mutate } = useSWRConfig();
   const modals = useModals();
   const t = useT();
   const [datafast_visitor_id] = useCookie('datafast_visitor_id', '');
   const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
-    setStripe(loadStripe(stripeClient));
+    const stripePromise = loadStripe(stripeClient);
+    stripePromise.catch(() => setStripeFailed(true));
+    setStripe(stripePromise);
   }, []);
 
   const loadCheckout = useCallback(async () => {
@@ -105,6 +109,12 @@ export const FirstBillingComponent = () => {
       refreshWhenHidden: false,
     }
   );
+
+  useEffect(() => {
+    if (data?.blocked) {
+      mutate('/user/self');
+    }
+  }, [data?.blocked, mutate]);
 
   const price = useMemo(
     () => Object.entries(pricing).filter(([key, value]) => key !== 'FREE'),
@@ -212,6 +222,13 @@ export const FirstBillingComponent = () => {
                 'Another account with this email already has an active subscription. Please log off and sign in to that account to manage your subscription.'
               )}
             </div>
+          ) : stripeFailed ? (
+            <div className="mt-[24px] p-[24px] rounded-[20px] border-[1.5px] border-newColColor text-[16px] font-[500]">
+              {t(
+                'billing_stripe_load_failed',
+                'The payment form could not be loaded. Please disable ad blockers or privacy extensions for this page and reload.'
+              )}
+            </div>
           ) : !isLoading && data && stripe ? (
             <EmbeddedBilling
               stripe={stripe}
@@ -317,7 +334,7 @@ type FeatureItem = {
   prefix?: string | number;
 };
 
-export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
+export const useBillingFeatures = (tier: string) => {
   const t = useT();
   const features = useMemo(() => {
     const currentPricing = pricing[tier];
@@ -374,6 +391,13 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
         prefix: currentPricing?.generate_videos,
       });
     }
+    if (currentPricing?.clipping_minutes) {
+      list.push({
+        key: 'billing_clipping_minutes_per_month',
+        defaultValue: 'minutes of AI video clipping per month',
+        prefix: currentPricing?.clipping_minutes,
+      });
+    }
     return list;
   }, [tier]);
 
@@ -387,6 +411,15 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
     }
     return translatedText;
   };
+
+  return features.map((feature) => ({
+    key: feature.key,
+    label: renderFeature(feature),
+  }));
+};
+
+export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
+  const features = useBillingFeatures(tier);
 
   return (
     <div className="grid grid-cols-2 mobile:grid-cols-1 gap-y-[8px] gap-x-[32px]">
@@ -406,7 +439,7 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
               />
             </svg>
           </div>
-          <div>{renderFeature(feature)}</div>
+          <div>{feature.label}</div>
         </div>
       ))}
     </div>

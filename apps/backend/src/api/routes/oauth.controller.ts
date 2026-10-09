@@ -2,28 +2,60 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
+  HttpCode,
   HttpException,
   HttpStatus,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { User, Organization } from '@prisma/client';
-import { AuthorizeOAuthQueryDto, ApproveOAuthDto } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
+import {
+  AuthorizeOAuthQueryDto,
+  ApproveOAuthDto,
+  AuthorizeSelfHostedDto,
+} from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
+import { RegisterClientDto } from '@gitroom/nestjs-libraries/dtos/oauth/register-client.dto';
+import { extractBasicCredentials } from '@gitroom/nestjs-libraries/chat/oauth-types';
+import { McpRelayService } from '@gitroom/nestjs-libraries/chat/mcp.relay.service';
+import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 
 @ApiTags('OAuth')
 @Controller('/oauth')
 export class OAuthController {
-  constructor(private _oauthService: OAuthService) {}
+  constructor(
+    private _oauthService: OAuthService,
+    private _mcpRelayService: McpRelayService
+  ) {}
+
+  // Dynamic Client Registration (RFC 7591), used by MCP clients like Claude
+  @Post('/register')
+  @HttpCode(201)
+  async register(@Body() body: RegisterClientDto) {
+    return this._oauthService.registerDynamicClient(body);
+  }
 
   @Get('/authorize')
   async authorize(@Query() query: AuthorizeOAuthQueryDto) {
     const app = await this._oauthService.validateAuthorizationRequest(
-      query.client_id
+      query.client_id,
+      {
+        redirectUri: query.redirect_uri,
+        codeChallenge: query.code_challenge,
+        codeChallengeMethod: query.code_challenge_method,
+      }
+    );
+
+    const selfHosted = this._oauthService.allowsSelfHosted(
+      app,
+      query.resource
     );
 
     return {
@@ -35,11 +67,68 @@ export class OAuthController {
         redirectUrl: app.redirectUrl,
       },
       state: query.state,
+      selfHosted,
+      selfHostedEmail:
+        selfHosted && this._oauthService.selfHostedRequiresEmail(app),
     };
   }
 
+  // Public (the person may have no account here) and capped per client,
+  // since every attempt sends requests to the instance
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Post('/authorize/self-hosted')
+  async authorizeSelfHosted(@Body() body: AuthorizeSelfHostedDto) {
+    const app = await this._oauthService.validateAuthorizationRequest(
+      body.client_id,
+      {
+        redirectUri: body.redirect_uri,
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+      }
+    );
+
+    const email = body.email?.trim();
+    this._oauthService.validateSelfHostedRequest(app, {
+      resource: body.resource,
+      email,
+    });
+
+    const instance = await this._mcpRelayService.connect(
+      body.instance_url,
+      body.api_key
+    );
+
+    const code = await this._oauthService.createSelfHostedAuthorizationCode(
+      app.id,
+      { ...instance, email },
+      app.dynamic
+        ? {
+            codeChallenge: body.code_challenge,
+            codeChallengeMethod: body.code_challenge_method,
+            redirectUri: body.redirect_uri,
+          }
+        : undefined
+    );
+
+    // Same redirect as an approved cloud authorization
+    const redirectUrl = new URL(
+      app.dynamic ? body.redirect_uri! : app.redirectUrl
+    );
+    redirectUrl.searchParams.set('code', code);
+    if (body.state) {
+      redirectUrl.searchParams.set('state', body.state);
+    }
+    return { redirect: redirectUrl.toString() };
+  }
+
   @Post('/token')
-  async token(@Body() body: TokenExchangeDto) {
+  // RFC 6749 §5.1: successful token responses are 200; strict clients (Canva) reject Nest's default 201
+  @HttpCode(200)
+  async token(
+    @Body() body: TokenExchangeDto,
+    @Headers('authorization') authorization?: string
+  ) {
     if (body.grant_type !== 'authorization_code') {
       throw new HttpException(
         { error: 'unsupported_grant_type' },
@@ -47,11 +136,34 @@ export class OAuthController {
       );
     }
 
+    // client_secret_basic puts the credentials in the Authorization header,
+    // client_secret_post and public clients put them in the body
+    const basic = extractBasicCredentials(authorization);
+    const clientId = basic?.clientId || body.client_id;
+    if (!clientId) {
+      throw new HttpException(
+        { error: 'invalid_client' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
     return this._oauthService.exchangeCodeForToken(
       body.code,
-      body.client_id,
-      body.client_secret
+      clientId,
+      basic?.clientSecret || body.client_secret,
+      body.code_verifier,
+      body.redirect_uri
     );
+  }
+
+  @Get('/userinfo')
+  async userinfo(@Headers('authorization') authorization?: string) {
+    return this._oauthService.getUserInfo(authorization);
+  }
+
+  @Post('/userinfo')
+  async userinfoPost(@Headers('authorization') authorization?: string) {
+    return this._oauthService.getUserInfo(authorization);
   }
 }
 
@@ -67,11 +179,20 @@ export class OAuthAuthorizedController {
     @GetOrgFromRequest() org: Organization
   ) {
     const app = await this._oauthService.validateAuthorizationRequest(
-      body.client_id
+      body.client_id,
+      {
+        redirectUri: body.redirect_uri,
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+      }
     );
 
+    // Dynamic clients redirect to their validated redirect_uri,
+    // static apps keep using the one stored on the app
+    const redirectTarget = app.dynamic ? body.redirect_uri! : app.redirectUrl;
+
     if (body.action === 'deny') {
-      const redirectUrl = new URL(app.redirectUrl);
+      const redirectUrl = new URL(redirectTarget);
       redirectUrl.searchParams.set('error', 'access_denied');
       if (body.state) {
         redirectUrl.searchParams.set('state', body.state);
@@ -82,10 +203,17 @@ export class OAuthAuthorizedController {
     const code = await this._oauthService.createAuthorizationCode(
       app.id,
       user.id,
-      org.id
+      org.id,
+      app.dynamic
+        ? {
+            codeChallenge: body.code_challenge,
+            codeChallengeMethod: body.code_challenge_method,
+            redirectUri: body.redirect_uri,
+          }
+        : undefined
     );
 
-    const redirectUrl = new URL(app.redirectUrl);
+    const redirectUrl = new URL(redirectTarget);
     redirectUrl.searchParams.set('code', code);
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);

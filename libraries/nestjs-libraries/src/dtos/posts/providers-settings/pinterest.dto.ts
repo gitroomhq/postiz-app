@@ -1,5 +1,12 @@
 import {
-  IsDefined, IsOptional, IsString, IsUrl, MaxLength, MinLength, ValidateIf
+  IsDefined,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Matches,
+  MaxLength,
+  MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
 
@@ -27,8 +34,13 @@ export class PinterestSettingsDto {
   @MinLength(1, {
     message: 'Board is required',
   })
-    @JSONSchema({
-    description: 'board must be an id',
+  @Matches(/^\d+$/, {
+    message:
+      'Board must be the numeric board id (use the boards list of the channel to find it), not the board name',
+  })
+  @JSONSchema({
+    description:
+      'The numeric id of the board (from the boards list of the channel), not the board name',
   })
   board: string;
 }

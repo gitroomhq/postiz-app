@@ -6,6 +6,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import {
   BadBody,
   RefreshToken,
@@ -31,7 +32,7 @@ type MastodonPendingData = {
 };
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
+  override maxConcurrentJob = 10; // Mastodon limits are per user, not per app
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;
@@ -96,7 +97,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     const url = this.generateUrlDynamic(
       process.env.MASTODON_URL || 'https://mastodon.social',
       state,
@@ -105,7 +106,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     );
     return {
       url,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }

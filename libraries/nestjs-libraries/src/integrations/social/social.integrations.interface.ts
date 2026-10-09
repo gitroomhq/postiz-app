@@ -34,6 +34,23 @@ export interface IAuthenticator {
     postId: string,
     fromDate: number,
   ): Promise<AnalyticsData[]>;
+  resolveReleaseId?(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration,
+    settings: any,
+    releaseURL: string
+  ): Promise<
+    | { postId: string; releaseURL: string }
+    | { pending: true }
+    | { unavailable: true }
+    | undefined
+  >; // Final id + URL to persist when the stored releaseId is still a publish id, pending when the platform has no final id yet, unavailable when the post will never get one, undefined when nothing to resolve
+  releaseUrl?(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration
+  ): Promise<string | undefined>; // URL of a post the user connected by hand
   changeNickname?(
     id: string,
     accessToken: string,
@@ -180,6 +197,10 @@ export interface SocialProvider
     pendingData: any,
     integration: Integration
   ): Promise<PendingCheckResponse>;
+  migrationMatch(
+    auth: Pick<AuthTokenDetails, 'id' | 'username'>,
+    integration: Integration
+  ): boolean;
   finalizePost(
     accessToken: string,
     pendingData: any,
@@ -189,6 +210,7 @@ export interface SocialProvider
   isChromeExtension?: boolean;
   extensionCookies?: { name: string; domain: string }[];
   editor: 'none' | 'normal' | 'markdown' | 'html';
+  inlineImages?: (settings?: any) => boolean;
   customFields?: () => Promise<
     {
       key: string;

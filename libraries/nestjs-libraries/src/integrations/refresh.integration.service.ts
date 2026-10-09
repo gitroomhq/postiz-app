@@ -89,12 +89,16 @@ export class RefreshIntegrationService {
         );
       }
 
+      // informAboutRefreshError (with the failure cause) already notifies
+      // the user, and refreshNeeded sets the same flag disconnectChannel
+      // would — calling disconnectChannel here sent a second, cause-less
+      // copy of the same email for every failed refresh.
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
       );
 
-      await this._integrationService.disconnectChannel(
+      await this._integrationService.informAboutRefreshError(
         integration.organizationId,
         integration,
         socialProvider.refreshErrorMessage?.(refreshError) || cause

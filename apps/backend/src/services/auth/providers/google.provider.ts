@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { HttpException } from '@nestjs/common';
 import {
   AuthProvider,
   AuthProviderAbstract,
@@ -16,12 +17,12 @@ const makeClient = (redirectUri: string) =>
 
 @AuthProvider({ provider: 'GOOGLE' })
 export class GoogleProvider extends AuthProviderAbstract {
-  generateLink(query?: { redirect_uri?: string }) {
+  generateLink(query?: { redirect_uri?: string; state?: string }) {
     const redirectUri = query?.redirect_uri || defaultRedirect();
     return makeClient(redirectUri).generateAuthUrl({
       access_type: 'online',
       prompt: 'consent',
-      state: 'login',
+      state: query?.state || 'login',
       redirect_uri: redirectUri,
       scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
@@ -32,8 +33,19 @@ export class GoogleProvider extends AuthProviderAbstract {
 
   async getToken(code: string, redirectUri?: string) {
     const client = makeClient(redirectUri || defaultRedirect());
-    const { tokens } = await client.getToken(code);
-    return tokens.access_token!;
+    try {
+      const { tokens } = await client.getToken(code);
+      return tokens.access_token!;
+    } catch (err: any) {
+      // The code is single use and short lived (callback reloaded or too slow)
+      if (err?.response?.data?.error === 'invalid_grant') {
+        throw new HttpException(
+          'Google sign-in expired, please sign in again',
+          400
+        );
+      }
+      throw err;
+    }
   }
 
   async getUser(providerToken: string) {
