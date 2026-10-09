@@ -12,6 +12,34 @@ import { Integration } from '@prisma/client';
 
 const MOLTBOOK_API_BASE = 'https://www.moltbook.com/api/v1';
 
+
+/**
+ * Redact sensitive headers (Authorization, API keys) from an AxiosError's
+ * config so the error object can be safely logged or returned without
+ * leaking the plaintext API key.
+ *
+ * AxiosError carries the request config (including headers) on
+ * `error.config`. When axios throws on a non-2xx response, network
+ * failure, or DNS error, any code that logs or persists the error
+ * object will include `error.config.headers.Authorization` in
+ * plaintext. This function strips that before the error propagates.
+ */
+function redactSensitiveHeaders(error: any): any {
+  if (error?.config?.headers) {
+    const headers = error.config.headers;
+    if (headers.Authorization) {
+      headers.Authorization = '[REDACTED]';
+    }
+    if (headers.authorization) {
+      headers.authorization = '[REDACTED]';
+    }
+    if (headers['X-API-Key']) {
+      headers['X-API-Key'] = '[REDACTED]';
+    }
+  }
+  return error;
+}
+
 export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
@@ -21,6 +49,28 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   scopes = [] as string[];
   isWeb3 = true;
   editor = 'normal' as const;
+
+  /**
+   * Wrap an axios promise to redact sensitive headers from any
+   * AxiosError that propagates. Prevents API key leakage via
+   * error.config.headers.Authorization (issue #2220).
+   */
+  private async redactAxiosError<T>(promise: Promise<T>): Promise<T> {
+    try {
+      return await promise;
+    } catch (error: any) {
+      if (error?.config?.headers) {
+        if (error.config.headers.Authorization) {
+          error.config.headers.Authorization = '[REDACTED]';
+        }
+        if (error.config.headers.authorization) {
+          error.config.headers.authorization = '[REDACTED]';
+        }
+      }
+      throw error;
+    }
+  }
+
 
   maxLength() {
     return 300;
@@ -48,11 +98,11 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async registerAgent(name: string, description: string) {
-    const response = await this.getSsrfSafeAxios().post(
+    const response = await this.redactAxiosError(this.getSsrfSafeAxios().post(
       `${MOLTBOOK_API_BASE}/agents/register`,
       { name, description },
       { headers: { 'Content-Type': 'application/json' } }
-    );
+    ));
 
     if (!response.data.success) {
       throw new Error(response.data.error || 'Registration failed');
@@ -62,23 +112,23 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async checkAgentStatus(apiKey: string) {
-    const response = await this.getSsrfSafeAxios().get(
+    const response = await this.redactAxiosError(this.getSsrfSafeAxios().get(
       `${MOLTBOOK_API_BASE}/agents/status`,
       {
         headers: { Authorization: `Bearer ${apiKey}` },
       }
-    );
+    ));
 
     return response.data;
   }
 
   async getAgentProfile(apiKey: string) {
-    const response = await this.getSsrfSafeAxios().get(
+    const response = await this.redactAxiosError(this.getSsrfSafeAxios().get(
       `${MOLTBOOK_API_BASE}/agents/me`,
       {
         headers: { Authorization: `Bearer ${apiKey}` },
       }
-    );
+    ));
 
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to get profile');
@@ -127,7 +177,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         content: post.message,
       };
 
-      const response = await this.getSsrfSafeAxios().post(
+      const response = await this.redactAxiosError(this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts`,
         postData,
         {
@@ -136,7 +186,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
             'Content-Type': 'application/json',
           },
         }
-      );
+      ));
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to create post');
@@ -173,7 +223,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         commentData.parent_id = lastCommentId;
       }
 
-      const response = await this.getSsrfSafeAxios().post(
+      const response = await this.redactAxiosError(this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts/${postId}/comments`,
         commentData,
         {
@@ -182,7 +232,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
             'Content-Type': 'application/json',
           },
         }
-      );
+      ));
 
       if (!response.data.success) {
         throw new Error(response.data.error || 'Failed to create comment');
