@@ -13,6 +13,38 @@ import {
 import sharp from 'sharp';
 import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
+import { logger } from '@gitroom/nestjs-libraries/sentry/logger';
+
+const RATE_LIMIT_HEADERS = {
+  rate_limit_remaining: [
+    'x-rate-limit-remaining',
+    'x-ratelimit-remaining',
+    'ratelimit-remaining',
+  ],
+  rate_limit_limit: ['x-rate-limit-limit', 'x-ratelimit-limit', 'ratelimit-limit'],
+  rate_limit_reset: [
+    'x-rate-limit-reset',
+    'x-ratelimit-reset',
+    'ratelimit-reset',
+    'retry-after',
+  ],
+};
+
+const readRateLimits = (headers: Headers) => {
+  const found: Record<string, string> = {};
+
+  for (const [attribute, names] of Object.entries(RATE_LIMIT_HEADERS)) {
+    for (const name of names) {
+      const value = headers?.get?.(name);
+      if (value) {
+        found[attribute] = value;
+        break;
+      }
+    }
+  }
+
+  return found;
+};
 
 // Media reads answer headers in well under a second and the chunk sizes the
 // providers ask for finish in under two, with the slowest healthy read we
@@ -570,7 +602,21 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    const base = {
+      provider: this.identifier,
+      integration_identifier: identifier,
+      request_path: stripQuery(url),
+      response_status: request.status,
+      retry_attempt: totalRetries,
+      ...readRateLimits(request.headers),
+    };
+
     if (totalRetries > 2) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'retries_exhausted',
+        reason: message || 'Unknown Error',
+      });
       // Include the platform's actual response body so the failure is
       // diagnosable, instead of an empty '{}'.
       throw new BadBody(identifier, json, options.body || '{}', message);
@@ -584,6 +630,11 @@ export abstract class SocialAbstract {
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
+      logger.warn('provider_rate_limited', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -596,6 +647,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'retry') {
+      logger.warn('provider_request_retried', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -608,6 +664,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'disconnect') {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'disconnect',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new Disconnect(
         identifier,
         json,
@@ -621,6 +682,11 @@ export abstract class SocialAbstract {
         (handleError?.type === 'refresh-token' || !handleError)) ||
       handleError?.type === 'refresh-token'
     ) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'refresh_token',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new RefreshToken(
         identifier,
         json,
@@ -629,6 +695,11 @@ export abstract class SocialAbstract {
       );
     }
 
+    logger.error('provider_request_failed', {
+      ...base,
+      outcome: 'bad_body',
+      reason: handleError?.value || 'Unknown Error',
+    });
     throw new BadBody(
       identifier,
       json,

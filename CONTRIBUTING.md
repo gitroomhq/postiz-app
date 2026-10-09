@@ -45,25 +45,31 @@ Contributions can include:
 To ensure the quality and maintainability of the codebase, **we do not accept Pull Requests generated primarily by AI tools** (e.g., ChatGPT, GitHub Copilot, Claude Code, etc.). 
 All contributions must be the original work of the author. We reserve the right to close any PR that appears to be AI-generated without further review.
 
+## Branches
+
+We develop against a `staging` branch. `main` reflects the released state of the project, and `staging` is where accepted changes land first. Please branch off `staging` and open all pull requests against `staging`. Pull requests opened against `main` will be asked to retarget.
+
 ## How to contribute
 
 This project follows a Fork/Feature Branch/Pull Request model. If you're not familiar with this, here's how it works:
 
 1. **Fork the project:** Create a personal copy of the repository on your GitHub account.
 2. **Clone your fork:** Bring a copy of your fork to your local machine.
-   ```bash
+```bash
    git clone https://github.com/YOUR_USERNAME/postiz.git
-   ```
-3. **Create a new branch**: Start a new branch for your changes
-   ```bash
+```
+3. **Create a new branch**: Start a new branch for your changes, based on `staging`
+```bash
+   git checkout staging
+   git pull origin staging
    git checkout -b feature/your-feature-name
-   ```
+```
 4. **Make your changes**: Implement the changes you wish to contribute.
 5. **Push your changes**: Upload your changes to your fork.
-   ```bash
+```bash
    git push -u origin feature/your-feature-name
-   ```
-6. **Create a pull request**: Propose your changes **to the main branch**.
+```
+6. **Create a pull request**: Propose your changes **to the staging branch**.
 
 # Need Help?
 
