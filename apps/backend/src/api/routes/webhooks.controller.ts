@@ -17,6 +17,7 @@ import {
   OnlyURL, UpdateDto, WebhooksDto
 } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { enrichWebhookTestPayload } from '@gitroom/nestjs-libraries/database/prisma/posts/webhook.payload';
 
 @ApiTags('Webhooks')
 @Controller('/webhooks')
@@ -58,7 +59,7 @@ export class WebhookController {
     try {
       await fetch(query.url, {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify(enrichWebhookTestPayload(body)),
         headers: { 'Content-Type': 'application/json' },
       });
     } catch (err) {
