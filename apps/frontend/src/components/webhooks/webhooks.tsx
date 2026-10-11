@@ -209,6 +209,16 @@ export const AddOrEditWebhook: FC<{
           {
             id: 'cm6tcts4f0005qcwit25cis26',
             content: 'This is the first post to instagram',
+            image: [
+              {
+                id: 'img-1',
+                path: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
+              },
+            ],
+            settings: {
+              __type: 'instagram',
+              post_type: 'post',
+            },
             publishDate: '2025-02-06T13:09:00.000Z',
             releaseURL: 'https://facebook.com/release/release',
             state: 'PUBLISHED',
@@ -223,6 +233,10 @@ export const AddOrEditWebhook: FC<{
           {
             id: 'cm6tcts4f0005qcwit25cis26',
             content: 'This is the second post to facebook',
+            image: [],
+            settings: {
+              __type: 'facebook',
+            },
             publishDate: '2025-02-06T13:09:00.000Z',
             releaseURL: 'https://facebook.com/release2/release2',
             state: 'PUBLISHED',

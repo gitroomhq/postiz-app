@@ -1,0 +1,23 @@
+# Rebuild only the webhook payload files on top of the official image.
+# Final image size matches ghcr.io/gitroomhq/postiz-app:latest (~4.8GB), not a from-scratch 9GB build.
+FROM ghcr.io/gitroomhq/postiz-app:latest AS build
+WORKDIR /app
+COPY libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts
+COPY libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN pnpm run build:orchestrator && pnpm run build:backend
+
+FROM ghcr.io/gitroomhq/postiz-app:latest
+LABEL org.opencontainers.image.source="https://github.com/IORoot/postiz-app"
+COPY --from=build /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/database/prisma/posts/ \
+     /app/apps/orchestrator/dist/libraries/nestjs-libraries/src/database/prisma/posts/
+COPY --from=build /app/apps/backend/dist/libraries/nestjs-libraries/src/database/prisma/posts/ \
+     /app/apps/backend/dist/libraries/nestjs-libraries/src/database/prisma/posts/
+COPY libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts
+COPY libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts
+COPY apps/frontend/src/components/webhooks/webhooks.tsx \
+     /app/apps/frontend/src/components/webhooks/webhooks.tsx

@@ -16,6 +16,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
+import { shapeWebhookPosts } from '@gitroom/nestjs-libraries/database/prisma/posts/webhook.payload';
 
 dayjs.extend(isoWeek);
 dayjs.extend(weekOfYear);
@@ -1155,6 +1156,8 @@ export class PostsRepository {
     const select = {
       id: true,
       content: true,
+      image: true,
+      settings: true,
       publishDate: true,
       releaseURL: true,
       state: true,
@@ -1179,24 +1182,26 @@ export class PostsRepository {
     });
 
     if (posts.length) {
-      return posts;
+      return shapeWebhookPosts(posts);
     }
 
     // The running workflows pass the platform's post id, which updatePost
     // already stored on the row as releaseId before the webhook is sent.
-    return this._post.model.post.findMany({
-      where: {
-        releaseId: postId,
-        integrationId,
-        deletedAt: null,
-        parentPostId: null,
-      },
-      orderBy: {
-        updatedAt: 'desc' as const,
-      },
-      take: 1,
-      select,
-    });
+    return shapeWebhookPosts(
+      await this._post.model.post.findMany({
+        where: {
+          releaseId: postId,
+          integrationId,
+          deletedAt: null,
+          parentPostId: null,
+        },
+        orderBy: {
+          updatedAt: 'desc' as const,
+        },
+        take: 1,
+        select,
+      })
+    );
   }
 
   async getPostsSince(orgId: string, since: string) {
