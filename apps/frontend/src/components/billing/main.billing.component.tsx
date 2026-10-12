@@ -410,11 +410,19 @@ export const MainBillingComponent: FC<{
           !pricing[billing].team_members &&
           pricing[subscription?.subscriptionTier!]?.team_members
         ) {
-          const team = await (await fetch('/settings/team')).json();
-          if (
-            !Array.isArray(team?.users) ||
-            team.users.some((member) => member.user.id !== user?.id)
-          ) {
+          let hasMembers = true;
+          try {
+            const team = await (await fetch('/settings/team')).json();
+            hasMembers =
+              !Array.isArray(team?.users) ||
+              team.users.some(
+                (member: { user: { id: string } }) =>
+                  member.user.id !== user?.id
+              );
+          } catch (err: any) {
+            // keep the warning when the team cannot be loaded
+          }
+          if (hasMembers) {
             messages.push(
               `Your team members will be disabled and lose access to your organization until you upgrade to a plan that includes team members again`
             );
