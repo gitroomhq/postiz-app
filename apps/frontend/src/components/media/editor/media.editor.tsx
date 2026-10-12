@@ -63,6 +63,7 @@ import {
   EditorPreset,
   PresetsSection,
   useBrandKit,
+  useGrid,
   usePresets,
 } from '@gitroom/frontend/components/media/editor/media.editor.presets';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -304,6 +305,7 @@ const MediaEditor: FC<{
   const [blankColor, setBlankColor] = useState('#FFFFFF');
   const [presets, setPresets] = usePresets();
   const [brand, setBrand] = useBrandKit();
+  const [grid, setGrid] = useGrid();
 
   const setDoc = useCallback((next: EditorDoc) => {
     docRef.current = next;
@@ -1070,6 +1072,25 @@ const MediaEditor: FC<{
         >
           ⇵ {t('editor_flip', 'Flip')}
         </ToolButton>
+        <ToolButton
+          active={grid.show}
+          onClick={() => setGrid((g) => ({ ...g, show: !g.show }))}
+        >
+          {t('editor_grid', 'Grid')}
+        </ToolButton>
+        {grid.show && (
+          <label className="flex items-center gap-[4px] text-[13px]">
+            <span className="sr-only">{t('editor_grid_size', 'Grid size')}</span>
+            <NumberInput
+              className="w-[80px]"
+              min={4}
+              max={MAX_SIZE}
+              value={grid.size}
+              onValue={(size) => setGrid((g) => ({ ...g, size: Math.round(size) }))}
+            />
+            px
+          </label>
+        )}
         <div className="flex-1" />
         {(['fit', 0.5, 1, 2] as const).map((value) => (
           <ToolButton key={value} active={zoom === value} onClick={() => setZoom(value)}>
@@ -1108,6 +1129,7 @@ const MediaEditor: FC<{
             zoom={zoom}
             onZoom={setZoom}
             fontsVersion={fontsVersion}
+            grid={grid.show ? grid.size : undefined}
           />
         </div>
 

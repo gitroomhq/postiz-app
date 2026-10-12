@@ -1052,34 +1052,51 @@ const turnedBox = (b: Rect, degrees: number): Rect => {
 
 type Guides = { x?: number; y?: number };
 
-// snaps the edges or centre of the layer to the edges or centre of the canvas
+// grid lines every `size` pixels from the top-left of the visible area
+const gridLines = (area: Rect, size: number) => {
+  const lines = (from: number, length: number) =>
+    Array.from({ length: Math.floor(length / size) + 1 }, (_, i) => from + i * size);
+  return { xs: lines(area.x, area.w), ys: lines(area.y, area.h) };
+};
+
+// lines a few screen pixels apart would cover the photo, so they are neither drawn nor snapped to
+const drawnGrid = (grid: number | undefined, scale: number) =>
+  grid && grid / scale >= 4 ? grid : undefined;
+
+type Targets = { xs: number[]; ys: number[] };
+
+// the edges and centre of the canvas, plus the grid lines when the grid is on
+const snapTargets = (area: Rect, grid?: number): Targets => {
+  const lines = grid ? gridLines(area, grid) : { xs: [], ys: [] };
+  return {
+    xs: [area.x, area.x + area.w / 2, area.x + area.w, ...lines.xs],
+    ys: [area.y, area.y + area.h / 2, area.y + area.h, ...lines.ys],
+  };
+};
+
+const closest = (edges: number[], targets: number[], tolerance: number) => {
+  let best: { diff: number; at: number } | undefined;
+  for (const edge of edges) {
+    for (const at of targets) {
+      const diff = at - edge;
+      if (Math.abs(diff) <= tolerance && (!best || Math.abs(diff) < Math.abs(best.diff))) {
+        best = { diff, at };
+      }
+    }
+  }
+  return best;
+};
+
+// snaps the edges or centre of the layer to the nearest target
 const snapLayer = (
   ctx: CanvasRenderingContext2D,
   l: EditorLayer,
-  area: Rect,
+  targets: Targets,
   tolerance: number
 ): { layer: EditorLayer; guides: Guides } => {
   const box = turnedBox(layerBounds(ctx, l), l.rotation);
-  const closest = (edges: number[], targets: number[]) => {
-    let best: { diff: number; at: number } | undefined;
-    for (const edge of edges) {
-      for (const at of targets) {
-        const diff = at - edge;
-        if (Math.abs(diff) <= tolerance && (!best || Math.abs(diff) < Math.abs(best.diff))) {
-          best = { diff, at };
-        }
-      }
-    }
-    return best;
-  };
-  const x = closest(
-    [box.x, box.x + box.w / 2, box.x + box.w],
-    [area.x, area.x + area.w / 2, area.x + area.w]
-  );
-  const y = closest(
-    [box.y, box.y + box.h / 2, box.y + box.h],
-    [area.y, area.y + area.h / 2, area.y + area.h]
-  );
+  const x = closest([box.x, box.x + box.w / 2, box.x + box.w], targets.xs, tolerance);
+  const y = closest([box.y, box.y + box.h / 2, box.y + box.h], targets.ys, tolerance);
   return {
     layer: moveLayer(l, x?.diff || 0, y?.diff || 0),
     guides: { x: x?.at, y: y?.at },
@@ -1238,6 +1255,8 @@ export const EditorCanvas: FC<{
   zoom: EditorZoom;
   onZoom: (zoom: number) => void;
   fontsVersion: number;
+  // grid spacing in image pixels, undefined when the grid is off
+  grid?: number;
 }> = (props) => {
   const {
     doc,
@@ -1258,6 +1277,7 @@ export const EditorCanvas: FC<{
     zoom,
     onZoom,
     fontsVersion,
+    grid,
   } = props;
   const ref = useRef<HTMLCanvasElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -1379,6 +1399,28 @@ export const EditorCanvas: FC<{
       ctx.setLineDash([6 * scale, 4 * scale]);
       ctx.strokeRect(cropDraft.x, cropDraft.y, cropDraft.w, cropDraft.h);
     }
+    const shownGrid = drawnGrid(grid, scale);
+    if (shownGrid && tool !== 'crop') {
+      const { xs, ys } = gridLines(area, shownGrid);
+      ctx.save();
+      ctx.beginPath();
+      for (const x of xs) {
+        ctx.moveTo(x, area.y);
+        ctx.lineTo(x, area.y + area.h);
+      }
+      for (const y of ys) {
+        ctx.moveTo(area.x, y);
+        ctx.lineTo(area.x + area.w, y);
+      }
+      // dark under light keeps the lines visible on any photo
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.lineWidth = 2 * scale;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = scale;
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.save();
     ctx.strokeStyle = '#FF2E93';
     ctx.lineWidth = scale;
@@ -1423,7 +1465,7 @@ export const EditorCanvas: FC<{
       }
     }
     ctx.restore();
-  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion]);
+  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion, grid]);
 
   const toPoint = useCallback(
     (e: MouseEvent<HTMLCanvasElement>) => {
@@ -1558,7 +1600,7 @@ export const EditorCanvas: FC<{
           const snapped = snapLayer(
             ref.current!.getContext('2d')!,
             next,
-            area,
+            snapTargets(area, drawnGrid(grid, p.scale)),
             8 * p.scale
           );
           next = snapped.layer;
@@ -1580,7 +1622,34 @@ export const EditorCanvas: FC<{
       } else {
         const ctx = ref.current!.getContext('2d')!;
         const local = turnAround(dx, dy, { x: 0, y: 0 }, -d.layer.rotation);
-        const resized = resizeLayer(d.layer, d.bounds, local.x);
+        let along = local.x;
+        // a turned corner does not run along the grid, so only straight layers snap
+        if (!e.altKey && !d.layer.rotation) {
+          const targets = snapTargets(area, drawnGrid(grid, p.scale));
+          const tolerance = 8 * p.scale;
+          // padding and rounded text sizes keep the edges from growing one for one with the drag
+          const sized = (a: number) => layerBounds(ctx, resizeLayer(d.layer, d.bounds, a));
+          const b = sized(along);
+          const probe = sized(along + d.bounds.w);
+          const gainX = (probe.w - b.w) / d.bounds.w;
+          const gainY = (probe.h - b.h) / d.bounds.w;
+          // the top-left stays put, and flat lines have a side that never moves
+          const x = gainX > 0.01 ? closest([d.bounds.x + b.w], targets.xs, tolerance) : undefined;
+          const y = gainY > 0.01 ? closest([d.bounds.y + b.h], targets.ys, tolerance) : undefined;
+          // the corner moves on both axes at once, so follow the side nearer a line
+          if (x && (!y || Math.abs(x.diff) <= Math.abs(y.diff))) {
+            along += x.diff / gainX;
+            setGuides({ x: x.at });
+          } else if (y) {
+            along += y.diff / gainY;
+            setGuides({ y: y.at });
+          } else {
+            setGuides({});
+          }
+        } else {
+          setGuides({});
+        }
+        const resized = resizeLayer(d.layer, d.bounds, along);
         // keep the top-left corner where it is on screen
         const b = layerBounds(ctx, resized);
         const before = turnAround(d.bounds.x, d.bounds.y, centreOf(d.bounds), d.layer.rotation);
@@ -1592,7 +1661,7 @@ export const EditorCanvas: FC<{
         layers: current.layers.map((l) => (l.id === next.id ? next : l)),
       }));
     },
-    [doc, cropRatio, area, toPoint]
+    [doc, cropRatio, area, toPoint, grid]
   );
 
   const pointerUp = useCallback(() => {

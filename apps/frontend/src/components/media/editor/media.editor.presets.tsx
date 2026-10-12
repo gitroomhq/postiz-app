@@ -36,6 +36,7 @@ export interface BrandKit {
 
 const PRESETS_KEY = 'postiz-editor-presets';
 const BRAND_KEY = 'postiz-editor-brand';
+const GRID_KEY = 'postiz-editor-grid';
 const MAX_COLORS = 12;
 
 // imported files and stored values are rebuilt field by field, anything unexpected is dropped
@@ -253,6 +254,19 @@ const useStoredState = <T,>(key: string, parse: (value: any) => T) => {
 export const usePresets = () => useStoredState(PRESETS_KEY, toPresets);
 
 export const useBrandKit = () => useStoredState(BRAND_KEY, toBrandKit);
+
+export interface GridSettings {
+  show: boolean;
+  // image pixels, not screen pixels
+  size: number;
+}
+
+const toGrid = (g: any): GridSettings => ({
+  show: !!g?.show,
+  size: Math.round(num(g?.size, 4, MAX_SIZE) ?? 100),
+});
+
+export const useGrid = () => useStoredState(GRID_KEY, toGrid);
 
 type Store<T> = (fn: (value: T) => T) => boolean;
 

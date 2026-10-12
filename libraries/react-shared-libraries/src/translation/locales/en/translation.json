@@ -886,6 +886,8 @@
   "editor_stroke_width": "Stroke width",
   "editor_all_colours": "All colours",
   "editor_keep_ratio": "Keep ratio",
+  "editor_grid": "Grid",
+  "editor_grid_size": "Grid size",
   "editor_blank_canvas": "Blank canvas",
   "editor_background": "Background",
   "editor_create": "Create",
