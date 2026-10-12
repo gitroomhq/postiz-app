@@ -2,6 +2,10 @@
 
 import { FC, ReactNode, useEffect, useState } from 'react';
 import clsx from 'clsx';
+import {
+  EditorIcon,
+  EditorIconName,
+} from '@gitroom/frontend/components/media/editor/media.editor.icons';
 
 export const inputClass =
   'h-[36px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px] outline-none focus:border-[#612BD3]';
@@ -9,11 +13,15 @@ export const inputClass =
 export const ToolButton: FC<{
   active?: boolean;
   disabled?: boolean;
+  icon?: EditorIconName;
+  title?: string;
   onClick: () => void;
   children: ReactNode;
-}> = ({ active, disabled, onClick, children }) => (
+}> = ({ active, disabled, icon, title, onClick, children }) => (
   <button
     type="button"
+    title={title}
+    aria-label={title}
     disabled={disabled}
     onClick={onClick}
     className={clsx(
@@ -21,6 +29,7 @@ export const ToolButton: FC<{
       active ? 'bg-[#612BD3] text-white' : 'bg-btnSimple changeColor'
     )}
   >
+    {icon && <EditorIcon name={icon} className="shrink-0" />}
     {children}
   </button>
 );

@@ -66,6 +66,10 @@ import {
   useGrid,
   usePresets,
 } from '@gitroom/frontend/components/media/editor/media.editor.presets';
+import {
+  EditorIcon,
+  EditorIconName,
+} from '@gitroom/frontend/components/media/editor/media.editor.icons';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 const FONTS = [
@@ -101,19 +105,19 @@ const FONTS = [
   'Permanent Marker',
 ];
 
-const PRESETS = [
-  { label: '1080 × 1080', w: 1080, h: 1080 },
-  { label: '1080 × 1350', w: 1080, h: 1350 },
-  { label: '1080 × 1920', w: 1080, h: 1920 },
-  { label: '1920 × 1080', w: 1920, h: 1080 },
+const PRESETS: { label: string; w: number; h: number; icon: EditorIconName }[] = [
+  { label: '1080 × 1080', w: 1080, h: 1080, icon: 'ratioSquare' },
+  { label: '1080 × 1350', w: 1080, h: 1350, icon: 'ratioPortrait' },
+  { label: '1080 × 1920', w: 1080, h: 1920, icon: 'ratioStory' },
+  { label: '1920 × 1080', w: 1920, h: 1080, icon: 'ratioLandscape' },
 ];
 
-const RATIOS: { label: string; value?: number }[] = [
-  { label: 'Free' },
-  { label: '1:1', value: 1 },
-  { label: '4:5', value: 4 / 5 },
-  { label: '16:9', value: 16 / 9 },
-  { label: '9:16', value: 9 / 16 },
+const RATIOS: { label: string; value?: number; icon: EditorIconName }[] = [
+  { label: 'Free', icon: 'ratioFree' },
+  { label: '1:1', value: 1, icon: 'ratioSquare' },
+  { label: '4:5', value: 4 / 5, icon: 'ratioPortrait' },
+  { label: '16:9', value: 16 / 9, icon: 'ratioLandscape' },
+  { label: '9:16', value: 9 / 16, icon: 'ratioStory' },
 ];
 
 const HISTORY = 50;
@@ -215,7 +219,8 @@ const SvgInsert: FC<{ onInsert: (markup: string) => boolean; close: () => void }
   const insert = (value: string) => onInsert(value) && close();
   return (
     <div className="flex flex-col gap-[16px] w-[560px] max-w-full">
-      <label className="self-start h-[44px] px-[20px] rounded-[8px] bg-btnSimple changeColor flex items-center cursor-pointer">
+      <label className="self-start h-[44px] px-[20px] rounded-[8px] bg-btnSimple changeColor flex items-center gap-[8px] cursor-pointer">
+        <EditorIcon name="upload" />
         {t('editor_svg_upload', 'Upload an SVG file')}
         <input
           type="file"
@@ -244,8 +249,9 @@ const SvgInsert: FC<{ onInsert: (markup: string) => boolean; close: () => void }
           type="button"
           disabled={!markup.trim()}
           onClick={() => insert(markup)}
-          className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50"
+          className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50 flex items-center gap-[8px]"
         >
+          <EditorIcon name="plus" />
           {t('editor_insert', 'Insert')}
         </button>
       </div>
@@ -942,6 +948,7 @@ const MediaEditor: FC<{
             {PRESETS.map((preset) => (
               <ToolButton
                 key={preset.label}
+                icon={preset.icon}
                 active={blankWidth === preset.w && blankHeight === preset.h}
                 onClick={() => {
                   setBlankWidth(preset.w);
@@ -984,8 +991,9 @@ const MediaEditor: FC<{
               type="button"
               onClick={startBlank}
               disabled={!blankWidth || !blankHeight}
-              className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50"
+              className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50 flex items-center gap-[8px]"
             >
+              <EditorIcon name="plus" />
               {t('editor_create', 'Create')}
             </button>
           </div>
@@ -1012,8 +1020,9 @@ const MediaEditor: FC<{
                   })
                 )
               }
-              className="h-[44px] px-[20px] rounded-[8px] bg-btnSimple changeColor"
+              className="h-[44px] px-[20px] rounded-[8px] bg-btnSimple changeColor flex items-center gap-[8px]"
             >
+              <EditorIcon name="image" />
               {t('editor_pick_image', 'Pick an image')}
             </button>
           </div>
@@ -1041,38 +1050,63 @@ const MediaEditor: FC<{
   return (
     <div className="flex flex-col gap-[12px] w-full">
       <div className="flex flex-wrap gap-[8px] items-center">
-        <ToolButton active={tool === 'select'} onClick={() => changeTool('select')}>
+        <ToolButton
+          icon="select"
+          active={tool === 'select'}
+          onClick={() => changeTool('select')}
+        >
           {t('editor_select', 'Select')}
         </ToolButton>
-        <ToolButton onClick={addText}>{t('editor_add_text', 'Add text')}</ToolButton>
-        <ToolButton active={tool === 'draw'} onClick={() => changeTool('draw')}>
+        <ToolButton icon="text" onClick={addText}>
+          {t('editor_add_text', 'Add text')}
+        </ToolButton>
+        <ToolButton icon="draw" active={tool === 'draw'} onClick={() => changeTool('draw')}>
           {t('editor_draw', 'Draw')}
         </ToolButton>
-        <ToolButton active={tool === 'shape'} onClick={() => changeTool('shape')}>
+        <ToolButton icon="shapes" active={tool === 'shape'} onClick={() => changeTool('shape')}>
           {t('editor_shapes', 'Shapes')}
         </ToolButton>
-        <ToolButton onClick={() => pickImages(addOverlays)}>
+        <ToolButton icon="image" onClick={() => pickImages(addOverlays)}>
           {t('editor_add_image', 'Add image')}
         </ToolButton>
-        <ToolButton onClick={openSvgInsert}>{t('editor_add_svg', 'Add SVG')}</ToolButton>
-        <ToolButton active={tool === 'crop'} onClick={() => changeTool('crop')}>
+        <ToolButton icon="svg" onClick={openSvgInsert}>
+          {t('editor_add_svg', 'Add SVG')}
+        </ToolButton>
+        <ToolButton icon="crop" active={tool === 'crop'} onClick={() => changeTool('crop')}>
           {t('editor_crop', 'Crop')}
         </ToolButton>
-        <ToolButton onClick={() => rotate(-90)}>↺ {t('editor_rotate', 'Rotate')}</ToolButton>
-        <ToolButton onClick={() => rotate(90)}>↻ {t('editor_rotate', 'Rotate')}</ToolButton>
         <ToolButton
+          icon="rotateLeft"
+          title={t('editor_rotate_left', 'Rotate left')}
+          onClick={() => rotate(-90)}
+        >
+          {t('editor_rotate', 'Rotate')}
+        </ToolButton>
+        <ToolButton
+          icon="rotateRight"
+          title={t('editor_rotate_right', 'Rotate right')}
+          onClick={() => rotate(90)}
+        >
+          {t('editor_rotate', 'Rotate')}
+        </ToolButton>
+        <ToolButton
+          icon="flipHorizontal"
+          title={t('editor_flip_horizontal', 'Flip horizontally')}
           disabled={!doc.src}
           onClick={() => commit((d) => ({ ...d, flipX: !d.flipX }))}
         >
-          ⇋ {t('editor_flip', 'Flip')}
+          {t('editor_flip', 'Flip')}
         </ToolButton>
         <ToolButton
+          icon="flipVertical"
+          title={t('editor_flip_vertical', 'Flip vertically')}
           disabled={!doc.src}
           onClick={() => commit((d) => ({ ...d, flipY: !d.flipY }))}
         >
-          ⇵ {t('editor_flip', 'Flip')}
+          {t('editor_flip', 'Flip')}
         </ToolButton>
         <ToolButton
+          icon="grid"
           active={grid.show}
           onClick={() => setGrid((g) => ({ ...g, show: !g.show }))}
         >
@@ -1093,17 +1127,22 @@ const MediaEditor: FC<{
         )}
         <div className="flex-1" />
         {(['fit', 0.5, 1, 2] as const).map((value) => (
-          <ToolButton key={value} active={zoom === value} onClick={() => setZoom(value)}>
+          <ToolButton
+            key={value}
+            icon={value === 'fit' ? 'fit' : 'zoom'}
+            active={zoom === value}
+            onClick={() => setZoom(value)}
+          >
             {value === 'fit' ? t('editor_fit', 'Fit') : `${value * 100}%`}
           </ToolButton>
         ))}
         {zoom !== 'fit' && ![0.5, 1, 2].includes(zoom) && (
           <span className="text-[13px] px-[4px]">{Math.round(zoom * 100)}%</span>
         )}
-        <ToolButton disabled={!canUndo} onClick={undo}>
+        <ToolButton icon="undo" disabled={!canUndo} onClick={undo}>
           {t('editor_undo', 'Undo')}
         </ToolButton>
-        <ToolButton disabled={!canRedo} onClick={redo}>
+        <ToolButton icon="redo" disabled={!canRedo} onClick={redo}>
           {t('editor_redo', 'Redo')}
         </ToolButton>
       </div>
@@ -1140,6 +1179,7 @@ const MediaEditor: FC<{
                 {RATIOS.map((ratio) => (
                   <ToolButton
                     key={ratio.label}
+                    icon={ratio.icon}
                     active={cropRatio === ratio.value}
                     onClick={() => {
                       setCropRatio(ratio.value);
@@ -1154,10 +1194,11 @@ const MediaEditor: FC<{
                 {t('editor_crop_hint', 'Drag on the image to draw the crop area.')}
               </div>
               <div className="flex gap-[6px]">
-                <ToolButton active={true} onClick={applyCrop}>
+                <ToolButton icon="check" active={true} onClick={applyCrop}>
                   {t('editor_apply', 'Apply')}
                 </ToolButton>
                 <ToolButton
+                  icon="reset"
                   onClick={() => {
                     setCropRatio(undefined);
                     setCropDraft(fullRect(doc));
@@ -1165,7 +1206,7 @@ const MediaEditor: FC<{
                 >
                   {t('editor_reset', 'Reset')}
                 </ToolButton>
-                <ToolButton onClick={() => setTool('select')}>
+                <ToolButton icon="close" onClick={() => setTool('select')}>
                   {t('cancel', 'Cancel')}
                 </ToolButton>
               </div>
@@ -1207,7 +1248,12 @@ const MediaEditor: FC<{
                     ['arrow', t('editor_arrow', 'Arrow')],
                   ] as const
                 ).map(([kind, label]) => (
-                  <ToolButton key={kind} active={shape === kind} onClick={() => setShape(kind)}>
+                  <ToolButton
+                    key={kind}
+                    icon={kind}
+                    active={shape === kind}
+                    onClick={() => setShape(kind)}
+                  >
                     {label}
                   </ToolButton>
                 ))}
@@ -1375,6 +1421,7 @@ const MediaEditor: FC<{
               )}
               <div>
                 <ToolButton
+                  icon="reset"
                   onClick={() =>
                     commitLayer(selected.id, {
                       fills: {},
@@ -1431,6 +1478,7 @@ const MediaEditor: FC<{
                   onChange={(e) => setCustomFont(e.target.value)}
                 />
                 <ToolButton
+                  icon="check"
                   disabled={!customFont.trim()}
                   onClick={async () =>
                     (await ensureFont(customFont)) &&
@@ -1474,17 +1522,20 @@ const MediaEditor: FC<{
                 >
                   <span className="italic">I</span>
                 </ToolButton>
-                {(['left', 'center', 'right'] as const).map((align) => (
+                {(
+                  [
+                    ['left', 'alignLeft', t('editor_left', 'Left')],
+                    ['center', 'alignCentre', t('editor_centre', 'Centre')],
+                    ['right', 'alignRight', t('editor_right', 'Right')],
+                  ] as const
+                ).map(([align, icon, label]) => (
                   <ToolButton
                     key={align}
+                    icon={icon}
                     active={selected.align === align}
                     onClick={() => commitLayer(selected.id, { align })}
                   >
-                    {align === 'left'
-                      ? t('editor_left', 'Left')
-                      : align === 'center'
-                      ? t('editor_centre', 'Centre')
-                      : t('editor_right', 'Right')}
+                    {label}
                   </ToolButton>
                 ))}
               </div>
@@ -1574,7 +1625,11 @@ const MediaEditor: FC<{
                   ))}
                   {/* shapes are sized freely, photos and svgs would stretch */}
                   {sized.kind !== 'shape' && (
-                    <ToolButton active={keepRatio} onClick={() => setKeepRatio(!keepRatio)}>
+                    <ToolButton
+                      icon="link"
+                      active={keepRatio}
+                      onClick={() => setKeepRatio(!keepRatio)}
+                    >
                       {t('editor_keep_ratio', 'Keep ratio')}
                     </ToolButton>
                   )}
@@ -1610,23 +1665,24 @@ const MediaEditor: FC<{
               <div className="flex flex-wrap gap-[6px]">
                 {(
                   [
-                    ['front', t('editor_to_front', 'To front')],
-                    ['forward', t('editor_forward', 'Forward')],
-                    ['backward', t('editor_backward', 'Backward')],
-                    ['back', t('editor_to_back', 'To back')],
+                    ['front', 'toFront', t('editor_to_front', 'To front')],
+                    ['forward', 'forward', t('editor_forward', 'Forward')],
+                    ['backward', 'backward', t('editor_backward', 'Backward')],
+                    ['back', 'toBack', t('editor_to_back', 'To back')],
                   ] as const
-                ).map(([to, label]) => (
-                  <ToolButton key={to} onClick={() => reorderLayer(selected.id, to)}>
+                ).map(([to, icon, label]) => (
+                  <ToolButton key={to} icon={icon} onClick={() => reorderLayer(selected.id, to)}>
                     {label}
                   </ToolButton>
                 ))}
               </div>
               <div className="flex flex-wrap gap-[6px]">
-                <ToolButton onClick={() => duplicateLayer(selected.id)}>
+                <ToolButton icon="duplicate" onClick={() => duplicateLayer(selected.id)}>
                   {t('editor_duplicate', 'Duplicate')}
                 </ToolButton>
                 <ToolButton onClick={() => removeLayer(selected.id)}>
-                  <span className="text-[#FF3F3F]">
+                  <span className="text-[#FF3F3F] flex items-center gap-[6px]">
+                    <EditorIcon name="trash" />
                     {t('editor_delete_layer', 'Delete layer')}
                   </span>
                 </ToolButton>
@@ -1671,6 +1727,7 @@ const MediaEditor: FC<{
               ))}
               <div>
                 <ToolButton
+                  icon="reset"
                   onClick={() => commit((d) => ({ ...d, ...NEUTRAL_ADJUSTMENTS }))}
                 >
                   {t('editor_reset', 'Reset')}
@@ -1727,16 +1784,18 @@ const MediaEditor: FC<{
         <button
           type="button"
           onClick={closeModal}
-          className="h-[44px] px-[20px] rounded-[8px] border border-newTextColor/10"
+          className="h-[44px] px-[20px] rounded-[8px] border border-newTextColor/10 flex items-center gap-[8px]"
         >
+          <EditorIcon name="close" />
           {t('cancel', 'Cancel')}
         </button>
         <button
           type="button"
           onClick={save}
           disabled={saving}
-          className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50"
+          className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50 flex items-center gap-[8px]"
         >
+          <EditorIcon name="save" />
           {saving ? t('editor_saving', 'Saving…') : t('editor_save', 'Save to library')}
         </button>
       </div>

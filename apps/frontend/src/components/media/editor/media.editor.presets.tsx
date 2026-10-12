@@ -19,6 +19,7 @@ import {
   Section,
   ToolButton,
 } from '@gitroom/frontend/components/media/editor/media.editor.ui';
+import { EditorIcon } from '@gitroom/frontend/components/media/editor/media.editor.icons';
 
 export interface EditorPreset {
   name: string;
@@ -278,9 +279,9 @@ const RemoveBadge: FC<{ onClick: () => void }> = ({ onClick }) => {
       type="button"
       title={t('editor_remove', 'Remove')}
       onClick={onClick}
-      className="hidden group-hover:flex mobile:flex absolute -top-[6px] -end-[6px] w-[14px] h-[14px] rounded-full bg-[#FF3F3F] text-white text-[10px] leading-[14px] items-center justify-center"
+      className="hidden group-hover:flex mobile:flex absolute -top-[6px] -end-[6px] w-[14px] h-[14px] rounded-full bg-[#FF3F3F] text-white items-center justify-center"
     >
-      ×
+      <EditorIcon name="close" size={10} />
     </button>
   );
 };
@@ -316,14 +317,16 @@ const PresetRow: FC<{
           {preset.name}
         </div>
       )}
-      <ToolButton active={true} onClick={onApply}>
+      <ToolButton icon="check" active={true} onClick={onApply}>
         {t('editor_apply', 'Apply')}
       </ToolButton>
-      <ToolButton onClick={() => setRenaming(true)}>
+      <ToolButton icon="pencil" onClick={() => setRenaming(true)}>
         {t('editor_rename', 'Rename')}
       </ToolButton>
-      <ToolButton onClick={onDelete}>
-        <span className="text-[#FF3F3F]">×</span>
+      <ToolButton title={t('delete', 'Delete')} onClick={onDelete}>
+        <span className="text-[#FF3F3F]">
+          <EditorIcon name="trash" />
+        </span>
       </ToolButton>
     </div>
   );
@@ -374,6 +377,7 @@ export const PresetsSection: FC<{
           onChange={(e) => setName(e.target.value)}
         />
         <ToolButton
+          icon="save"
           disabled={!name.trim()}
           onClick={() => {
             onSave(name.trim());
@@ -441,6 +445,7 @@ export const BrandSection: FC<{
             onChange={(e) => setColor(e.target.value)}
           />
           <ToolButton
+            icon="plus"
             disabled={
               brand.colors.length >= MAX_COLORS ||
               brand.colors.includes(color.toLowerCase())
@@ -472,6 +477,7 @@ export const BrandSection: FC<{
             </div>
           ))}
           <ToolButton
+            icon="plus"
             onClick={() =>
               onPickLogos((paths) =>
                 setBrand((b) => ({
@@ -570,8 +576,10 @@ export const BackupSection: FC<{
         )}
       </div>
       <div className="flex gap-[6px]">
-        <ToolButton onClick={exportFile}>{t('editor_export', 'Export')}</ToolButton>
-        <ToolButton onClick={() => file.current?.click()}>
+        <ToolButton icon="download" onClick={exportFile}>
+          {t('editor_export', 'Export')}
+        </ToolButton>
+        <ToolButton icon="upload" onClick={() => file.current?.click()}>
           {t('editor_import', 'Import')}
         </ToolButton>
         <input
