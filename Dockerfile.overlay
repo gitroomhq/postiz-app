@@ -40,6 +40,8 @@ COPY apps/frontend/src/components/media/media.bulk.actions.tsx \
      /app/apps/frontend/src/components/media/media.bulk.actions.tsx
 COPY libraries/react-shared-libraries/src/form/checkbox.tsx \
      /app/libraries/react-shared-libraries/src/form/checkbox.tsx
+COPY libraries/react-shared-libraries/src/helpers/video.frame.tsx \
+     /app/libraries/react-shared-libraries/src/helpers/video.frame.tsx
 
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run build:orchestrator && pnpm run build:backend && pnpm run build:frontend
