@@ -23,6 +23,7 @@ import { streamUploadOptions } from '@gitroom/nestjs-libraries/upload/multer.str
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { BulkDeleteMediaDto } from '@gitroom/nestjs-libraries/dtos/media/bulk.delete.media.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
 
@@ -38,6 +39,14 @@ export class MediaController {
   @Delete('/:id')
   deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
     return this._mediaService.deleteMedia(org.id, id);
+  }
+
+  @Post('/bulk/delete')
+  bulkDeleteMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: BulkDeleteMediaDto
+  ) {
+    return this._mediaService.bulkDeleteMedia(org.id, body);
   }
 
   @Post('/generate-video')

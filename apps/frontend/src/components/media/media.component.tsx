@@ -54,6 +54,7 @@ import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
+import { MediaBulkActionsBar } from '@gitroom/frontend/components/media/media.bulk.actions';
 const Polonto = dynamic(
   () => import('@gitroom/frontend/components/launches/polonto')
 );
@@ -226,6 +227,10 @@ export const MediaBox: FC<{
   const toaster = useToaster();
   useEffect(() => {
     setPage(0);
+    if (standalone) {
+      setSelected([]);
+      setWholeLibrary(false);
+    }
   }, [debouncedSearch]);
   const loadMedia = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page + 1) });
@@ -238,7 +243,10 @@ export const MediaBox: FC<{
     `get-media-${page}-${debouncedSearch}`,
     loadMedia
   );
-  const [selected, setSelected] = useState([]);
+  const [selected, setSelected] = useState<any[]>([]);
+  // the standalone library selects only to delete in bulk
+  const [selectMode, setSelectMode] = useState(false);
+  const [wholeLibrary, setWholeLibrary] = useState(false);
   const t = useT();
   const uploaderRef = useRef<any>(null);
   const mediaDirectory = useMediaDirectory();
@@ -279,7 +287,12 @@ export const MediaBox: FC<{
 
   const addRemoveSelected = useCallback(
     (media: any) => () => {
-      if (standalone) {
+      if (standalone && !selectMode) {
+        return;
+      }
+      if (wholeLibrary) {
+        setWholeLibrary(false);
+        setSelected([media]);
         return;
       }
       const exists = selected.find((p: any) => p.id === media.id);
@@ -289,8 +302,52 @@ export const MediaBox: FC<{
       }
       setSelected([...selected, media]);
     },
-    [selected]
+    [selected, standalone, selectMode, wholeLibrary]
   );
+
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode(!selectMode);
+    setSelected([]);
+    setWholeLibrary(false);
+  }, [selectMode]);
+
+  const pageMedia = useMemo(() => data?.results || [], [data?.results]);
+  const pageSelected =
+    wholeLibrary ||
+    (!!pageMedia.length &&
+      pageMedia.every((m: any) => selected.some((p: any) => p.id === m.id)));
+
+  const selectPage = useCallback(() => {
+    setWholeLibrary(false);
+    setSelected((current: any) => [
+      ...current,
+      ...pageMedia.filter(
+        (m: any) => !current.some((p: any) => p.id === m.id)
+      ),
+    ]);
+  }, [pageMedia]);
+
+  const selectLibrary = useCallback(() => {
+    setSelected([]);
+    setWholeLibrary(true);
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelected([]);
+    setWholeLibrary(false);
+  }, []);
+
+  const bulkDone = useCallback(async () => {
+    const all = wholeLibrary;
+    clearSelection();
+    const result = await mutate();
+    // deleting a whole last page leaves nothing to show there
+    if (all) {
+      setPage(0);
+    } else if (page >= (result?.pages || 1)) {
+      setPage(Math.max(0, (result?.pages || 1) - 1));
+    }
+  }, [wholeLibrary, clearSelection, mutate, page]);
 
   const addMedia = useCallback(async () => {
     if (standalone) {
@@ -500,6 +557,19 @@ export const MediaBox: FC<{
           <div className={clsx('flex gap-[8px]', !standalone && 'mobile:hidden')}>
             {btn}
             <ThirdPartyMediaLibrary onImported={() => mutate()} />
+            {standalone && !!data?.results?.length && (
+              <button
+                onClick={toggleSelectMode}
+                className={clsx(
+                  'cursor-pointer flex h-[44px] px-[18px] justify-center items-center rounded-[8px] select-none',
+                  selectMode
+                    ? 'bg-boxFocused text-textItemFocused'
+                    : 'bg-btnSimple changeColor'
+                )}
+              >
+                {t('select', 'Select')}
+              </button>
+            )}
           </div>
           {!standalone && !!data?.results?.length && (
             <div className="hidden mobile:block basis-full text-[14px] font-[600]">
@@ -509,7 +579,7 @@ export const MediaBox: FC<{
               )}
             </div>
           )}
-          {!!selected.length && (
+          {!standalone && !!selected.length && (
             <div
               onClick={deleteSelected}
               className="hidden mobile:flex basis-full justify-center items-center gap-[8px] h-[24px] text-[15px] font-[600] text-[#FF3F3F] cursor-pointer select-none"
@@ -519,6 +589,23 @@ export const MediaBox: FC<{
             </div>
           )}
         </div>
+        {standalone && selectMode && (
+          <div className="mt-[12px]">
+            <MediaBulkActionsBar
+              selection={{
+                ids: selected.map((p: any) => p.id),
+                all: wholeLibrary,
+                search: debouncedSearch,
+              }}
+              pageSelected={pageSelected}
+              onSelectPage={selectPage}
+              onSelectLibrary={selectLibrary}
+              onClear={clearSelection}
+              onCancel={toggleSelectMode}
+              onDone={bulkDone}
+            />
+          </div>
+        )}
         <div
           className={clsx(
             'w-full pointer-events-none relative mt-[5px] mb-[5px]',
@@ -615,24 +702,29 @@ export const MediaBox: FC<{
                 <div
                   className={clsx(
                     'group px-[3px] py-[3px] mobile:p-[6px] float-left rounded-[6px] w8-max mobile:!w-1/2 mobile:!max-w-[50%] aspect-square',
-                    !standalone && 'cursor-pointer'
+                    (!standalone || selectMode) && 'cursor-pointer'
                   )}
                   key={media.id}
                 >
                   <div
                     className={clsx(
                       'w-full h-full rounded-[6px] border-[4px] relative',
-                      !!selected.find((p) => p.id === media.id)
+                      (standalone && wholeLibrary) ||
+                        !!selected.find((p) => p.id === media.id)
                         ? 'border-[#612BD3]'
                         : 'border-transparent'
                     )}
                     onClick={addRemoveSelected(media)}
                   >
-                    {!!selected.find((p: any) => p.id === media.id) ? (
+                    {standalone && wholeLibrary ? (
+                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
+                        ✓
+                      </div>
+                    ) : !!selected.find((p: any) => p.id === media.id) ? (
                       <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
                         {selected.findIndex((z: any) => z.id === media.id) + 1}
                       </div>
-                    ) : (
+                    ) : selectMode ? null : (
                       <DeleteCircleIcon
                         className={clsx(
                           'cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]',
@@ -656,7 +748,8 @@ export const MediaBox: FC<{
                           onClick={maximize(media)}
                           className={clsx(
                             'cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all',
-                            !standalone && 'mobile:!hidden'
+                            !standalone && 'mobile:!hidden',
+                            selectMode && '!hidden'
                           )}
                         >
                           <svg

@@ -1,25 +1,55 @@
-# Rebuild only the webhook payload files on top of the official image.
-# Final image size matches ghcr.io/gitroomhq/postiz-app:latest (~4.8GB), not a from-scratch 9GB build.
+# Rebuild patched backend, orchestrator and frontend on top of the official
+# image. Final size stays close to ghcr.io/gitroomhq/postiz-app:latest
+# (~4.8GB), not a from-scratch 9GB build.
 FROM ghcr.io/gitroomhq/postiz-app:latest AS build
 WORKDIR /app
+
 COPY libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts \
      /app/libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts
 COPY libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts \
      /app/libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts
+COPY libraries/nestjs-libraries/src/database/prisma/posts/posts.service.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/posts/posts.service.ts
+COPY libraries/nestjs-libraries/src/dtos/posts/bulk.posts.dto.ts \
+     /app/libraries/nestjs-libraries/src/dtos/posts/bulk.posts.dto.ts
+COPY libraries/nestjs-libraries/src/dtos/media/bulk.delete.media.dto.ts \
+     /app/libraries/nestjs-libraries/src/dtos/media/bulk.delete.media.dto.ts
+COPY libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts
+COPY libraries/nestjs-libraries/src/database/prisma/media/media.service.ts \
+     /app/libraries/nestjs-libraries/src/database/prisma/media/media.service.ts
 COPY apps/backend/src/api/routes/webhooks.controller.ts \
      /app/apps/backend/src/api/routes/webhooks.controller.ts
+COPY apps/backend/src/api/routes/posts.controller.ts \
+     /app/apps/backend/src/api/routes/posts.controller.ts
+COPY apps/backend/src/api/routes/media.controller.ts \
+     /app/apps/backend/src/api/routes/media.controller.ts
+COPY apps/frontend/src/components/webhooks/webhooks.tsx \
+     /app/apps/frontend/src/components/webhooks/webhooks.tsx
+COPY apps/frontend/src/components/launches/bulk.actions.tsx \
+     /app/apps/frontend/src/components/launches/bulk.actions.tsx
+COPY apps/frontend/src/components/launches/calendar.tsx \
+     /app/apps/frontend/src/components/launches/calendar.tsx
+COPY apps/frontend/src/components/launches/calendar.context.tsx \
+     /app/apps/frontend/src/components/launches/calendar.context.tsx
+COPY apps/frontend/src/components/launches/filters.tsx \
+     /app/apps/frontend/src/components/launches/filters.tsx
+COPY apps/frontend/src/components/media/media.component.tsx \
+     /app/apps/frontend/src/components/media/media.component.tsx
+COPY apps/frontend/src/components/media/media.bulk.actions.tsx \
+     /app/apps/frontend/src/components/media/media.bulk.actions.tsx
+COPY libraries/react-shared-libraries/src/form/checkbox.tsx \
+     /app/libraries/react-shared-libraries/src/form/checkbox.tsx
+
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN pnpm run build:orchestrator && pnpm run build:backend
+RUN pnpm run build:orchestrator && pnpm run build:backend && pnpm run build:frontend
 
 FROM ghcr.io/gitroomhq/postiz-app:latest
 LABEL org.opencontainers.image.source="https://github.com/IORoot/postiz-app"
 COPY --from=build /app/apps/orchestrator/dist /app/apps/orchestrator/dist
 COPY --from=build /app/apps/backend/dist /app/apps/backend/dist
-COPY libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts \
-     /app/libraries/nestjs-libraries/src/database/prisma/posts/webhook.payload.ts
-COPY libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts \
-     /app/libraries/nestjs-libraries/src/database/prisma/posts/posts.repository.ts
-COPY apps/backend/src/api/routes/webhooks.controller.ts \
-     /app/apps/backend/src/api/routes/webhooks.controller.ts
-COPY apps/frontend/src/components/webhooks/webhooks.tsx \
-     /app/apps/frontend/src/components/webhooks/webhooks.tsx
+COPY --from=build /app/apps/frontend/.next /app/apps/frontend/.next
+COPY --from=build /app/apps/frontend/src /app/apps/frontend/src
+COPY --from=build /app/libraries/nestjs-libraries/src /app/libraries/nestjs-libraries/src
+COPY --from=build /app/libraries/react-shared-libraries/src /app/libraries/react-shared-libraries/src
+COPY --from=build /app/apps/backend/src /app/apps/backend/src

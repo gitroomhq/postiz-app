@@ -5,6 +5,11 @@ import { generationError } from '@gitroom/nestjs-libraries/openai/generation.err
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import {
+  BulkDeleteMediaDto,
+  BulkDeleteMediaResult,
+} from '@gitroom/nestjs-libraries/dtos/media/bulk.delete.media.dto';
+import { chunk } from 'lodash';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -96,6 +101,46 @@ export class MediaService {
 
   async deleteMedia(org: string, id: string) {
     return this._mediaRepository.deleteMedia(org, id);
+  }
+
+  // Hides the media from the library; with `removeFiles` the stored files go
+  // too. A file that can't be removed never fails the batch, it is counted.
+  async bulkDeleteMedia(
+    org: string,
+    body: BulkDeleteMediaDto
+  ): Promise<BulkDeleteMediaResult> {
+    const media = await this._mediaRepository.getMediaForDelete(org, body);
+    if (!media.length) {
+      return { deleted: 0, filesRemoved: 0, filesFailed: 0 };
+    }
+
+    const { count } = await this._mediaRepository.deleteManyMedia(
+      org,
+      media.map((p) => p.id)
+    );
+
+    let filesRemoved = 0;
+    let filesFailed = 0;
+    if (body.removeFiles) {
+      const files = media.flatMap((p) =>
+        [p.path, p.thumbnail].filter((f): f is string => !!f)
+      );
+      for (const batch of chunk(files, 10)) {
+        await Promise.all(
+          batch.map(async (file) => {
+            try {
+              await this.storage.removeFile(file);
+              filesRemoved++;
+            } catch (err) {
+              filesFailed++;
+              console.error(`Could not remove media file ${file}:`, err);
+            }
+          })
+        );
+      }
+    }
+
+    return { deleted: count, filesRemoved, filesFailed };
   }
 
   getMediaById(id: string) {

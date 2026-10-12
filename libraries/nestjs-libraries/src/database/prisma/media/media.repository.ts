@@ -96,6 +96,50 @@ export class MediaRepository {
     });
   }
 
+  // either the given ids, or every media of the library matching the search
+  getMediaForDelete(
+    org: string,
+    filter: { ids?: string[]; all?: boolean; search?: string }
+  ) {
+    const trimmedSearch = filter.search?.trim();
+    return this._media.model.media.findMany({
+      where: {
+        organizationId: org,
+        deletedAt: null,
+        // still being normalized by a workflow, like in the library list
+        status: { not: 'processing' },
+        ...(filter.all
+          ? trimmedSearch
+            ? {
+                originalName: {
+                  contains: trimmedSearch,
+                  mode: 'insensitive' as const,
+                },
+              }
+            : {}
+          : { id: { in: filter.ids || [] } }),
+      },
+      select: {
+        id: true,
+        path: true,
+        thumbnail: true,
+      },
+    });
+  }
+
+  deleteManyMedia(org: string, ids: string[]) {
+    return this._media.model.media.updateMany({
+      where: {
+        id: { in: ids },
+        organizationId: org,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
   saveMediaInformation(org: string, data: SaveMediaInformationDto) {
     return this._media.model.media.update({
       where: {
