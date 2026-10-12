@@ -1627,9 +1627,7 @@ const MediaEditor: FC<{
                   ['warmth', t('editor_warmth', 'Warmth'), -100, 100],
                   ['fade', t('editor_fade', 'Fade'), 0, 100],
                   ['vignette', t('editor_vignette', 'Vignette'), 0, 100],
-                  ...(supportsFilters()
-                    ? [['sharpen', t('editor_sharpen', 'Sharpen'), 0, 100]]
-                    : []),
+                  ['sharpen', t('editor_sharpen', 'Sharpen'), 0, 100],
                 ] as [Adjustment, string, number, number][]
               ).map(([key, label, min, max]) => (
                 <Field key={key} label={`${label}: ${doc[key]}`}>

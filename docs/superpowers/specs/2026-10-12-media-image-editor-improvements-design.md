@@ -12,11 +12,13 @@ New base-photo adjustments next to brightness / contrast / saturation:
   photo with `soft-light` blending.
 - **Fade** (0..100): lifts the blacks with a grey `lighten` wash.
 - **Vignette** (0..100): radial gradient darkening the edges (`multiply`).
-- **Sharpen** (0..100): SVG `feConvolveMatrix` referenced from `ctx.filter`.
+- **Sharpen** (0..100): a 3×3 sharpen kernel applied to the pixels
+  (`getImageData`/`putImageData`). An SVG `feConvolveMatrix` referenced from
+  `ctx.filter` left the photo blank in some Chrome setups.
 
-All apply to the base photo only (drawn before the layers). Warmth, fade and
-vignette use compositing and work in every browser; sharpen and the three
-existing sliders need canvas filters and stay hidden without them. No
+All apply to the base photo only (drawn before the layers). Warmth, fade,
+vignette and sharpen work in every browser; the three existing sliders need
+canvas filters and stay hidden without them. No
 built-in filter presets.
 
 ## Stage 2: layer tools

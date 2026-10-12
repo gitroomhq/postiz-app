@@ -697,20 +697,32 @@ const drawContent = (
   ctx.restore();
 };
 
-// one shared filter, its kernel is set right before each draw
-const sharpenFilter = (amount: number) => {
-  const id = 'postiz-editor-sharpen';
-  if (!document.getElementById(id)) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('style', 'position:absolute;width:0;height:0');
-    svg.innerHTML = `<filter id="${id}" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true"/></filter>`;
-    document.body.appendChild(svg);
-  }
+// a 3×3 sharpen on the pixels themselves: an svg filter (ctx.filter = 'url(#…)')
+// leaves the photo blank in some Chrome setups and is missing in Safari
+const sharpenPixels = (ctx: CanvasRenderingContext2D, w: number, h: number, amount: number) => {
+  const image = ctx.getImageData(0, 0, w, h);
+  const src = image.data;
+  const out = new Uint8ClampedArray(src);
   const a = amount / 100;
-  document
-    .querySelector(`#${id} feConvolveMatrix`)!
-    .setAttribute('kernelMatrix', `0 ${-a} 0 ${-a} ${1 + 4 * a} ${-a} 0 ${-a} 0`);
-  return `url(#${id})`;
+  const centre = 1 + 4 * a;
+  const row = w * 4;
+  for (let y = 0; y < h; y++) {
+    // edge pixels repeat themselves instead of reading outside the image
+    const up = y > 0 ? -row : 0;
+    const down = y < h - 1 ? row : 0;
+    for (let x = 0; x < w; x++) {
+      const left = x > 0 ? -4 : 0;
+      const right = x < w - 1 ? 4 : 0;
+      const i = (y * w + x) * 4;
+      // alpha stays as it is
+      for (let p = i; p < i + 3; p++) {
+        out[p] =
+          centre * src[p] - a * (src[p + up] + src[p + down] + src[p + left] + src[p + right]);
+      }
+    }
+  }
+  image.data.set(out);
+  ctx.putImageData(image, 0, 0);
 };
 
 const drawBase = (
@@ -769,9 +781,11 @@ const adjustedPhoto = (doc: EditorDoc, base: HTMLImageElement) => {
       `brightness(${doc.brightness}%)`,
       `contrast(${doc.contrast}%)`,
       `saturate(${doc.saturation}%)`,
-      doc.sharpen ? sharpenFilter(doc.sharpen) : '',
     ].join(' ')
   );
+  if (doc.sharpen) {
+    sharpenPixels(ctx, w, h, doc.sharpen);
+  }
   if (doc.warmth) {
     ctx.globalCompositeOperation = 'soft-light';
     ctx.globalAlpha = (Math.abs(doc.warmth) / 100) * 0.7;
