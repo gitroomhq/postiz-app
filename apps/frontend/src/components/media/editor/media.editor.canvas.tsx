@@ -6,8 +6,15 @@ import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 export type Rect = { x: number; y: number; w: number; h: number };
 export type EditorTool = 'select' | 'draw' | 'crop';
 
-export interface ImageLayer {
+interface LayerBase {
   id: string;
+  // 0-100
+  opacity: number;
+  // degrees, around the centre of the layer bounds
+  rotation: number;
+}
+
+export interface ImageLayer extends LayerBase {
   kind: 'image';
   src: string;
   x: number;
@@ -16,8 +23,7 @@ export interface ImageLayer {
   h: number;
 }
 
-export interface TextLayer {
-  id: string;
+export interface TextLayer extends LayerBase {
   kind: 'text';
   x: number;
   y: number;
@@ -35,8 +41,7 @@ export interface TextLayer {
   bgPadding: number;
 }
 
-export interface StrokeLayer {
-  id: string;
+export interface StrokeLayer extends LayerBase {
   kind: 'stroke';
   points: number[];
   color: string;
@@ -119,6 +124,8 @@ export const newTextLayer = (
   return {
     id: makeId(10),
     kind: 'text',
+    opacity: 100,
+    rotation: 0,
     x: area.x + area.w / 2 - size * 3,
     y: area.y + area.h / 2 - size / 2,
     text,
@@ -173,7 +180,63 @@ export const layerBounds = (
   };
 };
 
+const centreOf = (r: Rect) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+
+const turnAround = (
+  x: number,
+  y: number,
+  c: { x: number; y: number },
+  degrees: number
+) => {
+  const rad = (degrees * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = x - c.x;
+  const dy = y - c.y;
+  return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos };
+};
+
+// applies the layer rotation, so drawing can use unrotated coordinates
+const withRotation = (
+  ctx: CanvasRenderingContext2D,
+  bounds: Rect,
+  degrees: number
+) => {
+  if (degrees) {
+    const c = centreOf(bounds);
+    ctx.translate(c.x, c.y);
+    ctx.rotate((degrees * Math.PI) / 180);
+    ctx.translate(-c.x, -c.y);
+  }
+};
+
 const drawLayer = (
+  ctx: CanvasRenderingContext2D,
+  l: EditorLayer,
+  images: Map<string, HTMLImageElement>
+) => {
+  const b = layerBounds(ctx, l);
+  ctx.save();
+  withRotation(ctx, b, l.rotation);
+  if (l.opacity < 100 && l.kind === 'text' && l.outlineWidth > 0) {
+    // drawn apart first, otherwise the outline shows through the faded fill
+    const margin = l.size;
+    const off = document.createElement('canvas');
+    off.width = Math.max(1, Math.ceil(b.w + margin * 2));
+    off.height = Math.max(1, Math.ceil(b.h + margin * 2));
+    const offCtx = off.getContext('2d')!;
+    offCtx.translate(margin - b.x, margin - b.y);
+    drawContent(offCtx, l, images);
+    ctx.globalAlpha = l.opacity / 100;
+    ctx.drawImage(off, b.x - margin, b.y - margin);
+  } else {
+    ctx.globalAlpha = l.opacity / 100;
+    drawContent(ctx, l, images);
+  }
+  ctx.restore();
+};
+
+const drawContent = (
   ctx: CanvasRenderingContext2D,
   l: EditorLayer,
   images: Map<string, HTMLImageElement>
@@ -202,7 +265,8 @@ const drawLayer = (
   }
   const m = measureText(ctx, l);
   if (l.bgOpacity > 0) {
-    ctx.globalAlpha = l.bgOpacity / 100;
+    const alpha = ctx.globalAlpha;
+    ctx.globalAlpha = alpha * (l.bgOpacity / 100);
     ctx.fillStyle = l.bgColor;
     ctx.fillRect(
       l.x - l.bgPadding,
@@ -210,7 +274,7 @@ const drawLayer = (
       m.w + l.bgPadding * 2,
       m.h + l.bgPadding * 2
     );
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = alpha;
   }
   ctx.textBaseline = 'top';
   ctx.textAlign = l.align;
@@ -366,6 +430,11 @@ export const renderDoc = (
   ctx.restore();
 };
 
+export const normaliseAngle = (degrees: number) => {
+  const a = ((Math.round(degrees) % 360) + 360) % 360;
+  return a > 180 ? a - 360 : a;
+};
+
 // turns the document by ±90°, carrying every layer to its new position
 export const rotateDoc = (
   ctx: CanvasRenderingContext2D,
@@ -390,12 +459,14 @@ export const rotateDoc = (
         }
         return { ...l, points };
       }
+      // strokes keep their rotation, their points already turned
       const b = layerBounds(ctx, l);
       const centre = turn(b.x + b.w / 2, b.y + b.h / 2);
       return {
         ...l,
         x: l.x + centre.x - (b.x + b.w / 2),
         y: l.y + centre.y - (b.y + b.h / 2),
+        rotation: normaliseAngle(l.rotation + by),
       };
     }),
   };
@@ -445,7 +516,29 @@ const cropFromDrag = (
   };
 };
 
-const moveLayer = (l: EditorLayer, dx: number, dy: number): EditorLayer =>
+// the point in the unrotated frame of the layer
+const toLayerFrame = (l: EditorLayer, b: Rect, x: number, y: number) =>
+  turnAround(x, y, centreOf(b), -l.rotation);
+
+const hitsLayer = (
+  ctx: CanvasRenderingContext2D,
+  l: EditorLayer,
+  x: number,
+  y: number
+) => {
+  const b = layerBounds(ctx, l);
+  const p = toLayerFrame(l, b, x, y);
+  return contains(b, p.x, p.y);
+};
+
+const ROTATE_HANDLE_GAP = 28;
+
+const handles = (b: Rect, scale: number) => ({
+  resize: { x: b.x + b.w, y: b.y + b.h },
+  rotate: { x: b.x + b.w / 2, y: b.y - ROTATE_HANDLE_GAP * scale },
+});
+
+export const moveLayer = (l: EditorLayer, dx: number, dy: number): EditorLayer =>
   l.kind === 'stroke'
     ? {
         ...l,
@@ -468,7 +561,7 @@ type Drag =
   | { mode: 'crop'; sx: number; sy: number }
   | { mode: 'draw'; id: string }
   | {
-      mode: 'move' | 'resize';
+      mode: 'move' | 'resize' | 'rotate';
       sx: number;
       sy: number;
       layer: EditorLayer;
@@ -543,20 +636,30 @@ export const EditorCanvas: FC<{
     const selected = doc.layers.find((l) => l.id === selectedId);
     if (tool === 'select' && selected) {
       const b = layerBounds(ctx, selected);
+      const hs = HANDLE * scale;
+      const { resize, rotate } = handles(b, scale);
+      withRotation(ctx, b, selected.rotation);
       // white under the dashes keeps the outline visible on any colour
       ctx.lineWidth = 2 * scale;
       ctx.strokeStyle = '#FFFFFF';
       ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.beginPath();
+      ctx.moveTo(b.x + b.w / 2, b.y);
+      ctx.lineTo(rotate.x, rotate.y);
+      ctx.stroke();
       ctx.strokeStyle = '#612BD3';
       ctx.setLineDash([6 * scale, 4 * scale]);
       ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#612BD3';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(rotate.x, rotate.y, hs / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
       if (selected.kind !== 'stroke') {
-        const hs = HANDLE * scale;
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#612BD3';
-        ctx.fillRect(b.x + b.w - hs / 2, b.y + b.h - hs / 2, hs, hs);
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.strokeRect(b.x + b.w - hs / 2, b.y + b.h - hs / 2, hs, hs);
+        ctx.fillRect(resize.x - hs / 2, resize.y - hs / 2, hs, hs);
+        ctx.strokeRect(resize.x - hs / 2, resize.y - hs / 2, hs, hs);
       }
     }
     ctx.restore();
@@ -603,6 +706,8 @@ export const EditorCanvas: FC<{
             {
               id,
               kind: 'stroke',
+              opacity: 100,
+              rotation: 0,
               points: [p.x, p.y],
               color: drawColor,
               width: drawSize,
@@ -613,27 +718,27 @@ export const EditorCanvas: FC<{
         return;
       }
       const selected = doc.layers.find((l) => l.id === selectedId);
-      if (selected && selected.kind !== 'stroke') {
+      if (selected) {
         const b = layerBounds(ctx, selected);
         const hs = HANDLE * p.scale;
-        if (
-          Math.abs(p.x - (b.x + b.w)) <= hs &&
-          Math.abs(p.y - (b.y + b.h)) <= hs
-        ) {
+        const local = toLayerFrame(selected, b, p.x, p.y);
+        const near = (h: { x: number; y: number }) =>
+          Math.abs(local.x - h.x) <= hs && Math.abs(local.y - h.y) <= hs;
+        const { resize, rotate } = handles(b, p.scale);
+        const mode = near(rotate)
+          ? 'rotate'
+          : selected.kind !== 'stroke' && near(resize)
+          ? 'resize'
+          : undefined;
+        if (mode) {
           onBegin();
-          drag.current = {
-            mode: 'resize',
-            sx: p.x,
-            sy: p.y,
-            layer: selected,
-            bounds: b,
-          };
+          drag.current = { mode, sx: p.x, sy: p.y, layer: selected, bounds: b };
           return;
         }
       }
       const hit = [...doc.layers]
         .reverse()
-        .find((l) => contains(layerBounds(ctx, l), p.x, p.y));
+        .find((l) => hitsLayer(ctx, l, p.x, p.y));
       onSelect(hit?.id);
       if (hit) {
         onBegin();
@@ -673,10 +778,30 @@ export const EditorCanvas: FC<{
       }
       const dx = p.x - d.sx;
       const dy = p.y - d.sy;
-      const next =
-        d.mode === 'move'
-          ? moveLayer(d.layer, dx, dy)
-          : resizeLayer(d.layer, d.bounds, dx);
+      let next: EditorLayer;
+      if (d.mode === 'move') {
+        next = moveLayer(d.layer, dx, dy);
+      } else if (d.mode === 'rotate') {
+        const c = centreOf(d.bounds);
+        const angle =
+          d.layer.rotation +
+          ((Math.atan2(p.y - c.y, p.x - c.x) - Math.atan2(d.sy - c.y, d.sx - c.x)) *
+            180) /
+            Math.PI;
+        next = {
+          ...d.layer,
+          rotation: normaliseAngle(e.shiftKey ? Math.round(angle / 15) * 15 : angle),
+        };
+      } else {
+        const ctx = ref.current!.getContext('2d')!;
+        const local = turnAround(dx, dy, { x: 0, y: 0 }, -d.layer.rotation);
+        const resized = resizeLayer(d.layer, d.bounds, local.x);
+        // keep the top-left corner where it is on screen
+        const b = layerBounds(ctx, resized);
+        const before = turnAround(d.bounds.x, d.bounds.y, centreOf(d.bounds), d.layer.rotation);
+        const after = turnAround(b.x, b.y, centreOf(b), d.layer.rotation);
+        next = moveLayer(resized, before.x - after.x, before.y - after.y);
+      }
       onUpdate((current) => ({
         ...current,
         layers: current.layers.map((l) => (l.id === next.id ? next : l)),

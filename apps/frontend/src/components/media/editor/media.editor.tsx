@@ -26,6 +26,7 @@ import {
   EditorTool,
   fullRect,
   loadImage,
+  moveLayer,
   newTextLayer,
   ratioRect,
   Rect,
@@ -297,8 +298,10 @@ const MediaEditor: FC<{
   const [doc, setDocState] = useState<EditorDoc>();
   const docRef = useRef<EditorDoc | undefined>(undefined);
   const past = useRef<EditorDoc[]>([]);
+  const future = useRef<EditorDoc[]>([]);
   const pending = useRef<EditorDoc | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const [tool, setTool] = useState<EditorTool>('select');
   const [selectedId, setSelectedIdState] = useState<string>();
@@ -342,9 +345,18 @@ const MediaEditor: FC<{
   const end = useCallback(() => {
     if (pending.current && pending.current !== docRef.current) {
       past.current = [...past.current, pending.current].slice(-HISTORY);
+      future.current = [];
       setCanUndo(true);
+      setCanRedo(false);
     }
     pending.current = null;
+  }, []);
+
+  const resetHistory = useCallback(() => {
+    past.current = [];
+    future.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
   }, []);
 
   // the canvas fires before the blur of a focused field, so close that step first
@@ -362,12 +374,27 @@ const MediaEditor: FC<{
   const undo = useCallback(() => {
     end();
     const previous = past.current[past.current.length - 1];
-    if (!previous) {
+    if (!previous || !docRef.current) {
       return;
     }
     past.current = past.current.slice(0, -1);
+    future.current = [...future.current, docRef.current];
     setCanUndo(!!past.current.length);
+    setCanRedo(true);
     setDoc(previous);
+  }, []);
+
+  const redo = useCallback(() => {
+    end();
+    const next = future.current[future.current.length - 1];
+    if (!next || !docRef.current) {
+      return;
+    }
+    future.current = future.current.slice(0, -1);
+    past.current = [...past.current, docRef.current].slice(-HISTORY);
+    setCanUndo(true);
+    setCanRedo(!!future.current.length);
+    setDoc(next);
   }, []);
 
   const updateLayer = useCallback(
@@ -401,7 +428,52 @@ const MediaEditor: FC<{
     setSelectedId(undefined);
   }, []);
 
+  const reorderLayer = useCallback(
+    (id: string, to: 'front' | 'forward' | 'backward' | 'back') => {
+      commit((current) => {
+        const layers = [...current.layers];
+        const from = layers.findIndex((l) => l.id === id);
+        const index = {
+          front: layers.length - 1,
+          forward: Math.min(layers.length - 1, from + 1),
+          backward: Math.max(0, from - 1),
+          back: 0,
+        }[to];
+        const [layer] = layers.splice(from, 1);
+        layers.splice(index, 0, layer);
+        return { ...current, layers };
+      });
+    },
+    []
+  );
+
+  // a step that is visible on screen whatever the image size
+  const nudgeStep = (current: EditorDoc) =>
+    Math.max(1, Math.round(visibleRect(current).w / 400));
+
+  const duplicateLayer = useCallback((id: string) => {
+    const current = docRef.current;
+    const layer = current?.layers.find((l) => l.id === id);
+    if (!current || !layer) {
+      return;
+    }
+    const offset = nudgeStep(current) * 10;
+    const copy = { ...moveLayer(layer, offset, offset), id: makeId(10) };
+    commit((d) => {
+      const layers = [...d.layers];
+      layers.splice(layers.findIndex((l) => l.id === id) + 1, 0, copy);
+      return { ...d, layers };
+    });
+    setSelectedId(copy.id);
+  }, []);
+
   useEffect(() => {
+    const arrows: Record<string, [number, number]> = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+    };
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (
@@ -411,18 +483,51 @@ const MediaEditor: FC<{
       ) {
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      const key = e.key.toLowerCase();
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        ((key === 'z' && e.shiftKey) || (key === 'y' && !e.metaKey))
+      ) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && key === 'z') {
         e.preventDefault();
         undo();
         return;
       }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedRef.current) {
+      const id = selectedRef.current;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && id) {
         e.preventDefault();
-        removeLayer(selectedRef.current);
+        removeLayer(id);
+        return;
+      }
+      const arrow = arrows[e.key];
+      if (arrow && id && docRef.current) {
+        e.preventDefault();
+        const step = nudgeStep(docRef.current) * (e.shiftKey ? 10 : 1);
+        // a held key is one undo step, closed on key up
+        begin();
+        update((current) => ({
+          ...current,
+          layers: current.layers.map((l) =>
+            l.id === id ? moveLayer(l, arrow[0] * step, arrow[1] * step) : l
+          ),
+        }));
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (arrows[e.key]) {
+        end();
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, []);
 
   useEffect(() => {
@@ -452,8 +557,7 @@ const MediaEditor: FC<{
       try {
         const img = await loadImage(item.path);
         images.set(item.path, img);
-        past.current = [];
-        setCanUndo(false);
+        resetHistory();
         setDoc(
           emptyDoc({
             width: img.naturalWidth,
@@ -482,8 +586,7 @@ const MediaEditor: FC<{
   }, []);
 
   const startBlank = useCallback(() => {
-    past.current = [];
-    setCanUndo(false);
+    resetHistory();
     setDoc(
       emptyDoc({
         width: Math.min(MAX_SIZE, Math.max(16, Math.round(blankWidth))),
@@ -530,6 +633,8 @@ const MediaEditor: FC<{
           layers.push({
             id: makeId(10),
             kind: 'image',
+            opacity: 100,
+            rotation: 0,
             src: item.path,
             x: area.x + (area.w - w) / 2,
             y: area.y + (area.h - h) / 2,
@@ -821,6 +926,9 @@ const MediaEditor: FC<{
         <ToolButton disabled={!canUndo} onClick={undo}>
           {t('editor_undo', 'Undo')}
         </ToolButton>
+        <ToolButton disabled={!canRedo} onClick={redo}>
+          {t('editor_redo', 'Redo')}
+        </ToolButton>
       </div>
 
       <div className="flex gap-[16px] mobile:flex-col">
@@ -1071,13 +1179,59 @@ const MediaEditor: FC<{
           )}
 
           {tool === 'select' && selected && (
-            <div>
-              <ToolButton onClick={() => removeLayer(selected.id)}>
-                <span className="text-[#FF3F3F]">
-                  {t('editor_delete_layer', 'Delete layer')}
-                </span>
-              </ToolButton>
-            </div>
+            <Section title={t('editor_layer', 'Layer')}>
+              <Field label={`${t('editor_opacity', 'Opacity')}: ${selected.opacity}%`}>
+                <input
+                  type="range"
+                  className="w-full accent-[#612BD3]"
+                  min={0}
+                  max={100}
+                  value={selected.opacity}
+                  {...liveRange}
+                  onChange={(e) =>
+                    updateLayer(selected.id, { opacity: Number(e.target.value) })
+                  }
+                />
+              </Field>
+              <Field label={`${t('editor_rotation', 'Rotation')}: ${selected.rotation}°`}>
+                <input
+                  type="range"
+                  className="w-full accent-[#612BD3]"
+                  min={-180}
+                  max={180}
+                  value={selected.rotation}
+                  {...liveRange}
+                  onDoubleClick={() => commitLayer(selected.id, { rotation: 0 })}
+                  onChange={(e) =>
+                    updateLayer(selected.id, { rotation: Number(e.target.value) })
+                  }
+                />
+              </Field>
+              <div className="flex flex-wrap gap-[6px]">
+                {(
+                  [
+                    ['front', t('editor_to_front', 'To front')],
+                    ['forward', t('editor_forward', 'Forward')],
+                    ['backward', t('editor_backward', 'Backward')],
+                    ['back', t('editor_to_back', 'To back')],
+                  ] as const
+                ).map(([to, label]) => (
+                  <ToolButton key={to} onClick={() => reorderLayer(selected.id, to)}>
+                    {label}
+                  </ToolButton>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-[6px]">
+                <ToolButton onClick={() => duplicateLayer(selected.id)}>
+                  {t('editor_duplicate', 'Duplicate')}
+                </ToolButton>
+                <ToolButton onClick={() => removeLayer(selected.id)}>
+                  <span className="text-[#FF3F3F]">
+                    {t('editor_delete_layer', 'Delete layer')}
+                  </span>
+                </ToolButton>
+              </div>
+            </Section>
           )}
 
           {tool === 'select' && !selected && !!doc.src && (
