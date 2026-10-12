@@ -767,7 +767,10 @@ export const MediaBox: FC<{
                         </div>
                       </div>
                       {hasExtension(media.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media.path)} />
+                        <VideoFrame
+                          url={mediaDirectory.set(media.path)}
+                          showDuration
+                        />
                       ) : (
                         <img
                           width="100%"
