@@ -1254,6 +1254,41 @@ export const sizeLayer = (l: SizedLayer, w: number, h: number): SizedLayer =>
 
 const ROTATE_HANDLE_GAP = 28;
 
+// the numbers the layer panel shows, under the layer while it is being sized
+const drawSizeLabel = (
+  ctx: CanvasRenderingContext2D,
+  l: EditorLayer,
+  area: Rect,
+  scale: number
+) => {
+  const b = layerBounds(ctx, l);
+  const size = 'w' in l ? l : b;
+  const text = `${Math.round(Math.abs(size.w))} × ${Math.round(Math.abs(size.h))}`;
+  // below the turned layer, kept inside the canvas
+  const turn = (l.rotation * Math.PI) / 180;
+  const halfHeight = (Math.abs(b.w * Math.sin(turn)) + Math.abs(b.h * Math.cos(turn))) / 2;
+  const c = centreOf(b);
+  ctx.save();
+  ctx.font = `600 ${12 * scale}px sans-serif`;
+  const w = ctx.measureText(text).width + 16 * scale;
+  const h = 22 * scale;
+  const x = clamp(c.x - w / 2, area.x, area.x + area.w - w);
+  const y = clamp(c.y + halfHeight + 10 * scale, area.y, area.y + area.h - h);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, 6 * scale);
+  } else {
+    ctx.rect(x, y, w, h);
+  }
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + w / 2, y + h / 2);
+  ctx.restore();
+};
+
 const handles = (b: Rect, scale: number) => ({
   resize: { x: b.x + b.w, y: b.y + b.h },
   rotate: { x: b.x + b.w / 2, y: b.y - ROTATE_HANDLE_GAP * scale },
@@ -1339,6 +1374,8 @@ export const EditorCanvas: FC<{
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guides>({});
   const [overCrop, setOverCrop] = useState(false);
+  // the layer being resized or drawn, labelled with its size
+  const [sizingId, setSizingId] = useState<string>();
   const [svgVersion, setSvgVersion] = useState(0);
   const [editingId, setEditingId] = useState<string>();
   const editingRef = useRef(editingId);
@@ -1520,7 +1557,15 @@ export const EditorCanvas: FC<{
       }
     }
     ctx.restore();
-  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion, grid]);
+    const sizing = doc.layers.find((l) => l.id === sizingId);
+    if (sizing) {
+      // a fresh transform, the selection outline above may be turned
+      ctx.save();
+      ctx.translate(-area.x, -area.y);
+      drawSizeLabel(ctx, sizing, area, scale);
+      ctx.restore();
+    }
+  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion, grid, sizingId]);
 
   const toPoint = useCallback(
     (e: MouseEvent<HTMLCanvasElement>) => {
@@ -1583,6 +1628,7 @@ export const EditorCanvas: FC<{
         onBegin();
         onUpdate((d) => ({ ...d, layers: [...d.layers, layer] }));
         drag.current = { mode: 'shape', sx: p.x, sy: p.y, layer };
+        setSizingId(layer.id);
         return;
       }
       const selected = doc.layers.find((l) => l.id === selectedId);
@@ -1601,6 +1647,9 @@ export const EditorCanvas: FC<{
         if (mode) {
           onBegin();
           drag.current = { mode, sx: p.x, sy: p.y, layer: selected, bounds: b };
+          if (mode === 'resize') {
+            setSizingId(selected.id);
+          }
           return;
         }
       }
@@ -1735,6 +1784,7 @@ export const EditorCanvas: FC<{
     const d = drag.current;
     drag.current = null;
     setGuides({});
+    setSizingId(undefined);
     if (d?.mode === 'shape') {
       // a click without a drag places a default sized shape
       onUpdate((current) => ({
