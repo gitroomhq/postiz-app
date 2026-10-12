@@ -60,6 +60,10 @@ export interface EditorDoc {
   brightness: number;
   contrast: number;
   saturation: number;
+  warmth: number;
+  fade: number;
+  vignette: number;
+  sharpen: number;
   crop?: Rect;
   outputWidth?: number;
   layers: EditorLayer[];
@@ -226,6 +230,118 @@ const drawLayer = (
   ctx.restore();
 };
 
+const sharpenFilter = (amount: number) => {
+  const id = `postiz-editor-sharpen-${amount}`;
+  if (!document.getElementById(id)) {
+    let svg: Element | null = document.getElementById('postiz-editor-filters');
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.id = 'postiz-editor-filters';
+      svg.setAttribute('style', 'position:absolute;width:0;height:0');
+      document.body.appendChild(svg);
+    }
+    const a = amount / 100;
+    svg.insertAdjacentHTML(
+      'beforeend',
+      `<filter id="${id}" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 ${-a} 0 ${-a} ${
+        1 + 4 * a
+      } ${-a} 0 ${-a} 0"/></filter>`
+    );
+  }
+  return `url(#${id})`;
+};
+
+const drawBase = (
+  ctx: CanvasRenderingContext2D,
+  doc: EditorDoc,
+  base: HTMLImageElement,
+  filter: string
+) => {
+  const { w, h } = compSize(doc);
+  ctx.save();
+  ctx.filter = filter;
+  ctx.translate(w / 2, h / 2);
+  // flip before rotating so flips follow the screen axes
+  ctx.scale(doc.flipX ? -1 : 1, doc.flipY ? -1 : 1);
+  ctx.rotate((doc.rotate * Math.PI) / 180);
+  ctx.drawImage(base, -doc.width / 2, -doc.height / 2, doc.width, doc.height);
+  ctx.restore();
+};
+
+// the adjusted photo is rendered once per change, not on every pointer move
+const photoCache = new WeakMap<
+  HTMLImageElement,
+  { key: string; canvas: HTMLCanvasElement }
+>();
+
+const adjustedPhoto = (doc: EditorDoc, base: HTMLImageElement) => {
+  const key = [
+    doc.width,
+    doc.height,
+    doc.rotate,
+    doc.flipX,
+    doc.flipY,
+    doc.brightness,
+    doc.contrast,
+    doc.saturation,
+    doc.warmth,
+    doc.fade,
+    doc.vignette,
+    doc.sharpen,
+  ].join(',');
+  const cached = photoCache.get(base);
+  if (cached?.key === key) {
+    return cached.canvas;
+  }
+  const { w, h } = compSize(doc);
+  const canvas = cached?.canvas || document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, w, h);
+  drawBase(
+    ctx,
+    doc,
+    base,
+    [
+      `brightness(${doc.brightness}%)`,
+      `contrast(${doc.contrast}%)`,
+      `saturate(${doc.saturation}%)`,
+      doc.sharpen ? sharpenFilter(doc.sharpen) : '',
+    ].join(' ')
+  );
+  if (doc.warmth) {
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.globalAlpha = (Math.abs(doc.warmth) / 100) * 0.7;
+    ctx.fillStyle = doc.warmth > 0 ? '#FF8A00' : '#0077FF';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+  }
+  if (doc.fade) {
+    const grey = Math.round(doc.fade * 0.8);
+    ctx.globalCompositeOperation = 'lighten';
+    ctx.fillStyle = `rgb(${grey}, ${grey}, ${grey})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+  if (doc.vignette) {
+    const r = Math.hypot(w, h) / 2;
+    const gradient = ctx.createRadialGradient(w / 2, h / 2, r * 0.35, w / 2, h / 2, r);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    gradient.addColorStop(1, `rgba(0, 0, 0, ${(doc.vignette / 100) * 0.85})`);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+  }
+  if (doc.warmth || doc.fade || doc.vignette) {
+    // keep transparent parts of the photo transparent
+    ctx.globalCompositeOperation = 'destination-in';
+    drawBase(ctx, doc, base, 'none');
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  photoCache.set(base, { key, canvas });
+  return canvas;
+};
+
 // draws the document with `area` as the top-left of the output
 export const renderDoc = (
   ctx: CanvasRenderingContext2D,
@@ -242,14 +358,7 @@ export const renderDoc = (
   }
   const base = doc.src && images.get(doc.src);
   if (base) {
-    ctx.save();
-    ctx.filter = `brightness(${doc.brightness}%) contrast(${doc.contrast}%) saturate(${doc.saturation}%)`;
-    ctx.translate(w / 2, h / 2);
-    // flip before rotating so flips follow the screen axes
-    ctx.scale(doc.flipX ? -1 : 1, doc.flipY ? -1 : 1);
-    ctx.rotate((doc.rotate * Math.PI) / 180);
-    ctx.drawImage(base, -doc.width / 2, -doc.height / 2, doc.width, doc.height);
-    ctx.restore();
+    ctx.drawImage(adjustedPhoto(doc, base), 0, 0);
   }
   for (const layer of doc.layers) {
     drawLayer(ctx, layer, images);

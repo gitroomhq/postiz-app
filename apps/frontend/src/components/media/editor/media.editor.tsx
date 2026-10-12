@@ -154,6 +154,18 @@ const loadFontList = () => {
 
 const isJpeg = (path: string) => /\.jpe?g(\?|#|$)/i.test(path);
 
+const NEUTRAL_ADJUSTMENTS = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  warmth: 0,
+  fade: 0,
+  vignette: 0,
+  sharpen: 0,
+};
+
+type Adjustment = keyof typeof NEUTRAL_ADJUSTMENTS;
+
 const emptyDoc = (fields: Partial<EditorDoc>): EditorDoc => ({
   width: 1080,
   height: 1080,
@@ -161,9 +173,7 @@ const emptyDoc = (fields: Partial<EditorDoc>): EditorDoc => ({
   rotate: 0,
   flipX: false,
   flipY: false,
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
+  ...NEUTRAL_ADJUSTMENTS,
   layers: [],
   ...fields,
 });
@@ -1070,23 +1080,37 @@ const MediaEditor: FC<{
             </div>
           )}
 
-          {tool === 'select' && !selected && !!doc.src && supportsFilters() && (
+          {tool === 'select' && !selected && !!doc.src && (
             <Section title={t('editor_adjust', 'Adjust')}>
               {(
                 [
-                  ['brightness', t('editor_brightness', 'Brightness')],
-                  ['contrast', t('editor_contrast', 'Contrast')],
-                  ['saturation', t('editor_saturation', 'Saturation')],
-                ] as const
-              ).map(([key, label]) => (
-                <Field key={key} label={`${label}: ${doc[key]}%`}>
+                  // canvas filters are missing in some browsers (Safari)
+                  ...(supportsFilters()
+                    ? [
+                        ['brightness', t('editor_brightness', 'Brightness'), 0, 200],
+                        ['contrast', t('editor_contrast', 'Contrast'), 0, 200],
+                        ['saturation', t('editor_saturation', 'Saturation'), 0, 200],
+                      ]
+                    : []),
+                  ['warmth', t('editor_warmth', 'Warmth'), -100, 100],
+                  ['fade', t('editor_fade', 'Fade'), 0, 100],
+                  ['vignette', t('editor_vignette', 'Vignette'), 0, 100],
+                  ...(supportsFilters()
+                    ? [['sharpen', t('editor_sharpen', 'Sharpen'), 0, 100]]
+                    : []),
+                ] as [Adjustment, string, number, number][]
+              ).map(([key, label, min, max]) => (
+                <Field key={key} label={`${label}: ${doc[key]}`}>
                   <input
                     type="range"
                     className="w-full accent-[#612BD3]"
-                    min={0}
-                    max={200}
+                    min={min}
+                    max={max}
                     value={doc[key]}
                     {...liveRange}
+                    onDoubleClick={() =>
+                      commit((d) => ({ ...d, [key]: NEUTRAL_ADJUSTMENTS[key] }))
+                    }
                     onChange={(e) =>
                       update((d) => ({ ...d, [key]: Number(e.target.value) }))
                     }
@@ -1095,14 +1119,7 @@ const MediaEditor: FC<{
               ))}
               <div>
                 <ToolButton
-                  onClick={() =>
-                    commit((d) => ({
-                      ...d,
-                      brightness: 100,
-                      contrast: 100,
-                      saturation: 100,
-                    }))
-                  }
+                  onClick={() => commit((d) => ({ ...d, ...NEUTRAL_ADJUSTMENTS }))}
                 >
                   {t('editor_reset', 'Reset')}
                 </ToolButton>
