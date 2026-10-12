@@ -256,16 +256,33 @@ export const usePresets = () => useStoredState(PRESETS_KEY, toPresets);
 
 export const useBrandKit = () => useStoredState(BRAND_KEY, toBrandKit);
 
+export const MAX_GRID_COUNT = 100;
+
 export interface GridSettings {
   show: boolean;
+  // 'size' spaces lines a fixed distance apart, 'count' divides the visible area evenly
+  mode: 'size' | 'count';
   // image pixels, not screen pixels
-  size: number;
+  width: number;
+  height: number;
+  columns: number;
+  rows: number;
 }
 
-const toGrid = (g: any): GridSettings => ({
-  show: !!g?.show,
-  size: Math.round(num(g?.size, 4, MAX_SIZE) ?? 100),
-});
+const toGrid = (g: any): GridSettings => {
+  // settings saved before columns and rows could differ had one `size`
+  const size = (value: any) =>
+    Math.round(num(value, 4, MAX_SIZE) ?? num(g?.size, 4, MAX_SIZE) ?? 100);
+  const count = (value: any) => Math.round(num(value, 1, MAX_GRID_COUNT) ?? 3);
+  return {
+    show: !!g?.show,
+    mode: g?.mode === 'count' ? 'count' : 'size',
+    width: size(g?.width),
+    height: size(g?.height),
+    columns: count(g?.columns),
+    rows: count(g?.rows),
+  };
+};
 
 export const useGrid = () => useStoredState(GRID_KEY, toGrid);
 

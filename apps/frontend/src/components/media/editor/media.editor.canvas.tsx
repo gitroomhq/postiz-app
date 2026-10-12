@@ -1052,22 +1052,36 @@ const turnedBox = (b: Rect, degrees: number): Rect => {
 
 type Guides = { x?: number; y?: number };
 
-// grid lines every `size` pixels from the top-left of the visible area
-const gridLines = (area: Rect, size: number) => {
-  const lines = (from: number, length: number) =>
-    Array.from({ length: Math.floor(length / size) + 1 }, (_, i) => from + i * size);
-  return { xs: lines(area.x, area.w), ys: lines(area.y, area.h) };
+// column and row spacing in image pixels, either side may be off
+export type GridSpacing = { x?: number; y?: number };
+
+// grid lines from the top-left of the visible area
+const gridLines = (area: Rect, grid: GridSpacing) => {
+  // the epsilon keeps the closing line when the spacing divides the area into a fraction
+  const lines = (from: number, length: number, size?: number) =>
+    size
+      ? Array.from(
+          { length: Math.floor(length / size + 1e-6) + 1 },
+          (_, i) => from + i * size
+        )
+      : [];
+  return {
+    xs: lines(area.x, area.w, grid.x),
+    ys: lines(area.y, area.h, grid.y),
+  };
 };
 
 // lines a few screen pixels apart would cover the photo, so they are neither drawn nor snapped to
-const drawnGrid = (grid: number | undefined, scale: number) =>
-  grid && grid / scale >= 4 ? grid : undefined;
+const drawnGrid = (grid: GridSpacing | undefined, scale: number): GridSpacing => {
+  const shown = (size?: number) => (size && size / scale >= 4 ? size : undefined);
+  return { x: shown(grid?.x), y: shown(grid?.y) };
+};
 
 type Targets = { xs: number[]; ys: number[] };
 
 // the edges and centre of the canvas, plus the grid lines when the grid is on
-const snapTargets = (area: Rect, grid?: number): Targets => {
-  const lines = grid ? gridLines(area, grid) : { xs: [], ys: [] };
+const snapTargets = (area: Rect, grid: GridSpacing): Targets => {
+  const lines = gridLines(area, grid);
   return {
     xs: [area.x, area.x + area.w / 2, area.x + area.w, ...lines.xs],
     ys: [area.y, area.y + area.h / 2, area.y + area.h, ...lines.ys],
@@ -1255,8 +1269,8 @@ export const EditorCanvas: FC<{
   zoom: EditorZoom;
   onZoom: (zoom: number) => void;
   fontsVersion: number;
-  // grid spacing in image pixels, undefined when the grid is off
-  grid?: number;
+  // undefined when the grid is off
+  grid?: GridSpacing;
 }> = (props) => {
   const {
     doc,
@@ -1399,9 +1413,8 @@ export const EditorCanvas: FC<{
       ctx.setLineDash([6 * scale, 4 * scale]);
       ctx.strokeRect(cropDraft.x, cropDraft.y, cropDraft.w, cropDraft.h);
     }
-    const shownGrid = drawnGrid(grid, scale);
-    if (shownGrid && tool !== 'crop') {
-      const { xs, ys } = gridLines(area, shownGrid);
+    const { xs, ys } = gridLines(area, drawnGrid(grid, scale));
+    if ((xs.length || ys.length) && tool !== 'crop') {
       ctx.save();
       ctx.beginPath();
       for (const x of xs) {

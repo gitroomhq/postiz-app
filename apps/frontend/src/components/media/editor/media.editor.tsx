@@ -5,6 +5,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -28,6 +29,7 @@ import {
   EditorZoom,
   fromPresetLayers,
   fullRect,
+  GridSpacing,
   isLineShape,
   loadImage,
   loadSvgs,
@@ -61,6 +63,7 @@ import {
   BackupSection,
   BrandSection,
   EditorPreset,
+  MAX_GRID_COUNT,
   PresetsSection,
   useBrandKit,
   useGrid,
@@ -312,6 +315,17 @@ const MediaEditor: FC<{
   const [presets, setPresets] = usePresets();
   const [brand, setBrand] = useBrandKit();
   const [grid, setGrid] = useGrid();
+  const gridArea = doc && visibleRect(doc);
+  const gridAreaWidth = gridArea?.w;
+  const gridAreaHeight = gridArea?.h;
+  const gridSpacing = useMemo<GridSpacing | undefined>(() => {
+    if (!grid.show || !gridAreaWidth || !gridAreaHeight) {
+      return undefined;
+    }
+    return grid.mode === 'count'
+      ? { x: gridAreaWidth / grid.columns, y: gridAreaHeight / grid.rows }
+      : { x: grid.width, y: grid.height };
+  }, [grid, gridAreaWidth, gridAreaHeight]);
 
   const setDoc = useCallback((next: EditorDoc) => {
     docRef.current = next;
@@ -1112,19 +1126,6 @@ const MediaEditor: FC<{
         >
           {t('editor_grid', 'Grid')}
         </ToolButton>
-        {grid.show && (
-          <label className="flex items-center gap-[4px] text-[13px]">
-            <span className="sr-only">{t('editor_grid_size', 'Grid size')}</span>
-            <NumberInput
-              className="w-[80px]"
-              min={4}
-              max={MAX_SIZE}
-              value={grid.size}
-              onValue={(size) => setGrid((g) => ({ ...g, size: Math.round(size) }))}
-            />
-            px
-          </label>
-        )}
         <div className="flex-1" />
         {(['fit', 0.5, 1, 2] as const).map((value) => (
           <ToolButton
@@ -1168,7 +1169,7 @@ const MediaEditor: FC<{
             zoom={zoom}
             onZoom={setZoom}
             fontsVersion={fontsVersion}
-            grid={grid.show ? grid.size : undefined}
+            grid={gridSpacing}
           />
         </div>
 
@@ -1732,6 +1733,52 @@ const MediaEditor: FC<{
                 >
                   {t('editor_reset', 'Reset')}
                 </ToolButton>
+              </div>
+            </Section>
+          )}
+
+          {grid.show && tool !== 'crop' && (
+            <Section title={t('editor_grid', 'Grid')}>
+              <div className="flex gap-[6px]">
+                {(
+                  [
+                    ['size', t('editor_grid_by_size', 'By size')],
+                    ['count', t('editor_grid_by_count', 'By count')],
+                  ] as const
+                ).map(([mode, label]) => (
+                  <ToolButton
+                    key={mode}
+                    icon={mode === 'size' ? 'ratioFree' : 'grid'}
+                    active={grid.mode === mode}
+                    onClick={() => setGrid((g) => ({ ...g, mode }))}
+                  >
+                    {label}
+                  </ToolButton>
+                ))}
+              </div>
+              <div className="flex gap-[8px] items-end">
+                {(grid.mode === 'count'
+                  ? ([
+                      ['columns', t('editor_grid_columns', 'Columns')],
+                      ['rows', t('editor_grid_rows', 'Rows')],
+                    ] as const)
+                  : ([
+                      ['width', `${t('editor_grid_column_width', 'Column width')} (px)`],
+                      ['height', `${t('editor_grid_row_height', 'Row height')} (px)`],
+                    ] as const)
+                ).map(([key, label]) => (
+                  <Field key={key} label={label}>
+                    <NumberInput
+                      className="w-[100px]"
+                      min={grid.mode === 'count' ? 1 : 4}
+                      max={grid.mode === 'count' ? MAX_GRID_COUNT : MAX_SIZE}
+                      value={grid[key]}
+                      onValue={(value) =>
+                        setGrid((g) => ({ ...g, [key]: Math.round(value) }))
+                      }
+                    />
+                  </Field>
+                ))}
               </div>
             </Section>
           )}
