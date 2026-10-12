@@ -1330,56 +1330,70 @@ const MediaEditor: FC<{
             <Section title={t('editor_svg', 'SVG')}>
               {(
                 [
-                  ['fill', 'fills', t('editor_fill', 'Fill')],
-                  ['stroke', 'strokes', t('editor_stroke', 'Stroke')],
+                  ['fill', 'fills', 'fillOpacities', t('editor_fill', 'Fill')],
+                  ['stroke', 'strokes', 'strokeOpacities', t('editor_stroke', 'Stroke')],
                 ] as const
-              ).map(
-                ([paint, field, label]) =>
-                  !!svgPalette[paint].length && (
-                    <Field key={paint} as="div" label={label}>
-                      <div className="flex flex-wrap gap-[8px]">
-                        {/* gradients can hold many colours, the All picker changes every one */}
-                        {svgPalette[paint].slice(0, 24).map((color) => (
-                          <ColorInput
-                            key={color}
-                            value={selected[field][color] || color}
-                            swatches={brand.colors}
-                            {...live}
-                            onChange={(value) =>
-                              updateLayer(selected.id, {
-                                [field]: { ...selected[field], [color]: value },
-                              })
-                            }
-                            onCommit={(value) =>
-                              commitLayer(selected.id, {
-                                [field]: { ...selected[field], [color]: value },
-                              })
-                            }
-                          />
-                        ))}
-                      </div>
-                      {svgPalette[paint].length > 1 && (
-                        <Field as="div" label={t('editor_all_colours', 'All colours')}>
-                          <ColorInput
-                            value={selected[field][svgPalette[paint][0]] || svgPalette[paint][0]}
-                            swatches={brand.colors}
-                            {...live}
-                            onChange={(value) =>
-                              updateLayer(selected.id, {
-                                [field]: Object.fromEntries(svgPalette[paint].map((c) => [c, value])),
-                              })
-                            }
-                            onCommit={(value) =>
-                              commitLayer(selected.id, {
-                                [field]: Object.fromEntries(svgPalette[paint].map((c) => [c, value])),
-                              })
-                            }
-                          />
-                        </Field>
-                      )}
-                    </Field>
-                  )
-              )}
+              ).map(([paint, field, opacityField, label]) => {
+                const colors = svgPalette[paint];
+                if (!colors.length) {
+                  return null;
+                }
+                // the All row passes every colour, a colour row just its own
+                const row = (key: string, forColors: string[]) => {
+                  const color = selected[field][forColors[0]] || forColors[0];
+                  const opacity = selected[opacityField][forColors[0]] ?? 100;
+                  const each = <T,>(current: Record<string, T>, value: T) => ({
+                    ...current,
+                    ...Object.fromEntries(forColors.map((c) => [c, value])),
+                  });
+                  const setColor = (value: string, final: boolean) =>
+                    (final ? commitLayer : updateLayer)(selected.id, {
+                      [field]: each(selected[field], value),
+                    });
+                  const setOpacity = (value: number, final: boolean) =>
+                    (final ? commitLayer : updateLayer)(selected.id, {
+                      [opacityField]: each(selected[opacityField], value),
+                    });
+                  return (
+                    <div key={key} className="flex items-center gap-[8px]">
+                      <ColorInput
+                        value={color}
+                        swatches={brand.colors}
+                        {...live}
+                        onChange={(value) => setColor(value, false)}
+                        onCommit={(value) => setColor(value, true)}
+                      />
+                      <input
+                        type="range"
+                        aria-label={`${label} ${
+                          forColors.length > 1 ? t('editor_all_colours', 'All colours') : color
+                        } ${t('editor_opacity', 'Opacity')}`}
+                        className="flex-1 min-w-0 accent-[#612BD3]"
+                        min={0}
+                        max={100}
+                        value={opacity}
+                        {...liveRange}
+                        onDoubleClick={() => setOpacity(100, true)}
+                        onChange={(e) => setOpacity(Number(e.target.value), false)}
+                      />
+                      <span className="text-[12px] w-[36px] text-end">{opacity}%</span>
+                    </div>
+                  );
+                };
+                return (
+                  <Field key={paint} as="div" label={label}>
+                    <div className="flex flex-col gap-[6px]">
+                      {/* gradients can hold many colours, the All row changes every one */}
+                      {colors.slice(0, 24).map((color) => row(color, [color]))}
+                    </div>
+                    {colors.length > 1 && (
+                      <Field as="div" label={t('editor_all_colours', 'All colours')}>
+                        {row('all', colors)}
+                      </Field>
+                    )}
+                  </Field>
+                );
+              })}
               {svgPalette.stroke.length ? (
                 <Field label={`${t('editor_stroke_width', 'Stroke width')}: ${selected.strokeScale}%`}>
                   <input
@@ -1430,6 +1444,8 @@ const MediaEditor: FC<{
                     commitLayer(selected.id, {
                       fills: {},
                       strokes: {},
+                      fillOpacities: {},
+                      strokeOpacities: {},
                       strokeScale: 100,
                       outlineWidth: 0,
                     })
@@ -1612,7 +1628,7 @@ const MediaEditor: FC<{
           {tool === 'select' && selected && (
             <Section title={t('editor_layer', 'Layer')}>
               {sized && (
-                <div className="flex gap-[8px] items-end">
+                <div className="flex flex-wrap gap-[8px] items-end">
                   {(['w', 'h'] as const).map((side) => (
                     <Field key={side} label={side === 'w' ? t('width', 'Width') : t('height', 'Height')}>
                       <NumberInput

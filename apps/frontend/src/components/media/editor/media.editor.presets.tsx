@@ -145,6 +145,13 @@ const toLayer = (l: any): EditorLayer | undefined => {
             ([from, to]) => isColor(from) && isColor(to)
           )
         ) as Record<string, string>;
+      const opacities = (v: any): Record<string, number> =>
+        Object.fromEntries(
+          Object.entries(v && typeof v === 'object' ? v : {}).flatMap(([from, to]) => {
+            const percent = num(to, 0, 100);
+            return isColor(from) && percent !== undefined ? [[from, percent]] : [];
+          })
+        );
       return svg && x !== undefined && y !== undefined && w && h
         ? {
             ...base,
@@ -156,6 +163,8 @@ const toLayer = (l: any): EditorLayer | undefined => {
             h,
             fills: colors(l.fills),
             strokes: colors(l.strokes),
+            fillOpacities: opacities(l.fillOpacities),
+            strokeOpacities: opacities(l.strokeOpacities),
             strokeScale: num(l.strokeScale, 0, 500) ?? 100,
             outline: isColor(l.outline) ? l.outline : '#000000',
             outlineWidth: num(l.outlineWidth, 0, 100) ?? 0,

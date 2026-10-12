@@ -86,6 +86,9 @@ export interface SvgLayer extends LayerBase {
   // new colours keyed by the colour in the markup
   fills: Record<string, string>;
   strokes: Record<string, string>;
+  // percent, keyed by the colour in the markup like fills and strokes
+  fillOpacities: Record<string, number>;
+  strokeOpacities: Record<string, number>;
   // percent of the svg's own stroke widths
   strokeScale: number;
   // a stroke for svgs without one, its width in percent of the svg width
@@ -466,9 +469,21 @@ export const svgColors = (markup: string) => {
   return lastColors.colors;
 };
 
+// an alpha in the colour itself works the same in attributes, inline styles and style sheets
+const withOpacity = (hex: string, percent = 100) =>
+  percent >= 100
+    ? hex
+    : `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')}, ${
+        Math.max(0, percent) / 100
+      })`;
+
 const svgUrl = (l: SvgLayer) => {
   const root = svgRoot(l.markup);
-  eachColor(root, (color, paint) => (paint === 'stroke' ? l.strokes : l.fills)[color] || color);
+  eachColor(root, (color, paint) =>
+    paint === 'stroke'
+      ? withOpacity(l.strokes[color] || color, l.strokeOpacities[color])
+      : withOpacity(l.fills[color] || color, l.fillOpacities[color])
+  );
   if (l.strokeScale !== 100) {
     scaleStrokes(root, l.strokeScale / 100);
   }
@@ -495,7 +510,15 @@ const svgRasters = new Map<
 
 // the markup of a layer never changes, only its colours and strokes
 const svgKey = (l: SvgLayer) =>
-  JSON.stringify([l.fills, l.strokes, l.strokeScale, l.outline, l.outlineWidth]);
+  JSON.stringify([
+    l.fills,
+    l.strokes,
+    l.fillOpacities,
+    l.strokeOpacities,
+    l.strokeScale,
+    l.outline,
+    l.outlineWidth,
+  ]);
 
 const svgRaster = (l: SvgLayer) => {
   const raster = svgRasters.get(l.id);
@@ -1211,6 +1234,8 @@ export const newSvgLayer = (
     h,
     fills: {},
     strokes: {},
+    fillOpacities: {},
+    strokeOpacities: {},
     strokeScale: 100,
     outline: '#000000',
     outlineWidth: 0,
