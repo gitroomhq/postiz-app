@@ -19,15 +19,18 @@ import {
   mediaLibrarySize,
 } from '@gitroom/frontend/components/media/media.component';
 import {
+  Adjustment,
   compSize,
   EditorCanvas,
   EditorDoc,
   EditorLayer,
   EditorTool,
   EditorZoom,
+  fromPresetLayers,
   fullRect,
   loadImage,
   moveLayer,
+  NEUTRAL_ADJUSTMENTS,
   newTextLayer,
   ratioRect,
   Rect,
@@ -36,8 +39,25 @@ import {
   ShapeKind,
   supportsFilters,
   TextLayer,
+  toPresetLayers,
   visibleRect,
 } from '@gitroom/frontend/components/media/editor/media.editor.canvas';
+import {
+  ColorInput,
+  Field,
+  inputClass,
+  NumberInput,
+  Section,
+  ToolButton,
+} from '@gitroom/frontend/components/media/editor/media.editor.ui';
+import {
+  BackupSection,
+  BrandSection,
+  EditorPreset,
+  PresetsSection,
+  useBrandKit,
+  usePresets,
+} from '@gitroom/frontend/components/media/editor/media.editor.presets';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 const FONTS = [
@@ -157,18 +177,6 @@ const loadFontList = () => {
 
 const isJpeg = (path: string) => /\.jpe?g(\?|#|$)/i.test(path);
 
-const NEUTRAL_ADJUSTMENTS = {
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
-  warmth: 0,
-  fade: 0,
-  vignette: 0,
-  sharpen: 0,
-};
-
-type Adjustment = keyof typeof NEUTRAL_ADJUSTMENTS;
-
 const emptyDoc = (fields: Partial<EditorDoc>): EditorDoc => ({
   width: 1080,
   height: 1080,
@@ -181,81 +189,6 @@ const emptyDoc = (fields: Partial<EditorDoc>): EditorDoc => ({
   ...fields,
 });
 
-const inputClass =
-  'h-[36px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px] outline-none focus:border-[#612BD3]';
-
-const ToolButton: FC<{
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}> = ({ active, disabled, onClick, children }) => (
-  <button
-    type="button"
-    disabled={disabled}
-    onClick={onClick}
-    className={clsx(
-      'h-[36px] px-[12px] rounded-[8px] text-[13px] flex items-center gap-[6px] select-none whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed',
-      active ? 'bg-[#612BD3] text-white' : 'bg-btnSimple changeColor'
-    )}
-  >
-    {children}
-  </button>
-);
-
-const Section: FC<{ title: string; children: ReactNode }> = ({
-  title,
-  children,
-}) => (
-  <div className="flex flex-col gap-[10px] p-[12px] rounded-[8px] bg-newBgColorInner">
-    <div className="text-[13px] font-[600]">{title}</div>
-    {children}
-  </div>
-);
-
-// keeps what is typed until it is a valid number, so the field can be cleared
-const NumberInput: FC<{
-  value: number;
-  min: number;
-  max: number;
-  className?: string;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  onValue: (value: number) => void;
-}> = ({ value, min, max, className, onFocus, onBlur, onValue }) => {
-  const [draft, setDraft] = useState(String(value));
-  const [focused, setFocused] = useState(false);
-  useEffect(() => {
-    if (!focused) {
-      setDraft(String(value));
-    }
-  }, [value, focused]);
-  return (
-    <input
-      type="number"
-      className={clsx(inputClass, className)}
-      min={min}
-      max={max}
-      value={draft}
-      onFocus={() => {
-        setFocused(true);
-        onFocus?.();
-      }}
-      onBlur={() => {
-        setFocused(false);
-        onBlur?.();
-      }}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        const number = Number(e.target.value);
-        if (e.target.value && number >= min && number <= max) {
-          onValue(number);
-        }
-      }}
-    />
-  );
-};
-
 // lets the editor ignore its shortcuts while the library picker is on top
 const PickerScope: FC<{ onUnmount: () => void; children: ReactNode }> = ({
   onUnmount,
@@ -264,16 +197,6 @@ const PickerScope: FC<{ onUnmount: () => void; children: ReactNode }> = ({
   useEffect(() => onUnmount, []);
   return <>{children}</>;
 };
-
-const Field: FC<{ label: string; children: ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <label className="flex flex-col gap-[4px] text-[12px] text-newTextColor/70">
-    {label}
-    {children}
-  </label>
-);
 
 const MediaEditor: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
@@ -322,6 +245,8 @@ const MediaEditor: FC<{
   const [blankWidth, setBlankWidth] = useState(props.width || 1080);
   const [blankHeight, setBlankHeight] = useState(props.height || 1080);
   const [blankColor, setBlankColor] = useState('#FFFFFF');
+  const [presets, setPresets] = usePresets();
+  const [brand, setBrand] = useBrandKit();
 
   const setDoc = useCallback((next: EditorDoc) => {
     docRef.current = next;
@@ -668,16 +593,103 @@ const MediaEditor: FC<{
     if (!current) {
       return;
     }
-    await ensureFont(FONTS[0]);
-    const layer = newTextLayer(
-      current,
-      FONTS[0],
-      t('editor_your_text', 'Your text')
-    );
+    const font = (await ensureFont(brand.font || FONTS[0])) ? brand.font || FONTS[0] : FONTS[0];
+    const layer = newTextLayer(current, font, t('editor_your_text', 'Your text'));
     commit((d) => ({ ...d, layers: [...d.layers, layer] }));
     setTool('select');
     setSelectedId(layer.id);
-  }, [ensureFont, t]);
+  }, [ensureFont, brand.font, t]);
+
+  const savePreset = useCallback(
+    (name: string) => {
+      const current = docRef.current;
+      const ctx = document.createElement('canvas').getContext('2d');
+      if (!current || !ctx) {
+        return;
+      }
+      const preset: EditorPreset = {
+        name,
+        adjustments: Object.fromEntries(
+          (Object.keys(NEUTRAL_ADJUSTMENTS) as Adjustment[]).map((key) => [key, current[key]])
+        ),
+        cropRatio: current.crop ? current.crop.w / current.crop.h : undefined,
+        outputWidth: current.outputWidth,
+        layers: toPresetLayers(ctx, current),
+      };
+      const exists = presets.some((p) => p.name === name);
+      const stored = setPresets((list) => [...list.filter((p) => p.name !== name), preset]);
+      toaster.show(
+        !stored
+          ? t('editor_storage_full', 'Could not save in this browser, the storage may be full')
+          : exists
+          ? t('editor_preset_updated', 'Preset "{{name}}" updated', { name })
+          : t('editor_preset_saved', 'Preset "{{name}}" saved', { name }),
+        stored ? 'success' : 'warning'
+      );
+    },
+    [presets, t]
+  );
+
+  const applyPreset = useCallback(
+    async (preset: EditorPreset) => {
+      const ctx = document.createElement('canvas').getContext('2d');
+      if (!docRef.current || !ctx) {
+        return;
+      }
+      const sources = Array.from(
+        new Set(
+          preset.layers.flatMap(({ layer }) => (layer.kind === 'image' ? [layer.src] : []))
+        )
+      );
+      const loaded = new Set<string>();
+      await Promise.all([
+        ...preset.layers.flatMap(({ layer }) =>
+          layer.kind === 'text' ? [loadGoogleFont(layer.font)] : []
+        ),
+        ...sources.map(async (src) => {
+          try {
+            images.set(src, images.get(src) || (await loadImage(src)));
+            loaded.add(src);
+          } catch (e) {}
+        }),
+      ]);
+      if (loaded.size < sources.length) {
+        toaster.show(
+          t(
+            'editor_preset_images_missing',
+            'Some images in this preset could not be loaded and were left out'
+          ),
+          'warning'
+        );
+      }
+      const layers = preset.layers.filter(
+        ({ layer }) => layer.kind !== 'image' || loaded.has(layer.src)
+      );
+      setTool('select');
+      setSelectedId(undefined);
+      commit((d) => {
+        let next: EditorDoc = { ...d, ...NEUTRAL_ADJUSTMENTS, ...preset.adjustments };
+        if (preset.cropRatio) {
+          const crop = ratioRect(next, preset.cropRatio);
+          const full = fullRect(next);
+          next = {
+            ...next,
+            crop:
+              Math.round(crop.w) === Math.round(full.w) &&
+              Math.round(crop.h) === Math.round(full.h)
+                ? undefined
+                : crop,
+          };
+        }
+        if (preset.outputWidth) {
+          next = { ...next, outputWidth: preset.outputWidth };
+        }
+        return { ...next, layers: [...next.layers, ...fromPresetLayers(ctx, next, layers)] };
+      });
+      setFontsVersion((v) => v + 1);
+    },
+    [t]
+  );
 
   const changeTool = useCallback((next: EditorTool) => {
     const current = docRef.current;
@@ -838,11 +850,10 @@ const MediaEditor: FC<{
               />
             </Field>
             <Field label={t('editor_background', 'Background')}>
-              <input
-                type="color"
-                className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+              <ColorInput
                 value={blankColor}
-                onChange={(e) => setBlankColor(e.target.value)}
+                swatches={brand.colors}
+                onChange={setBlankColor}
               />
             </Field>
           </div>
@@ -1019,11 +1030,10 @@ const MediaEditor: FC<{
             <Section title={t('editor_draw', 'Draw')}>
               <div className="flex gap-[12px] items-end">
                 <Field label={t('editor_colour', 'Colour')}>
-                  <input
-                    type="color"
-                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                  <ColorInput
                     value={drawColor}
-                    onChange={(e) => setDrawColor(e.target.value)}
+                    swatches={brand.colors}
+                    onChange={setDrawColor}
                   />
                 </Field>
                 <Field label={`${t('editor_brush_size', 'Brush size')}: ${drawSize}`}>
@@ -1070,12 +1080,11 @@ const MediaEditor: FC<{
               {(selected.shape === 'rect' || selected.shape === 'ellipse') && (
                 <div className="flex gap-[12px] items-end">
                   <Field label={t('editor_fill', 'Fill')}>
-                    <input
-                      type="color"
-                      className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                    <ColorInput
                       value={selected.fill}
+                      swatches={brand.colors}
                       {...live}
-                      onChange={(e) => updateLayer(selected.id, { fill: e.target.value })}
+                      onChange={(fill) => updateLayer(selected.id, { fill })}
                     />
                   </Field>
                   <Field label={`${t('editor_opacity', 'Opacity')}: ${selected.fillOpacity}%`}>
@@ -1095,12 +1104,11 @@ const MediaEditor: FC<{
               )}
               <div className="flex gap-[12px] items-end">
                 <Field label={t('editor_outline', 'Outline')}>
-                  <input
-                    type="color"
-                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                  <ColorInput
                     value={selected.stroke}
+                    swatches={brand.colors}
                     {...live}
-                    onChange={(e) => updateLayer(selected.id, { stroke: e.target.value })}
+                    onChange={(stroke) => updateLayer(selected.id, { stroke })}
                   />
                 </Field>
                 <Field label={`${t('editor_width', 'Width')}: ${selected.strokeWidth}`}>
@@ -1182,12 +1190,11 @@ const MediaEditor: FC<{
                   />
                 </Field>
                 <Field label={t('editor_colour', 'Colour')}>
-                  <input
-                    type="color"
-                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                  <ColorInput
                     value={selected.color}
+                    swatches={brand.colors}
                     {...live}
-                    onChange={(e) => updateLayer(selected.id, { color: e.target.value })}
+                    onChange={(color) => updateLayer(selected.id, { color })}
                   />
                 </Field>
               </div>
@@ -1220,14 +1227,11 @@ const MediaEditor: FC<{
               </div>
               <div className="flex gap-[12px] items-end">
                 <Field label={t('editor_outline', 'Outline')}>
-                  <input
-                    type="color"
-                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                  <ColorInput
                     value={selected.outlineColor}
+                    swatches={brand.colors}
                     {...live}
-                    onChange={(e) =>
-                      updateLayer(selected.id, { outlineColor: e.target.value })
-                    }
+                    onChange={(outlineColor) => updateLayer(selected.id, { outlineColor })}
                   />
                 </Field>
                 <Field label={`${t('editor_width', 'Width')}: ${selected.outlineWidth}`}>
@@ -1246,12 +1250,11 @@ const MediaEditor: FC<{
               </div>
               <div className="flex gap-[12px] items-end">
                 <Field label={t('editor_background', 'Background')}>
-                  <input
-                    type="color"
-                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                  <ColorInput
                     value={selected.bgColor}
+                    swatches={brand.colors}
                     {...live}
-                    onChange={(e) => updateLayer(selected.id, { bgColor: e.target.value })}
+                    onChange={(bgColor) => updateLayer(selected.id, { bgColor })}
                   />
                 </Field>
                 <div className="flex flex-col gap-[6px] flex-1">
@@ -1404,6 +1407,32 @@ const MediaEditor: FC<{
               <span>× {outputHeight}px</span>
             </div>
           </Section>
+
+          {tool === 'select' && !selected && (
+            <>
+              <PresetsSection
+                presets={presets}
+                setPresets={setPresets}
+                onSave={savePreset}
+                onApply={applyPreset}
+              />
+              <BrandSection
+                brand={brand}
+                setBrand={setBrand}
+                fonts={FONTS}
+                onInsertLogo={(path) => addOverlays([{ path }])}
+                onPickLogos={(onPick) =>
+                  pickImages((items) => onPick(items.map((item) => item.path)))
+                }
+              />
+              <BackupSection
+                presets={presets}
+                setPresets={setPresets}
+                brand={brand}
+                setBrand={setBrand}
+              />
+            </>
+          )}
         </div>
       </div>
 

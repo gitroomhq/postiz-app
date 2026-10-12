@@ -101,6 +101,18 @@ export interface EditorDoc {
   layers: EditorLayer[];
 }
 
+export const NEUTRAL_ADJUSTMENTS = {
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  warmth: 0,
+  fade: 0,
+  vignette: 0,
+  sharpen: 0,
+};
+
+export type Adjustment = keyof typeof NEUTRAL_ADJUSTMENTS;
+
 const LINE_HEIGHT = 1.2;
 const HANDLE = 14;
 
@@ -572,6 +584,84 @@ export const rotateDoc = (
       };
     }),
   };
+};
+
+// maps every position to p * scale + offset and every size to size * scale
+const transformLayer = (
+  l: EditorLayer,
+  scale: number,
+  dx: number,
+  dy: number
+): EditorLayer => {
+  if (l.kind === 'stroke') {
+    return {
+      ...l,
+      points: l.points.map((v, i) => v * scale + (i % 2 === 0 ? dx : dy)),
+      width: l.width * scale,
+    };
+  }
+  const moved = { ...l, x: l.x * scale + dx, y: l.y * scale + dy };
+  if (moved.kind === 'text') {
+    return {
+      ...moved,
+      size: moved.size * scale,
+      outlineWidth: moved.outlineWidth * scale,
+      bgPadding: moved.bgPadding * scale,
+    };
+  }
+  if (moved.kind === 'shape') {
+    return {
+      ...moved,
+      w: moved.w * scale,
+      h: moved.h * scale,
+      strokeWidth: moved.strokeWidth * scale,
+    };
+  }
+  return { ...moved, w: moved.w * scale, h: moved.h * scale };
+};
+
+// a layer scaled to a canvas 1 unit wide, plus its vertical centre as a share of the height
+export interface PresetLayer {
+  layer: EditorLayer;
+  centreY: number;
+}
+
+export const toPresetLayers = (
+  ctx: CanvasRenderingContext2D,
+  doc: EditorDoc
+): PresetLayer[] => {
+  const area = visibleRect(doc);
+  return doc.layers.map((l) => ({
+    layer: transformLayer(l, 1 / area.w, -area.x / area.w, -area.y / area.w),
+    centreY: (centreOf(layerBounds(ctx, l)).y - area.y) / area.h,
+  }));
+};
+
+export const fromPresetLayers = (
+  ctx: CanvasRenderingContext2D,
+  doc: EditorDoc,
+  layers: PresetLayer[]
+): EditorLayer[] => {
+  const area = visibleRect(doc);
+  return layers.map(({ layer, centreY }) => {
+    let l = { ...transformLayer(layer, area.w, area.x, area.y), id: makeId(10) };
+    if (l.kind === 'text') {
+      l = {
+        ...l,
+        size: Math.max(6, Math.round(l.size)),
+        outlineWidth: Math.round(l.outlineWidth),
+        bgPadding: Math.round(l.bgPadding),
+      };
+    }
+    if (l.kind === 'shape') {
+      l = {
+        ...l,
+        strokeWidth: Math.max(isLine(l) ? 1 : 0, Math.round(l.strokeWidth)),
+      };
+    }
+    const y = centreOf(layerBounds(ctx, l)).y;
+    return moveLayer(l, 0, area.y + centreY * area.h - y);
+  });
 };
 
 export const supportsFilters = () =>
