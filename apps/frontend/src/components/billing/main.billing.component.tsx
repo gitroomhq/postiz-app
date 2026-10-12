@@ -410,9 +410,15 @@ export const MainBillingComponent: FC<{
           !pricing[billing].team_members &&
           pricing[subscription?.subscriptionTier!]?.team_members
         ) {
-          messages.push(
-            `Your team members will be removed from your organization`
-          );
+          const team = await (await fetch('/settings/team')).json();
+          if (
+            !Array.isArray(team?.users) ||
+            team.users.some((member) => member.user.id !== user?.id)
+          ) {
+            messages.push(
+              `Your team members will be disabled and lose access to your organization until you upgrade to a plan that includes team members again`
+            );
+          }
         }
         if (billing === 'FREE') {
           if (
