@@ -75,7 +75,30 @@ export interface ShapeLayer extends LayerBase {
   strokeWidth: number;
 }
 
-export type EditorLayer = ImageLayer | TextLayer | StrokeLayer | ShapeLayer;
+export interface SvgLayer extends LayerBase {
+  kind: 'svg';
+  // cleaned by parseSvg, every colour written as #rrggbb
+  markup: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  // new colours keyed by the colour in the markup
+  fills: Record<string, string>;
+  strokes: Record<string, string>;
+  // percent of the svg's own stroke widths
+  strokeScale: number;
+  // a stroke for svgs without one, its width in percent of the svg width
+  outline: string;
+  outlineWidth: number;
+}
+
+export type EditorLayer =
+  | ImageLayer
+  | TextLayer
+  | StrokeLayer
+  | ShapeLayer
+  | SvgLayer;
 
 export interface EditorDoc {
   // base size before rotation
@@ -211,7 +234,7 @@ export const layerBounds = (
   ctx: CanvasRenderingContext2D,
   l: EditorLayer
 ): Rect => {
-  if (l.kind === 'image') {
+  if (l.kind === 'image' || l.kind === 'svg') {
     return { x: l.x, y: l.y, w: l.w, h: l.h };
   }
   if (l.kind === 'shape') {
@@ -252,6 +275,270 @@ const turnAround = (
   const dx = x - c.x;
   const dy = y - c.y;
   return { x: c.x + dx * cos - dy * sin, y: c.y + dx * sin + dy * cos };
+};
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const MAX_SVG_LENGTH = 1_000_000;
+const PAINT_ATTRIBUTES = ['fill', 'stroke', 'stop-color', 'flood-color', 'lighting-color'];
+const PAINT_PROPERTY =
+  /(^|[;{\s])(fill|stroke|stop-color|flood-color|lighting-color)(\s*:\s*)([^;}!]+)/gi;
+const STROKE_WIDTH_PROPERTY = /(^|[;{\s])(stroke-width)(\s*:\s*)([\d.]+)/gi;
+const SVG_SHAPES = 'path, rect, circle, ellipse, polygon, polyline, text';
+const SAFE_HREF = /^(#|data:image\/(png|jpe?g|gif|webp);)/i;
+
+type Paint = 'fill' | 'stroke';
+
+let colorCtx: CanvasRenderingContext2D | null | undefined;
+
+// any css colour as #rrggbb, undefined for none, gradients and see-through colours
+const toHex = (value: string) => {
+  const v = value.trim();
+  if (/^currentcolor$/i.test(v)) {
+    // what an svg drawn as an image falls back to
+    return '#000000';
+  }
+  if (!v || /^(none|transparent|inherit|initial|unset)$/i.test(v) || /^url\(/i.test(v)) {
+    return undefined;
+  }
+  colorCtx = colorCtx ?? document.createElement('canvas').getContext('2d');
+  if (!colorCtx) {
+    return undefined;
+  }
+  // an invalid colour leaves fillStyle as it was, so try two starting values
+  colorCtx.fillStyle = '#000000';
+  colorCtx.fillStyle = v;
+  const first = String(colorCtx.fillStyle);
+  colorCtx.fillStyle = '#ffffff';
+  colorCtx.fillStyle = v;
+  return first === colorCtx.fillStyle && first.startsWith('#') ? first : undefined;
+};
+
+const svgElements = (root: Element) => [root, ...Array.from(root.querySelectorAll('*'))];
+
+// rewrites every colour in attributes, inline styles and style sheets with what swap returns
+const eachColor = (root: Element, swap: (color: string, paint: Paint) => string) => {
+  const paint = (name: string, value: string) => {
+    const color = toHex(value);
+    return color ? swap(color, name.toLowerCase() === 'stroke' ? 'stroke' : 'fill') : value;
+  };
+  const inCss = (css: string) =>
+    css.replace(PAINT_PROPERTY, (_, pre, name, sep, value) => pre + name + sep + paint(name, value));
+  for (const el of svgElements(root)) {
+    for (const name of PAINT_ATTRIBUTES) {
+      const value = el.getAttribute(name);
+      if (value) {
+        el.setAttribute(name, paint(name, value));
+      }
+    }
+    const style = el.getAttribute('style');
+    if (style) {
+      el.setAttribute('style', inCss(style));
+    }
+    if (el.localName === 'style' && el.textContent) {
+      el.textContent = inCss(el.textContent);
+    }
+  }
+};
+
+const scaleStrokes = (root: Element, by: number) => {
+  const inCss = (css: string) =>
+    css.replace(
+      STROKE_WIDTH_PROPERTY,
+      (_, pre, name, sep, value) => pre + name + sep + parseFloat(value) * by
+    );
+  for (const el of svgElements(root)) {
+    const width = el.getAttribute('stroke-width');
+    const n = parseFloat(width || '');
+    if (width && Number.isFinite(n)) {
+      el.setAttribute('stroke-width', width.replace(/^\s*[\d.]+/, String(n * by)));
+    }
+    const style = el.getAttribute('style');
+    if (style) {
+      el.setAttribute('style', inCss(style));
+    }
+    if (el.localName === 'style' && el.textContent) {
+      el.textContent = inCss(el.textContent);
+    }
+  }
+  if (!root.getAttribute('stroke-width')) {
+    // the default width is 1
+    root.setAttribute('stroke-width', String(by));
+  }
+};
+
+const svgRoot = (markup: string) =>
+  new DOMParser().parseFromString(markup, 'image/svg+xml').documentElement;
+
+const viewBoxOf = (root: Element) =>
+  (root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+
+// cleans pasted or uploaded markup: no scripts, handlers or outside links, and a known size
+export const parseSvg = (input: string) => {
+  let markup = input.trim();
+  if (!markup || markup.length > MAX_SVG_LENGTH) {
+    return undefined;
+  }
+  // svg copied out of html often leaves the namespaces off
+  if (!/\sxmlns=/i.test(markup.match(/<svg\b[^>]*>/i)?.[0] || '')) {
+    markup = markup.replace(/<svg\b/i, `<svg xmlns="${SVG_NS}"`);
+  }
+  if (/xlink:/.test(markup) && !/xmlns:xlink=/.test(markup)) {
+    markup = markup.replace(/<svg\b/i, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  }
+  const parsed = new DOMParser().parseFromString(markup, 'image/svg+xml');
+  const root = parsed.documentElement;
+  if (
+    root.localName !== 'svg' ||
+    root.namespaceURI !== SVG_NS ||
+    parsed.getElementsByTagName('parsererror').length
+  ) {
+    return undefined;
+  }
+  root
+    .querySelectorAll('script, foreignObject, animate, animateMotion, animateTransform, set')
+    .forEach((el) => el.remove());
+  // only links inside the svg survive, in attributes and in css
+  const localUrls = (value: string) =>
+    value.replace(/@import[^;]*;?/gi, '').replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none');
+  for (const el of svgElements(root)) {
+    for (const attr of Array.from(el.attributes)) {
+      const name = attr.name.toLowerCase();
+      if (
+        name.startsWith('on') ||
+        ((name === 'href' || name.endsWith(':href')) && !SAFE_HREF.test(attr.value.trim()))
+      ) {
+        el.removeAttribute(attr.name);
+      } else if (/url\(|@import/i.test(attr.value)) {
+        el.setAttribute(attr.name, localUrls(attr.value));
+      }
+    }
+    if (el.localName === 'style' && el.textContent) {
+      el.textContent = localUrls(el.textContent);
+    }
+  }
+
+  let [, , w, h] = viewBoxOf(root);
+  if (!(w > 0 && h > 0)) {
+    const length = (name: string) => {
+      const value = (root.getAttribute(name) || '').trim();
+      return /^[\d.]+(px)?$/.test(value) ? parseFloat(value) : NaN;
+    };
+    w = length('width');
+    h = length('height');
+    if (!(w > 0 && h > 0)) {
+      return undefined;
+    }
+    root.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  }
+  // drawn as an image, the svg needs its own size
+  root.setAttribute('width', String(w));
+  root.setAttribute('height', String(h));
+
+  // shapes without a fill are black, an explicit fill makes that colour editable too;
+  // classes are left alone, their fill is likely in a style sheet
+  const unfilled = Array.from(root.querySelectorAll(SVG_SHAPES)).some(
+    (el) =>
+      !el.closest('[fill], [class]') && !/fill\s*:/i.test(el.getAttribute('style') || '')
+  );
+  if (unfilled) {
+    root.setAttribute('fill', '#000000');
+  }
+  eachColor(root, (color) => color);
+  const cleaned = new XMLSerializer().serializeToString(root);
+  // checked again after cleaning, which can make the markup longer, so stored layers still load
+  return cleaned.length > MAX_SVG_LENGTH ? undefined : { markup: cleaned, w, h };
+};
+
+// the panel shows one svg at a time, so one result is enough to cache
+let lastColors: { markup: string; colors: Record<Paint, string[]> } | undefined;
+
+export const svgColors = (markup: string) => {
+  if (lastColors?.markup !== markup) {
+    const colors: Record<Paint, string[]> = { fill: [], stroke: [] };
+    eachColor(svgRoot(markup), (color, paint) => {
+      if (!colors[paint].includes(color)) {
+        colors[paint].push(color);
+      }
+      return color;
+    });
+    lastColors = { markup, colors };
+  }
+  return lastColors.colors;
+};
+
+const svgUrl = (l: SvgLayer) => {
+  const root = svgRoot(l.markup);
+  eachColor(root, (color, paint) => (paint === 'stroke' ? l.strokes : l.fills)[color] || color);
+  if (l.strokeScale !== 100) {
+    scaleStrokes(root, l.strokeScale / 100);
+  }
+  if (l.outlineWidth > 0) {
+    root.setAttribute('stroke', l.outline);
+    root.setAttribute('stroke-width', String((l.outlineWidth / 100) * viewBoxOf(root)[2]));
+  }
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    new XMLSerializer().serializeToString(root)
+  )}`;
+};
+
+// rendered svgs by layer id; the previous one stays on screen while a recoloured one loads
+const svgRasters = new Map<
+  string,
+  {
+    key: string;
+    img?: HTMLImageElement;
+    shown?: HTMLImageElement;
+    settled: boolean;
+    loading: Promise<void>;
+  }
+>();
+
+// the markup of a layer never changes, only its colours and strokes
+const svgKey = (l: SvgLayer) =>
+  JSON.stringify([l.fills, l.strokes, l.strokeScale, l.outline, l.outlineWidth]);
+
+const svgRaster = (l: SvgLayer) => {
+  const raster = svgRasters.get(l.id);
+  return raster?.img || raster?.shown;
+};
+
+// renders the svg layers that changed, true if there was anything to render
+export const loadSvgs = async (doc: EditorDoc) => {
+  // an undone delete just renders again
+  const ids = new Set(doc.layers.map((l) => l.id));
+  for (const id of Array.from(svgRasters.keys())) {
+    if (!ids.has(id)) {
+      svgRasters.delete(id);
+    }
+  }
+  const loading = doc.layers.flatMap((l) => {
+    if (l.kind !== 'svg') {
+      return [];
+    }
+    const key = svgKey(l);
+    const current = svgRasters.get(l.id);
+    if (current?.key === key) {
+      return current.settled ? [] : [current.loading];
+    }
+    const raster = {
+      key,
+      shown: current?.img || current?.shown,
+      img: undefined as HTMLImageElement | undefined,
+      settled: false,
+      loading: loadImage(svgUrl(l))
+        .then((img) => {
+          raster.img = img;
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          raster.settled = true;
+        }),
+    };
+    svgRasters.set(l.id, raster);
+    return [raster.loading];
+  });
+  await Promise.all(loading);
+  return loading.length > 0;
 };
 
 // applies the layer rotation, so drawing can use unrotated coordinates
@@ -299,8 +586,8 @@ const drawContent = (
   l: EditorLayer,
   images: Map<string, HTMLImageElement>
 ) => {
-  if (l.kind === 'image') {
-    const img = images.get(l.src);
+  if (l.kind === 'image' || l.kind === 'svg') {
+    const img = l.kind === 'image' ? images.get(l.src) : svgRaster(l);
     if (img) {
       ctx.drawImage(img, l.x, l.y, l.w, l.h);
     }
@@ -843,6 +1130,43 @@ export const newShapeLayer = (
   };
 };
 
+// centred, fitting a third of the visible area
+export const newSvgLayer = (
+  doc: EditorDoc,
+  svg: { markup: string; w: number; h: number }
+): SvgLayer => {
+  const area = visibleRect(doc);
+  const scale = Math.min(area.w / 3 / svg.w, area.h / 3 / svg.h);
+  const w = svg.w * scale;
+  const h = svg.h * scale;
+  return {
+    id: makeId(10),
+    kind: 'svg',
+    opacity: 100,
+    rotation: 0,
+    markup: svg.markup,
+    x: area.x + (area.w - w) / 2,
+    y: area.y + (area.h - h) / 2,
+    w,
+    h,
+    fills: {},
+    strokes: {},
+    strokeScale: 100,
+    outline: '#000000',
+    outlineWidth: 0,
+  };
+};
+
+export type SizedLayer = ImageLayer | ShapeLayer | SvgLayer;
+
+export const isLineShape = (l: EditorLayer) => l.kind === 'shape' && isLine(l);
+
+// keeps the centre where it is, lines keep their start and direction
+export const sizeLayer = (l: SizedLayer, w: number, h: number): SizedLayer =>
+  isLineShape(l)
+    ? { ...l, w: Math.sign(l.w || 1) * w, h: Math.sign(l.h || 1) * h }
+    : { ...l, x: l.x + (l.w - w) / 2, y: l.y + (l.h - h) / 2, w, h };
+
 const ROTATE_HANDLE_GAP = 28;
 
 const handles = (b: Rect, scale: number) => ({
@@ -860,7 +1184,7 @@ export const moveLayer = (l: EditorLayer, dx: number, dy: number): EditorLayer =
 
 const resizeLayer = (l: EditorLayer, bounds: Rect, dx: number): EditorLayer => {
   const factor = Math.max(0.05, (bounds.w + dx) / bounds.w);
-  if (l.kind === 'image' || l.kind === 'shape') {
+  if (l.kind === 'image' || l.kind === 'shape' || l.kind === 'svg') {
     return { ...l, w: l.w * factor, h: l.h * factor };
   }
   if (l.kind === 'text') {
@@ -925,6 +1249,7 @@ export const EditorCanvas: FC<{
   const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guides>({});
+  const [svgVersion, setSvgVersion] = useState(0);
   const [editingId, setEditingId] = useState<string>();
   const editingRef = useRef(editingId);
   editingRef.current = editingId;
@@ -1008,6 +1333,10 @@ export const EditorCanvas: FC<{
   }, [editingId]);
 
   useEffect(() => {
+    loadSvgs(doc).then((changed) => changed && setSvgVersion((v) => v + 1));
+  }, [doc]);
+
+  useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) {
@@ -1080,7 +1409,7 @@ export const EditorCanvas: FC<{
       }
     }
     ctx.restore();
-  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion]);
+  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion]);
 
   const toPoint = useCallback(
     (e: MouseEvent<HTMLCanvasElement>) => {

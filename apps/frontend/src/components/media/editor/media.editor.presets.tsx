@@ -10,6 +10,7 @@ import {
   Adjustment,
   EditorLayer,
   MAX_SIZE,
+  parseSvg,
   PresetLayer,
 } from '@gitroom/frontend/components/media/editor/media.editor.canvas';
 import {
@@ -129,6 +130,33 @@ const toLayer = (l: any): EditorLayer | undefined => {
             fillOpacity: num(l.fillOpacity, 0, 100) ?? 0,
             stroke: isColor(l.stroke) ? l.stroke : '#FFFFFF',
             strokeWidth: num(l.strokeWidth, 0, 100) ?? 0,
+          }
+        : undefined;
+    }
+    case 'svg': {
+      const svg = isText(l.markup) ? parseSvg(l.markup) : undefined;
+      const w = num(l.w, 0, 100);
+      const h = num(l.h, 0, 100);
+      const colors = (v: any): Record<string, string> =>
+        Object.fromEntries(
+          Object.entries(v && typeof v === 'object' ? v : {}).filter(
+            ([from, to]) => isColor(from) && isColor(to)
+          )
+        ) as Record<string, string>;
+      return svg && x !== undefined && y !== undefined && w && h
+        ? {
+            ...base,
+            kind: 'svg',
+            markup: svg.markup,
+            x,
+            y,
+            w,
+            h,
+            fills: colors(l.fills),
+            strokes: colors(l.strokes),
+            strokeScale: num(l.strokeScale, 0, 500) ?? 100,
+            outline: isColor(l.outline) ? l.outline : '#000000',
+            outlineWidth: num(l.outlineWidth, 0, 100) ?? 0,
           }
         : undefined;
     }

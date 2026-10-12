@@ -28,17 +28,23 @@ import {
   EditorZoom,
   fromPresetLayers,
   fullRect,
+  isLineShape,
   loadImage,
+  loadSvgs,
   MAX_SIZE,
   moveLayer,
   NEUTRAL_ADJUSTMENTS,
+  newSvgLayer,
   newTextLayer,
+  parseSvg,
   ratioRect,
   Rect,
   renderDoc,
   rotateDoc,
   ShapeKind,
+  sizeLayer,
   supportsFilters,
+  svgColors,
   TextLayer,
   toPresetLayers,
   visibleRect,
@@ -198,6 +204,54 @@ const PickerScope: FC<{ onUnmount: () => void; children: ReactNode }> = ({
   return <>{children}</>;
 };
 
+// the file is read here and never uploaded, the media library does not take svgs
+const SvgInsert: FC<{ onInsert: (markup: string) => boolean; close: () => void }> = ({
+  onInsert,
+  close,
+}) => {
+  const t = useT();
+  const [markup, setMarkup] = useState('');
+  const insert = (value: string) => onInsert(value) && close();
+  return (
+    <div className="flex flex-col gap-[16px] w-[560px] max-w-full">
+      <label className="self-start h-[44px] px-[20px] rounded-[8px] bg-btnSimple changeColor flex items-center cursor-pointer">
+        {t('editor_svg_upload', 'Upload an SVG file')}
+        <input
+          type="file"
+          accept=".svg,image/svg+xml"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) {
+              insert(await file.text());
+            }
+          }}
+        />
+      </label>
+      <Field label={t('editor_svg_paste', 'Or paste SVG code')}>
+        <textarea
+          className="min-h-[200px] p-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[12px] font-mono outline-none focus:border-[#612BD3]"
+          spellCheck={false}
+          placeholder={'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>'}
+          value={markup}
+          onChange={(e) => setMarkup(e.target.value)}
+        />
+      </Field>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          disabled={!markup.trim()}
+          onClick={() => insert(markup)}
+          className="h-[44px] px-[20px] rounded-[8px] bg-[#612BD3] text-white disabled:opacity-50"
+        >
+          {t('editor_insert', 'Insert')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const MediaEditor: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   closeModal: () => void;
@@ -239,6 +293,7 @@ const MediaEditor: FC<{
   const [drawSize, setDrawSize] = useState(8);
   const [shape, setShape] = useState<ShapeKind>('rect');
   const [zoom, setZoom] = useState<EditorZoom>('fit');
+  const [keepRatio, setKeepRatio] = useState(true);
   const [fontsVersion, setFontsVersion] = useState(0);
   const [customFont, setCustomFont] = useState('');
   const [loading, setLoading] = useState(!!media);
@@ -595,6 +650,64 @@ const MediaEditor: FC<{
     [t]
   );
 
+  const addSvg = useCallback(
+    (markup: string) => {
+      const current = docRef.current;
+      const svg = parseSvg(markup);
+      if (!current || !svg) {
+        toaster.show(
+          t(
+            'editor_svg_invalid',
+            "Couldn't read this SVG. It needs a viewBox or a width and height, and must be under 1 MB."
+          ),
+          'warning'
+        );
+        return false;
+      }
+      const layer = newSvgLayer(current, svg);
+      commit((d) => ({ ...d, layers: [...d.layers, layer] }));
+      setTool('select');
+      setSelectedId(layer.id);
+      return true;
+    },
+    [t]
+  );
+
+  const openSvgInsert = useCallback(() => {
+    pickerOpen.current = true;
+    modals.openModal({
+      title: t('editor_add_svg', 'Add SVG'),
+      askClose: false,
+      closeOnEscape: true,
+      children: (close) => (
+        <PickerScope onUnmount={() => (pickerOpen.current = false)}>
+          <SvgInsert onInsert={addSvg} close={close} />
+        </PickerScope>
+      ),
+    });
+  }, [addSvg, t]);
+
+  // sizes in image pixels; locked follows the change to the other side
+  const setLayerSize = useCallback(
+    (id: string, side: 'w' | 'h', value: number, locked: boolean) => {
+      update((current) => ({
+        ...current,
+        layers: current.layers.map((l) => {
+          if (l.id !== id || l.kind === 'text' || l.kind === 'stroke') {
+            return l;
+          }
+          const w = Math.abs(l.w);
+          const h = Math.abs(l.h);
+          const ratio = locked && w && h ? h / w : 0;
+          return side === 'w'
+            ? sizeLayer(l, value, ratio ? value * ratio : h)
+            : sizeLayer(l, ratio ? value / ratio : w, value);
+        }),
+      }));
+    },
+    []
+  );
+
   const addText = useCallback(async () => {
     const current = docRef.current;
     if (!current) {
@@ -749,6 +862,7 @@ const MediaEditor: FC<{
           .filter((l): l is TextLayer => l.kind === 'text')
           .map((l) => loadGoogleFont(l.font))
       );
+      await loadSvgs(current);
       const area = visibleRect(current);
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(area.w));
@@ -907,6 +1021,9 @@ const MediaEditor: FC<{
   }
 
   const selected = doc.layers.find((l) => l.id === selectedId);
+  const sized =
+    selected && selected.kind !== 'text' && selected.kind !== 'stroke' ? selected : undefined;
+  const svgPalette = selected?.kind === 'svg' ? svgColors(selected.markup) : undefined;
   const visible = visibleRect(doc);
   const outputWidth = doc.outputWidth || Math.round(visible.w);
   const outputHeight = Math.round((visible.h * outputWidth) / visible.w);
@@ -935,6 +1052,7 @@ const MediaEditor: FC<{
         <ToolButton onClick={() => pickImages(addOverlays)}>
           {t('editor_add_image', 'Add image')}
         </ToolButton>
+        <ToolButton onClick={openSvgInsert}>{t('editor_add_svg', 'Add SVG')}</ToolButton>
         <ToolButton active={tool === 'crop'} onClick={() => changeTool('crop')}>
           {t('editor_crop', 'Crop')}
         </ToolButton>
@@ -1136,6 +1254,120 @@ const MediaEditor: FC<{
             </Section>
           )}
 
+          {tool === 'select' && selected?.kind === 'svg' && svgPalette && (
+            <Section title={t('editor_svg', 'SVG')}>
+              {(
+                [
+                  ['fill', 'fills', t('editor_fill', 'Fill')],
+                  ['stroke', 'strokes', t('editor_stroke', 'Stroke')],
+                ] as const
+              ).map(
+                ([paint, field, label]) =>
+                  !!svgPalette[paint].length && (
+                    <Field key={paint} as="div" label={label}>
+                      <div className="flex flex-wrap gap-[8px]">
+                        {/* gradients can hold many colours, the All picker changes every one */}
+                        {svgPalette[paint].slice(0, 24).map((color) => (
+                          <ColorInput
+                            key={color}
+                            value={selected[field][color] || color}
+                            swatches={brand.colors}
+                            {...live}
+                            onChange={(value) =>
+                              updateLayer(selected.id, {
+                                [field]: { ...selected[field], [color]: value },
+                              })
+                            }
+                            onCommit={(value) =>
+                              commitLayer(selected.id, {
+                                [field]: { ...selected[field], [color]: value },
+                              })
+                            }
+                          />
+                        ))}
+                      </div>
+                      {svgPalette[paint].length > 1 && (
+                        <Field as="div" label={t('editor_all_colours', 'All colours')}>
+                          <ColorInput
+                            value={selected[field][svgPalette[paint][0]] || svgPalette[paint][0]}
+                            swatches={brand.colors}
+                            {...live}
+                            onChange={(value) =>
+                              updateLayer(selected.id, {
+                                [field]: Object.fromEntries(svgPalette[paint].map((c) => [c, value])),
+                              })
+                            }
+                            onCommit={(value) =>
+                              commitLayer(selected.id, {
+                                [field]: Object.fromEntries(svgPalette[paint].map((c) => [c, value])),
+                              })
+                            }
+                          />
+                        </Field>
+                      )}
+                    </Field>
+                  )
+              )}
+              {svgPalette.stroke.length ? (
+                <Field label={`${t('editor_stroke_width', 'Stroke width')}: ${selected.strokeScale}%`}>
+                  <input
+                    type="range"
+                    className="w-full accent-[#612BD3]"
+                    min={0}
+                    max={500}
+                    step={5}
+                    value={selected.strokeScale}
+                    {...liveRange}
+                    onDoubleClick={() => commitLayer(selected.id, { strokeScale: 100 })}
+                    onChange={(e) =>
+                      updateLayer(selected.id, { strokeScale: Number(e.target.value) })
+                    }
+                  />
+                </Field>
+              ) : (
+                <div className="flex gap-[12px] items-end">
+                  <Field label={t('editor_outline', 'Outline')}>
+                    <ColorInput
+                      value={selected.outline}
+                      swatches={brand.colors}
+                      {...live}
+                      onChange={(outline) => updateLayer(selected.id, { outline })}
+                      onCommit={(outline) => commitLayer(selected.id, { outline })}
+                    />
+                  </Field>
+                  <Field label={`${t('editor_width', 'Width')}: ${selected.outlineWidth}%`}>
+                    <input
+                      type="range"
+                      className="w-[150px] accent-[#612BD3]"
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      value={selected.outlineWidth}
+                      {...liveRange}
+                      onChange={(e) =>
+                        updateLayer(selected.id, { outlineWidth: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                </div>
+              )}
+              <div>
+                <ToolButton
+                  onClick={() =>
+                    commitLayer(selected.id, {
+                      fills: {},
+                      strokes: {},
+                      strokeScale: 100,
+                      outlineWidth: 0,
+                    })
+                  }
+                >
+                  {t('editor_reset', 'Reset')}
+                </ToolButton>
+              </div>
+            </Section>
+          )}
+
           {tool === 'select' && selected?.kind === 'text' && (
             <Section title={t('editor_text', 'Text')}>
               <textarea
@@ -1302,6 +1534,30 @@ const MediaEditor: FC<{
 
           {tool === 'select' && selected && (
             <Section title={t('editor_layer', 'Layer')}>
+              {sized && (
+                <div className="flex gap-[8px] items-end">
+                  {(['w', 'h'] as const).map((side) => (
+                    <Field key={side} label={side === 'w' ? t('width', 'Width') : t('height', 'Height')}>
+                      <NumberInput
+                        className="w-[90px]"
+                        min={isLineShape(sized) ? 0 : 1}
+                        max={MAX_SIZE * 2}
+                        value={Math.round(Math.abs(sized[side]))}
+                        {...live}
+                        onValue={(value) =>
+                          setLayerSize(sized.id, side, value, keepRatio && sized.kind !== 'shape')
+                        }
+                      />
+                    </Field>
+                  ))}
+                  {/* shapes are sized freely, photos and svgs would stretch */}
+                  {sized.kind !== 'shape' && (
+                    <ToolButton active={keepRatio} onClick={() => setKeepRatio(!keepRatio)}>
+                      {t('editor_keep_ratio', 'Keep ratio')}
+                    </ToolButton>
+                  )}
+                </div>
+              )}
               <Field label={`${t('editor_opacity', 'Opacity')}: ${selected.opacity}%`}>
                 <input
                   type="range"
