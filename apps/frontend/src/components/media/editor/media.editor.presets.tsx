@@ -5,8 +5,11 @@ import clsx from 'clsx';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
   Adjustment,
+  EditorLayer,
+  MAX_SIZE,
   PresetLayer,
 } from '@gitroom/frontend/components/media/editor/media.editor.canvas';
 import {
@@ -34,31 +37,155 @@ const PRESETS_KEY = 'postiz-editor-presets';
 const BRAND_KEY = 'postiz-editor-brand';
 const MAX_COLORS = 12;
 
-const isPreset = (p: any): p is EditorPreset =>
-  !!p &&
-  typeof p.name === 'string' &&
-  !!p.name.trim() &&
-  typeof p.adjustments === 'object' &&
-  Array.isArray(p.layers) &&
-  p.layers.every(
-    (l: any) =>
-      l && typeof l.centreY === 'number' && typeof l.layer?.kind === 'string'
-  );
+// imported files and stored values are rebuilt field by field, anything unexpected is dropped
+const isColor = (v: any): v is string =>
+  typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+
+const isText = (v: any): v is string => typeof v === 'string';
+
+const num = (v: any, min: number, max: number) =>
+  typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : undefined;
+
+const ADJUSTMENT_RANGES: Record<Adjustment, [number, number]> = {
+  brightness: [0, 200],
+  contrast: [0, 200],
+  saturation: [0, 200],
+  warmth: [-100, 100],
+  fade: [0, 100],
+  vignette: [0, 100],
+  sharpen: [0, 100],
+};
+
+const toLayer = (l: any): EditorLayer | undefined => {
+  // presets store layers scaled to a canvas 1 unit wide
+  const pos = (v: any) => num(v, -100, 100);
+  const base = {
+    id: makeId(10),
+    opacity: num(l?.opacity, 0, 100) ?? 100,
+    rotation: num(l?.rotation, -180, 180) ?? 0,
+  };
+  const x = pos(l?.x);
+  const y = pos(l?.y);
+  switch (l?.kind) {
+    case 'image': {
+      const w = num(l.w, 0, 100);
+      const h = num(l.h, 0, 100);
+      return isText(l.src) && x !== undefined && y !== undefined && w && h
+        ? { ...base, kind: 'image', src: l.src, x, y, w, h }
+        : undefined;
+    }
+    case 'text': {
+      const size = num(l.size, 0, 100);
+      return isText(l.text) && isText(l.font) && l.font.trim() && x !== undefined && y !== undefined && size
+        ? {
+            ...base,
+            kind: 'text',
+            x,
+            y,
+            size,
+            text: l.text,
+            font: l.font.trim(),
+            color: isColor(l.color) ? l.color : '#FFFFFF',
+            bold: !!l.bold,
+            italic: !!l.italic,
+            align: ['left', 'center', 'right'].includes(l.align) ? l.align : 'center',
+            outlineColor: isColor(l.outlineColor) ? l.outlineColor : '#000000',
+            outlineWidth: num(l.outlineWidth, 0, 100) ?? 0,
+            bgColor: isColor(l.bgColor) ? l.bgColor : '#000000',
+            bgOpacity: num(l.bgOpacity, 0, 100) ?? 0,
+            bgPadding: num(l.bgPadding, 0, 100) ?? 0,
+          }
+        : undefined;
+    }
+    case 'stroke': {
+      const points = Array.isArray(l.points) ? l.points.map(pos) : [];
+      return points.length >= 2 && points.length % 2 === 0 && points.every((p: any) => p !== undefined)
+        ? {
+            ...base,
+            kind: 'stroke',
+            points,
+            color: isColor(l.color) ? l.color : '#FF3F3F',
+            width: num(l.width, 0, 100) ?? 0.01,
+          }
+        : undefined;
+    }
+    case 'shape': {
+      const w = pos(l.w);
+      const h = pos(l.h);
+      return ['rect', 'ellipse', 'line', 'arrow'].includes(l.shape) &&
+        x !== undefined &&
+        y !== undefined &&
+        w !== undefined &&
+        h !== undefined
+        ? {
+            ...base,
+            kind: 'shape',
+            shape: l.shape,
+            x,
+            y,
+            w,
+            h,
+            fill: isColor(l.fill) ? l.fill : '#612BD3',
+            fillOpacity: num(l.fillOpacity, 0, 100) ?? 0,
+            stroke: isColor(l.stroke) ? l.stroke : '#FFFFFF',
+            strokeWidth: num(l.strokeWidth, 0, 100) ?? 0,
+          }
+        : undefined;
+    }
+  }
+  return undefined;
+};
+
+const toPreset = (p: any): EditorPreset | undefined => {
+  if (!isText(p?.name) || !p.name.trim()) {
+    return undefined;
+  }
+  const adjustments: Partial<Record<Adjustment, number>> = {};
+  for (const key of Object.keys(ADJUSTMENT_RANGES) as Adjustment[]) {
+    const value = num(p.adjustments?.[key], ...ADJUSTMENT_RANGES[key]);
+    if (value !== undefined) {
+      adjustments[key] = value;
+    }
+  }
+  const layers: PresetLayer[] = [];
+  for (const item of Array.isArray(p.layers) ? p.layers : []) {
+    const layer = toLayer(item?.layer);
+    const centreY = num(item?.centreY, -100, 100);
+    if (layer && centreY !== undefined) {
+      layers.push({ layer, centreY });
+    }
+  }
+  return {
+    name: p.name.trim(),
+    adjustments,
+    cropRatio: num(p.cropRatio, 0.01, 100) || undefined,
+    outputWidth: num(p.outputWidth, 16, MAX_SIZE) || undefined,
+    layers,
+  };
+};
+
+const toPresets = (list: any): EditorPreset[] => {
+  const byName = new Map<string, EditorPreset>();
+  for (const preset of Array.isArray(list) ? list.map(toPreset) : []) {
+    if (preset) {
+      byName.set(preset.name, preset);
+    }
+  }
+  return Array.from(byName.values());
+};
 
 const toBrandKit = (b: any): BrandKit => ({
   colors: Array.isArray(b?.colors)
-    ? b.colors
-        .filter((c: any) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c))
-        .slice(0, MAX_COLORS)
+    ? Array.from(new Set<string>(b.colors.filter(isColor).map((c: string) => c.toLowerCase()))).slice(
+        0,
+        MAX_COLORS
+      )
     : [],
-  logos: Array.isArray(b?.logos)
-    ? b.logos.filter((l: any) => typeof l === 'string')
-    : [],
-  font: typeof b?.font === 'string' && b.font.trim() ? b.font.trim() : undefined,
+  logos: Array.isArray(b?.logos) ? Array.from(new Set<string>(b.logos.filter(isText))) : [],
+  font: isText(b?.font) && b.font.trim() ? b.font.trim() : undefined,
 });
 
-const toPresets = (list: any): EditorPreset[] =>
-  Array.isArray(list) ? list.filter(isPreset) : [];
+const isEmptyKit = (b: BrandKit) => !b.colors.length && !b.logos.length && !b.font;
 
 const read = <T,>(key: string, parse: (value: any) => T): T => {
   try {
@@ -68,8 +195,10 @@ const read = <T,>(key: string, parse: (value: any) => T): T => {
   }
 };
 
-// state kept in this browser's localStorage; the setter reports if it could not be stored
+// state kept in this browser's localStorage; the setter returns false if it could not be stored
 const useStoredState = <T,>(key: string, parse: (value: any) => T) => {
+  const t = useT();
+  const toaster = useToaster();
   const [value, setValue] = useState<T>(() => read(key, parse));
   const current = useRef(value);
   const update = useCallback(
@@ -81,10 +210,14 @@ const useStoredState = <T,>(key: string, parse: (value: any) => T) => {
         localStorage.setItem(key, JSON.stringify(next));
         return true;
       } catch (e) {
+        toaster.show(
+          t('editor_storage_full', 'Could not save in this browser, the storage may be full'),
+          'warning'
+        );
         return false;
       }
     },
-    [key]
+    [key, t]
   );
   return [value, update] as const;
 };
@@ -95,18 +228,25 @@ export const useBrandKit = () => useStoredState(BRAND_KEY, toBrandKit);
 
 type Store<T> = (fn: (value: T) => T) => boolean;
 
-// not a <label>: a click on a logo would otherwise press the first button inside
-const Group: FC<{ label: string; children: ReactNode }> = ({ label, children }) => (
-  <div className="flex flex-col gap-[4px] text-[12px] text-newTextColor/70">
-    {label}
-    {children}
-  </div>
-);
+// always shown on phones, which have no hover
+const RemoveBadge: FC<{ onClick: () => void }> = ({ onClick }) => {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      title={t('editor_remove', 'Remove')}
+      onClick={onClick}
+      className="hidden group-hover:flex mobile:flex absolute -top-[6px] -end-[6px] w-[14px] h-[14px] rounded-full bg-[#FF3F3F] text-white text-[10px] leading-[14px] items-center justify-center"
+    >
+      ×
+    </button>
+  );
+};
 
 const PresetRow: FC<{
   preset: EditorPreset;
   onApply: () => void;
-  onRename: (name: string) => void;
+  onRename: (name: string) => boolean;
   onDelete: () => void;
 }> = ({ preset, onApply, onRename, onDelete }) => {
   const t = useT();
@@ -114,9 +254,7 @@ const PresetRow: FC<{
   const [name, setName] = useState(preset.name);
   const finish = () => {
     setRenaming(false);
-    if (name.trim() && name.trim() !== preset.name) {
-      onRename(name.trim());
-    } else {
+    if (!name.trim() || name.trim() === preset.name || !onRename(name.trim())) {
       setName(preset.name);
     }
   };
@@ -167,9 +305,9 @@ export const PresetsSection: FC<{
         }),
         'warning'
       );
-      return;
+      return false;
     }
-    setPresets((list) => list.map((p) => (p.name === from ? { ...p, name: to } : p)));
+    return setPresets((list) => list.map((p) => (p.name === from ? { ...p, name: to } : p)));
   };
 
   const remove = async (preset: EditorPreset) => {
@@ -238,7 +376,7 @@ export const BrandSection: FC<{
 
   return (
     <Section title={t('editor_brand_kit', 'Brand kit')}>
-      <Group label={t('editor_brand_colours', 'Colours')}>
+      <Field as="div" label={t('editor_brand_colours', 'Colours')}>
         <div className="flex flex-wrap items-center gap-[6px]">
           {brand.colors.map((c) => (
             <div key={c} className="relative group">
@@ -247,16 +385,11 @@ export const BrandSection: FC<{
                 style={{ background: c }}
                 title={c}
               />
-              <button
-                type="button"
-                title={t('editor_remove', 'Remove')}
+              <RemoveBadge
                 onClick={() =>
                   setBrand((b) => ({ ...b, colors: b.colors.filter((x) => x !== c) }))
                 }
-                className="hidden group-hover:flex absolute -top-[6px] -end-[6px] w-[14px] h-[14px] rounded-full bg-[#FF3F3F] text-white text-[10px] leading-[14px] items-center justify-center"
-              >
-                ×
-              </button>
+              />
             </div>
           ))}
           <input
@@ -277,8 +410,9 @@ export const BrandSection: FC<{
             {t('editor_add', 'Add')}
           </ToolButton>
         </div>
-      </Group>
-      <Group label={t('editor_brand_logos', 'Logos (click to add to the image)')}>
+      </Field>
+      {/* a <label> would turn a click on a logo into a click on its first button */}
+      <Field as="div" label={t('editor_brand_logos', 'Logos (click to add to the image)')}>
         <div className="flex flex-wrap items-center gap-[6px]">
           {brand.logos.map((path) => (
             <div key={path} className="relative group">
@@ -288,16 +422,11 @@ export const BrandSection: FC<{
                 onClick={() => onInsertLogo(path)}
                 className="w-[48px] h-[48px] object-contain rounded-[6px] bg-newBgColor cursor-pointer"
               />
-              <button
-                type="button"
-                title={t('editor_remove', 'Remove')}
+              <RemoveBadge
                 onClick={() =>
                   setBrand((b) => ({ ...b, logos: b.logos.filter((x) => x !== path) }))
                 }
-                className="hidden group-hover:flex absolute -top-[6px] -end-[6px] w-[14px] h-[14px] rounded-full bg-[#FF3F3F] text-white text-[10px] leading-[14px] items-center justify-center"
-              >
-                ×
-              </button>
+              />
             </div>
           ))}
           <ToolButton
@@ -313,7 +442,7 @@ export const BrandSection: FC<{
             {t('editor_add_logo', 'Add logo')}
           </ToolButton>
         </div>
-      </Group>
+      </Field>
       <Field label={t('editor_default_font', 'Font for new text')}>
         <select
           className={inputClass}
@@ -350,7 +479,8 @@ export const BackupSection: FC<{
     link.href = url;
     link.download = 'postiz-editor-presets.json';
     link.click();
-    URL.revokeObjectURL(url);
+    // revoking straight away cancels the download in some browsers
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const importFile = async (selected?: File) => {
@@ -360,21 +490,27 @@ export const BackupSection: FC<{
     try {
       const data = JSON.parse(await selected.text());
       const imported = toPresets(data?.presets);
-      if (!imported.length && !data?.brand) {
+      const kit = toBrandKit(data?.brand);
+      if (!imported.length && isEmptyKit(kit)) {
         throw new Error('Nothing to import');
       }
       const names = imported.map((p) => p.name);
       const stored =
-        setPresets((list) => [...list.filter((p) => !names.includes(p.name)), ...imported]) &&
-        (!data.brand || setBrand(() => toBrandKit(data.brand)));
-      toaster.show(
-        stored
-          ? t('editor_import_done', 'Imported {{count}} presets', {
-              count: imported.length,
-            })
-          : t('editor_storage_full', 'Could not save in this browser, the storage may be full'),
-        stored ? 'success' : 'warning'
-      );
+        (!imported.length ||
+          setPresets((list) => [...list.filter((p) => !names.includes(p.name)), ...imported])) &&
+        (isEmptyKit(kit) || setBrand(() => kit));
+      if (stored) {
+        toaster.show(
+          isEmptyKit(kit)
+            ? t('editor_import_presets', 'Imported {{count}} presets', {
+                count: imported.length,
+              })
+            : t('editor_import_presets_brand', 'Imported {{count}} presets and the brand kit', {
+                count: imported.length,
+              }),
+          'success'
+        );
+      }
     } catch (e) {
       toaster.show(
         t('editor_import_failed', 'This file is not a Postiz editor export'),

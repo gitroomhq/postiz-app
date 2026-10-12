@@ -35,14 +35,15 @@ export const Section: FC<{ title: string; children: ReactNode }> = ({
   </div>
 );
 
-export const Field: FC<{ label: string; children: ReactNode }> = ({
-  label,
-  children,
-}) => (
-  <label className="flex flex-col gap-[4px] text-[12px] text-newTextColor/70">
+export const Field: FC<{
+  label: string;
+  as?: 'label' | 'div';
+  children: ReactNode;
+}> = ({ label, as: Tag = 'label', children }) => (
+  <Tag className="flex flex-col gap-[4px] text-[12px] text-newTextColor/70">
     {label}
     {children}
-  </label>
+  </Tag>
 );
 
 // keeps what is typed until it is a valid number, so the field can be cleared
@@ -88,14 +89,16 @@ export const NumberInput: FC<{
   );
 };
 
-// colour picker with the brand kit colours one click away
+// colour picker with the brand kit colours one click away;
+// onChange is the live edit while picking, onCommit a finished change (a swatch click)
 export const ColorInput: FC<{
   value: string;
   swatches?: string[];
   onFocus?: () => void;
   onBlur?: () => void;
   onChange: (value: string) => void;
-}> = ({ value, swatches = [], onFocus, onBlur, onChange }) => (
+  onCommit?: (value: string) => void;
+}> = ({ value, swatches = [], onFocus, onBlur, onChange, onCommit }) => (
   <div className="flex items-center gap-[4px] flex-wrap max-w-[140px]">
     <input
       type="color"
@@ -110,11 +113,7 @@ export const ColorInput: FC<{
         key={color}
         type="button"
         title={color}
-        onClick={() => {
-          onFocus?.();
-          onChange(color);
-          onBlur?.();
-        }}
+        onClick={() => (onCommit || onChange)(color)}
         className={clsx(
           'w-[18px] h-[18px] rounded-full border',
           color.toLowerCase() === value.toLowerCase()

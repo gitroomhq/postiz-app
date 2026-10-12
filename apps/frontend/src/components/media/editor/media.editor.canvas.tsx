@@ -101,6 +101,8 @@ export interface EditorDoc {
   layers: EditorLayer[];
 }
 
+export const MAX_SIZE = 8000;
+
 export const NEUTRAL_ADJUSTMENTS = {
   brightness: 100,
   contrast: 100,
@@ -182,8 +184,8 @@ export const newTextLayer = (
   };
 };
 
-const fontString = (l: TextLayer) =>
-  `${l.italic ? 'italic ' : ''}${l.bold ? 'bold ' : ''}${l.size}px "${
+const fontString = (l: TextLayer, size = l.size) =>
+  `${l.italic ? 'italic ' : ''}${l.bold ? 'bold ' : ''}${size}px "${
     l.font
   }", sans-serif`;
 
@@ -408,24 +410,19 @@ const drawContent = (
   ctx.restore();
 };
 
+// one shared filter, its kernel is set right before each draw
 const sharpenFilter = (amount: number) => {
-  const id = `postiz-editor-sharpen-${amount}`;
+  const id = 'postiz-editor-sharpen';
   if (!document.getElementById(id)) {
-    let svg: Element | null = document.getElementById('postiz-editor-filters');
-    if (!svg) {
-      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.id = 'postiz-editor-filters';
-      svg.setAttribute('style', 'position:absolute;width:0;height:0');
-      document.body.appendChild(svg);
-    }
-    const a = amount / 100;
-    svg.insertAdjacentHTML(
-      'beforeend',
-      `<filter id="${id}" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 ${-a} 0 ${-a} ${
-        1 + 4 * a
-      } ${-a} 0 ${-a} 0"/></filter>`
-    );
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('style', 'position:absolute;width:0;height:0');
+    svg.innerHTML = `<filter id="${id}" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true"/></filter>`;
+    document.body.appendChild(svg);
   }
+  const a = amount / 100;
+  document
+    .querySelector(`#${id} feConvolveMatrix`)!
+    .setAttribute('kernelMatrix', `0 ${-a} 0 ${-a} ${1 + 4 * a} ${-a} 0 ${-a} 0`);
   return `url(#${id})`;
 };
 
@@ -929,6 +926,8 @@ export const EditorCanvas: FC<{
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guides>({});
   const [editingId, setEditingId] = useState<string>();
+  const editingRef = useRef(editingId);
+  editingRef.current = editingId;
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
   const area = tool === 'crop' ? fullRect(doc) : visibleRect(doc);
 
@@ -971,6 +970,18 @@ export const EditorCanvas: FC<{
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const finishEditing = useCallback(() => {
+    // clearing the text removes the layer, in the same undo step as the edit
+    let emptied = false;
+    onUpdate((current) => {
+      const layers = current.layers.filter(
+        (l) => !(l.id === editingRef.current && l.kind === 'text' && !l.text.trim())
+      );
+      emptied = layers.length !== current.layers.length;
+      return emptied ? { ...current, layers } : current;
+    });
+    if (emptied) {
+      onSelect(undefined);
+    }
     onEnd();
     setEditingId(undefined);
   }, []);
@@ -1322,9 +1333,7 @@ export const EditorCanvas: FC<{
           // the canvas draws the text, the field only shows the caret and selection
           color: 'transparent',
           caretColor: editing.color,
-          font: `${editing.italic ? 'italic ' : ''}${editing.bold ? 'bold ' : ''}${
-            editing.size * s
-          }px "${editing.font}", sans-serif`,
+          font: fontString(editing, editing.size * s),
           lineHeight: 1.2,
           textAlign: editing.align,
           transformOrigin: `${(centre.x - box.x) * s}px ${(centre.y - box.y) * s}px`,

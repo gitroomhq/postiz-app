@@ -29,6 +29,7 @@ import {
   fromPresetLayers,
   fullRect,
   loadImage,
+  MAX_SIZE,
   moveLayer,
   NEUTRAL_ADJUSTMENTS,
   newTextLayer,
@@ -108,7 +109,6 @@ const RATIOS: { label: string; value?: number }[] = [
   { label: '9:16', value: 9 / 16 },
 ];
 
-const MAX_SIZE = 8000;
 const HISTORY = 50;
 
 const googleFontsUrl = (family: string) =>
@@ -229,6 +229,8 @@ const MediaEditor: FC<{
   const [canRedo, setCanRedo] = useState(false);
 
   const [tool, setTool] = useState<EditorTool>('select');
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
   const [selectedId, setSelectedIdState] = useState<string>();
   const selectedRef = useRef<string | undefined>(undefined);
   const [cropDraft, setCropDraft] = useState<Rect>();
@@ -289,8 +291,9 @@ const MediaEditor: FC<{
     setZoom('fit');
   }, []);
 
-  // the canvas fires before the blur of a focused field, so close that step first
+  // pointer down comes before the blur of a focused field, so blur it now to close its step first
   const beginStep = useCallback(() => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
     end();
     begin();
   }, []);
@@ -434,7 +437,7 @@ const MediaEditor: FC<{
         return;
       }
       const arrow = arrows[e.key];
-      if (arrow && id && docRef.current) {
+      if (arrow && id && docRef.current && toolRef.current === 'select') {
         e.preventDefault();
         const step = nudgeStep(docRef.current) * (e.shiftKey ? 10 : 1);
         // a held key is one undo step, closed on key up
@@ -452,11 +455,15 @@ const MediaEditor: FC<{
         end();
       }
     };
+    // no key up arrives once the window loses focus mid-press
+    const onWindowBlur = () => end();
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onWindowBlur);
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onWindowBlur);
     };
   }, []);
 
@@ -617,15 +624,14 @@ const MediaEditor: FC<{
         layers: toPresetLayers(ctx, current),
       };
       const exists = presets.some((p) => p.name === name);
-      const stored = setPresets((list) => [...list.filter((p) => p.name !== name), preset]);
-      toaster.show(
-        !stored
-          ? t('editor_storage_full', 'Could not save in this browser, the storage may be full')
-          : exists
-          ? t('editor_preset_updated', 'Preset "{{name}}" updated', { name })
-          : t('editor_preset_saved', 'Preset "{{name}}" saved', { name }),
-        stored ? 'success' : 'warning'
-      );
+      if (setPresets((list) => [...list.filter((p) => p.name !== name), preset])) {
+        toaster.show(
+          exists
+            ? t('editor_preset_updated', 'Preset "{{name}}" updated', { name })
+            : t('editor_preset_saved', 'Preset "{{name}}" saved', { name }),
+          'success'
+        );
+      }
     },
     [presets, t]
   );
@@ -1085,6 +1091,7 @@ const MediaEditor: FC<{
                       swatches={brand.colors}
                       {...live}
                       onChange={(fill) => updateLayer(selected.id, { fill })}
+                      onCommit={(fill) => commitLayer(selected.id, { fill })}
                     />
                   </Field>
                   <Field label={`${t('editor_opacity', 'Opacity')}: ${selected.fillOpacity}%`}>
@@ -1109,6 +1116,7 @@ const MediaEditor: FC<{
                     swatches={brand.colors}
                     {...live}
                     onChange={(stroke) => updateLayer(selected.id, { stroke })}
+                    onCommit={(stroke) => commitLayer(selected.id, { stroke })}
                   />
                 </Field>
                 <Field label={`${t('editor_width', 'Width')}: ${selected.strokeWidth}`}>
@@ -1195,6 +1203,7 @@ const MediaEditor: FC<{
                     swatches={brand.colors}
                     {...live}
                     onChange={(color) => updateLayer(selected.id, { color })}
+                    onCommit={(color) => commitLayer(selected.id, { color })}
                   />
                 </Field>
               </div>
@@ -1232,6 +1241,7 @@ const MediaEditor: FC<{
                     swatches={brand.colors}
                     {...live}
                     onChange={(outlineColor) => updateLayer(selected.id, { outlineColor })}
+                    onCommit={(outlineColor) => commitLayer(selected.id, { outlineColor })}
                   />
                 </Field>
                 <Field label={`${t('editor_width', 'Width')}: ${selected.outlineWidth}`}>
@@ -1255,6 +1265,7 @@ const MediaEditor: FC<{
                     swatches={brand.colors}
                     {...live}
                     onChange={(bgColor) => updateLayer(selected.id, { bgColor })}
+                    onCommit={(bgColor) => commitLayer(selected.id, { bgColor })}
                   />
                 </Field>
                 <div className="flex flex-col gap-[6px] flex-1">
