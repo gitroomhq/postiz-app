@@ -38,6 +38,8 @@ COPY apps/frontend/src/components/media/media.component.tsx \
      /app/apps/frontend/src/components/media/media.component.tsx
 COPY apps/frontend/src/components/media/media.bulk.actions.tsx \
      /app/apps/frontend/src/components/media/media.bulk.actions.tsx
+COPY apps/frontend/src/components/media/editor \
+     /app/apps/frontend/src/components/media/editor
 COPY libraries/react-shared-libraries/src/form/checkbox.tsx \
      /app/libraries/react-shared-libraries/src/form/checkbox.tsx
 COPY libraries/react-shared-libraries/src/helpers/video.frame.tsx \

@@ -49,14 +49,15 @@ import {
   VerticalDividerIcon,
   NoMediaIcon,
   TrashIcon,
+  PencilIcon,
 } from '@gitroom/frontend/components/ui/icons';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
 import { MediaBulkActionsBar } from '@gitroom/frontend/components/media/media.bulk.actions';
-const Polonto = dynamic(
-  () => import('@gitroom/frontend/components/launches/polonto')
+const MediaEditor = dynamic(
+  () => import('@gitroom/frontend/components/media/editor/media.editor')
 );
 const showModalEmitter = new EventEmitter();
 // on phones the media library takes the whole screen
@@ -455,6 +456,37 @@ export const MediaBox: FC<{
     []
   );
 
+  const editImage = useCallback(
+    (media: Media) => (e: any) => {
+      e.stopPropagation();
+      modals.openModal({
+        title: t('media_editor', 'Media Editor'),
+        askClose: true,
+        closeOnEscape: true,
+        fullScreen: true,
+        size: 'calc(100% - 80px)',
+        height: 'calc(100% - 80px)',
+        children: (close) => (
+          <MediaEditor
+            media={{
+              path: mediaDirectory.set(media.path),
+              name: media.originalName || media.name,
+            }}
+            setMedia={() => {
+              toaster.show(
+                t('editor_saved_copy', 'Saved a copy to the library'),
+                'success'
+              );
+              mutate();
+            }}
+            closeModal={close}
+          />
+        ),
+      });
+    },
+    [mutate, t]
+  );
+
   const deleteImage = useCallback(
     (media: Media) => async (e: any) => {
       e.stopPropagation();
@@ -734,6 +766,17 @@ export const MediaBox: FC<{
                         onClick={deleteImage(media)}
                       />
                     )}
+                    {standalone &&
+                      !selectMode &&
+                      !hasExtension(media.path, 'mp4') && (
+                        <div
+                          onClick={editImage(media)}
+                          title={t('edit', 'Edit')}
+                          className="cursor-pointer hidden z-[100] group-hover:flex justify-center items-center w-[26px] h-[26px] rounded-full bg-[#612BD3] text-white absolute -top-[5px] -start-[5px]"
+                        >
+                          <PencilIcon size={14} />
+                        </div>
+                      )}
                     <div
                       className={clsx(
                         'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]',
@@ -955,11 +998,13 @@ export const MultiMediaComponent: FC<{
   const designMedia = useCallback(() => {
     if (!!user?.tier?.ai && !dummy) {
       modals.openModal({
-        askClose: false,
+        askClose: true,
         title: t('design_media', 'Design Media'),
-        size: '80%',
+        fullScreen: true,
+        size: 'calc(100% - 80px)',
+        height: 'calc(100% - 80px)',
         children: (close) => (
-          <Polonto setMedia={changeMedia} closeModal={close} />
+          <MediaEditor setMedia={changeMedia} closeModal={close} />
         ),
       });
     }
@@ -1162,13 +1207,13 @@ export const MediaComponent: FC<{
   const showDesignModal = useCallback(() => {
     modals.openModal({
       title: t('media_editor', 'Media Editor'),
-      askClose: false,
+      askClose: true,
       closeOnEscape: true,
       fullScreen: true,
       size: 'calc(100% - 80px)',
       height: 'calc(100% - 80px)',
       children: (close) => (
-        <Polonto
+        <MediaEditor
           width={width}
           height={height}
           setMedia={changeMedia}
