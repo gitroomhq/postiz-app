@@ -972,6 +972,21 @@ const contains = (r: Rect, x: number, y: number) =>
 const clamp = (v: number, min: number, max: number) =>
   Math.min(max, Math.max(min, v));
 
+// a crop covering the whole image has nowhere to go, so dragging inside it draws a new one
+const insideCrop = (doc: EditorDoc, crop: Rect | undefined, x: number, y: number) => {
+  const { w, h } = compSize(doc);
+  return !!crop && (crop.w < w || crop.h < h) && contains(crop, x, y);
+};
+
+const movedCrop = (doc: EditorDoc, crop: Rect, dx: number, dy: number): Rect => {
+  const { w, h } = compSize(doc);
+  return {
+    ...crop,
+    x: clamp(crop.x + dx, 0, w - crop.w),
+    y: clamp(crop.y + dy, 0, h - crop.h),
+  };
+};
+
 const cropFromDrag = (
   doc: EditorDoc,
   sx: number,
@@ -1240,6 +1255,7 @@ const resizeLayer = (l: EditorLayer, bounds: Rect, dx: number): EditorLayer => {
 
 type Drag =
   | { mode: 'crop'; sx: number; sy: number }
+  | { mode: 'cropMove'; sx: number; sy: number; rect: Rect }
   | { mode: 'draw'; id: string }
   | { mode: 'shape'; sx: number; sy: number; layer: ShapeLayer }
   | {
@@ -1297,6 +1313,7 @@ export const EditorCanvas: FC<{
   const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const [guides, setGuides] = useState<Guides>({});
+  const [overCrop, setOverCrop] = useState(false);
   const [svgVersion, setSvgVersion] = useState(0);
   const [editingId, setEditingId] = useState<string>();
   const editingRef = useRef(editingId);
@@ -1503,6 +1520,10 @@ export const EditorCanvas: FC<{
       ref.current!.setPointerCapture(e.pointerId);
       const p = toPoint(e);
       if (tool === 'crop') {
+        if (cropDraft && insideCrop(doc, cropDraft, p.x, p.y)) {
+          drag.current = { mode: 'cropMove', sx: p.x, sy: p.y, rect: cropDraft };
+          return;
+        }
         const { w, h } = compSize(doc);
         drag.current = {
           mode: 'crop',
@@ -1576,18 +1597,26 @@ export const EditorCanvas: FC<{
         };
       }
     },
-    [doc, tool, selectedId, editingId, drawColor, drawSize, shape, toPoint]
+    [doc, tool, selectedId, editingId, drawColor, drawSize, shape, toPoint, cropDraft]
   );
 
   const pointerMove = useCallback(
     (e: PointerEvent<HTMLCanvasElement>) => {
       const d = drag.current;
       if (!d) {
+        if (tool === 'crop') {
+          const p = toPoint(e);
+          setOverCrop(insideCrop(doc, cropDraft, p.x, p.y));
+        }
         return;
       }
       const p = toPoint(e);
       if (d.mode === 'crop') {
         onCropDraft(cropFromDrag(doc, d.sx, d.sy, p.x, p.y, cropRatio));
+        return;
+      }
+      if (d.mode === 'cropMove') {
+        onCropDraft(movedCrop(doc, d.rect, p.x - d.sx, p.y - d.sy));
         return;
       }
       if (d.mode === 'draw') {
@@ -1674,7 +1703,7 @@ export const EditorCanvas: FC<{
         layers: current.layers.map((l) => (l.id === next.id ? next : l)),
       }));
     },
-    [doc, cropRatio, area, toPoint, grid]
+    [doc, cropRatio, area, toPoint, grid, tool, cropDraft]
   );
 
   const pointerUp = useCallback(() => {
@@ -1699,7 +1728,7 @@ export const EditorCanvas: FC<{
       onShapeCreated(d.layer.id);
       return;
     }
-    if (d && d.mode !== 'crop') {
+    if (d && d.mode !== 'crop' && d.mode !== 'cropMove') {
       onEnd();
     }
   }, [onShapeCreated]);
@@ -1780,7 +1809,12 @@ export const EditorCanvas: FC<{
             ref={ref}
             className="block w-full h-full touch-none select-none"
             style={{
-              cursor: tool === 'select' ? 'default' : 'crosshair',
+              cursor:
+                tool === 'select'
+                  ? 'default'
+                  : tool === 'crop' && overCrop
+                  ? 'move'
+                  : 'crosshair',
               background:
                 'repeating-conic-gradient(#2a2a2a 0% 25%, #1f1f1f 0% 50%) 50% / 20px 20px',
             }}

@@ -1192,7 +1192,10 @@ const MediaEditor: FC<{
                 ))}
               </div>
               <div className="text-[12px] text-newTextColor/70">
-                {t('editor_crop_hint', 'Drag on the image to draw the crop area.')}
+                {t(
+                  'editor_crop_hint',
+                  'Drag on the image to draw the crop area, or drag inside it to move it.'
+                )}
               </div>
               <div className="flex gap-[6px]">
                 <ToolButton icon="check" active={true} onClick={applyCrop}>

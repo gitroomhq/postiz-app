@@ -915,7 +915,7 @@
   "editor_undo": "Undo",
   "editor_redo": "Redo",
   "editor_free": "Free",
-  "editor_crop_hint": "Drag on the image to draw the crop area.",
+  "editor_crop_hint": "Drag on the image to draw the crop area, or drag inside it to move it.",
   "editor_apply": "Apply",
   "editor_reset": "Reset",
   "editor_colour": "Colour",
