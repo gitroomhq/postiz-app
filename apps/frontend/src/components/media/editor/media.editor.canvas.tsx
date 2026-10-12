@@ -1,10 +1,21 @@
 'use client';
 
-import { FC, PointerEvent, useCallback, useEffect, useRef } from 'react';
+import {
+  FC,
+  MouseEvent,
+  PointerEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 export type Rect = { x: number; y: number; w: number; h: number };
-export type EditorTool = 'select' | 'draw' | 'crop';
+export type EditorTool = 'select' | 'draw' | 'crop' | 'shape';
+export type EditorZoom = 'fit' | number;
 
 interface LayerBase {
   id: string;
@@ -48,7 +59,23 @@ export interface StrokeLayer extends LayerBase {
   width: number;
 }
 
-export type EditorLayer = ImageLayer | TextLayer | StrokeLayer;
+export type ShapeKind = 'rect' | 'ellipse' | 'line' | 'arrow';
+
+export interface ShapeLayer extends LayerBase {
+  kind: 'shape';
+  shape: ShapeKind;
+  // lines run from (x, y) to (x + w, y + h), so w and h can be negative
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fill: string;
+  fillOpacity: number;
+  stroke: string;
+  strokeWidth: number;
+}
+
+export type EditorLayer = ImageLayer | TextLayer | StrokeLayer | ShapeLayer;
 
 export interface EditorDoc {
   // base size before rotation
@@ -155,12 +182,29 @@ const measureText = (ctx: CanvasRenderingContext2D, l: TextLayer) => {
   return { lines, w, h: lines.length * l.size * LINE_HEIGHT };
 };
 
+const isLine = (l: ShapeLayer) => l.shape === 'line' || l.shape === 'arrow';
+
+const arrowHead = (l: ShapeLayer) =>
+  l.shape === 'arrow' ? Math.max(l.strokeWidth * 3, 12) : l.strokeWidth / 2;
+
+// the text itself, without the background padding or outline
+export const textBox = (ctx: CanvasRenderingContext2D, l: TextLayer): Rect => {
+  const m = measureText(ctx, l);
+  return { x: l.x, y: l.y, w: m.w, h: m.h };
+};
+
 export const layerBounds = (
   ctx: CanvasRenderingContext2D,
   l: EditorLayer
 ): Rect => {
   if (l.kind === 'image') {
     return { x: l.x, y: l.y, w: l.w, h: l.h };
+  }
+  if (l.kind === 'shape') {
+    const pad = isLine(l) ? arrowHead(l) : l.strokeWidth / 2;
+    const x = Math.min(l.x, l.x + l.w) - pad;
+    const y = Math.min(l.y, l.y + l.h) - pad;
+    return { x, y, w: Math.abs(l.w) + pad * 2, h: Math.abs(l.h) + pad * 2 };
   }
   if (l.kind === 'text') {
     const m = measureText(ctx, l);
@@ -249,6 +293,64 @@ const drawContent = (
     return;
   }
   ctx.save();
+  if (l.kind === 'shape') {
+    ctx.lineWidth = l.strokeWidth;
+    ctx.strokeStyle = l.stroke;
+    ctx.fillStyle = l.stroke;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (isLine(l)) {
+      const angle = Math.atan2(l.h, l.w);
+      const head = l.shape === 'arrow' ? arrowHead(l) : 0;
+      const ex = l.x + l.w;
+      const ey = l.y + l.h;
+      // the line stops at the base of the head so its end does not poke out
+      ctx.moveTo(l.x, l.y);
+      ctx.lineTo(ex - Math.cos(angle) * head * 0.8, ey - Math.sin(angle) * head * 0.8);
+      ctx.stroke();
+      if (head) {
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(
+          ex - head * Math.cos(angle - Math.PI / 7),
+          ey - head * Math.sin(angle - Math.PI / 7)
+        );
+        ctx.lineTo(
+          ex - head * Math.cos(angle + Math.PI / 7),
+          ey - head * Math.sin(angle + Math.PI / 7)
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else {
+      if (l.shape === 'rect') {
+        ctx.rect(l.x, l.y, l.w, l.h);
+      } else {
+        ctx.ellipse(
+          l.x + l.w / 2,
+          l.y + l.h / 2,
+          Math.abs(l.w / 2),
+          Math.abs(l.h / 2),
+          0,
+          0,
+          Math.PI * 2
+        );
+      }
+      if (l.fillOpacity > 0) {
+        const alpha = ctx.globalAlpha;
+        ctx.globalAlpha = alpha * (l.fillOpacity / 100);
+        ctx.fillStyle = l.fill;
+        ctx.fill();
+        ctx.globalAlpha = alpha;
+      }
+      if (l.strokeWidth > 0) {
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    return;
+  }
   if (l.kind === 'stroke') {
     ctx.strokeStyle = l.color;
     ctx.lineWidth = l.width;
@@ -520,15 +622,138 @@ const cropFromDrag = (
 const toLayerFrame = (l: EditorLayer, b: Rect, x: number, y: number) =>
   turnAround(x, y, centreOf(b), -l.rotation);
 
+const distanceToSegment = (l: ShapeLayer, x: number, y: number) => {
+  const length = l.w * l.w + l.h * l.h;
+  const t = length ? clamp(((x - l.x) * l.w + (y - l.y) * l.h) / length, 0, 1) : 0;
+  return Math.hypot(x - (l.x + t * l.w), y - (l.y + t * l.h));
+};
+
 const hitsLayer = (
   ctx: CanvasRenderingContext2D,
   l: EditorLayer,
   x: number,
-  y: number
+  y: number,
+  scale: number
 ) => {
   const b = layerBounds(ctx, l);
   const p = toLayerFrame(l, b, x, y);
+  if (l.kind === 'shape' && isLine(l)) {
+    // the bounds of a diagonal line would cover most of the photo
+    return distanceToSegment(l, p.x, p.y) <= l.strokeWidth / 2 + 8 * scale;
+  }
   return contains(b, p.x, p.y);
+};
+
+// the axis-aligned box around a rotated layer
+const turnedBox = (b: Rect, degrees: number): Rect => {
+  if (!degrees) {
+    return b;
+  }
+  const corners = [
+    [b.x, b.y],
+    [b.x + b.w, b.y],
+    [b.x, b.y + b.h],
+    [b.x + b.w, b.y + b.h],
+  ].map(([x, y]) => turnAround(x, y, centreOf(b), degrees));
+  const xs = corners.map((c) => c.x);
+  const ys = corners.map((c) => c.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+};
+
+type Guides = { x?: number; y?: number };
+
+// snaps the edges or centre of the layer to the edges or centre of the canvas
+const snapLayer = (
+  ctx: CanvasRenderingContext2D,
+  l: EditorLayer,
+  area: Rect,
+  tolerance: number
+): { layer: EditorLayer; guides: Guides } => {
+  const box = turnedBox(layerBounds(ctx, l), l.rotation);
+  const closest = (edges: number[], targets: number[]) => {
+    let best: { diff: number; at: number } | undefined;
+    for (const edge of edges) {
+      for (const at of targets) {
+        const diff = at - edge;
+        if (Math.abs(diff) <= tolerance && (!best || Math.abs(diff) < Math.abs(best.diff))) {
+          best = { diff, at };
+        }
+      }
+    }
+    return best;
+  };
+  const x = closest(
+    [box.x, box.x + box.w / 2, box.x + box.w],
+    [area.x, area.x + area.w / 2, area.x + area.w]
+  );
+  const y = closest(
+    [box.y, box.y + box.h / 2, box.y + box.h],
+    [area.y, area.y + area.h / 2, area.y + area.h]
+  );
+  return {
+    layer: moveLayer(l, x?.diff || 0, y?.diff || 0),
+    guides: { x: x?.at, y: y?.at },
+  };
+};
+
+// keeps the start point, Shift makes squares, circles and 45° lines
+const shapeFromDrag = (
+  l: ShapeLayer,
+  sx: number,
+  sy: number,
+  px: number,
+  py: number,
+  constrain: boolean
+): ShapeLayer => {
+  let w = px - sx;
+  let h = py - sy;
+  if (isLine(l)) {
+    if (constrain) {
+      const angle = Math.round(Math.atan2(h, w) / (Math.PI / 4)) * (Math.PI / 4);
+      const length = Math.hypot(w, h);
+      w = Math.cos(angle) * length;
+      h = Math.sin(angle) * length;
+    }
+    return { ...l, x: sx, y: sy, w, h };
+  }
+  if (constrain) {
+    const side = Math.max(Math.abs(w), Math.abs(h));
+    w = Math.sign(w || 1) * side;
+    h = Math.sign(h || 1) * side;
+  }
+  return {
+    ...l,
+    x: Math.min(sx, sx + w),
+    y: Math.min(sy, sy + h),
+    w: Math.abs(w),
+    h: Math.abs(h),
+  };
+};
+
+export const newShapeLayer = (
+  doc: EditorDoc,
+  shape: ShapeKind,
+  x: number,
+  y: number
+): ShapeLayer => {
+  const line = shape === 'line' || shape === 'arrow';
+  return {
+    id: makeId(10),
+    kind: 'shape',
+    opacity: 100,
+    rotation: 0,
+    shape,
+    x,
+    y,
+    w: 0,
+    h: 0,
+    fill: '#612BD3',
+    fillOpacity: line ? 0 : 100,
+    stroke: '#FFFFFF',
+    strokeWidth: line ? Math.max(2, Math.round(visibleRect(doc).w / 150)) : 0,
+  };
 };
 
 const ROTATE_HANDLE_GAP = 28;
@@ -548,7 +773,7 @@ export const moveLayer = (l: EditorLayer, dx: number, dy: number): EditorLayer =
 
 const resizeLayer = (l: EditorLayer, bounds: Rect, dx: number): EditorLayer => {
   const factor = Math.max(0.05, (bounds.w + dx) / bounds.w);
-  if (l.kind === 'image') {
+  if (l.kind === 'image' || l.kind === 'shape') {
     return { ...l, w: l.w * factor, h: l.h * factor };
   }
   if (l.kind === 'text') {
@@ -560,6 +785,7 @@ const resizeLayer = (l: EditorLayer, bounds: Rect, dx: number): EditorLayer => {
 type Drag =
   | { mode: 'crop'; sx: number; sy: number }
   | { mode: 'draw'; id: string }
+  | { mode: 'shape'; sx: number; sy: number; layer: ShapeLayer }
   | {
       mode: 'move' | 'resize' | 'rotate';
       sx: number;
@@ -582,6 +808,10 @@ export const EditorCanvas: FC<{
   cropRatio?: number;
   drawColor: string;
   drawSize: number;
+  shape: ShapeKind;
+  onShapeCreated: (id: string) => void;
+  zoom: EditorZoom;
+  onZoom: (zoom: number) => void;
   fontsVersion: number;
 }> = (props) => {
   const {
@@ -598,11 +828,83 @@ export const EditorCanvas: FC<{
     cropRatio,
     drawColor,
     drawSize,
+    shape,
+    onShapeCreated,
+    zoom,
+    onZoom,
     fontsVersion,
   } = props;
   const ref = useRef<HTMLCanvasElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
+  const [guides, setGuides] = useState<Guides>({});
+  const [editingId, setEditingId] = useState<string>();
+  const [viewport, setViewport] = useState({ w: 0, h: 0 });
   const area = tool === 'crop' ? fullRect(doc) : visibleRect(doc);
+
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) {
+      return;
+    }
+    const observer = new ResizeObserver(() =>
+      setViewport({ w: el.clientWidth, h: el.clientHeight })
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // css pixels per image pixel
+  const fit = viewport.w
+    ? Math.min(1, viewport.w / area.w, viewport.h / area.h)
+    : 1;
+  const displayScale = zoom === 'fit' ? fit : zoom;
+  const displayRef = useRef(displayScale);
+  displayRef.current = displayScale;
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) {
+      return;
+    }
+    // react registers wheel listeners as passive, so preventDefault needs a native one
+    const onWheel = (e: WheelEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        return;
+      }
+      e.preventDefault();
+      onZoom(clamp(displayRef.current * Math.exp(-e.deltaY * 0.002), 0.05, 8));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [onZoom]);
+
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const finishEditing = useCallback(() => {
+    onEnd();
+    setEditingId(undefined);
+  }, []);
+
+  useEffect(() => {
+    if (tool !== 'select' && editingId) {
+      finishEditing();
+    }
+  }, [tool]);
+
+  useEffect(() => {
+    if (!editingId) {
+      return;
+    }
+    // capture runs before the modal's Escape hotkey, which would close the editor
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && e.target === editorRef.current) {
+        e.stopImmediatePropagation();
+        finishEditing();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [editingId]);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -633,6 +935,20 @@ export const EditorCanvas: FC<{
       ctx.setLineDash([6 * scale, 4 * scale]);
       ctx.strokeRect(cropDraft.x, cropDraft.y, cropDraft.w, cropDraft.h);
     }
+    ctx.save();
+    ctx.strokeStyle = '#FF2E93';
+    ctx.lineWidth = scale;
+    ctx.beginPath();
+    if (guides.x !== undefined) {
+      ctx.moveTo(guides.x, area.y);
+      ctx.lineTo(guides.x, area.y + area.h);
+    }
+    if (guides.y !== undefined) {
+      ctx.moveTo(area.x, guides.y);
+      ctx.lineTo(area.x + area.w, guides.y);
+    }
+    ctx.stroke();
+    ctx.restore();
     const selected = doc.layers.find((l) => l.id === selectedId);
     if (tool === 'select' && selected) {
       const b = layerBounds(ctx, selected);
@@ -663,10 +979,10 @@ export const EditorCanvas: FC<{
       }
     }
     ctx.restore();
-  }, [doc, images, tool, selectedId, cropDraft, fontsVersion]);
+  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion]);
 
   const toPoint = useCallback(
-    (e: PointerEvent<HTMLCanvasElement>) => {
+    (e: MouseEvent<HTMLCanvasElement>) => {
       const canvas = ref.current!;
       const r = canvas.getBoundingClientRect();
       const scale = canvas.width / r.width;
@@ -717,6 +1033,13 @@ export const EditorCanvas: FC<{
         drag.current = { mode: 'draw', id };
         return;
       }
+      if (tool === 'shape') {
+        const layer = newShapeLayer(doc, shape, p.x, p.y);
+        onBegin();
+        onUpdate((d) => ({ ...d, layers: [...d.layers, layer] }));
+        drag.current = { mode: 'shape', sx: p.x, sy: p.y, layer };
+        return;
+      }
       const selected = doc.layers.find((l) => l.id === selectedId);
       if (selected) {
         const b = layerBounds(ctx, selected);
@@ -738,8 +1061,11 @@ export const EditorCanvas: FC<{
       }
       const hit = [...doc.layers]
         .reverse()
-        .find((l) => hitsLayer(ctx, l, p.x, p.y));
+        .find((l) => hitsLayer(ctx, l, p.x, p.y, p.scale));
       onSelect(hit?.id);
+      if (editingId && hit?.id !== editingId) {
+        finishEditing();
+      }
       if (hit) {
         onBegin();
         drag.current = {
@@ -751,7 +1077,7 @@ export const EditorCanvas: FC<{
         };
       }
     },
-    [doc, tool, selectedId, drawColor, drawSize, toPoint]
+    [doc, tool, selectedId, editingId, drawColor, drawSize, shape, toPoint]
   );
 
   const pointerMove = useCallback(
@@ -779,8 +1105,23 @@ export const EditorCanvas: FC<{
       const dx = p.x - d.sx;
       const dy = p.y - d.sy;
       let next: EditorLayer;
-      if (d.mode === 'move') {
+      if (d.mode === 'shape') {
+        next = shapeFromDrag(d.layer, d.sx, d.sy, p.x, p.y, e.shiftKey);
+      } else if (d.mode === 'move') {
         next = moveLayer(d.layer, dx, dy);
+        // Alt moves freely
+        if (!e.altKey) {
+          const snapped = snapLayer(
+            ref.current!.getContext('2d')!,
+            next,
+            area,
+            8 * p.scale
+          );
+          next = snapped.layer;
+          setGuides(snapped.guides);
+        } else {
+          setGuides({});
+        }
       } else if (d.mode === 'rotate') {
         const c = centreOf(d.bounds);
         const angle =
@@ -807,30 +1148,127 @@ export const EditorCanvas: FC<{
         layers: current.layers.map((l) => (l.id === next.id ? next : l)),
       }));
     },
-    [doc, cropRatio, toPoint]
+    [doc, cropRatio, area, toPoint]
   );
 
   const pointerUp = useCallback(() => {
     const d = drag.current;
     drag.current = null;
+    setGuides({});
+    if (d?.mode === 'shape') {
+      // a click without a drag places a default sized shape
+      onUpdate((current) => ({
+        ...current,
+        layers: current.layers.map((l) => {
+          if (l.id !== d.layer.id || l.kind !== 'shape' || Math.hypot(l.w, l.h) > 4) {
+            return l;
+          }
+          const size = visibleRect(current).w / 4;
+          return isLine(l)
+            ? { ...l, w: size, h: 0 }
+            : { ...l, x: l.x - size / 2, y: l.y - size / 2, w: size, h: size };
+        }),
+      }));
+      onEnd();
+      onShapeCreated(d.layer.id);
+      return;
+    }
     if (d && d.mode !== 'crop') {
       onEnd();
     }
-  }, []);
+  }, [onShapeCreated]);
+
+  const doubleClick = useCallback(
+    (e: MouseEvent<HTMLCanvasElement>) => {
+      const ctx = ref.current?.getContext('2d');
+      if (!ctx || tool !== 'select') {
+        return;
+      }
+      const p = toPoint(e);
+      const hit = [...doc.layers]
+        .reverse()
+        .find((l) => hitsLayer(ctx, l, p.x, p.y, p.scale));
+      if (hit?.kind === 'text') {
+        onSelect(hit.id);
+        onBegin();
+        setEditingId(hit.id);
+      }
+    },
+    [doc, tool, toPoint]
+  );
+
+  const editing = doc.layers.find(
+    (l): l is TextLayer => l.id === editingId && l.kind === 'text'
+  );
+  let editor: ReactNode = null;
+  if (editing && ref.current) {
+    const box = textBox(ref.current.getContext('2d')!, editing);
+    const centre = centreOf(layerBounds(ref.current.getContext('2d')!, editing));
+    const s = displayScale;
+    editor = (
+      <textarea
+        ref={editorRef}
+        autoFocus
+        wrap="off"
+        spellCheck={false}
+        value={editing.text}
+        onBlur={finishEditing}
+        onChange={(e) => {
+          const text = e.target.value;
+          onUpdate((current) => ({
+            ...current,
+            layers: current.layers.map((l) =>
+              l.id === editing.id ? { ...l, text } : l
+            ),
+          }));
+        }}
+        className="absolute p-0 m-0 border-0 outline-none resize-none overflow-hidden bg-transparent whitespace-pre"
+        style={{
+          left: (box.x - area.x) * s,
+          top: (box.y - area.y) * s,
+          // a little extra room so the caret does not wrap the last character
+          width: box.w * s + 2,
+          height: box.h * s,
+          // the canvas draws the text, the field only shows the caret and selection
+          color: 'transparent',
+          caretColor: editing.color,
+          font: `${editing.italic ? 'italic ' : ''}${editing.bold ? 'bold ' : ''}${
+            editing.size * s
+          }px "${editing.font}", sans-serif`,
+          lineHeight: 1.2,
+          textAlign: editing.align,
+          transformOrigin: `${(centre.x - box.x) * s}px ${(centre.y - box.y) * s}px`,
+          transform: editing.rotation ? `rotate(${editing.rotation}deg)` : undefined,
+        }}
+      />
+    );
+  }
 
   return (
-    <canvas
-      ref={ref}
-      className="max-w-full max-h-full touch-none select-none"
-      style={{
-        cursor: tool === 'select' ? 'default' : 'crosshair',
-        background:
-          'repeating-conic-gradient(#2a2a2a 0% 25%, #1f1f1f 0% 50%) 50% / 20px 20px',
-      }}
-      onPointerDown={pointerDown}
-      onPointerMove={pointerMove}
-      onPointerUp={pointerUp}
-      onPointerCancel={pointerUp}
-    />
+    <div className="relative w-full h-full">
+      {/* absolute, so a zoomed canvas scrolls instead of widening the modal */}
+      <div ref={scroller} className="absolute inset-0 overflow-auto flex">
+        <div
+          className="relative m-auto shrink-0"
+          style={{ width: area.w * displayScale, height: area.h * displayScale }}
+        >
+          <canvas
+            ref={ref}
+            className="block w-full h-full touch-none select-none"
+            style={{
+              cursor: tool === 'select' ? 'default' : 'crosshair',
+              background:
+                'repeating-conic-gradient(#2a2a2a 0% 25%, #1f1f1f 0% 50%) 50% / 20px 20px',
+            }}
+            onPointerDown={pointerDown}
+            onPointerMove={pointerMove}
+            onPointerUp={pointerUp}
+            onPointerCancel={pointerUp}
+            onDoubleClick={doubleClick}
+          />
+          {editor}
+        </div>
+      </div>
+    </div>
   );
 };

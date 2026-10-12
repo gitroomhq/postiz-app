@@ -24,6 +24,7 @@ import {
   EditorDoc,
   EditorLayer,
   EditorTool,
+  EditorZoom,
   fullRect,
   loadImage,
   moveLayer,
@@ -32,6 +33,7 @@ import {
   Rect,
   renderDoc,
   rotateDoc,
+  ShapeKind,
   supportsFilters,
   TextLayer,
   visibleRect,
@@ -310,6 +312,8 @@ const MediaEditor: FC<{
   const [cropRatio, setCropRatio] = useState<number>();
   const [drawColor, setDrawColor] = useState('#FF3F3F');
   const [drawSize, setDrawSize] = useState(8);
+  const [shape, setShape] = useState<ShapeKind>('rect');
+  const [zoom, setZoom] = useState<EditorZoom>('fit');
   const [fontsVersion, setFontsVersion] = useState(0);
   const [customFont, setCustomFont] = useState('');
   const [loading, setLoading] = useState(!!media);
@@ -357,6 +361,7 @@ const MediaEditor: FC<{
     future.current = [];
     setCanUndo(false);
     setCanRedo(false);
+    setZoom('fit');
   }, []);
 
   // the canvas fires before the blur of a focused field, so close that step first
@@ -699,6 +704,11 @@ const MediaEditor: FC<{
     setTool('select');
   }, [cropDraft]);
 
+  const shapeCreated = useCallback((id: string) => {
+    setTool('select');
+    setSelectedId(id);
+  }, []);
+
   const rotate = useCallback((by: 90 | -90) => {
     const ctx = document.createElement('canvas').getContext('2d');
     if (!ctx) {
@@ -902,6 +912,9 @@ const MediaEditor: FC<{
         <ToolButton active={tool === 'draw'} onClick={() => changeTool('draw')}>
           {t('editor_draw', 'Draw')}
         </ToolButton>
+        <ToolButton active={tool === 'shape'} onClick={() => changeTool('shape')}>
+          {t('editor_shapes', 'Shapes')}
+        </ToolButton>
         <ToolButton onClick={() => pickImages(addOverlays)}>
           {t('editor_add_image', 'Add image')}
         </ToolButton>
@@ -923,6 +936,14 @@ const MediaEditor: FC<{
           ⇵ {t('editor_flip', 'Flip')}
         </ToolButton>
         <div className="flex-1" />
+        {(['fit', 0.5, 1, 2] as const).map((value) => (
+          <ToolButton key={value} active={zoom === value} onClick={() => setZoom(value)}>
+            {value === 'fit' ? t('editor_fit', 'Fit') : `${value * 100}%`}
+          </ToolButton>
+        ))}
+        {zoom !== 'fit' && ![0.5, 1, 2].includes(zoom) && (
+          <span className="text-[13px] px-[4px]">{Math.round(zoom * 100)}%</span>
+        )}
         <ToolButton disabled={!canUndo} onClick={undo}>
           {t('editor_undo', 'Undo')}
         </ToolButton>
@@ -947,6 +968,10 @@ const MediaEditor: FC<{
             cropRatio={cropRatio}
             drawColor={drawColor}
             drawSize={drawSize}
+            shape={shape}
+            onShapeCreated={shapeCreated}
+            zoom={zoom}
+            onZoom={setZoom}
             fontsVersion={fontsVersion}
           />
         </div>
@@ -1015,6 +1040,86 @@ const MediaEditor: FC<{
             </Section>
           )}
 
+          {tool === 'shape' && (
+            <Section title={t('editor_shapes', 'Shapes')}>
+              <div className="flex flex-wrap gap-[6px]">
+                {(
+                  [
+                    ['rect', t('editor_rectangle', 'Rectangle')],
+                    ['ellipse', t('editor_ellipse', 'Ellipse')],
+                    ['line', t('editor_line', 'Line')],
+                    ['arrow', t('editor_arrow', 'Arrow')],
+                  ] as const
+                ).map(([kind, label]) => (
+                  <ToolButton key={kind} active={shape === kind} onClick={() => setShape(kind)}>
+                    {label}
+                  </ToolButton>
+                ))}
+              </div>
+              <div className="text-[12px] text-newTextColor/70">
+                {t(
+                  'editor_shape_hint',
+                  'Drag on the canvas to draw. Hold Shift for squares, circles and 45° lines.'
+                )}
+              </div>
+            </Section>
+          )}
+
+          {tool === 'select' && selected?.kind === 'shape' && (
+            <Section title={t('editor_shape', 'Shape')}>
+              {(selected.shape === 'rect' || selected.shape === 'ellipse') && (
+                <div className="flex gap-[12px] items-end">
+                  <Field label={t('editor_fill', 'Fill')}>
+                    <input
+                      type="color"
+                      className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                      value={selected.fill}
+                      {...live}
+                      onChange={(e) => updateLayer(selected.id, { fill: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={`${t('editor_opacity', 'Opacity')}: ${selected.fillOpacity}%`}>
+                    <input
+                      type="range"
+                      className="w-[180px] accent-[#612BD3]"
+                      min={0}
+                      max={100}
+                      value={selected.fillOpacity}
+                      {...liveRange}
+                      onChange={(e) =>
+                        updateLayer(selected.id, { fillOpacity: Number(e.target.value) })
+                      }
+                    />
+                  </Field>
+                </div>
+              )}
+              <div className="flex gap-[12px] items-end">
+                <Field label={t('editor_outline', 'Outline')}>
+                  <input
+                    type="color"
+                    className="w-[36px] h-[36px] bg-transparent cursor-pointer"
+                    value={selected.stroke}
+                    {...live}
+                    onChange={(e) => updateLayer(selected.id, { stroke: e.target.value })}
+                  />
+                </Field>
+                <Field label={`${t('editor_width', 'Width')}: ${selected.strokeWidth}`}>
+                  <input
+                    type="range"
+                    className="w-[180px] accent-[#612BD3]"
+                    min={selected.shape === 'line' || selected.shape === 'arrow' ? 1 : 0}
+                    max={100}
+                    value={selected.strokeWidth}
+                    {...liveRange}
+                    onChange={(e) =>
+                      updateLayer(selected.id, { strokeWidth: Number(e.target.value) })
+                    }
+                  />
+                </Field>
+              </div>
+            </Section>
+          )}
+
           {tool === 'select' && selected?.kind === 'text' && (
             <Section title={t('editor_text', 'Text')}>
               <textarea
@@ -1023,6 +1128,9 @@ const MediaEditor: FC<{
                 {...live}
                 onChange={(e) => updateLayer(selected.id, { text: e.target.value })}
               />
+              <div className="text-[12px] text-newTextColor/70">
+                {t('editor_text_hint', 'Tip: double-click the text on the canvas to type there.')}
+              </div>
               <Field label={t('editor_font', 'Font')}>
                 <div className="max-h-[180px] overflow-y-auto rounded-[8px] border border-newColColor">
                   {FONTS.map((font) => (

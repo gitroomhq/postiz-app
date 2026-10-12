@@ -27,11 +27,14 @@ built-in filter presets.
   rotated frame.
 - Order: to front, forward, backward, to back. Duplicate (offset copy).
 - Redo: button, Cmd+Shift+Z / Ctrl+Y; cleared by a new edit.
-- Arrow keys nudge the selected layer 1px (Shift: 10px), one undo step each.
+- Arrow keys nudge the selected layer by 1/400 of the image width, at least
+  1px (Shift: ten times that), so the step is visible on large photos. A held
+  key is one undo step.
 
 ## Stage 3: canvas tools
 
-- Snapping to the canvas centre lines and edges while dragging, with guides.
+- Snapping to the canvas centre lines and edges while dragging, with guides
+  (hold Alt to move freely).
 - Double-click a text layer to edit it in place on the canvas.
 - Shapes tool: rectangle, ellipse, line, arrow; fill, outline colour/width,
   opacity, rotation.
