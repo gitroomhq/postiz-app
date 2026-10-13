@@ -198,7 +198,7 @@ export const Component: FC<{
                   : 'min-h-full pt-[100px] pb-[100px] mobile:pt-[24px] mobile:pb-[24px] mobile:px-[8px]'
                 : 'h-screen mobile:h-dvh',
               modal.size && modal.height
-                ? 'flex justify-center items-center'
+                ? 'inset-0 w-full h-full overflow-hidden flex justify-center items-center'
                 : 'top-0 left-0'
             )}
           >
@@ -208,7 +208,7 @@ export const Component: FC<{
                   'gap-[40px] p-[32px] mobile:gap-[24px] mobile:p-[16px]',
                 'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] mobile:rounded-[16px] relative mobile:!max-w-full',
                 modal.destructive && 'border-2 border-red-700',
-                modal.size ? '' : 'min-w-[600px] mobile:min-w-0 mobile:w-full',
+                modal.size ? 'min-w-0 max-w-full' : 'min-w-[600px] mobile:min-w-0 mobile:w-full',
                 modal.fullScreen && 'h-full'
               )}
               {...((!!modal.size || !!modal.height || !!modal.maxSize) && {
@@ -253,7 +253,7 @@ export const Component: FC<{
               <div
                 className={clsx(
                   'whitespace-pre-line',
-                  !!modal.height && !!modal.size && 'flex flex-1 flex-col'
+                  !!modal.height && !!modal.size && 'flex flex-1 flex-col min-h-0 min-w-0'
                 )}
               >
                 {RenderComponent}

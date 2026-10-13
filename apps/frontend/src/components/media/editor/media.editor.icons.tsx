@@ -41,6 +41,12 @@ const PATHS = {
   plus: 'M12 5v14M5 12h14',
   pencil: 'M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4',
   split: 'M12 3v18M5 8h6M13 16h6',
+  play: 'M8 5.2l10.5 6.8L8 18.8z',
+  pause: 'M7 5h3.2v14H7zM13.8 5H17v14h-3.2z',
+  toStart: 'M5 5h2.2v14H5zM18.2 5.2 8 12l10.2 6.8z',
+  toEnd: 'M5.8 5.2 16 12 5.8 18.8zM16.8 5H19v14h-2.2z',
+  clipBack: 'M11.2 5.5 4.5 12l6.7 6.5zM19.5 5.5 12.8 12l6.7 6.5z',
+  clipForward: 'M4.5 5.5 11.2 12 4.5 18.5zM12.8 5.5 19.5 12l-6.7 6.5z',
   volume: 'M4 9v6h4l5 4V5L8 9H4zM16.5 9.5a3.5 3.5 0 0 1 0 5',
   save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
@@ -51,6 +57,8 @@ const PATHS = {
   ratioLandscape: 'M3 7h18v10H3z',
   ratioStory: 'M7.5 3h9v18h-9z',
 };
+
+const FILLED_ICONS = new Set(['play', 'pause', 'toStart', 'toEnd', 'clipBack', 'clipForward']);
 
 export type EditorIconName = keyof typeof PATHS;
 
@@ -72,7 +80,8 @@ export const EditorIcon: FC<IconProps & { name: EditorIconName }> = ({
   >
     <path
       d={PATHS[name]}
-      stroke="currentColor"
+      fill={FILLED_ICONS.has(name) ? 'currentColor' : 'none'}
+      stroke={FILLED_ICONS.has(name) ? 'none' : 'currentColor'}
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"

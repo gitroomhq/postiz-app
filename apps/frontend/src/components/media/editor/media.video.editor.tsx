@@ -4,6 +4,7 @@ import {
   FC,
   PointerEvent as ReactPointerEvent,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -60,8 +61,10 @@ import {
 } from '@gitroom/frontend/components/media/editor/media.editor.ui';
 
 const MIN_CLIP = 0.1;
-const PX = 48;
 const TEXT_SECONDS = 3;
+// closest the timeline will go; zoomed out it shrinks to the width on screen
+const TIMELINE_MAX_PX = 160;
+const ZOOM_STEP = 1.25;
 
 interface Source {
   id: string;
@@ -126,6 +129,24 @@ const formatTime = (seconds: number, fps: number) => {
   const mins = Math.floor(whole / 60);
   const secs = whole % 60;
   return `${mins}:${String(secs).padStart(2, '0')}:${String(frames).padStart(2, '0')}`;
+};
+
+// labels stay about the same distance apart, so zooming in shows a finer step
+const scaleStep = (px: number, fps: number) => {
+  const raw = 80 / Math.max(px, 0.001);
+  const rate = frameRate(fps);
+  const steps = [1 / rate, 2 / rate, 5 / rate, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 1800];
+  return steps.find((step) => step >= raw - 0.0001) || 1800;
+};
+
+const scaleLabel = (seconds: number, step: number, fps: number) => {
+  if (step < 1) {
+    return formatTime(seconds, fps);
+  }
+  const whole = Math.round(seconds);
+  const mins = Math.floor(whole / 60);
+  const secs = whole % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
 };
 
 const span = (clip: Clip) => clip.out - clip.in;
@@ -210,6 +231,10 @@ const MediaVideoEditor: FC<{
   const stageRef = useRef<HTMLDivElement | null>(null);
   const [stage, setStage] = useState({ w: 0, h: 0 });
   const timelineRef = useRef<HTMLDivElement | null>(null);
+  const timelineFrame = useRef<HTMLDivElement | null>(null);
+  // 0 shows the whole edit; each step zooms in and the timeline scrolls sideways
+  const [zoomLevel, setZoomLevel] = useState(0);
+  const [lane, setLane] = useState(0);
   const playingRef = useRef(false);
   const playheadRef = useRef(0);
   const totalRef = useRef(0);
@@ -228,10 +253,70 @@ const MediaVideoEditor: FC<{
 
   const placed = useMemo(() => placedClips(doc.clips), [doc.clips]);
   const total = totalOf(doc.clips);
+  const duration = Math.max(total, MIN_CLIP);
+  const fitPx = lane > 0 ? lane / duration : 0;
+  const px =
+    fitPx > 0 ? Math.max(fitPx, Math.min(TIMELINE_MAX_PX, fitPx * ZOOM_STEP ** zoomLevel)) : 0;
+  const fitted = px === 0 || px <= fitPx + 0.01;
+  const canZoomIn = fitPx > 0 && fitPx * ZOOM_STEP ** (zoomLevel + 1) <= TIMELINE_MAX_PX + 0.01;
+  const canZoomOut = zoomLevel > 0;
   const timelineFps = frameRate(doc.clips[0]?.fps);
+  const ruler = useMemo(() => {
+    if (px <= 0 || total <= 0) {
+      return [] as { at: number; label?: string }[];
+    }
+    const step = scaleStep(px, timelineFps);
+    const minor = step / 5;
+    const showMinor = minor * px >= 8;
+    const marks: { at: number; label?: string }[] = [];
+    const count = Math.floor(total / step + 0.0001);
+    for (let index = 0; index <= count; index++) {
+      const at = index * step;
+      marks.push({ at, label: scaleLabel(at, step, timelineFps) });
+      if (!showMinor || index === count) {
+        continue;
+      }
+      for (let part = 1; part < 5; part++) {
+        const tick = at + minor * part;
+        if (tick < total) {
+          marks.push({ at: tick });
+        }
+      }
+    }
+    return marks;
+  }, [px, total, timelineFps]);
   playheadRef.current = playhead;
   totalRef.current = total;
   fpsRef.current = timelineFps;
+
+  useLayoutEffect(() => {
+    const el = timelineFrame.current;
+    if (!el) {
+      return;
+    }
+    const measure = () => {
+      const style = getComputedStyle(el);
+      const pad = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      setLane(Math.max(0, el.clientWidth - pad));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // keep the playhead in view when the scale changes, and back at the start when it fits
+  useEffect(() => {
+    const frame = timelineFrame.current;
+    if (!frame) {
+      return;
+    }
+    if (fitted) {
+      frame.scrollLeft = 0;
+      return;
+    }
+    frame.scrollLeft = Math.max(0, playheadRef.current * px - frame.clientWidth / 2);
+  }, [zoomLevel, fitted, px]);
   const active = placed.find((clip) => playhead < clip.start + span(clip)) || placed[placed.length - 1];
   const frame = frameOf(doc);
   const previewScale =
@@ -1001,7 +1086,7 @@ const MediaVideoEditor: FC<{
       return;
     }
     setPlaying(false);
-    setPlayhead(Math.max(0, Math.min(total, (clientX - rect.left) / PX)));
+    setPlayhead(Math.max(0, Math.min(total, (clientX - rect.left) / (px || 1))));
   };
 
   const dragPlayhead = (event: ReactPointerEvent) => {
@@ -1027,7 +1112,7 @@ const MediaVideoEditor: FC<{
     }
     const initial = edge === 'in' ? clipAt.in : clipAt.out;
     const move = (e: PointerEvent) => {
-      trim(key, edge, initial + (e.clientX - startX) / PX);
+      trim(key, edge, initial + (e.clientX - startX) / (px || 1));
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
@@ -1049,7 +1134,7 @@ const MediaVideoEditor: FC<{
     const initial = spanOf(docRef.current, id, length);
     let moved = false;
     const move = (e: PointerEvent) => {
-      const by = (e.clientX - startX) / PX;
+      const by = (e.clientX - startX) / (px || 1);
       moved = moved || Math.abs(e.clientX - startX) > 2;
       if (!moved) {
         return;
@@ -1082,8 +1167,32 @@ const MediaVideoEditor: FC<{
     window.addEventListener('pointerup', up);
   };
 
+  const jumpTo = (time: number) => {
+    playingRef.current = false;
+    setPlaying(false);
+    const next = Math.max(0, Math.min(totalRef.current, time));
+    playheadRef.current = next;
+    setPlayhead(next);
+    const frame = timelineFrame.current;
+    if (frame && !fitted) {
+      frame.scrollLeft = Math.max(0, next * px - frame.clientWidth / 2);
+    }
+  };
+
+  // at the end of the edit the playhead is still in the last clip
+  const clipIndex = placed.findIndex((clip) => playhead < clip.start + span(clip) - 0.001);
+  const currentClip = clipIndex === -1 ? placed.length - 1 : clipIndex;
+  const here = placed[currentClip];
+  // past a clip's own start, previous returns there; already on a start, it steps back one
+  const previousAt =
+    here && playhead > here.start + 0.001
+      ? here.start
+      : currentClip > 0
+      ? placed[currentClip - 1].start
+      : undefined;
+
   return (
-    <div className="flex flex-col gap-[12px] w-full h-full min-h-0">
+    <div className="flex flex-col gap-[12px] w-full h-full min-h-0 min-w-0 max-w-full overflow-hidden">
       <div className="flex flex-wrap gap-[8px] items-center">
         <ToolButton icon="select" active={tool === 'select'} onClick={() => changeTool('select')}>
           {t('editor_select', 'Select')}
@@ -1118,15 +1227,6 @@ const MediaVideoEditor: FC<{
             {label}
           </ToolButton>
         ))}
-        <ToolButton icon={playing ? 'close' : 'select'} onClick={() => setPlaying((value) => !value)}>
-          {playing ? t('editor_pause', 'Pause') : t('editor_play', 'Play')}
-        </ToolButton>
-        <ToolButton icon="split" onClick={split}>
-          {t('editor_split', 'Split')}
-        </ToolButton>
-        <ToolButton icon="undo" disabled={!canUndo} onClick={undo}>
-          {t('editor_undo', 'Undo')}
-        </ToolButton>
       </div>
 
       <div className="flex gap-[16px] flex-1 min-h-0 mobile:flex-col">
@@ -1377,11 +1477,14 @@ const MediaVideoEditor: FC<{
         </div>
       </div>
 
-      <div className="rounded-[8px] bg-newBgColorInner p-[10px] overflow-x-auto max-h-[40vh] overflow-y-auto">
+      <div
+        ref={timelineFrame}
+        className="min-w-0 w-full max-w-full rounded-[8px] bg-newBgColorInner p-[10px] overflow-x-auto max-h-[40vh] overflow-y-auto"
+      >
         <div
           ref={timelineRef}
-          className="relative pt-[18px]"
-          style={{ width: Math.max(total, 1) * PX }}
+          className="relative pt-[22px]"
+          style={{ width: fitted ? '100%' : duration * px }}
           onPointerDown={(event) => {
             if ((event.target as HTMLElement).closest('[data-timeline-item]')) {
               return;
@@ -1389,9 +1492,36 @@ const MediaVideoEditor: FC<{
             dragPlayhead(event);
           }}
         >
+          <div className="absolute top-0 left-0 right-0 h-[20px] pointer-events-none">
+            {ruler.map((mark, index) => (
+              <div key={index} className="absolute top-0 h-full" style={{ left: mark.at * px }}>
+                {mark.label && (
+                  <span
+                    className="absolute top-0 text-[10px] leading-[12px] text-white/50 whitespace-nowrap"
+                    style={{
+                      transform:
+                        mark.at === 0
+                          ? undefined
+                          : total - mark.at < scaleStep(px, timelineFps) * 0.6
+                          ? 'translateX(-100%)'
+                          : 'translateX(-50%)',
+                    }}
+                  >
+                    {mark.label}
+                  </span>
+                )}
+                <span
+                  className={clsx(
+                    'absolute bottom-0 left-0 w-px bg-white/40',
+                    mark.label ? 'h-[6px]' : 'h-[3px]'
+                  )}
+                />
+              </div>
+            ))}
+          </div>
           <div
             className="absolute top-0 bottom-0 z-[3] cursor-ew-resize"
-            style={{ left: playhead * PX - 8, width: 16 }}
+            style={{ left: playhead * px - 8, width: 16 }}
             onPointerDown={dragPlayhead}
           >
             <div
@@ -1399,7 +1529,7 @@ const MediaVideoEditor: FC<{
               style={{
                 left: 8,
                 transform:
-                  playhead * PX < 36
+                  playhead * px < 36
                     ? 'translateX(0)'
                     : total - playhead < 0.8
                     ? 'translateX(-100%)'
@@ -1408,8 +1538,8 @@ const MediaVideoEditor: FC<{
             >
               {formatTime(playhead, timelineFps)}
             </div>
-            <div className="absolute left-[7px] top-[16px] bottom-0 w-[2px] bg-[#FF2E93]" />
-            <div className="absolute left-[3px] top-[16px] h-[8px] w-[10px] rounded-b-[3px] bg-[#FF2E93]" />
+            <div className="absolute left-[7px] top-[20px] bottom-0 w-[2px] bg-[#FF2E93]" />
+            <div className="absolute left-[3px] top-[20px] h-[8px] w-[10px] rounded-b-[3px] bg-[#FF2E93]" />
           </div>
           <div className="relative h-[48px] bg-black/30 rounded-[6px]">
             {placed.map((item, index) => (
@@ -1435,8 +1565,8 @@ const MediaVideoEditor: FC<{
                   selectedClip === item.key && 'outline outline-1 outline-white'
                 )}
                 style={{
-                  left: item.start * PX,
-                  width: Math.max(8, span(item) * PX),
+                  left: item.start * px,
+                  width: Math.max(8, span(item) * px),
                   background: clipColor(item.tone),
                 }}
               >
@@ -1464,8 +1594,8 @@ const MediaVideoEditor: FC<{
                     selectedLayer === item.id && 'outline outline-1 outline-[#612BD3]'
                   )}
                   style={{
-                    left: at.start * PX,
-                    width: Math.max(8, (at.end - at.start) * PX),
+                    left: at.start * px,
+                    width: Math.max(8, (at.end - at.start) * px),
                   }}
                 >
                   <div
@@ -1485,7 +1615,7 @@ const MediaVideoEditor: FC<{
             <div
               data-timeline-item
               className="relative h-[24px] mt-[6px] rounded-[4px] bg-[#4a8]/40 text-[11px] flex items-center px-[6px] cursor-ew-resize"
-              style={{ marginLeft: doc.music.start * PX }}
+              style={{ marginLeft: doc.music.start * px }}
               onPointerDown={(event) => {
                 const music = doc.music;
                 if (!music) {
@@ -1495,7 +1625,7 @@ const MediaVideoEditor: FC<{
                 const startX = event.clientX;
                 const initial = music.start;
                 const move = (e: PointerEvent) => {
-                  const next = Math.max(0, Math.min(total, initial + (e.clientX - startX) / PX));
+                  const next = Math.max(0, Math.min(total, initial + (e.clientX - startX) / (px || 1)));
                   setDoc((current) =>
                     current.music ? { ...current, music: { ...current.music, start: next } } : current
                   );
@@ -1517,12 +1647,71 @@ const MediaVideoEditor: FC<{
         <audio ref={musicRef} src={mediaDirectory.set(doc.music.path)} preload="auto" />
       )}
 
-      <div className="flex items-center justify-between gap-[8px]">
-        <div className="text-[12px] text-newTextColor/70">
-          {Math.round(total)}s
-          {tooLong && ` · ${t('editor_too_long', 'Shorten the edit to 15 minutes or less')}`}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-[8px]">
+        <div className="flex items-center gap-[8px] min-w-0">
+          <ToolButton
+            title={t('editor_zoom_out', 'Zoom out')}
+            disabled={!canZoomOut}
+            onClick={() => setZoomLevel((level) => Math.max(0, level - 1))}
+          >
+            {t('editor_zoom_out', 'Zoom out')}
+          </ToolButton>
+          <ToolButton
+            title={t('editor_zoom_in', 'Zoom in')}
+            disabled={!canZoomIn}
+            onClick={() => setZoomLevel((level) => level + 1)}
+          >
+            {t('editor_zoom_in', 'Zoom in')}
+          </ToolButton>
+          <div className="text-[12px] text-newTextColor/70">
+            {Math.round(total)}s
+            {tooLong && ` · ${t('editor_too_long', 'Shorten the edit to 15 minutes or less')}`}
+          </div>
         </div>
-        <div className="flex gap-[8px]">
+        <div className="flex items-center gap-[8px]">
+          <ToolButton
+            icon="toStart"
+            title={t('editor_to_start', 'To start')}
+            disabled={playhead <= 0.001}
+            onClick={() => jumpTo(0)}
+          >
+            {t('editor_to_start', 'To start')}
+          </ToolButton>
+          <ToolButton
+            icon="clipBack"
+            title={t('editor_previous_clip', 'Previous clip')}
+            disabled={previousAt === undefined}
+            onClick={() => previousAt !== undefined && jumpTo(previousAt)}
+          >
+            {t('editor_previous_clip', 'Previous clip')}
+          </ToolButton>
+          <ToolButton icon={playing ? 'pause' : 'play'} onClick={() => setPlaying((value) => !value)}>
+            {playing ? t('editor_pause', 'Pause') : t('editor_play', 'Play')}
+          </ToolButton>
+          <ToolButton
+            icon="clipForward"
+            title={t('editor_next_clip', 'Next clip')}
+            disabled={currentClip >= placed.length - 1}
+            onClick={() => jumpTo(placed[currentClip + 1].start)}
+          >
+            {t('editor_next_clip', 'Next clip')}
+          </ToolButton>
+          <ToolButton
+            icon="toEnd"
+            title={t('editor_to_end', 'To end')}
+            disabled={playhead >= total - 0.001}
+            onClick={() => jumpTo(total)}
+          >
+            {t('editor_to_end', 'To end')}
+          </ToolButton>
+          <ToolButton icon="split" onClick={split}>
+            {t('editor_split', 'Split')}
+          </ToolButton>
+          <ToolButton icon="undo" disabled={!canUndo} onClick={undo}>
+            {t('editor_undo', 'Undo')}
+          </ToolButton>
+        </div>
+        <div className="flex gap-[8px] justify-end">
           <button
             type="button"
             onClick={closeModal}
