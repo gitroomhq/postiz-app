@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -1252,6 +1253,52 @@ export const sizeLayer = (l: SizedLayer, w: number, h: number): SizedLayer =>
     ? { ...l, w: Math.sign(l.w || 1) * w, h: Math.sign(l.h || 1) * h }
     : { ...l, x: l.x + (l.w - w) / 2, y: l.y + (l.h - h) / 2, w, h };
 
+export const emptyDoc = (fields: Partial<EditorDoc>): EditorDoc => ({
+  width: 1080,
+  height: 1080,
+  color: '',
+  rotate: 0,
+  flipX: false,
+  flipY: false,
+  ...NEUTRAL_ADJUSTMENTS,
+  layers: [],
+  ...fields,
+});
+
+export type LayerOrder = 'front' | 'forward' | 'backward' | 'back';
+
+export const restackLayers = (layers: EditorLayer[], id: string, to: LayerOrder) => {
+  const next = [...layers];
+  const from = next.findIndex((l) => l.id === id);
+  const index = {
+    front: next.length - 1,
+    forward: Math.min(next.length - 1, from + 1),
+    backward: Math.max(0, from - 1),
+    back: 0,
+  }[to];
+  const [layer] = next.splice(from, 1);
+  next.splice(index, 0, layer);
+  return next;
+};
+
+// sizes in image pixels; locked follows the change to the other side
+export const sizeLayerSide = (
+  l: EditorLayer,
+  side: 'w' | 'h',
+  value: number,
+  locked: boolean
+): EditorLayer => {
+  if (l.kind === 'text' || l.kind === 'stroke') {
+    return l;
+  }
+  const w = Math.abs(l.w);
+  const h = Math.abs(l.h);
+  const ratio = locked && w && h ? h / w : 0;
+  return side === 'w'
+    ? sizeLayer(l, value, ratio ? value * ratio : h)
+    : sizeLayer(l, ratio ? value / ratio : w, value);
+};
+
 const ROTATE_HANDLE_GAP = 28;
 
 // the numbers the layer panel shows, under the layer while it is being sized
@@ -1347,6 +1394,10 @@ export const EditorCanvas: FC<{
   fontsVersion: number;
   // undefined when the grid is off
   grid?: GridSpacing;
+  // layers left out of the picture and of clicks, still in the doc
+  hidden?: string[];
+  // no checkerboard, for a canvas laid over other content
+  transparent?: boolean;
 }> = (props) => {
   const {
     doc,
@@ -1368,6 +1419,8 @@ export const EditorCanvas: FC<{
     onZoom,
     fontsVersion,
     grid,
+    hidden,
+    transparent,
   } = props;
   const ref = useRef<HTMLCanvasElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -1382,6 +1435,13 @@ export const EditorCanvas: FC<{
   editingRef.current = editingId;
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
   const area = tool === 'crop' ? fullRect(doc) : visibleRect(doc);
+  const shown = useMemo(
+    () =>
+      hidden?.length
+        ? { ...doc, layers: doc.layers.filter((l) => !hidden.includes(l.id)) }
+        : doc,
+    [doc, hidden]
+  );
 
   useLayoutEffect(() => {
     const el = scroller.current;
@@ -1476,7 +1536,7 @@ export const EditorCanvas: FC<{
       canvas.height = height;
     }
     ctx.clearRect(0, 0, width, height);
-    renderDoc(ctx, doc, images, area);
+    renderDoc(ctx, shown, images, area);
 
     const scale = width / (canvas.getBoundingClientRect().width || width);
     ctx.save();
@@ -1565,7 +1625,7 @@ export const EditorCanvas: FC<{
       drawSizeLabel(ctx, sizing, area, scale);
       ctx.restore();
     }
-  }, [doc, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion, grid, sizingId]);
+  }, [doc, shown, images, tool, selectedId, cropDraft, guides, displayScale, fontsVersion, svgVersion, grid, sizingId]);
 
   const toPoint = useCallback(
     (e: MouseEvent<HTMLCanvasElement>) => {
@@ -1653,7 +1713,7 @@ export const EditorCanvas: FC<{
           return;
         }
       }
-      const hit = [...doc.layers]
+      const hit = [...shown.layers]
         .reverse()
         .find((l) => hitsLayer(ctx, l, p.x, p.y, p.scale));
       onSelect(hit?.id);
@@ -1671,7 +1731,7 @@ export const EditorCanvas: FC<{
         };
       }
     },
-    [doc, tool, selectedId, editingId, drawColor, drawSize, shape, toPoint, cropDraft]
+    [doc, shown, tool, selectedId, editingId, drawColor, drawSize, shape, toPoint, cropDraft]
   );
 
   const pointerMove = useCallback(
@@ -1815,7 +1875,7 @@ export const EditorCanvas: FC<{
         return;
       }
       const p = toPoint(e);
-      const hit = [...doc.layers]
+      const hit = [...shown.layers]
         .reverse()
         .find((l) => hitsLayer(ctx, l, p.x, p.y, p.scale));
       if (hit?.kind === 'text') {
@@ -1824,7 +1884,7 @@ export const EditorCanvas: FC<{
         setEditingId(hit.id);
       }
     },
-    [doc, tool, toPoint]
+    [shown, tool, toPoint]
   );
 
   const editing = doc.layers.find(
@@ -1890,8 +1950,9 @@ export const EditorCanvas: FC<{
                   : tool === 'crop' && overCrop
                   ? 'move'
                   : 'crosshair',
-              background:
-                'repeating-conic-gradient(#2a2a2a 0% 25%, #1f1f1f 0% 50%) 50% / 20px 20px',
+              background: transparent
+                ? undefined
+                : 'repeating-conic-gradient(#2a2a2a 0% 25%, #1f1f1f 0% 50%) 50% / 20px 20px',
             }}
             onPointerDown={pointerDown}
             onPointerMove={pointerMove}

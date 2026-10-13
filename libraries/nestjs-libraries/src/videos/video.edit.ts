@@ -1,11 +1,9 @@
 export const VIDEO_EDIT_MAX_SECONDS = 900;
 export const VIDEO_EDIT_MIN_CLIP = 0.1;
-export const VIDEO_FONTS = ['Inter', 'Roboto', 'Montserrat', 'Poppins'] as const;
+export const VIDEO_EDIT_MAX_OVERLAYS = 40;
 export const VIDEO_RATIOS = ['1:1', '4:5', '9:16', '16:9'] as const;
 
-export type VideoFont = (typeof VIDEO_FONTS)[number];
 export type VideoRatio = (typeof VIDEO_RATIOS)[number];
-export type VideoAlign = 'left' | 'center' | 'right';
 
 export interface VideoEditClip {
   mediaId: string;
@@ -14,16 +12,12 @@ export interface VideoEditClip {
   muted: boolean;
 }
 
-export interface VideoEditTitle {
-  text: string;
+// a full-frame picture drawn in the browser, shown between start and end;
+// path is set by the server from the uploaded file, never read from the body
+export interface VideoEditOverlay {
   start: number;
   end: number;
-  x: number;
-  y: number;
-  font: VideoFont;
-  size: number;
-  color: string;
-  align: VideoAlign;
+  path: string;
 }
 
 export interface VideoEditMusic {
@@ -35,14 +29,12 @@ export interface VideoEditMusic {
 
 export interface VideoEdit {
   clips: VideoEditClip[];
-  titles: VideoEditTitle[];
+  overlays: VideoEditOverlay[];
   music?: VideoEditMusic;
   shape: 'original' | VideoRatio;
   focusX: number;
   focusY: number;
 }
-
-const COLOR = /^#[0-9a-f]{6}$/i;
 
 const number = (value: unknown, min: number, max: number) =>
   typeof value === 'number' && Number.isFinite(value)
@@ -53,8 +45,10 @@ const text = (value: unknown) =>
   typeof value === 'string' && value.trim() ? value.trim() : undefined;
 
 // Turns the request body into an edit, or a reason it cannot be rendered
+// overlay paths are attached by the caller once the uploaded files are stored
 export const parseVideoEdit = (
-  body: any
+  body: any,
+  overlayPaths: string[] = []
 ): { edit: VideoEdit } | { error: string } => {
   const clips = Array.isArray(body?.clips) ? body.clips : [];
   if (!clips.length || clips.length > 30) {
@@ -83,47 +77,18 @@ export const parseVideoEdit = (
     return { error: 'The edit is longer than 15 minutes' };
   }
 
-  const titles = Array.isArray(body?.titles) ? body.titles : [];
-  if (titles.length > 40) {
-    return { error: 'Use at most 40 titles' };
+  const overlays = Array.isArray(body?.overlays) ? body.overlays : [];
+  if (overlays.length > VIDEO_EDIT_MAX_OVERLAYS) {
+    return { error: `Use at most ${VIDEO_EDIT_MAX_OVERLAYS} layers` };
   }
-  const parsedTitles: VideoEditTitle[] = [];
-  for (const title of titles) {
-    const value = typeof title?.text === 'string' ? title.text.trim() : '';
-    if (!value) {
-      continue;
+  const parsedOverlays: Omit<VideoEditOverlay, 'path'>[] = [];
+  for (const overlay of overlays) {
+    const start = number(overlay?.start, 0, duration);
+    const end = number(overlay?.end, 0, duration);
+    if (start === undefined || end === undefined || end <= start) {
+      return { error: 'A layer has timing outside the video' };
     }
-    const start = number(title.start, 0, duration);
-    const end = number(title.end, 0, duration);
-    const x = number(title.x, 0, 1);
-    const y = number(title.y, 0, 1);
-    const size = number(title.size, 8, 500);
-    if (
-      start === undefined ||
-      end === undefined ||
-      x === undefined ||
-      y === undefined ||
-      size === undefined ||
-      end <= start
-    ) {
-      return { error: 'A title has timing or a position outside the video' };
-    }
-    if (!VIDEO_FONTS.includes(title.font) || !COLOR.test(title.color || '')) {
-      return { error: 'A title has a font or colour this editor cannot use' };
-    }
-    const align: VideoAlign =
-      title.align === 'left' || title.align === 'right' ? title.align : 'center';
-    parsedTitles.push({
-      text: value.slice(0, 200),
-      start,
-      end,
-      x,
-      y,
-      font: title.font,
-      size: Math.round(size),
-      color: title.color.toLowerCase(),
-      align,
-    });
+    parsedOverlays.push({ start, end });
   }
 
   let music: VideoEditMusic | undefined;
@@ -138,6 +103,10 @@ export const parseVideoEdit = (
     music = { mediaId, in: start, start: at, volume: Math.round(volume) };
   }
 
+  if (overlayPaths.length !== parsedOverlays.length) {
+    return { error: 'Every layer needs its picture' };
+  }
+
   const shape = body?.shape === undefined ? 'original' : body.shape;
   if (shape !== 'original' && !VIDEO_RATIOS.includes(shape)) {
     return { error: 'Choose a frame size' };
@@ -148,7 +117,10 @@ export const parseVideoEdit = (
   return {
     edit: {
       clips: parsedClips,
-      titles: parsedTitles,
+      overlays: parsedOverlays.map((overlay, index) => ({
+        ...overlay,
+        path: overlayPaths[index],
+      })),
       ...(music ? { music } : {}),
       shape,
       focusX,

@@ -1,6 +1,4 @@
-import { existsSync } from 'fs';
-import { join } from 'path';
-import { editDuration, VideoEdit, VideoFont } from './video.edit';
+import { editDuration, VideoEdit } from './video.edit';
 
 export interface SourceProbe {
   path: string;
@@ -19,40 +17,9 @@ export interface ResolvedEdit {
   height: number;
 }
 
-const FONT_FILE: Record<VideoFont, string> = {
-  Inter: 'Inter.ttf',
-  Roboto: 'Roboto.ttf',
-  Montserrat: 'Montserrat.ttf',
-  Poppins: 'Poppins.ttf',
-};
-
-// drawtext needs a file. The image installs these; local dev uses the copies
-// next to this source, then Inter when the chosen family is missing
-export const fontFile = (family: VideoFont) => {
-  const names = [FONT_FILE[family], FONT_FILE.Inter];
-  const dirs = [
-    join(__dirname, 'fonts'),
-    join(process.cwd(), 'libraries/nestjs-libraries/src/videos/fonts'),
-    '/usr/share/fonts/postiz',
-  ];
-  for (const name of names) {
-    for (const dir of dirs) {
-      const path = join(dir, name);
-      if (existsSync(path)) {
-        return path;
-      }
-    }
-  }
-  return undefined;
-};
-
-// drawtext treats colon, backslash, percent and quotes as syntax
-export const escapeDrawtext = (value: string) =>
-  value.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, "\\'").replace(/%/g, '\\%');
-
 const fpsOf = (fps: number) => Math.min(60, Math.max(1, Math.round(fps || 30)));
 
-export const ffmpegPlan = (resolved: ResolvedEdit, titleImages: string[] = []) => {
+export const ffmpegPlan = (resolved: ResolvedEdit) => {
   const { edit, clips, width, height } = resolved;
   const duration = editDuration(edit);
   const fps = fpsOf(clips[0]?.fps);
@@ -84,18 +51,18 @@ export const ffmpegPlan = (resolved: ResolvedEdit, titleImages: string[] = []) =
   filters.push(`${pairs}concat=n=${clips.length}:v=1:a=1[vcat][acat]`);
 
   let video = '[vcat]';
-  const inputs: { path: string; duration?: number }[] = clips.map((clip) => ({
+  const inputs: { path: string }[] = clips.map((clip) => ({
     path: clip.path,
   }));
-  edit.titles.forEach((title, index) => {
-    const image = titleImages[index];
-    if (!image) {
-      return;
-    }
-    inputs.push({ path: image, duration });
-    const next = index === edit.titles.length - 1 ? '[vout]' : `[vt${index}]`;
+  // listed back to front, so later layers are drawn over earlier ones; a still
+  // picture is one frame that overlay keeps showing, enable is on the video's clock
+  const overlays = edit.overlays || [];
+  overlays.forEach((overlay, index) => {
+    inputs.push({ path: overlay.path });
+    const next = index === overlays.length - 1 ? '[vout]' : `[vo${index}]`;
     filters.push(
-      `${video}[${inputs.length - 1}:v]overlay=0:0:enable='between(t,${title.start},${title.end})'${next}`
+      `[${inputs.length - 1}:v]scale=${width}:${height},format=rgba[o${index}]`,
+      `${video}[o${index}]overlay=0:0:enable='between(t,${overlay.start},${overlay.end})'${next}`
     );
     video = next;
   });

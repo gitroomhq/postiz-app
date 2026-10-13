@@ -3,41 +3,31 @@ import { frameSize, parseVideoEdit } from './video.edit';
 const clip = { mediaId: 'clip-1', in: 0, out: 10, muted: false };
 
 describe('parseVideoEdit', () => {
-  it('keeps a clip, a title and the music track', () => {
-    const parsed = parseVideoEdit({
-      clips: [clip],
-      titles: [
-        {
-          text: '  Hello  ',
-          start: 1,
-          end: 4,
-          x: 0.5,
-          y: 0.2,
-          font: 'Inter',
-          size: 64.4,
-          color: '#FF00AA',
-          align: 'left',
-        },
-      ],
-      music: { mediaId: 'song', in: 2, start: 1, volume: 40 },
-      shape: '9:16',
-      focusX: 0.2,
-      focusY: 0.8,
-    });
+  it('keeps a clip, the overlays with their stored pictures, and the music track', () => {
+    const parsed = parseVideoEdit(
+      {
+        clips: [clip],
+        overlays: [
+          { start: 1, end: 4, path: '/etc/passwd' },
+          { start: 0, end: 99 },
+        ],
+        music: { mediaId: 'song', in: 2, start: 1, volume: 40 },
+        shape: '9:16',
+        focusX: 0.2,
+        focusY: 0.8,
+      },
+      ['https://cdn/one.png', 'https://cdn/two.png']
+    );
     expect('edit' in parsed && parsed.edit).toMatchObject({
       shape: '9:16',
       focusX: 0.2,
       focusY: 0.8,
       music: { mediaId: 'song', in: 2, start: 1, volume: 40 },
+      overlays: [
+        { start: 1, end: 4, path: 'https://cdn/one.png' },
+        { start: 0, end: 10, path: 'https://cdn/two.png' },
+      ],
     });
-    if ('edit' in parsed) {
-      expect(parsed.edit.titles[0]).toMatchObject({
-        text: 'Hello',
-        size: 64,
-        color: '#ff00aa',
-        align: 'left',
-      });
-    }
   });
 
   it('rejects a clip shorter than 0.1 seconds and a timeline past 15 minutes', () => {
@@ -49,30 +39,17 @@ describe('parseVideoEdit', () => {
     });
   });
 
-  it('drops an empty title and rejects a colour that is not hex', () => {
-    const empty = parseVideoEdit({
-      clips: [clip],
-      titles: [{ text: '   ', start: 0, end: 1 }],
+  it('rejects an overlay without its picture, with no length, or past the cap', () => {
+    expect(parseVideoEdit({ clips: [clip], overlays: [{ start: 0, end: 1 }] })).toEqual({
+      error: 'Every layer needs its picture',
     });
-    expect('edit' in empty && empty.edit.titles).toEqual([]);
     expect(
-      parseVideoEdit({
-        clips: [clip],
-        titles: [
-          {
-            text: 'Hi',
-            start: 0,
-            end: 1,
-            x: 0.5,
-            y: 0.5,
-            font: 'Inter',
-            size: 40,
-            color: 'red',
-            align: 'center',
-          },
-        ],
-      })
-    ).toEqual({ error: 'A title has a font or colour this editor cannot use' });
+      parseVideoEdit({ clips: [clip], overlays: [{ start: 2, end: 2 }] }, ['a.png'])
+    ).toEqual({ error: 'A layer has timing outside the video' });
+    const many = Array.from({ length: 41 }, () => ({ start: 0, end: 1 }));
+    expect(parseVideoEdit({ clips: [clip], overlays: many })).toEqual({
+      error: 'Use at most 40 layers',
+    });
   });
 });
 

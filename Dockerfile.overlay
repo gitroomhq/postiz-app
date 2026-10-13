@@ -67,9 +67,7 @@ LABEL org.opencontainers.image.source="https://github.com/IORoot/postiz-app"
 USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
-    && mkdir -p /usr/share/fonts/postiz \
     && rm -rf /var/lib/apt/lists/*
-COPY libraries/nestjs-libraries/src/videos/fonts/ /usr/share/fonts/postiz/
 COPY --from=build /app/apps/orchestrator/dist /app/apps/orchestrator/dist
 COPY --from=build /app/apps/backend/dist /app/apps/backend/dist
 COPY --from=build /app/apps/frontend/.next /app/apps/frontend/.next

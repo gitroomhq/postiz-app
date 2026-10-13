@@ -1,36 +1,9 @@
-import { createReadStream, readFileSync, statSync, unlinkSync, writeFileSync } from 'fs';
+import { createReadStream, statSync, unlinkSync } from 'fs';
 import { spawn } from 'child_process';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import sharp from 'sharp';
 import { IUploadProvider } from '@gitroom/nestjs-libraries/upload/upload.interface';
-import { VideoEditTitle, VideoFont } from './video.edit';
-import { ffmpegPlan, fontFile, ResolvedEdit, SourceProbe } from './video.ffmpeg';
-
-const fontData = new Map<VideoFont, string>();
-const textAnchor = { left: 'start', center: 'middle', right: 'end' } as const;
-
-const escapeXml = (value: string) =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-// A full-frame transparent image. The ffmpeg build has overlay, not drawtext
-const titlePng = async (title: VideoEditTitle, width: number, height: number) => {
-  let font = fontData.get(title.font);
-  if (!font) {
-    const file = fontFile(title.font) || fontFile('Inter');
-    font = file ? readFileSync(file).toString('base64') : '';
-    fontData.set(title.font, font);
-  }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-<style>@font-face { font-family: "PostizTitle"; src: url("data:font/ttf;base64,${font}"); }</style>
-<text x="${width * title.x}" y="${height * title.y}" text-anchor="${textAnchor[title.align]}" dominant-baseline="middle" font-family="PostizTitle" font-size="${title.size}" fill="${title.color}">${escapeXml(title.text)}</text>
-</svg>`;
-  return sharp(Buffer.from(svg)).png().toBuffer();
-};
+import { ffmpegPlan, ResolvedEdit, SourceProbe } from './video.ffmpeg';
 
 const run = (command: string, args: string[], timeoutMs: number) =>
   new Promise<void>((resolve, reject) => {
@@ -138,20 +111,11 @@ export const renderToStorage = async (
   storage: IUploadProvider,
   resolved: ResolvedEdit
 ) => {
-  const titleFiles: string[] = [];
   const output = join(tmpdir(), `postiz-edit-${Date.now()}.mp4`);
   try {
-    for (const [index, title] of resolved.edit.titles.entries()) {
-      const file = join(tmpdir(), `postiz-title-${process.pid}-${Date.now()}-${index}.png`);
-      writeFileSync(file, await titlePng(title, resolved.width, resolved.height));
-      titleFiles.push(file);
-    }
-    const plan = ffmpegPlan(resolved, titleFiles);
+    const plan = ffmpegPlan(resolved);
     const args = ['-y', '-hide_banner'];
     for (const input of plan.inputs) {
-      if (input.duration) {
-        args.push('-loop', '1', '-t', String(input.duration));
-      }
       args.push('-i', input.path);
     }
     args.push('-filter_complex', plan.filter, ...plan.output, output);
@@ -168,12 +132,10 @@ export const renderToStorage = async (
       fileSize: Math.min(size, 2147483647),
     };
   } finally {
-    for (const file of [output, ...titleFiles]) {
-      try {
-        unlinkSync(file);
-      } catch {
-        // the encode failed before the file existed
-      }
+    try {
+      unlinkSync(output);
+    } catch {
+      // the encode failed before the file existed
     }
   }
 };

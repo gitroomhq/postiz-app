@@ -705,9 +705,50 @@ export class MediaService {
     }
   }
 
-  // Checks the edit, creates the library row, and hands the encode to a workflow
-  async startVideoEdit(org: string, body: unknown) {
-    const parsed = parseVideoEdit(body);
+  // Checks the edit, creates the library row, and hands the encode to a workflow.
+  // edit is the JSON of the timeline, overlays the stored picture of each layer
+  async startVideoEdit(
+    org: string,
+    edit: string,
+    overlays: { path: string; mimetype: string }[] = []
+  ) {
+    try {
+      return await this.queueVideoEdit(org, edit, overlays);
+    } catch (err) {
+      await this.removeOverlays(overlays.map((overlay) => overlay.path));
+      throw err;
+    }
+  }
+
+  // the overlay pictures only live for one render
+  private async removeOverlays(paths: string[]) {
+    for (const path of paths) {
+      try {
+        await this.storage.removeFile(path);
+      } catch (err) {
+        console.error(`Could not remove overlay file ${path}:`, err);
+      }
+    }
+  }
+
+  private async queueVideoEdit(
+    org: string,
+    body: string,
+    overlays: { path: string; mimetype: string }[]
+  ) {
+    if (overlays.some((overlay) => overlay.mimetype !== 'image/png')) {
+      throw new BadRequestException('Every layer must be a PNG picture');
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(body);
+    } catch {
+      throw new BadRequestException('The edit could not be read');
+    }
+    const parsed = parseVideoEdit(
+      json,
+      overlays.map((overlay) => overlay.path)
+    );
     if ('error' in parsed) {
       throw new BadRequestException(parsed.error);
     }
@@ -769,6 +810,14 @@ export class MediaService {
   // Runs inside the workflow. A deleted source or a failed encode throws, and
   // the workflow records that on the new item. The sources are left as they are
   async renderVideoEdit(mediaId: string, edit: VideoEdit) {
+    try {
+      await this.renderVideoEditFiles(mediaId, edit);
+    } finally {
+      await this.removeOverlays((edit.overlays || []).map((overlay) => overlay.path));
+    }
+  }
+
+  private async renderVideoEditFiles(mediaId: string, edit: VideoEdit) {
     const media = await this._mediaRepository.getMediaById(mediaId);
     if (!media || media.status !== 'rendering') {
       return;
@@ -808,7 +857,13 @@ export class MediaService {
 
     const size = frameSize(edit.shape, clips[0]);
     const stored = await renderToStorage(this.storage, {
-      edit,
+      edit: {
+        ...edit,
+        overlays: (edit.overlays || []).map((overlay) => ({
+          ...overlay,
+          path: localMediaPath(overlay.path),
+        })),
+      },
       clips,
       ...(music ? { music } : {}),
       ...size,

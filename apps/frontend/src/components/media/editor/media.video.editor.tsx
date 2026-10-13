@@ -16,26 +16,52 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import {
+  frameSize,
+  VIDEO_EDIT_MAX_OVERLAYS,
   VIDEO_EDIT_MAX_SECONDS,
-  VIDEO_FONTS,
   VIDEO_RATIOS,
-  VideoAlign,
-  VideoFont,
   VideoRatio,
 } from '@gitroom/nestjs-libraries/videos/video.edit';
 import {
+  EditorCanvas,
+  EditorDoc,
+  EditorLayer,
+  EditorTool,
+  emptyDoc,
+  fullRect,
+  LayerOrder,
+  loadImage,
+  loadSvgs,
+  moveLayer,
+  newSvgLayer,
+  newTextLayer,
+  parseSvg,
+  renderDoc,
+  restackLayers,
+  sizeLayerSide,
+  TextLayer,
+} from '@gitroom/frontend/components/media/editor/media.editor.canvas';
+import {
+  DrawSection,
+  FONTS,
+  LayerPanels,
+  loadFontList,
+  loadGoogleFont,
+  PickerScope,
+  ShapesSection,
+  SvgInsert,
+} from '@gitroom/frontend/components/media/editor/media.editor.layers';
+import { useBrandKit } from '@gitroom/frontend/components/media/editor/media.editor.presets';
+import {
   Field,
+  NumberInput,
+  Section,
   ToolButton,
 } from '@gitroom/frontend/components/media/editor/media.editor.ui';
 
 const MIN_CLIP = 0.1;
 const PX = 48;
-const FRAME: Record<VideoRatio, { width: number; height: number }> = {
-  '1:1': { width: 1080, height: 1080 },
-  '4:5': { width: 1080, height: 1350 },
-  '9:16': { width: 1080, height: 1920 },
-  '16:9': { width: 1920, height: 1080 },
-};
+const TEXT_SECONDS = 3;
 
 interface Source {
   id: string;
@@ -59,19 +85,6 @@ interface Clip {
   fps?: number;
 }
 
-interface Title {
-  key: string;
-  text: string;
-  start: number;
-  end: number;
-  x: number;
-  y: number;
-  font: VideoFont;
-  size: number;
-  color: string;
-  align: VideoAlign;
-}
-
 interface Music {
   mediaId: string;
   path: string;
@@ -82,9 +95,17 @@ interface Music {
   duration: number;
 }
 
+// when a layer shows, in seconds of the edit
+interface Span {
+  start: number;
+  end: number;
+}
+
 interface Doc {
   clips: Clip[];
-  titles: Title[];
+  // back to front, the same order the server stacks them
+  layers: EditorLayer[];
+  timing: Record<string, Span>;
   music?: Music;
   shape: 'original' | VideoRatio;
   focusX: number;
@@ -120,6 +141,22 @@ const placedClips = (clips: Clip[]) => {
 
 const totalOf = (clips: Clip[]) => clips.reduce((sum, clip) => sum + span(clip), 0);
 
+// the server encodes at this size, so layers are placed in its pixels
+const frameOf = (doc: Doc) =>
+  frameSize(doc.shape, {
+    width: doc.clips[0]?.width || 1920,
+    height: doc.clips[0]?.height || 1080,
+  });
+
+const overlayDoc = (doc: Doc) => emptyDoc({ ...frameOf(doc), layers: doc.layers });
+
+// a shorter edit pulls the end back, the stored timing is left alone
+const spanOf = (doc: Doc, id: string, total: number): Span => {
+  const stored = doc.timing[id] || { start: 0, end: total };
+  const end = Math.min(stored.end, total);
+  return { start: Math.max(0, Math.min(stored.start, end - MIN_CLIP)), end };
+};
+
 const MediaVideoEditor: FC<{
   media: Source;
   closeModal: () => void;
@@ -130,7 +167,8 @@ const MediaVideoEditor: FC<{
   const toaster = useToaster();
   const modals = useModals();
   const mediaDirectory = useMediaDirectory();
-  const [doc, setDoc] = useState<Doc>({
+  const [brand] = useBrandKit();
+  const [doc, setDocState] = useState<Doc>({
     clips: [
       {
         key: makeId(8),
@@ -147,31 +185,46 @@ const MediaVideoEditor: FC<{
         tone: 0,
       },
     ],
-    titles: [],
+    layers: [],
+    timing: {},
     shape: 'original',
     focusX: 0.5,
     focusY: 0.5,
   });
   const [playhead, setPlayhead] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [selectedClip, setSelectedClip] = useState(doc.clips[0].key);
-  const [selectedTitle, setSelectedTitle] = useState<string>();
+  const [selectedClip, setSelectedClip] = useState<string | undefined>(doc.clips[0].key);
+  const [selectedLayer, setSelectedLayerState] = useState<string>();
+  const [tool, setTool] = useState<EditorTool>('select');
+  const [drawColor, setDrawColor] = useState('#FF3F3F');
+  const [drawSize, setDrawSize] = useState(8);
+  const [fontsVersion, setFontsVersion] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(0);
   const history = useRef<Doc[]>([]);
+  const pending = useRef<Doc | null>(null);
   const [canUndo, setCanUndo] = useState(false);
+  const images = useRef(new Map<string, HTMLImageElement>()).current;
   const videos = useRef<Record<string, HTMLVideoElement | null>>({});
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const [stage, setStage] = useState({ w: 0, h: 0 });
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const playingRef = useRef(false);
   const playheadRef = useRef(0);
   const totalRef = useRef(0);
   const fpsRef = useRef(30);
   const fpsRequested = useRef(new Set<string>());
+  const selectedLayerRef = useRef<string | undefined>(undefined);
+  const pickerOpen = useRef(false);
   const docRef = useRef(doc);
-  docRef.current = doc;
   playingRef.current = playing;
+
+  // the ref moves at once, so a step can be closed in the same handler
+  const setDoc = (next: Doc | ((current: Doc) => Doc)) => {
+    docRef.current = typeof next === 'function' ? next(docRef.current) : next;
+    setDocState(docRef.current);
+  };
 
   const placed = useMemo(() => placedClips(doc.clips), [doc.clips]);
   const total = totalOf(doc.clips);
@@ -180,16 +233,50 @@ const MediaVideoEditor: FC<{
   totalRef.current = total;
   fpsRef.current = timelineFps;
   const active = placed.find((clip) => playhead < clip.start + span(clip)) || placed[placed.length - 1];
-  const frame =
-    doc.shape === 'original'
-      ? { width: doc.clips[0]?.width || 1920, height: doc.clips[0]?.height || 1080 }
-      : FRAME[doc.shape];
+  const frame = frameOf(doc);
+  const previewScale =
+    stage.w > 0 && stage.h > 0 ? Math.min(stage.w / frame.width, stage.h / frame.height) : 0;
+
+  const setSelectedLayer = (id?: string) => {
+    selectedLayerRef.current = id;
+    setSelectedLayerState(id);
+    if (id) {
+      setSelectedClip(undefined);
+    }
+  };
 
   const remember = () => {
     history.current = [...history.current.slice(-49), docRef.current];
     setCanUndo(true);
   };
+
+  // begin / end group live edits (drags, sliders, typing) into one undo step
+  const begin = () => {
+    if (!pending.current) {
+      pending.current = docRef.current;
+    }
+  };
+  const end = () => {
+    if (pending.current && pending.current !== docRef.current) {
+      history.current = [...history.current.slice(-49), pending.current];
+      setCanUndo(true);
+    }
+    pending.current = null;
+  };
+  // pointer down comes before the blur of a focused field, so blur it now to close its step first
+  const beginStep = () => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    end();
+    begin();
+  };
+  const commit = (fn: (current: Doc) => Doc) => {
+    beginStep();
+    setDoc(fn);
+    end();
+  };
+
   const undo = () => {
+    end();
     const previous = history.current.pop();
     setCanUndo(history.current.length > 0);
     if (previous) {
@@ -226,16 +313,21 @@ const MediaVideoEditor: FC<{
   }, [total]);
 
   useEffect(() => {
-    const box = previewRef.current;
+    loadFontList();
+  }, []);
+
+  useEffect(() => {
+    const box = stageRef.current;
     if (!box) {
       return;
     }
-    const measure = () => setPreviewWidth(box.clientWidth);
+    // the padding of the stage
+    const measure = () => setStage({ w: box.clientWidth - 24, h: box.clientHeight - 24 });
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(box);
     return () => observer.disconnect();
-  }, [frame.width, frame.height]);
+  }, []);
 
   useEffect(() => {
     const missing = [
@@ -274,30 +366,36 @@ const MediaVideoEditor: FC<{
     };
   }, [doc.clips]);
 
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href =
-      'https://fonts.googleapis.com/css2?family=Inter&family=Montserrat&family=Poppins&family=Roboto&display=swap';
-    document.head.appendChild(link);
-    return () => {
-      link.remove();
-    };
-  }, []);
+  const removeLayer = (id: string) => {
+    commit((current) => {
+      const { [id]: _removed, ...timing } = current.timing;
+      return { ...current, layers: current.layers.filter((l) => l.id !== id), timing };
+    });
+    setSelectedLayer(undefined);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      const target = e.target as HTMLElement;
+      if (
+        pickerOpen.current ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName) ||
+        target?.isContentEditable
+      ) {
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         undo();
+        return;
       }
       if (e.key === ' ') {
         e.preventDefault();
         setPlaying((value) => !value);
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedLayerRef.current) {
+        e.preventDefault();
+        removeLayer(selectedLayerRef.current);
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
@@ -431,15 +529,24 @@ const MediaVideoEditor: FC<{
     });
   };
 
-  const pick = (kind: 'video' | 'audio', onPick: (items: Source[]) => void) => {
+  const pick = (kind: 'video' | 'audio' | 'image', onPick: (items: Source[]) => void) => {
+    pickerOpen.current = true;
     modals.openModal({
-      title: kind === 'video' ? t('editor_add_clip', 'Add clip') : t('editor_music', 'Music'),
+      title:
+        kind === 'video'
+          ? t('editor_add_clip', 'Add clip')
+          : kind === 'image'
+          ? t('editor_add_image', 'Add image')
+          : t('editor_music', 'Music'),
+      fullScreen: true,
       size: 'calc(100% - 80px)',
       height: 'calc(100% - 80px)',
       closeOnEscape: true,
       askClose: false,
       children: (close) => (
-        <LibraryPick kind={kind} close={close} onPick={onPick} />
+        <PickerScope onUnmount={() => (pickerOpen.current = false)}>
+          <LibraryPick kind={kind} close={close} onPick={onPick} />
+        </PickerScope>
       ),
     });
   };
@@ -468,6 +575,7 @@ const MediaVideoEditor: FC<{
       ],
     }));
     setSelectedClip(key);
+    setSelectedLayer(undefined);
   };
 
   const split = () => {
@@ -519,36 +627,192 @@ const MediaVideoEditor: FC<{
     setDoc({ ...doc, clips: next });
   };
 
-  const addTitle = () => {
-    remember();
-    const key = makeId(8);
-    const start = Math.min(playhead, Math.max(0, total - 1));
-    setDoc((current) => ({
-      ...current,
-      titles: [
-        ...current.titles,
-        {
-          key,
-          text: t('editor_title', 'Title'),
-          start,
-          end: Math.min(total, start + 3),
-          x: 0.5,
-          y: 0.5,
-          font: 'Inter',
-          size: 64,
-          color: '#ffffff',
-          align: 'center',
-        },
-      ],
-    }));
-    setSelectedTitle(key);
+  // text starts at the playhead for a few seconds, anything else runs to the end
+  const newSpan = (layer: EditorLayer): Span => {
+    const length = totalRef.current;
+    if (layer.kind === 'text') {
+      const start = Math.min(playheadRef.current, Math.max(0, length - 1));
+      return { start, end: Math.min(length, start + TEXT_SECONDS) };
+    }
+    return { start: Math.min(playheadRef.current, Math.max(0, length - MIN_CLIP)), end: length };
   };
 
-  const updateTitle = (key: string, patch: Partial<Title>) => {
-    setDoc((current) => ({
+  const tooManyLayers = () =>
+    toaster.show(
+      t('editor_layer_limit', 'A video can have at most {{count}} layers', {
+        count: VIDEO_EDIT_MAX_OVERLAYS,
+      }),
+      'warning'
+    );
+
+  // the canvas edits a picture doc of the layers, new layers get their timing here
+  const updateOverlay = (fn: (current: EditorDoc) => EditorDoc) => {
+    const current = docRef.current;
+    const layers = fn(overlayDoc(current)).layers;
+    if (layers === current.layers) {
+      return;
+    }
+    if (layers.length > VIDEO_EDIT_MAX_OVERLAYS && layers.length > current.layers.length) {
+      tooManyLayers();
+      return;
+    }
+    const added = layers.filter((l) => !current.timing[l.id]);
+    setDoc({
       ...current,
-      titles: current.titles.map((title) => (title.key === key ? { ...title, ...patch } : title)),
+      layers,
+      timing: added.length
+        ? { ...current.timing, ...Object.fromEntries(added.map((l) => [l.id, newSpan(l)])) }
+        : current.timing,
+    });
+  };
+
+  const addLayers = (layers: EditorLayer[]) => {
+    if (!layers.length) {
+      return false;
+    }
+    if (docRef.current.layers.length + layers.length > VIDEO_EDIT_MAX_OVERLAYS) {
+      tooManyLayers();
+      return false;
+    }
+    beginStep();
+    updateOverlay((d) => ({ ...d, layers: [...d.layers, ...layers] }));
+    end();
+    setTool('select');
+    setSelectedLayer(layers[layers.length - 1].id);
+    return true;
+  };
+
+  const updateLayer = (id: string, fields: Partial<EditorLayer>) => {
+    updateOverlay((current) => ({
+      ...current,
+      layers: current.layers.map((l) => (l.id === id ? ({ ...l, ...fields } as EditorLayer) : l)),
     }));
+  };
+
+  const commitLayer = (id: string, fields: Partial<EditorLayer>) => {
+    beginStep();
+    updateLayer(id, fields);
+    end();
+  };
+
+  const setLayerSize = (id: string, side: 'w' | 'h', value: number, locked: boolean) => {
+    updateOverlay((current) => ({
+      ...current,
+      layers: current.layers.map((l) => (l.id === id ? sizeLayerSide(l, side, value, locked) : l)),
+    }));
+  };
+
+  const reorderLayer = (id: string, to: LayerOrder) => {
+    commit((current) => ({ ...current, layers: restackLayers(current.layers, id, to) }));
+  };
+
+  const duplicateLayer = (id: string) => {
+    const current = docRef.current;
+    const layer = current.layers.find((l) => l.id === id);
+    if (!layer) {
+      return;
+    }
+    if (current.layers.length >= VIDEO_EDIT_MAX_OVERLAYS) {
+      tooManyLayers();
+      return;
+    }
+    const offset = Math.max(1, Math.round(frameOf(current).width / 400)) * 10;
+    const copy = { ...moveLayer(layer, offset, offset), id: makeId(10) };
+    commit((d) => {
+      const layers = [...d.layers];
+      layers.splice(layers.findIndex((l) => l.id === id) + 1, 0, copy);
+      return { ...d, layers, timing: { ...d.timing, [copy.id]: spanOf(d, id, totalRef.current) } };
+    });
+    setSelectedLayer(copy.id);
+  };
+
+  const setLayerSpan = (id: string, next: Span) => {
+    setDoc((current) => ({ ...current, timing: { ...current.timing, [id]: next } }));
+  };
+
+  const ensureFont = async (family: string) => {
+    if (!(await loadGoogleFont(family))) {
+      toaster.show(
+        t('editor_font_not_found', 'Could not find "{{font}}" on Google Fonts', {
+          font: family,
+        }),
+        'warning'
+      );
+      return false;
+    }
+    setFontsVersion((v) => v + 1);
+    return true;
+  };
+
+  const addText = async () => {
+    const font = (await ensureFont(brand.font || FONTS[0])) ? brand.font || FONTS[0] : FONTS[0];
+    addLayers([newTextLayer(overlayDoc(docRef.current), font, t('editor_your_text', 'Your text'))]);
+  };
+
+  const addSvg = (markup: string) => {
+    const svg = parseSvg(markup);
+    if (!svg) {
+      toaster.show(
+        t(
+          'editor_svg_invalid',
+          "Couldn't read this SVG. It needs a viewBox or a width and height, and must be under 1 MB."
+        ),
+        'warning'
+      );
+      return false;
+    }
+    return addLayers([newSvgLayer(overlayDoc(docRef.current), svg)]);
+  };
+
+  const openSvgInsert = () => {
+    pickerOpen.current = true;
+    modals.openModal({
+      title: t('editor_add_svg', 'Add SVG'),
+      askClose: false,
+      closeOnEscape: true,
+      children: (close) => (
+        <PickerScope onUnmount={() => (pickerOpen.current = false)}>
+          <SvgInsert onInsert={addSvg} close={close} />
+        </PickerScope>
+      ),
+    });
+  };
+
+  const addImages = async (items: Source[]) => {
+    const area = fullRect(overlayDoc(docRef.current));
+    const layers: EditorLayer[] = [];
+    for (const item of items) {
+      try {
+        const img = await loadImage(item.path);
+        images.set(item.path, img);
+        const w = Math.min(img.naturalWidth, area.w * 0.4);
+        const h = (w * img.naturalHeight) / img.naturalWidth;
+        layers.push({
+          id: makeId(10),
+          kind: 'image',
+          opacity: 100,
+          rotation: 0,
+          src: item.path,
+          x: (area.w - w) / 2,
+          y: (area.h - h) / 2,
+          w,
+          h,
+        });
+      } catch (e) {
+        toaster.show(
+          t('editor_image_load_failed', "Couldn't load this image for editing"),
+          'warning'
+        );
+      }
+    }
+    addLayers(layers);
+  };
+
+  const changeTool = (next: EditorTool) => {
+    if (next === 'draw') {
+      setDrawSize(Math.max(2, Math.round(frame.width / 150)));
+    }
+    setTool(next);
   };
 
   const uploadMusic = async (file: File) => {
@@ -578,47 +842,73 @@ const MediaVideoEditor: FC<{
     }));
   };
 
+  // each layer becomes a full-frame transparent picture, the server lays them over the video
+  const renderOverlays = async (current: Doc, layers: EditorLayer[]) => {
+    const base = overlayDoc(current);
+    await Promise.all(
+      layers
+        .filter((l): l is TextLayer => l.kind === 'text')
+        .map((l) => loadGoogleFont(l.font))
+    );
+    await loadSvgs(base);
+    const canvas = document.createElement('canvas');
+    canvas.width = base.width;
+    canvas.height = base.height;
+    const ctx = canvas.getContext('2d')!;
+    const blobs: Blob[] = [];
+    for (const layer of layers) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      renderDoc(ctx, { ...base, layers: [layer] }, images, fullRect(base));
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) {
+        throw new Error('Could not export a layer');
+      }
+      blobs.push(blob);
+    }
+    return blobs;
+  };
+
   const save = async () => {
+    end();
     setSaving(true);
     try {
-      const response = await fetch('/media/video-edit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clips: doc.clips.map((clip) => ({
-          mediaId: clip.mediaId,
-          in: clip.in,
-          out: clip.out,
-          muted: clip.muted,
-        })),
-        titles: doc.titles
-          .filter((title) => title.text.trim())
-          .map(({ text, start, end, x, y, font, size, color, align }) => ({
-            text,
-            start,
-            end,
-            x,
-            y,
-            font,
-            size,
-            color,
-            align,
+      const current = docRef.current;
+      const length = totalOf(current.clips);
+      // a layer that starts after the end of a shortened edit is left out
+      const layers = current.layers.filter(
+        (l) =>
+          (l.kind !== 'text' || l.text.trim()) &&
+          (current.timing[l.id]?.start ?? 0) < length
+      );
+      const pictures = await renderOverlays(current, layers);
+      const body = new FormData();
+      body.append(
+        'edit',
+        JSON.stringify({
+          clips: current.clips.map((clip) => ({
+            mediaId: clip.mediaId,
+            in: clip.in,
+            out: clip.out,
+            muted: clip.muted,
           })),
-        ...(doc.music
-          ? {
-              music: {
-                mediaId: doc.music.mediaId,
-                in: doc.music.in,
-                start: doc.music.start,
-                volume: doc.music.volume,
-              },
-            }
-          : {}),
-        shape: doc.shape,
-        focusX: doc.focusX,
-        focusY: doc.focusY,
-      }),
-      });
+          overlays: layers.map((layer) => spanOf(current, layer.id, length)),
+          ...(current.music
+            ? {
+                music: {
+                  mediaId: current.music.mediaId,
+                  in: current.music.in,
+                  start: current.music.start,
+                  volume: current.music.volume,
+                },
+              }
+            : {}),
+          shape: current.shape,
+          focusX: current.focusX,
+          focusY: current.focusY,
+        })
+      );
+      pictures.forEach((picture, index) => body.append('overlays', picture, `layer-${index}.png`));
+      const response = await fetch('/media/video-edit', { method: 'POST', body });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         const message = Array.isArray(data.message) ? data.message[0] : data.message;
@@ -634,37 +924,49 @@ const MediaVideoEditor: FC<{
     }
   };
 
-  const title = doc.titles.find((item) => item.key === selectedTitle);
   const clip = doc.clips.find((item) => item.key === selectedClip);
+  const layer = doc.layers.find((item) => item.id === selectedLayer);
+  const layerSpan = layer && spanOf(doc, layer.id, total);
   const tooLong = total > VIDEO_EDIT_MAX_SECONDS;
-
-  const dragTitle = (event: ReactPointerEvent, item: Title) => {
-    const box = previewRef.current?.getBoundingClientRect();
-    if (!box) {
-      return;
-    }
-    let saved = false;
-    const move = (e: PointerEvent) => {
-      if (!saved) {
-        saved = true;
-        remember();
-      }
-      updateTitle(item.key, {
-        x: Math.min(1, Math.max(0, (e.clientX - box.left) / box.width)),
-        y: Math.min(1, Math.max(0, (e.clientY - box.top) / box.height)),
-      });
-    };
-    const up = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    event.stopPropagation();
+  const canvasDoc = useMemo(
+    () => emptyDoc({ width: frame.width, height: frame.height, layers: doc.layers }),
+    [doc.layers, frame.width, frame.height]
+  );
+  // a layer is on screen only while the playhead sits inside its From/To
+  const hiddenKey = doc.layers
+    .filter((item) => {
+      const at = spanOf(doc, item.id, total);
+      return playhead < at.start || playhead >= at.end;
+    })
+    .map((item) => item.id)
+    .join(',');
+  const hidden = useMemo(() => (hiddenKey ? hiddenKey.split(',') : []), [hiddenKey]);
+  const live = { onFocus: begin, onBlur: end };
+  const liveRange = {
+    onPointerDown: begin,
+    onKeyDown: begin,
+    onPointerUp: end,
+    onKeyUp: end,
+    onBlur: end,
   };
 
+  const layerName = (item: EditorLayer) =>
+    item.kind === 'text'
+      ? item.text.trim() || t('editor_text', 'Text')
+      : item.kind === 'image'
+      ? t('editor_image', 'Image')
+      : item.kind === 'stroke'
+      ? t('editor_drawing', 'Drawing')
+      : item.kind === 'svg'
+      ? t('editor_svg', 'SVG')
+      : t('editor_shape', 'Shape');
+
+  // a click on the picture that hits no layer drags the framing instead
   const dragFocus = (event: ReactPointerEvent) => {
-    setSelectedTitle(undefined);
+    if (tool !== 'select' || selectedLayerRef.current) {
+      return;
+    }
+    setSelectedClip(undefined);
     if (doc.shape === 'original') {
       return;
     }
@@ -736,15 +1038,106 @@ const MediaVideoEditor: FC<{
     event.stopPropagation();
   };
 
+  // the middle moves the layer in time, an end changes when it comes in or goes out
+  const dragSpan = (id: string, mode: 'move' | 'start' | 'end', event: ReactPointerEvent) => {
+    event.stopPropagation();
+    setSelectedLayer(id);
+    setTool('select');
+    beginStep();
+    const startX = event.clientX;
+    const length = totalRef.current;
+    const initial = spanOf(docRef.current, id, length);
+    let moved = false;
+    const move = (e: PointerEvent) => {
+      const by = (e.clientX - startX) / PX;
+      moved = moved || Math.abs(e.clientX - startX) > 2;
+      if (!moved) {
+        return;
+      }
+      if (mode === 'move') {
+        const width = initial.end - initial.start;
+        const start = Math.max(0, Math.min(length - width, initial.start + by));
+        setLayerSpan(id, { start, end: start + width });
+      } else if (mode === 'start') {
+        setLayerSpan(id, {
+          start: Math.max(0, Math.min(initial.end - MIN_CLIP, initial.start + by)),
+          end: initial.end,
+        });
+      } else {
+        setLayerSpan(id, {
+          start: initial.start,
+          end: Math.min(length, Math.max(initial.start + MIN_CLIP, initial.end + by)),
+        });
+      }
+    };
+    const up = (e: PointerEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      end();
+      if (!moved) {
+        seekTo(e.clientX);
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
   return (
     <div className="flex flex-col gap-[12px] w-full h-full min-h-0">
+      <div className="flex flex-wrap gap-[8px] items-center">
+        <ToolButton icon="select" active={tool === 'select'} onClick={() => changeTool('select')}>
+          {t('editor_select', 'Select')}
+        </ToolButton>
+        <ToolButton icon="text" onClick={addText}>
+          {t('editor_add_text', 'Add text')}
+        </ToolButton>
+        <ToolButton icon="draw" active={tool === 'draw'} onClick={() => changeTool('draw')}>
+          {t('editor_draw', 'Draw')}
+        </ToolButton>
+        <ToolButton icon="shapes" active={tool === 'shape'} onClick={() => changeTool('shape')}>
+          {t('editor_shapes', 'Shapes')}
+        </ToolButton>
+        <ToolButton icon="image" onClick={() => pick('image', addImages)}>
+          {t('editor_add_image', 'Add image')}
+        </ToolButton>
+        <ToolButton icon="svg" onClick={openSvgInsert}>
+          {t('editor_add_svg', 'Add SVG')}
+        </ToolButton>
+        <div className="flex-1" />
+        {(
+          [
+            ['original', t('editor_original', 'Original')],
+            ...VIDEO_RATIOS.map((ratio) => [ratio, ratio] as const),
+          ] as const
+        ).map(([shape, label]) => (
+          <ToolButton
+            key={shape}
+            active={doc.shape === shape}
+            onClick={() => commit((current) => ({ ...current, shape }))}
+          >
+            {label}
+          </ToolButton>
+        ))}
+        <ToolButton icon={playing ? 'close' : 'select'} onClick={() => setPlaying((value) => !value)}>
+          {playing ? t('editor_pause', 'Pause') : t('editor_play', 'Play')}
+        </ToolButton>
+        <ToolButton icon="split" onClick={split}>
+          {t('editor_split', 'Split')}
+        </ToolButton>
+        <ToolButton icon="undo" disabled={!canUndo} onClick={undo}>
+          {t('editor_undo', 'Undo')}
+        </ToolButton>
+      </div>
+
       <div className="flex gap-[16px] flex-1 min-h-0 mobile:flex-col">
-        <div className="flex-1 flex items-center justify-center rounded-[8px] bg-newBgColorInner p-[12px] min-h-[280px]">
+        <div
+          ref={stageRef}
+          className="flex-1 flex items-center justify-center rounded-[8px] bg-newBgColorInner p-[12px] min-h-[280px] min-w-0 overflow-hidden"
+        >
           <div
             ref={previewRef}
-            onPointerDown={dragFocus}
-            className="relative bg-black max-h-full max-w-full overflow-hidden"
-            style={{ aspectRatio: `${frame.width} / ${frame.height}`, height: '100%' }}
+            className="relative bg-black overflow-hidden shrink-0"
+            style={{ width: frame.width * previewScale, height: frame.height * previewScale }}
           >
             {doc.clips.map((item) => (
               <video
@@ -778,78 +1171,102 @@ const MediaVideoEditor: FC<{
                 )}
               </div>
             )}
-            {doc.titles
-              .filter(
-                (item) =>
-                  item.key === selectedTitle ||
-                  (playhead >= item.start && playhead <= item.end)
-              )
-              .map((item) => (
-              <div
-                key={item.key}
-                onPointerDown={(event) => {
-                  setSelectedTitle(item.key);
-                  dragTitle(event, item);
+            <div className="absolute inset-0" onPointerDown={dragFocus}>
+              <EditorCanvas
+                doc={canvasDoc}
+                images={images}
+                tool={tool}
+                selectedId={selectedLayer && hidden.includes(selectedLayer) ? undefined : selectedLayer}
+                onSelect={setSelectedLayer}
+                onBegin={beginStep}
+                onUpdate={updateOverlay}
+                onEnd={end}
+                onCropDraft={() => undefined}
+                drawColor={drawColor}
+                drawSize={drawSize}
+                shape="rect"
+                onShapeCreated={(id) => {
+                  setTool('select');
+                  setSelectedLayer(id);
                 }}
-                className={clsx(
-                  'absolute whitespace-nowrap cursor-move',
-                  selectedTitle === item.key && 'outline outline-1 outline-[#612BD3]'
-                )}
-                style={{
-                  left: `${item.x * 100}%`,
-                  top: `${item.y * 100}%`,
-                  transform:
-                    item.align === 'left'
-                      ? 'translate(0, -50%)'
-                      : item.align === 'right'
-                      ? 'translate(-100%, -50%)'
-                      : 'translate(-50%, -50%)',
-                  fontFamily: item.font,
-                  fontSize: Math.max(
-                    12,
-                    (item.size * (previewWidth || frame.width)) / frame.width
-                  ),
-                  color: item.color,
-                }}
-              >
-                {item.text}
-              </div>
-            ))}
+                zoom="fit"
+                onZoom={() => undefined}
+                fontsVersion={fontsVersion}
+                hidden={hidden}
+                transparent
+              />
+            </div>
           </div>
         </div>
         <div className="w-[300px] mobile:w-full flex flex-col gap-[12px] overflow-y-auto">
-          <div className="flex flex-wrap gap-[6px]">
-            <ToolButton icon={playing ? 'close' : 'select'} onClick={() => setPlaying((value) => !value)}>
-              {playing ? t('editor_pause', 'Pause') : t('editor_play', 'Play')}
-            </ToolButton>
-            <ToolButton icon="split" onClick={split}>
-              {t('editor_split', 'Split')}
-            </ToolButton>
-            <ToolButton icon="undo" disabled={!canUndo} onClick={undo}>
-              {t('editor_undo', 'Undo')}
-            </ToolButton>
-          </div>
-          <div className="flex flex-wrap gap-[6px]">
-            {(
-              [
-                ['original', t('editor_original', 'Original')],
-                ...VIDEO_RATIOS.map((ratio) => [ratio, ratio] as const),
-              ] as const
-            ).map(([shape, label]) => (
-              <ToolButton
-                key={shape}
-                active={doc.shape === shape}
-                onClick={() => {
-                  remember();
-                  setDoc({ ...doc, shape });
-                }}
-              >
-                {label}
-              </ToolButton>
-            ))}
-          </div>
-          {clip && (
-            <Field label={clip.name}>
+          {tool === 'draw' && (
+            <DrawSection
+              color={drawColor}
+              size={drawSize}
+              swatches={brand.colors}
+              onColor={setDrawColor}
+              onSize={setDrawSize}
+            />
+          )}
+
+          {tool === 'shape' && <ShapesSection onPick={addSvg} />}
+
+          {tool === 'select' && layer && layerSpan && (
+            <>
+              <Section title={t('editor_timing', 'Timing')}>
+                <div className="flex gap-[12px] items-end">
+                  <Field label={`${t('editor_from', 'From')} (s)`}>
+                    <NumberInput
+                      className="w-[100px]"
+                      min={0}
+                      max={total}
+                      step={0.1}
+                      value={Number(layerSpan.start.toFixed(2))}
+                      {...live}
+                      onValue={(start) =>
+                        setLayerSpan(layer.id, {
+                          start: Math.min(start, layerSpan.end - MIN_CLIP),
+                          end: layerSpan.end,
+                        })
+                      }
+                    />
+                  </Field>
+                  <Field label={`${t('editor_to', 'To')} (s)`}>
+                    <NumberInput
+                      className="w-[100px]"
+                      min={0}
+                      max={total}
+                      step={0.1}
+                      value={Number(layerSpan.end.toFixed(2))}
+                      {...live}
+                      onValue={(value) =>
+                        setLayerSpan(layer.id, {
+                          start: layerSpan.start,
+                          end: Math.max(value, layerSpan.start + MIN_CLIP),
+                        })
+                      }
+                    />
+                  </Field>
+                </div>
+              </Section>
+              <LayerPanels
+                selected={layer}
+                swatches={brand.colors}
+                live={live}
+                liveRange={liveRange}
+                updateLayer={updateLayer}
+                commitLayer={commitLayer}
+                setLayerSize={setLayerSize}
+                ensureFont={ensureFont}
+                reorderLayer={reorderLayer}
+                duplicateLayer={duplicateLayer}
+                removeLayer={removeLayer}
+              />
+            </>
+          )}
+
+          {tool === 'select' && !layer && clip && (
+            <Section title={clip.name}>
               <div className="flex flex-wrap gap-[6px]">
                 <ToolButton
                   icon="volume"
@@ -867,195 +1284,100 @@ const MediaVideoEditor: FC<{
                   onClick={() => {
                     remember();
                     setDoc({ ...doc, clips: doc.clips.filter((item) => item.key !== clip.key) });
+                    setSelectedClip(undefined);
                   }}
                 >
                   {t('editor_delete_clip', 'Delete clip')}
                 </ToolButton>
               </div>
-            </Field>
+            </Section>
           )}
-          <div className="flex flex-wrap gap-[6px]">
-            <ToolButton icon="text" onClick={addTitle}>
-              {t('editor_add_title', 'Add title')}
-            </ToolButton>
-            <ToolButton icon="image" onClick={() => pick('video', (items) => items[0] && addClip(items[0]))}>
-              {t('editor_add_clip', 'Add clip')}
-            </ToolButton>
-          </div>
-          {title && (
-            <Field label={t('editor_title', 'Title')}>
-              <div className="flex flex-col gap-[8px]">
-                <input
-                  className="h-[36px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px] outline-none"
-                  value={title.text}
-                  onFocus={() => remember()}
-                  onChange={(e) => updateTitle(title.key, { text: e.target.value })}
-                />
-                <div className="grid grid-cols-3 gap-[6px]">
-                  <label className="text-[12px]">
-                    {t('editor_size', 'Size')}
+
+          {tool === 'select' && !layer && !clip && (
+            <>
+              <Section title={t('editor_frame', 'Frame')}>
+                <div className="text-[13px]">
+                  {frame.width} × {frame.height}px
+                </div>
+                <div>
+                  <ToolButton
+                    icon="image"
+                    onClick={() => pick('video', (items) => items[0] && addClip(items[0]))}
+                  >
+                    {t('editor_add_clip', 'Add clip')}
+                  </ToolButton>
+                </div>
+              </Section>
+              <Section title={t('editor_music', 'Music')}>
+                <div className="flex flex-wrap gap-[6px]">
+                  <label className="h-[36px] px-[12px] rounded-[8px] bg-btnSimple changeColor text-[13px] flex items-center cursor-pointer">
+                    {t('editor_upload', 'Upload')}
                     <input
-                      type="number"
-                      min={8}
-                      max={500}
-                      value={title.size}
-                      className="h-[36px] w-full px-[8px] rounded-[8px] bg-newBgColorInner border border-newColColor"
-                      onFocus={() => remember()}
-                      onChange={(e) =>
-                        updateTitle(title.key, {
-                          size: Math.min(500, Math.max(8, Number(e.target.value) || 8)),
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="text-[12px]">
-                    {t('editor_from', 'From')}
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.1}
-                      value={Number(title.start.toFixed(1))}
-                      className="h-[36px] w-full px-[8px] rounded-[8px] bg-newBgColorInner border border-newColColor"
-                      onFocus={() => remember()}
+                      type="file"
+                      accept="audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav"
+                      className="hidden"
                       onChange={(e) => {
-                        const start = Math.max(0, Number(e.target.value) || 0);
-                        updateTitle(title.key, {
-                          start,
-                          end: Math.max(title.end, start + 0.1),
-                        });
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (file) {
+                          uploadMusic(file);
+                        }
                       }}
                     />
                   </label>
-                  <label className="text-[12px]">
-                    {t('editor_to', 'To')}
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.1}
-                      value={Number(title.end.toFixed(1))}
-                      className="h-[36px] w-full px-[8px] rounded-[8px] bg-newBgColorInner border border-newColColor"
-                      onFocus={() => remember()}
-                      onChange={(e) =>
-                        updateTitle(title.key, {
-                          end: Math.max(title.start + 0.1, Number(e.target.value) || 0),
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-                <select
-                  className="h-[36px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[13px]"
-                  value={title.font}
-                  onChange={(e) => updateTitle(title.key, { font: e.target.value as VideoFont })}
-                >
-                  {VIDEO_FONTS.map((font) => (
-                    <option key={font}>{font}</option>
-                  ))}
-                </select>
-                <div className="flex gap-[6px]">
-                  {(['left', 'center', 'right'] as const).map((align) => (
-                    <ToolButton
-                      key={align}
-                      active={title.align === align}
-                      onClick={() => updateTitle(title.key, { align })}
-                    >
-                      {align === 'center' ? t('editor_centre', 'Centre') : align}
-                    </ToolButton>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <input
-                    type="color"
-                    value={title.color}
-                    onChange={(e) => updateTitle(title.key, { color: e.target.value })}
-                  />
                   <ToolButton
-                    icon="trash"
-                    onClick={() => {
-                      remember();
-                      setDoc((current) => ({
-                        ...current,
-                        titles: current.titles.filter((item) => item.key !== title.key),
-                      }));
-                      setSelectedTitle(undefined);
-                    }}
+                    icon="image"
+                    onClick={() =>
+                      pick('audio', (items) => {
+                        const item = items[0];
+                        if (!item) {
+                          return;
+                        }
+                        remember();
+                        setDoc((current) => ({
+                          ...current,
+                          music: {
+                            mediaId: item.id,
+                            path: item.path,
+                            name: item.name,
+                            in: 0,
+                            start: 0,
+                            volume: 40,
+                            duration: 0,
+                          },
+                        }));
+                      })
+                    }
                   >
-                    {t('editor_delete_title', 'Delete title')}
+                    {t('editor_library', 'Library')}
                   </ToolButton>
                 </div>
-              </div>
-            </Field>
+                {doc.music && (
+                  <Field label={`${doc.music.name} ${doc.music.volume}%`}>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={doc.music.volume}
+                      className="w-full accent-[#612BD3]"
+                      {...liveRange}
+                      onChange={(e) =>
+                        setDoc((current) =>
+                          current.music
+                            ? { ...current, music: { ...current.music, volume: Number(e.target.value) } }
+                            : current
+                        )
+                      }
+                    />
+                  </Field>
+                )}
+              </Section>
+            </>
           )}
-          <Field label={t('editor_music', 'Music')}>
-            <div className="flex flex-col gap-[8px]">
-              <div className="flex flex-wrap gap-[6px]">
-                <label className="h-[36px] px-[12px] rounded-[8px] bg-btnSimple changeColor text-[13px] flex items-center cursor-pointer">
-                  {t('editor_upload', 'Upload')}
-                  <input
-                    type="file"
-                    accept="audio/mpeg,audio/mp4,audio/wav,.mp3,.m4a,.wav"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = '';
-                      if (file) {
-                        uploadMusic(file);
-                      }
-                    }}
-                  />
-                </label>
-                <ToolButton
-                  icon="image"
-                  onClick={() =>
-                    pick('audio', (items) => {
-                      const item = items[0];
-                      if (!item) {
-                        return;
-                      }
-                      remember();
-                      setDoc((current) => ({
-                        ...current,
-                        music: {
-                          mediaId: item.id,
-                          path: item.path,
-                          name: item.name,
-                          in: 0,
-                          start: 0,
-                          volume: 40,
-                          duration: 0,
-                        },
-                      }));
-                    })
-                  }
-                >
-                  {t('editor_library', 'Library')}
-                </ToolButton>
-              </div>
-              {doc.music && (
-                <label className="text-[12px]">
-                  {doc.music.name} {doc.music.volume}%
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={doc.music.volume}
-                    className="w-full accent-[#612BD3]"
-                    onChange={(e) =>
-                      setDoc((current) =>
-                        current.music
-                          ? { ...current, music: { ...current.music, volume: Number(e.target.value) } }
-                          : current
-                      )
-                    }
-                  />
-                </label>
-              )}
-            </div>
-          </Field>
         </div>
       </div>
 
-      <div className="rounded-[8px] bg-newBgColorInner p-[10px] overflow-x-auto">
+      <div className="rounded-[8px] bg-newBgColorInner p-[10px] overflow-x-auto max-h-[40vh] overflow-y-auto">
         <div
           ref={timelineRef}
           className="relative pt-[18px]"
@@ -1104,6 +1426,8 @@ const MediaVideoEditor: FC<{
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedClip(item.key);
+                  setSelectedLayer(undefined);
+                  setTool('select');
                   seekTo(e.clientX);
                 }}
                 className={clsx(
@@ -1128,30 +1452,35 @@ const MediaVideoEditor: FC<{
               </div>
             ))}
           </div>
-          <div className="relative h-[28px] mt-[6px]">
-            {doc.titles.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                data-timeline-item
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedTitle(item.key);
-                  seekTo(e.clientX);
-                }}
-                className={clsx(
-                  'absolute top-0 h-full rounded-[4px] bg-white/20 text-[11px] px-[6px] truncate',
-                  selectedTitle === item.key && 'outline outline-1 outline-[#612BD3]'
-                )}
-                style={{
-                  left: item.start * PX,
-                  width: Math.max(8, (item.end - item.start) * PX),
-                }}
-              >
-                {item.text}
-              </button>
-            ))}
-          </div>
+          {doc.layers.map((item) => {
+            const at = spanOf(doc, item.id, total);
+            return (
+              <div key={item.id} className="relative h-[24px] mt-[4px]">
+                <div
+                  data-timeline-item
+                  onPointerDown={(e) => dragSpan(item.id, 'move', e)}
+                  className={clsx(
+                    'absolute top-0 h-full rounded-[4px] bg-white/20 text-[11px] px-[8px] flex items-center cursor-grab select-none',
+                    selectedLayer === item.id && 'outline outline-1 outline-[#612BD3]'
+                  )}
+                  style={{
+                    left: at.start * PX,
+                    width: Math.max(8, (at.end - at.start) * PX),
+                  }}
+                >
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-[6px] cursor-ew-resize"
+                    onPointerDown={(e) => dragSpan(item.id, 'start', e)}
+                  />
+                  <span className="truncate">{layerName(item)}</span>
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-[6px] cursor-ew-resize"
+                    onPointerDown={(e) => dragSpan(item.id, 'end', e)}
+                  />
+                </div>
+              </div>
+            );
+          })}
           {doc.music && (
             <div
               data-timeline-item
@@ -1216,7 +1545,7 @@ const MediaVideoEditor: FC<{
 };
 
 const LibraryPick: FC<{
-  kind: 'video' | 'audio';
+  kind: 'video' | 'audio' | 'image';
   close: () => void;
   onPick: (items: Source[]) => void;
 }> = ({ kind, onPick }) => {

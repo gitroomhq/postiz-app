@@ -60,11 +60,12 @@ export const NumberInput: FC<{
   value: number;
   min: number;
   max: number;
+  step?: number;
   className?: string;
   onFocus?: () => void;
   onBlur?: () => void;
   onValue: (value: number) => void;
-}> = ({ value, min, max, className, onFocus, onBlur, onValue }) => {
+}> = ({ value, min, max, step, className, onFocus, onBlur, onValue }) => {
   const [draft, setDraft] = useState(String(value));
   const [focused, setFocused] = useState(false);
   useEffect(() => {
@@ -78,6 +79,7 @@ export const NumberInput: FC<{
       className={clsx(inputClass, className)}
       min={min}
       max={max}
+      step={step}
       value={draft}
       onFocus={() => {
         setFocused(true);
