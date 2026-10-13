@@ -24,6 +24,16 @@ import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.sear
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { MediaProcessorJob } from '@gitroom/nestjs-libraries/upload/media.processor.interface';
 import { extname } from 'path';
+import {
+  frameSize,
+  parseVideoEdit,
+  VideoEdit,
+} from '@gitroom/nestjs-libraries/videos/video.edit';
+import {
+  localMediaPath,
+  probeFile,
+  renderToStorage,
+} from '@gitroom/nestjs-libraries/videos/video.render';
 import { randomBytes } from 'crypto';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -675,5 +685,138 @@ export class MediaService {
     }
 
     return functionToCall(body);
+  }
+
+  async probeMedia(org: string, id: string) {
+    const media = await this._mediaRepository.getMediaStatus(org, id);
+    if (!media?.path) {
+      throw new HttpException('Media not found', 404);
+    }
+    try {
+      const probed = await probeFile(localMediaPath(media.path));
+      return {
+        duration: probed.duration,
+        width: probed.width,
+        height: probed.height,
+        fps: probed.fps,
+      };
+    } catch (err: any) {
+      throw new BadRequestException(err?.message || 'Could not read this file');
+    }
+  }
+
+  // Checks the edit, creates the library row, and hands the encode to a workflow
+  async startVideoEdit(org: string, body: unknown) {
+    const parsed = parseVideoEdit(body);
+    if ('error' in parsed) {
+      throw new BadRequestException(parsed.error);
+    }
+    const { edit } = parsed;
+    const ids = [
+      ...new Set([
+        ...edit.clips.map((clip) => clip.mediaId),
+        ...(edit.music ? [edit.music.mediaId] : []),
+      ]),
+    ];
+    const rows = await this._mediaRepository.getMediaByIds(org, ids);
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    for (const clip of edit.clips) {
+      const row = byId.get(clip.mediaId);
+      const ext = extname(row?.path || '').toLowerCase();
+      if (!row || (ext !== '.mp4' && ext !== '.mov')) {
+        throw new BadRequestException('A clip is not a video in this library');
+      }
+    }
+    if (edit.music) {
+      const row = byId.get(edit.music.mediaId);
+      const ext = extname(row?.path || '').toLowerCase();
+      if (!row || !['.mp3', '.m4a', '.wav'].includes(ext)) {
+        throw new BadRequestException('The music is not an audio file in this library');
+      }
+    }
+
+    const first = byId.get(edit.clips[0].mediaId)!;
+    const base = (first.originalName || first.name).replace(/\.[^.]+$/, '');
+    const created = await this._mediaRepository.createRendering(
+      org,
+      `${base} edited.mp4`
+    );
+    const client = this._temporalService.client.getRawClient();
+    if (!client) {
+      await this._mediaRepository.finishProcessing(org, created.id, {
+        error: 'The background worker is not running',
+      });
+      throw new BadRequestException('The background worker is not running');
+    }
+    try {
+      await client.workflow.start('renderVideoEditWorkflow', {
+        workflowId: `video_edit_${created.id}`,
+        taskQueue: 'main',
+        args: [{ mediaId: created.id, edit }],
+        typedSearchAttributes: new TypedSearchAttributes([
+          { key: organizationId, value: org },
+        ]),
+      });
+    } catch (err) {
+      await this._mediaRepository.finishProcessing(org, created.id, {
+        error: 'Could not start the render',
+      });
+      throw err;
+    }
+    return { id: created.id };
+  }
+
+  // Runs inside the workflow. A deleted source or a failed encode throws, and
+  // the workflow records that on the new item. The sources are left as they are
+  async renderVideoEdit(mediaId: string, edit: VideoEdit) {
+    const media = await this._mediaRepository.getMediaById(mediaId);
+    if (!media || media.status !== 'rendering') {
+      return;
+    }
+    const org = media.organizationId;
+    const ids = [
+      ...new Set([
+        ...edit.clips.map((clip) => clip.mediaId),
+        ...(edit.music ? [edit.music.mediaId] : []),
+      ]),
+    ];
+    const rows = await this._mediaRepository.getMediaByIds(org, ids);
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const label = (id: string) =>
+      byId.get(id)?.originalName || byId.get(id)?.name || 'A file';
+
+    const clips = [];
+    for (const clip of edit.clips) {
+      const row = byId.get(clip.mediaId);
+      if (!row?.path) {
+        throw new Error(`${label(clip.mediaId)} was deleted`);
+      }
+      const probed = await probeFile(localMediaPath(row.path));
+      if (clip.out > probed.duration + 0.25) {
+        throw new Error(`${label(clip.mediaId)} is shorter than the trim`);
+      }
+      clips.push(probed);
+    }
+    let music;
+    if (edit.music) {
+      const row = byId.get(edit.music.mediaId);
+      if (!row?.path) {
+        throw new Error('The music was deleted');
+      }
+      music = await probeFile(localMediaPath(row.path));
+    }
+
+    const size = frameSize(edit.shape, clips[0]);
+    const stored = await renderToStorage(this.storage, {
+      edit,
+      clips,
+      ...(music ? { music } : {}),
+      ...size,
+    });
+    await this._mediaRepository.finishProcessing(org, mediaId, {
+      name: stored.filename,
+      path: stored.path,
+      fileSize: stored.fileSize,
+    });
   }
 }

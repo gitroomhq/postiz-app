@@ -18,6 +18,18 @@ COPY libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts \
      /app/libraries/nestjs-libraries/src/database/prisma/media/media.repository.ts
 COPY libraries/nestjs-libraries/src/database/prisma/media/media.service.ts \
      /app/libraries/nestjs-libraries/src/database/prisma/media/media.service.ts
+COPY libraries/nestjs-libraries/src/videos \
+     /app/libraries/nestjs-libraries/src/videos
+COPY libraries/nestjs-libraries/src/dtos/media/video.edit.dto.ts \
+     /app/libraries/nestjs-libraries/src/dtos/media/video.edit.dto.ts
+COPY libraries/nestjs-libraries/src/upload/custom.upload.validation.ts \
+     /app/libraries/nestjs-libraries/src/upload/custom.upload.validation.ts
+COPY apps/orchestrator/src/workflows/render.video.edit.workflow.ts \
+     /app/apps/orchestrator/src/workflows/render.video.edit.workflow.ts
+COPY apps/orchestrator/src/workflows/index.ts \
+     /app/apps/orchestrator/src/workflows/index.ts
+COPY apps/orchestrator/src/activities/media.activity.ts \
+     /app/apps/orchestrator/src/activities/media.activity.ts
 COPY apps/backend/src/api/routes/webhooks.controller.ts \
      /app/apps/backend/src/api/routes/webhooks.controller.ts
 COPY apps/backend/src/api/routes/posts.controller.ts \
@@ -52,6 +64,12 @@ RUN pnpm run build:orchestrator && pnpm run build:backend && pnpm run build:fron
 
 FROM ghcr.io/gitroomhq/postiz-app:latest
 LABEL org.opencontainers.image.source="https://github.com/IORoot/postiz-app"
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && mkdir -p /usr/share/fonts/postiz \
+    && rm -rf /var/lib/apt/lists/*
+COPY libraries/nestjs-libraries/src/videos/fonts/ /usr/share/fonts/postiz/
 COPY --from=build /app/apps/orchestrator/dist /app/apps/orchestrator/dist
 COPY --from=build /app/apps/backend/dist /app/apps/backend/dist
 COPY --from=build /app/apps/frontend/.next /app/apps/frontend/.next

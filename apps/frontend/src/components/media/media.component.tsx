@@ -59,6 +59,15 @@ import { MediaBulkActionsBar } from '@gitroom/frontend/components/media/media.bu
 const MediaEditor = dynamic(
   () => import('@gitroom/frontend/components/media/editor/media.editor')
 );
+const MediaVideoEditor = dynamic(
+  () => import('@gitroom/frontend/components/media/editor/media.video.editor')
+);
+const isVideoFile = (path?: string | null) =>
+  hasExtension(path, 'mp4') || hasExtension(path, 'mov');
+const isAudioFile = (path?: string | null) =>
+  hasExtension(path, 'mp3') ||
+  hasExtension(path, 'm4a') ||
+  hasExtension(path, 'wav');
 const showModalEmitter = new EventEmitter();
 // on phones the media library takes the whole screen
 export const mediaLibrarySize = () =>
@@ -217,7 +226,7 @@ const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024; // 1 GB
 export const MediaBox: FC<{
   setMedia: (params: { id: string; path: string }[]) => void;
   standalone?: boolean;
-  type?: 'image' | 'video';
+  type?: 'image' | 'video' | 'audio';
   closeModal: () => void;
 }> = ({ type, standalone, setMedia }) => {
   const [page, setPage] = useState(0);
@@ -242,7 +251,11 @@ export const MediaBox: FC<{
   }, [page, debouncedSearch]);
   const { data, mutate, isLoading } = useSWR(
     `get-media-${page}-${debouncedSearch}`,
-    loadMedia
+    loadMedia,
+    {
+      refreshInterval: (latest: { results?: { status?: string }[] }) =>
+        latest?.results?.some((item) => item.status === 'rendering') ? 3000 : 0,
+    }
   );
   const [selected, setSelected] = useState<any[]>([]);
   // the standalone library selects only to delete in bulk
@@ -435,7 +448,7 @@ export const MediaBox: FC<{
         top: 10,
         children: (
           <div className="w-full h-full p-[50px]">
-            {hasExtension(media.path, 'mp4') ? (
+            {isVideoFile(media.path) ? (
               <VideoFrame
                 autoplay={true}
                 url={mediaDirectory.set(media.path)}
@@ -475,6 +488,41 @@ export const MediaBox: FC<{
             setMedia={() => {
               toaster.show(
                 t('editor_saved_copy', 'Saved a copy to the library'),
+                'success'
+              );
+              mutate();
+            }}
+            closeModal={close}
+          />
+        ),
+      });
+    },
+    [mutate, t]
+  );
+
+  const editVideo = useCallback(
+    (media: Media) => (e: any) => {
+      e.stopPropagation();
+      modals.openModal({
+        title: t('video_editor', 'Video Editor'),
+        askClose: true,
+        closeOnEscape: true,
+        fullScreen: true,
+        size: 'calc(100% - 80px)',
+        height: 'calc(100% - 80px)',
+        children: (close) => (
+          <MediaVideoEditor
+            media={{
+              id: media.id,
+              path: media.path,
+              name: media.originalName || media.name,
+            }}
+            onSaved={() => {
+              toaster.show(
+                t(
+                  'editor_video_rendering',
+                  'Saving the video. It will show up in the library when it is ready.'
+                ),
                 'success'
               );
               mutate();
@@ -724,9 +772,13 @@ export const MediaBox: FC<{
             {data?.results
               ?.filter((f: any) => {
                 if (type === 'video') {
-                  return hasExtension(f.path, 'mp4');
-                } else if (type === 'image') {
-                  return !hasExtension(f.path, 'mp4');
+                  return isVideoFile(f.path);
+                }
+                if (type === 'audio') {
+                  return isAudioFile(f.path);
+                }
+                if (type === 'image') {
+                  return !!f.path && !isVideoFile(f.path) && !isAudioFile(f.path);
                 }
                 return true;
               })
@@ -768,7 +820,9 @@ export const MediaBox: FC<{
                     )}
                     {standalone &&
                       !selectMode &&
-                      !hasExtension(media.path, 'mp4') && (
+                      !!media.path &&
+                      !isVideoFile(media.path) &&
+                      !isAudioFile(media.path) && (
                         <div
                           onClick={editImage(media)}
                           title={t('edit', 'Edit')}
@@ -777,6 +831,15 @@ export const MediaBox: FC<{
                           <PencilIcon size={14} />
                         </div>
                       )}
+                    {standalone && !selectMode && isVideoFile(media.path) && (
+                      <div
+                        onClick={editVideo(media)}
+                        title={t('edit', 'Edit')}
+                        className="cursor-pointer hidden z-[100] group-hover:flex justify-center items-center w-[26px] h-[26px] rounded-full bg-[#612BD3] text-white absolute -top-[5px] -start-[5px]"
+                      >
+                        <PencilIcon size={14} />
+                      </div>
+                    )}
                     <div
                       className={clsx(
                         'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]',
@@ -792,7 +855,8 @@ export const MediaBox: FC<{
                           className={clsx(
                             'cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all',
                             !standalone && 'mobile:!hidden',
-                            selectMode && '!hidden'
+                            selectMode && '!hidden',
+                            (!media.path || isAudioFile(media.path)) && '!hidden'
                           )}
                         >
                           <svg
@@ -809,11 +873,22 @@ export const MediaBox: FC<{
                           </svg>
                         </div>
                       </div>
-                      {hasExtension(media.path, 'mp4') ? (
+                      {!media.path ? (
+                        <div className="w-full h-full flex items-center justify-center text-center text-[12px] px-[8px]">
+                          {media.status === 'failed'
+                            ? media.processingError ||
+                              t('video_edit_failed', 'Render failed')
+                            : t('video_edit_rendering', 'Rendering…')}
+                        </div>
+                      ) : isVideoFile(media.path) ? (
                         <VideoFrame
                           url={mediaDirectory.set(media.path)}
                           showDuration
                         />
+                      ) : isAudioFile(media.path) ? (
+                        <div className="w-full h-full flex items-center justify-center text-center text-[12px] px-[8px]">
+                          {media.originalName || media.name}
+                        </div>
                       ) : (
                         <img
                           width="100%"
@@ -1062,7 +1137,7 @@ export const MultiMediaComponent: FC<{
                       >
                         <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                       </div>
-                      {hasExtension(media?.path, 'mp4') ? (
+                      {isVideoFile(media?.path) ? (
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img

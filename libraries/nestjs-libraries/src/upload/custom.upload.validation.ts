@@ -5,7 +5,7 @@ import { IUploadProvider } from './upload.interface';
 const { fileTypeStream } = require('file-type');
 
 // What users may put in the media library, whether by multipart upload or
-// from a remote URL; narrower than what storage itself accepts, no audio
+// from a remote URL; narrower than what storage itself accepts
 export const UPLOAD_ALLOWED_MIME = new Set<string>([
   'image/jpeg',
   'image/png',
@@ -15,6 +15,11 @@ export const UPLOAD_ALLOWED_MIME = new Set<string>([
   'image/bmp',
   'image/tiff',
   'video/mp4',
+  'audio/mpeg',
+  'audio/mp4',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
 ]);
 
 export function getMaxSize(mimeType: string): number {
@@ -22,6 +27,8 @@ export function getMaxSize(mimeType: string): number {
     return 10 * 1024 * 1024; // 10 MB
   } else if (mimeType.startsWith('video/')) {
     return 1024 * 1024 * 1024; // 1 GB
+  } else if (mimeType.startsWith('audio/')) {
+    return 200 * 1024 * 1024; // 200 MB
   } else {
     throw new BadRequestException('Unsupported file type.');
   }

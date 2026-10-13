@@ -40,6 +40,8 @@ const PATHS = {
   link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
   plus: 'M12 5v14M5 12h14',
   pencil: 'M4 20h4L18.5 9.5a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4',
+  split: 'M12 3v18M5 8h6M13 16h6',
+  volume: 'M4 9v6h4l5 4V5L8 9H4zM16.5 9.5a3.5 3.5 0 0 1 0 5',
   save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
   upload: 'M12 20V9M7 14l5-5 5 5M5 4h14',

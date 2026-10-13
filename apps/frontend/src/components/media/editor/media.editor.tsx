@@ -43,7 +43,6 @@ import {
   Rect,
   renderDoc,
   rotateDoc,
-  ShapeKind,
   sizeLayer,
   supportsFilters,
   svgColors,
@@ -51,6 +50,7 @@ import {
   toPresetLayers,
   visibleRect,
 } from '@gitroom/frontend/components/media/editor/media.editor.canvas';
+import { editorShapes } from '@gitroom/frontend/components/media/editor/media.editor.shapes';
 import {
   ColorInput,
   Field,
@@ -301,7 +301,6 @@ const MediaEditor: FC<{
   const [cropRatio, setCropRatio] = useState<number>();
   const [drawColor, setDrawColor] = useState('#FF3F3F');
   const [drawSize, setDrawSize] = useState(8);
-  const [shape, setShape] = useState<ShapeKind>('rect');
   const [zoom, setZoom] = useState<EditorZoom>('fit');
   const [keepRatio, setKeepRatio] = useState(true);
   const [fontsVersion, setFontsVersion] = useState(0);
@@ -1164,7 +1163,7 @@ const MediaEditor: FC<{
             cropRatio={cropRatio}
             drawColor={drawColor}
             drawSize={drawSize}
-            shape={shape}
+            shape="rect"
             onShapeCreated={shapeCreated}
             zoom={zoom}
             onZoom={setZoom}
@@ -1243,29 +1242,29 @@ const MediaEditor: FC<{
 
           {tool === 'shape' && (
             <Section title={t('editor_shapes', 'Shapes')}>
-              <div className="flex flex-wrap gap-[6px]">
-                {(
-                  [
-                    ['rect', t('editor_rectangle', 'Rectangle')],
-                    ['ellipse', t('editor_ellipse', 'Ellipse')],
-                    ['line', t('editor_line', 'Line')],
-                    ['arrow', t('editor_arrow', 'Arrow')],
-                  ] as const
-                ).map(([kind, label]) => (
-                  <ToolButton
-                    key={kind}
-                    icon={kind}
-                    active={shape === kind}
-                    onClick={() => setShape(kind)}
+              <div className="grid grid-cols-6 gap-[6px]">
+                {editorShapes.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    title={item.name}
+                    aria-label={item.name}
+                    className="aspect-square w-full rounded-[8px] bg-btnSimple p-[5px] text-textColor hover:bg-[#612BD3] hover:text-white"
+                    onClick={() => addSvg(item.markup)}
                   >
-                    {label}
-                  </ToolButton>
+                    <span
+                      className="block h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                      dangerouslySetInnerHTML={{
+                        __html: item.markup.split('#000000').join('currentColor'),
+                      }}
+                    />
+                  </button>
                 ))}
               </div>
               <div className="text-[12px] text-newTextColor/70">
                 {t(
                   'editor_shape_hint',
-                  'Drag on the canvas to draw. Hold Shift for squares, circles and 45° lines.'
+                  'Click a shape to place it. Drag on the picture to draw a rectangle. Hold Shift for a square.'
                 )}
               </div>
             </Section>

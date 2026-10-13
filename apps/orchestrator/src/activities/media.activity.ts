@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Activity, ActivityMethod } from 'nestjs-temporal-core';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { VideoEdit } from '@gitroom/nestjs-libraries/videos/video.edit';
 
 @Injectable()
 @Activity()
@@ -22,5 +23,12 @@ export class MediaActivity {
   @ActivityMethod()
   async failMediaProcessing(mediaId: string, error: string) {
     return this._mediaService.failProcessing(mediaId, error);
+  }
+
+  // mediaId is the new library row. edit is the timeline. These two arguments
+  // stay as they are; a change needs a new activity and a new workflow
+  @ActivityMethod()
+  async renderVideoEdit(mediaId: string, edit: VideoEdit) {
+    return this._mediaService.renderVideoEdit(mediaId, edit);
   }
 }

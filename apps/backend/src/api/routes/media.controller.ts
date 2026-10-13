@@ -26,6 +26,7 @@ import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/sa
 import { BulkDeleteMediaDto } from '@gitroom/nestjs-libraries/dtos/media/bulk.delete.media.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { VideoEditDto } from '@gitroom/nestjs-libraries/dtos/media/video.edit.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -136,6 +137,14 @@ export class MediaController {
     return this._mediaService.saveMediaInformation(org.id, body);
   }
 
+  @Post('/video-edit')
+  startVideoEdit(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoEditDto
+  ) {
+    return this._mediaService.startVideoEdit(org.id, body);
+  }
+
   @Post('/upload-simple')
   @UseInterceptors(FileInterceptor('file', streamUploadOptions()))
   async uploadSimple(
@@ -185,6 +194,14 @@ export class MediaController {
     );
 
     res.status(200).json({ ...upload, saved: saveFile });
+  }
+
+  @Get('/:id/probe')
+  probeMedia(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._mediaService.probeMedia(org.id, id);
   }
 
   @Get('/:id/status')

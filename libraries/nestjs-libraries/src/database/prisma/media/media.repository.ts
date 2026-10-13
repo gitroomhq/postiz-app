@@ -1,6 +1,9 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { extname } from 'path';
+
+const AUDIO_EXT = new Set(['.mp3', '.m4a', '.wav']);
 
 @Injectable()
 export class MediaRepository {
@@ -17,6 +20,7 @@ export class MediaRepository {
         name: fileName,
         path: filePath,
         originalName: originalName || null,
+        ...(AUDIO_EXT.has(extname(fileName).toLowerCase()) ? { type: 'audio' } : {}),
       },
       select: {
         id: true,
@@ -72,6 +76,36 @@ export class MediaRepository {
         alt: true,
         status: true,
         processingError: true,
+      },
+    });
+  }
+
+  createRendering(org: string, originalName: string) {
+    return this._media.model.media.create({
+      data: {
+        organization: { connect: { id: org } },
+        name: 'rendering.mp4',
+        path: '',
+        originalName,
+        type: 'video',
+        status: 'rendering',
+      },
+      select: { id: true, status: true },
+    });
+  }
+
+  getMediaByIds(org: string, ids: string[]) {
+    return this._media.model.media.findMany({
+      where: {
+        organizationId: org,
+        id: { in: ids },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        name: true,
+        originalName: true,
+        path: true,
       },
     });
   }
@@ -205,6 +239,9 @@ export class MediaRepository {
         alt: true,
         thumbnailTimestamp: true,
         createdAt: true,
+        status: true,
+        processingError: true,
+        type: true,
       },
       skip: pageNum * 18,
       take: 18,
