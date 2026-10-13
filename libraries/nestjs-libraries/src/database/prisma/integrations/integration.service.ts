@@ -114,7 +114,8 @@ export class IntegrationService {
     customInstanceDetails?: string
   ) {
     const uploadedPicture = picture
-      ? picture?.indexOf('imagedelivery.net') > -1
+      ? picture.startsWith('/icons/') ||
+        picture?.indexOf('imagedelivery.net') > -1
         ? picture
         : await this.storage.uploadSimple(picture).catch((err) => {
             console.log('Failed to upload profile picture:', picture, err);
@@ -150,8 +151,28 @@ export class IntegrationService {
     return this._integrationRepository.updateOnCustomerName(org, id, name);
   }
 
-  getIntegrationsList(org: string) {
-    return this._integrationRepository.getIntegrationsList(org);
+  async getIntegrationsList(org: string) {
+    const list = await this._integrationRepository.getIntegrationsList(org);
+    await Promise.all(
+      list.map(async (integration) => {
+        if (integration.picture) {
+          return;
+        }
+        const provider = this._integrationManager.getSocialIntegration(
+          integration.providerIdentifier
+        );
+        if (!provider?.defaultPicture) {
+          return;
+        }
+        integration.picture = provider.defaultPicture;
+        await this._integrationRepository.setPicture(
+          integration.id,
+          org,
+          provider.defaultPicture
+        );
+      })
+    );
+    return list;
   }
 
   getChannelHealth(org: string, includeDeleted = false) {

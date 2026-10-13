@@ -586,6 +586,17 @@ export class IntegrationRepository {
     });
   }
 
+  setPicture(id: string, organizationId: string, picture: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        id,
+        organizationId,
+        OR: [{ picture: null }, { picture: '' }],
+      },
+      data: { picture },
+    });
+  }
+
   getIntegrationsList(org: string) {
     return this._integration.model.integration.findMany({
       where: {

@@ -73,6 +73,7 @@ function isBlocked(err: unknown) {
 export class WebhookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'webhook';
   name = 'Webhook';
+  defaultPicture = '/icons/platforms/webhook.png';
   toolTip = 'Sends the scheduled post as an HTTPS request';
   isBetweenSteps = false;
   scopes = [] as string[];
@@ -160,7 +161,7 @@ export class WebhookProvider extends SocialAbstract implements SocialProvider {
       accessToken: Buffer.from(JSON.stringify(channel)).toString('base64'),
       refreshToken: '',
       expiresIn: dayjs().add(100, 'year').unix() - dayjs().unix(),
-      picture: '',
+      picture: this.defaultPicture,
       username: new URL(channel.url).hostname,
     };
   }

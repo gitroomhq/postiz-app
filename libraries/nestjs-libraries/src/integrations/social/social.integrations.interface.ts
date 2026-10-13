@@ -227,6 +227,7 @@ export interface SocialProvider
   >;
   name: string;
   toolTip?: string;
+  defaultPicture?: string;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
   scopes: string[];

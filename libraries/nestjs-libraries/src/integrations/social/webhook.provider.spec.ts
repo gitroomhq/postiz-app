@@ -121,6 +121,7 @@ describe('WebhookProvider', () => {
 
     expect(auth.id).toBe(Buffer.from('https://example.com/hook').toString('base64'));
     expect(auth.name).toBe('Alerts');
+    expect(auth.picture).toBe('/icons/platforms/webhook.png');
     expect(JSON.parse(Buffer.from(auth.accessToken, 'base64').toString())).toEqual({
       url: 'https://example.com/hook',
       headers: [{ name: 'X-Event', value: 'post' }],

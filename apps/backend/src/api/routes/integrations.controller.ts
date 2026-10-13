@@ -126,7 +126,10 @@ export class IntegrationsController {
             disabled: p.disabled,
             editor: findIntegration.editor,
             stripLinks: !!findIntegration?.stripLinks?.(),
-            picture: p.picture || '/no-picture.jpg',
+            picture:
+              p.picture ||
+              findIntegration.defaultPicture ||
+              '/no-picture.jpg',
             identifier: p.providerIdentifier,
             inBetweenSteps: p.inBetweenSteps,
             refreshNeeded: p.refreshNeeded,
