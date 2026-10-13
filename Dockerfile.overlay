@@ -20,8 +20,6 @@ COPY libraries/nestjs-libraries/src/database/prisma/media/media.service.ts \
      /app/libraries/nestjs-libraries/src/database/prisma/media/media.service.ts
 COPY libraries/nestjs-libraries/src/videos \
      /app/libraries/nestjs-libraries/src/videos
-COPY libraries/nestjs-libraries/src/dtos/media/video.edit.dto.ts \
-     /app/libraries/nestjs-libraries/src/dtos/media/video.edit.dto.ts
 COPY libraries/nestjs-libraries/src/upload/custom.upload.validation.ts \
      /app/libraries/nestjs-libraries/src/upload/custom.upload.validation.ts
 COPY apps/orchestrator/src/workflows/render.video.edit.workflow.ts \
