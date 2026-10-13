@@ -255,10 +255,14 @@ export class PostsRepository {
     const skip = page * limit;
 
     const stateFilter = query.state || 'all';
+    // Only scheduled posts are date-bound — a past date there means the post is
+    // due. In every other state publishDate is a marker rather than a deadline,
+    // so a `publishDate >= now` floor would hide rows the moment it passes.
     const stateAndDate =
       stateFilter === 'scheduled'
         ? {
             state: State.QUEUE,
+            publishDate: { gte: dayjs.utc().toDate() },
           }
         : stateFilter === 'draft'
         ? { state: State.DRAFT }
@@ -284,11 +288,6 @@ export class PostsRepository {
         },
       ],
       ...stateAndDate,
-      // Published posts were already posted (publishDate in the past), so fetch
-      // all of them; everything else stays upcoming. Ordering handles the rest.
-      ...(stateFilter === 'published'
-        ? {}
-        : { publishDate: { gte: dayjs.utc().toDate() } }),
       deletedAt: null as Date | null,
       parentPostId: null as string | null,
       intervalInDays: null as number | null,
