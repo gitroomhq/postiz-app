@@ -56,6 +56,26 @@ COPY libraries/react-shared-libraries/src/helpers/video.frame.tsx \
      /app/libraries/react-shared-libraries/src/helpers/video.frame.tsx
 COPY libraries/react-shared-libraries/src/translation/locales/en/translation.json \
      /app/libraries/react-shared-libraries/src/translation/locales/en/translation.json
+COPY libraries/nestjs-libraries/src/integrations/integration.manager.ts \
+     /app/libraries/nestjs-libraries/src/integrations/integration.manager.ts
+COPY libraries/nestjs-libraries/src/integrations/social/social.integrations.interface.ts \
+     /app/libraries/nestjs-libraries/src/integrations/social/social.integrations.interface.ts
+COPY libraries/nestjs-libraries/src/integrations/social/webhook.provider.ts \
+     /app/libraries/nestjs-libraries/src/integrations/social/webhook.provider.ts
+COPY libraries/nestjs-libraries/src/integrations/social/webhook.channel.ts \
+     /app/libraries/nestjs-libraries/src/integrations/social/webhook.channel.ts
+COPY libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts \
+     /app/libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts
+COPY apps/orchestrator/src/activities/post.activity.ts \
+     /app/apps/orchestrator/src/activities/post.activity.ts
+COPY apps/frontend/src/components/launches/add.provider.component.tsx \
+     /app/apps/frontend/src/components/launches/add.provider.component.tsx
+COPY apps/frontend/src/components/new-launch/providers/show.all.providers.tsx \
+     /app/apps/frontend/src/components/new-launch/providers/show.all.providers.tsx
+COPY apps/frontend/src/components/new-launch/providers/webhook \
+     /app/apps/frontend/src/components/new-launch/providers/webhook
+COPY apps/frontend/public/icons/platforms/webhook.png \
+     /app/apps/frontend/public/icons/platforms/webhook.png
 
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run build:orchestrator && pnpm run build:backend && pnpm run build:frontend
@@ -73,3 +93,5 @@ COPY --from=build /app/apps/frontend/src /app/apps/frontend/src
 COPY --from=build /app/libraries/nestjs-libraries/src /app/libraries/nestjs-libraries/src
 COPY --from=build /app/libraries/react-shared-libraries/src /app/libraries/react-shared-libraries/src
 COPY --from=build /app/apps/backend/src /app/apps/backend/src
+COPY --from=build /app/apps/frontend/public/icons/platforms/webhook.png \
+     /app/apps/frontend/public/icons/platforms/webhook.png
