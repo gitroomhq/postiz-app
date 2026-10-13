@@ -674,7 +674,9 @@ export class InstagramProvider
         this.identifier,
         JSON.stringify({ status_code, status }),
         '{}',
-        handleError?.value || status || 'Instagram could not process the media'
+        handleError?.value ||
+          (status !== status_code && status) ||
+          'Instagram could not process the media'
       );
     }
 
