@@ -153,6 +153,10 @@ export type PostDetails<T = any> = {
   settings: T;
   media?: MediaContent[];
   poll?: PollDetails;
+  publishDate?: Date | string;
+  state?: string;
+  sourceContent?: string;
+  sourceImage?: unknown;
 };
 
 export type PollDetails = {
@@ -217,7 +221,7 @@ export interface SocialProvider
       label: string;
       defaultValue?: string;
       validation: string;
-      type: 'text' | 'password';
+      type: 'text' | 'password' | 'headers';
       hint?: string;
     }[]
   >;

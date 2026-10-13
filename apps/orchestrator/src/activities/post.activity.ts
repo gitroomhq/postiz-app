@@ -248,6 +248,10 @@ export class PostActivity {
                 JSON.parse(p.image || '[]'),
                 getIntegration?.convertToJPEG || false
               ),
+              sourceContent: p.content,
+              sourceImage: JSON.parse(p.image || '[]'),
+              publishDate: p.publishDate,
+              state: p.state,
             }))
           ),
           integration
@@ -370,6 +374,10 @@ export class PostActivity {
           JSON.parse(p.image || '[]'),
           getIntegration?.convertToJPEG || false
         ),
+        sourceContent: p.content,
+        sourceImage: JSON.parse(p.image || '[]'),
+        publishDate: p.publishDate,
+        state: p.state,
       }))
     );
 

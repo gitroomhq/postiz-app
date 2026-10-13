@@ -4,7 +4,13 @@ import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import React, { FC, useCallback, useMemo } from 'react';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Input } from '@gitroom/react/form/input';
-import { FieldValues, FormProvider, useForm } from 'react-hook-form';
+import {
+  FieldValues,
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useFormContext,
+} from 'react-hook-form';
 import { Button } from '@gitroom/react/form/button';
 import { classValidatorResolver } from '@hookform/resolvers/class-validator';
 import { ApiKeyDto } from '@gitroom/nestjs-libraries/dtos/integrations/api.key.dto';
@@ -12,7 +18,8 @@ import { useRouter } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import { object, string } from 'yup';
+import { array, object, string } from 'yup';
+import { normalizeWebhookHeaders } from '@gitroom/nestjs-libraries/integrations/social/webhook.channel';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -158,13 +165,88 @@ export const UrlModal: FC<{
     </div>
   );
 };
+const HeaderRows: FC<{ name: string; label: string; hint?: string }> = ({
+  name,
+  label,
+  hint,
+}) => {
+  const t = useT();
+  const { control, formState } = useFormContext();
+  const rows = useFieldArray({ control, name });
+  const fieldError = formState.errors[name] as
+    | { message?: string; root?: { message?: string } }
+    | undefined;
+  const message = fieldError?.root?.message || fieldError?.message;
+
+  return (
+    <div className="flex flex-col gap-[8px]">
+      <div className="text-[14px]">{label}</div>
+      {hint ? (
+        <div className="text-[12px] text-textColor/60">{hint}</div>
+      ) : null}
+      {rows.fields.map((field, index) => (
+        <div key={field.id} className="flex gap-[8px]">
+          <div className="flex-1">
+            <Input
+              label={t('webhook_header_name', 'Name')}
+              name={`${name}.${index}.name`}
+            />
+          </div>
+          <div className="flex-1">
+            <Input
+              label={t('webhook_header_value', 'Value')}
+              name={`${name}.${index}.value`}
+            />
+          </div>
+          <div className="flex flex-col gap-[6px]">
+            <div className="text-[14px] select-none">&nbsp;</div>
+            <div className="flex gap-[8px]">
+              <button
+                type="button"
+                aria-label={t('webhook_remove_header', 'Remove')}
+                className="bg-newBgColorInner h-[42px] w-[42px] border-newTableBorder border rounded-[8px] text-[18px] cursor-pointer"
+                onClick={() => rows.remove(index)}
+              >
+                -
+              </button>
+              {index === rows.fields.length - 1 ? (
+                <button
+                  type="button"
+                  aria-label={t('webhook_add_header', 'Add header')}
+                  className="bg-newBgColorInner h-[42px] w-[42px] border-newTableBorder border rounded-[8px] text-[18px] cursor-pointer"
+                  onClick={() => rows.append({ name: '', value: '' })}
+                >
+                  +
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ))}
+      {rows.fields.length === 0 ? (
+        <button
+          type="button"
+          aria-label={t('webhook_add_header', 'Add header')}
+          className="bg-newBgColorInner h-[42px] w-[42px] border-newTableBorder border rounded-[8px] text-[18px] cursor-pointer"
+          onClick={() => rows.append({ name: '', value: '' })}
+        >
+          +
+        </button>
+      ) : null}
+      {typeof message === 'string' ? (
+        <div className="text-[12px] text-red-400">{message}</div>
+      ) : null}
+    </div>
+  );
+};
+
 export const CustomVariables: FC<{
   variables: Array<{
     key: string;
     label: string;
     defaultValue?: string;
     validation: string;
-    type: 'text' | 'password';
+    type: 'text' | 'password' | 'headers';
     hint?: string;
   }>;
   close?: () => void;
@@ -178,6 +260,26 @@ export const CustomVariables: FC<{
   const schema = useMemo(() => {
     return object({
       ...variables.reduce((aIcc, item) => {
+        if (item.type === 'headers') {
+          return {
+            ...aIcc,
+            [item.key]: array()
+              .of(
+                object({
+                  name: string().ensure(),
+                  value: string().ensure(),
+                })
+              )
+              .ensure()
+              .test('headers', 'Headers are invalid', function (rows) {
+                const parsed = normalizeWebhookHeaders(rows || []);
+                if ('error' in parsed) {
+                  return this.createError({ message: parsed.error });
+                }
+                return true;
+              }),
+          };
+        }
         const splitter = item.validation.split('/');
         const regex = new RegExp(
           splitter.slice(1, -1).join('/'),
@@ -198,7 +300,9 @@ export const CustomVariables: FC<{
     values: variables.reduce(
       (acc, item) => ({
         ...acc,
-        ...(item.defaultValue
+        ...(item.type === 'headers'
+          ? { [item.key]: [{ name: '', value: '' }] }
+          : item.defaultValue
           ? {
               [item.key]: item.defaultValue,
             }
@@ -218,10 +322,17 @@ export const CustomVariables: FC<{
         return;
       }
       const { url } = await response.json();
+      const payload = { ...data };
+      if (Array.isArray(payload.headers)) {
+        payload.headers = payload.headers.filter(
+          (row: { name?: string; value?: string }) =>
+            String(row?.name || '').trim() || String(row?.value || '').trim()
+        );
+      }
       modals.closeAll();
       gotoUrl(
         `/integrations/social/${identifier}?state=${url}&code=${Buffer.from(
-          JSON.stringify(data)
+          JSON.stringify(payload)
         ).toString('base64')}${onboarding ? '&onboarding=true' : ''}`
       );
     },
@@ -239,7 +350,13 @@ export const CustomVariables: FC<{
         >
           {variables.map((variable) => (
             <div key={variable.key}>
-              {variable.hint ? (
+              {variable.type === 'headers' ? (
+                <HeaderRows
+                  name={variable.key}
+                  label={variable.label}
+                  hint={variable.hint}
+                />
+              ) : variable.hint ? (
                 <div className="flex flex-col gap-[6px]">
                   <div className="text-[14px] flex items-center gap-[6px]">
                     <span>{variable.label}</span>
@@ -394,7 +511,7 @@ export const AddProviderComponent: FC<{
       key: string;
       label: string;
       validation: string;
-      type: 'text' | 'password';
+      type: 'text' | 'password' | 'headers';
       hint?: string;
     }>;
   }>;
@@ -425,7 +542,7 @@ export const AddProviderComponent: FC<{
           label: string;
           validation: string;
           defaultValue?: string;
-          type: 'text' | 'password';
+          type: 'text' | 'password' | 'headers';
           hint?: string;
         }>
       ) =>
