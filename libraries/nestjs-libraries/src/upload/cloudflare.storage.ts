@@ -15,7 +15,7 @@ import { getExtension } from 'mime';
 import { IUploadProvider, UploadedStream } from './upload.interface';
 import axios from 'axios';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
-import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fileTypeFromBuffer } = require('file-type');
@@ -92,12 +92,18 @@ class CloudflareStorage implements IUploadProvider {
     if (dataUrl) {
       body = dataUrl.buffer;
     } else {
-      if (!(await isSafePublicHttpsUrl(path))) {
+      // Honour the self-hoster opt-out the same way every other fetch site
+      // does: a proxy with fake-IP DNS resolves public hosts to a reserved
+      // range, so the guard would reject avatars from every provider.
+      if (
+        process.env.DISABLE_SSRF_PROTECTION !== 'true' &&
+        !(await isSafePublicHttpsUrl(path))
+      ) {
         throw new Error('Unsafe URL');
       }
       const loadImage = await fetch(path, {
         // @ts-ignore — undici option, not in lib.dom fetch types
-        dispatcher: ssrfSafeDispatcher,
+        dispatcher: getSsrfSafeDispatcher(),
       });
       body = Buffer.from(await loadImage.arrayBuffer());
     }
