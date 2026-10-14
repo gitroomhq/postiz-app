@@ -108,6 +108,11 @@ export abstract class PaymentProviderAbstract {
     return this.notSupported();
   }
 
+  // Unix seconds of the next billing cycle renewal, null when unknown
+  async getRenewalDate(organizationId: string): Promise<number | null> {
+    return null;
+  }
+
   // Post-checkout poll: is this subscription id active for the org
   async checkSubscription(
     organizationId: string,
