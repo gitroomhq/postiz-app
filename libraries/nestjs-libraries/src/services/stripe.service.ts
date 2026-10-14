@@ -788,6 +788,18 @@ export class StripeService extends PaymentProviderAbstract {
     return this.createBillingPortalLink(customer);
   }
 
+  async getRenewalDate(organizationId: string) {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    const [sub] = await this.getLiveSubscriptions(customer);
+    const trialing = sub?.status === 'trialing';
+    return {
+      renewsAt:
+        (trialing ? sub.trial_end : sub?.items.data[0]?.current_period_end) ||
+        null,
+      trialing,
+    };
+  }
+
   async getInvoices(organizationId: string): Promise<PaymentInvoice[]> {
     const customer = await this.getCustomerByOrganizationId(organizationId);
     if (!customer || !customer.startsWith('cus_')) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { FC, useCallback, useState } from 'react';
+import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { Button } from '@gitroom/react/form/button';
@@ -10,20 +11,62 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { TrashIcon } from '@gitroom/frontend/components/ui/icons';
 
+interface DeleteAccountInfo {
+  hasSubscription: boolean;
+  hasAdditionalMembers: boolean;
+}
+
+export const useDeleteAccountInfo = () => {
+  const fetch = useFetch();
+
+  const load = useCallback(async () => {
+    return (await fetch('/user/delete-account-info')).json();
+  }, []);
+
+  return useSWR<DeleteAccountInfo>('delete-account-info', load, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+    revalidateOnMount: true,
+    refreshWhenHidden: false,
+    refreshWhenOffline: false,
+  });
+};
+
 const DeleteAccountComponent: FC<{ isLink?: boolean }> = ({ isLink }) => {
   const t = useT();
   const fetch = useFetch();
   const toaster = useToaster();
   const { isSecured } = useVariables();
   const [loading, setLoading] = useState(false);
+  const { mutate } = useDeleteAccountInfo();
 
   const deleteAccount = useCallback(async () => {
+    const info = await mutate();
+    const message =
+      info?.hasSubscription && info?.hasAdditionalMembers
+        ? t(
+            'delete_account_confirm_subscription_members',
+            'Your account, organizations, channels and posts will be deleted, your subscription will be cancelled and the additional team members will be removed from your organization. This action cannot be undone, are you sure?'
+          )
+        : info?.hasSubscription
+        ? t(
+            'delete_account_confirm_subscription',
+            'Your account, organizations, channels and posts will be deleted and your subscription will be cancelled. This action cannot be undone, are you sure?'
+          )
+        : info?.hasAdditionalMembers
+        ? t(
+            'delete_account_confirm_members',
+            'Your account, organizations, channels and posts will be deleted and the additional team members will be removed from your organization. This action cannot be undone, are you sure?'
+          )
+        : t(
+            'delete_account_confirm',
+            'Your account, organizations, channels and posts will be deleted. This action cannot be undone, are you sure?'
+          );
+
     if (
       !(await deleteDialog(
-        t(
-          'delete_account_confirm',
-          'Your account, organizations, channels and posts will be deleted. This action cannot be undone, are you sure?'
-        ),
+        message,
         t('yes_delete_my_account', 'Yes, delete my account')
       ))
     ) {

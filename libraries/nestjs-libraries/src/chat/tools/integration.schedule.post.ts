@@ -92,7 +92,7 @@ If validation fails, the result contains output.errors describing what to fix; t
                     content: z
                       .string()
                       .describe(
-                        "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together), and img (<img src=\"...\">) only when the integration rules say pictures go inside the content"
+                        "The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can't have u and strong together), img (<img src=\"...\">) only when the integration rules say pictures go inside the content, and span only for a mention in the exact format given by a mention tool from the integrationSchema tools"
                       ),
                     attachments: z
                       .array(attachmentUrl)

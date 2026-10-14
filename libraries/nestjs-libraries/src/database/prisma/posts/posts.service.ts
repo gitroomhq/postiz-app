@@ -873,6 +873,8 @@ export class PostsService {
           } catch (err) {}
         }
       } catch (err) {}
+
+      return { id: post.id };
     }
 
     return { error: true };

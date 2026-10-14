@@ -15,7 +15,7 @@ import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useBillingFeatures } from '@gitroom/frontend/components/billing/first.billing.component';
 import { BillingHistory } from '@gitroom/frontend/components/billing/billing.history.component';
-import { useSWRConfig } from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -27,6 +27,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
@@ -68,6 +69,149 @@ export const Prorate: FC<{
   return (
     <div className="animate-fadeIn">
       {t('pay_today', 'Pay Today')} ${Math.max(price, 0).toFixed(2)}
+    </div>
+  );
+};
+
+const creditTypes = ['ai_images', 'ai_videos', 'clipping_minutes'] as const;
+
+const useLoadCredits = () => {
+  const fetch = useFetch();
+  return useCallback(
+    async (
+      type: (typeof creditTypes)[number]
+    ): Promise<{ credits: number }> => {
+      const response = await fetch(`/copilot/credits?type=${type}`);
+      if (!response.ok) {
+        throw new Error('Failed to load credits');
+      }
+      return response.json();
+    },
+    []
+  );
+};
+
+const useCredits = (type: (typeof creditTypes)[number]) => {
+  const loadCredits = useLoadCredits();
+  return useSWR<{ credits: number }>(
+    `/copilot/credits?type=${type}`,
+    () => loadCredits(type),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+};
+
+const useRenewal = () => {
+  const fetch = useFetch();
+  return useSWR<{ renewsAt: number | null; trialing: boolean }>(
+    '/billing/renewal',
+    async () => {
+      const response = await fetch('/billing/renewal');
+      if (!response.ok) {
+        throw new Error('Failed to load renewal date');
+      }
+      return response.json();
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+};
+
+const BillingCycle: FC<{
+  tier: string;
+  canceled: boolean;
+}> = (props) => {
+  const { tier, canceled } = props;
+  const t = useT();
+  const { data: renewal } = useRenewal();
+  const { data: images } = useCredits('ai_images');
+  const { data: videos } = useCredits('ai_videos');
+  const { data: clipping } = useCredits('clipping_minutes');
+
+  const usage = [
+    {
+      label: t('billing_ai_images', 'AI images'),
+      total: pricing[tier]?.image_generation_count,
+      left: images?.credits,
+    },
+    {
+      label: t('billing_ai_videos', 'AI videos'),
+      total: pricing[tier]?.generate_videos,
+      left: videos?.credits,
+    },
+    {
+      label: t('billing_clipping_minutes', 'Clipping minutes'),
+      total: pricing[tier]?.clipping_minutes,
+      left: clipping?.credits,
+    },
+  ].filter((p) => p.total);
+
+  return (
+    <div className="flex items-center gap-[16px] rounded-[12px] border border-newTableBorder bg-newBgColorInner shadow-previewShadow px-[24px] py-[20px] mobile:flex-col mobile:items-stretch mobile:p-[16px]">
+      <div className="w-[48px] h-[48px] rounded-full bg-[#612bd3]/10 text-[#612bd3] flex items-center justify-center shrink-0 mobile:hidden">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      </div>
+      <div className="flex-1 flex flex-col gap-[4px]">
+        <div className="text-[16px] font-[600]">
+          {t('billing_cycle', 'Billing cycle')}
+        </div>
+        <div className="text-[14px] text-textItemBlur">
+          {!canceled && !!renewal?.renewsAt && (
+            <>
+              {renewal.trialing
+                ? t(
+                    'billing_trial_ends_on',
+                    'Your free trial ends and your first payment is charged on'
+                  )
+                : t('billing_renews_on', 'Your plan renews on')}{' '}
+              <bdi className="font-[600] text-newTextColor">
+                {newDayjs(renewal.renewsAt * 1000)
+                  .local()
+                  .format('D MMM, YYYY')}
+              </bdi>
+              {'. '}
+            </>
+          )}
+          {t(
+            'billing_ai_credits_reset_monthly',
+            'AI credits reset every month.'
+          )}
+        </div>
+      </div>
+      <div className="flex gap-[8px] mobile:flex-col">
+        {usage.map((p) => (
+          <div
+            key={p.label}
+            className="flex flex-col gap-[2px] min-w-[120px] rounded-[8px] border border-newTableBorder px-[16px] py-[10px]"
+          >
+            <div className="text-[12px] text-textItemBlur">{p.label}</div>
+            <div className="text-[16px] font-[600]">
+              {typeof p.left === 'number' ? Math.max(p.left, 0) : '-'}
+              <span className="text-[14px] font-[400] text-textItemBlur">
+                {' / '}
+                {p.total}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -317,6 +461,34 @@ export const MainBillingComponent: FC<{
     }
     setSubscription(sub);
   }, [sub]);
+  const loadCredits = useLoadCredits();
+  // credits follow the plan stored by the Stripe webhook: wait for it, then
+  // show the new plan's totals and credits together
+  const showConfirmedPlan = useCallback(
+    async (billing: string, period: string, attempt = 0) => {
+      try {
+        const current = await (await fetch('/user/subscription')).json();
+        if (
+          current?.subscription?.subscriptionTier !== billing ||
+          current?.subscription?.period !== period
+        ) {
+          if (attempt < 9) {
+            await timer(1000);
+            return showConfirmedPlan(billing, period, attempt + 1);
+          }
+          return;
+        }
+        const credits = await Promise.all(creditTypes.map(loadCredits));
+        creditTypes.forEach((type, index) =>
+          mutate(`/copilot/credits?type=${type}`, credits[index], {
+            revalidate: false,
+          })
+        );
+        mutate('/user/subscription', current, { revalidate: false });
+      } catch (err) {}
+    },
+    []
+  );
   const updatePayment = useCallback(async () => {
     const { portal } = await (await fetch('/billing/portal')).json();
     window.location.href = portal;
@@ -362,9 +534,23 @@ export const MainBillingComponent: FC<{
           !pricing[billing].team_members &&
           pricing[subscription?.subscriptionTier!]?.team_members
         ) {
-          messages.push(
-            `Your team members will be removed from your organization`
-          );
+          let hasMembers = true;
+          try {
+            const team = await (await fetch('/settings/team')).json();
+            hasMembers =
+              !Array.isArray(team?.users) ||
+              team.users.some(
+                (member: { user: { id: string } }) =>
+                  member.user.id !== user?.id
+              );
+          } catch (err: any) {
+            // keep the warning when the team cannot be loaded
+          }
+          if (hasMembers) {
+            messages.push(
+              `Your team members will be disabled and lose access to your organization until you upgrade to a plan that includes team members again`
+            );
+          }
         }
         if (billing === 'FREE') {
           if (
@@ -487,6 +673,11 @@ export const MainBillingComponent: FC<{
             }
           );
           mutate('/billing/invoices');
+          mutate('/billing/renewal');
+          showConfirmedPlan(
+            billing,
+            monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'
+          );
           toast.show('Subscription updated successfully');
         }
         setLoading(false);
@@ -672,6 +863,12 @@ export const MainBillingComponent: FC<{
           );
         })}
       </div>
+      {!!subscription?.id && (
+        <BillingCycle
+          tier={sub?.subscriptionTier || subscription.subscriptionTier}
+          canceled={!!subscription.cancelAt}
+        />
+      )}
       {!!subscription?.id && (
         <div className="flex items-center gap-[16px] rounded-[12px] border border-newTableBorder bg-newBgColorInner shadow-previewShadow px-[24px] py-[20px] mobile:flex-col mobile:items-stretch mobile:p-[16px]">
           <div className="w-[48px] h-[48px] rounded-full bg-[#612bd3]/10 text-[#612bd3] flex items-center justify-center shrink-0 mobile:hidden">
