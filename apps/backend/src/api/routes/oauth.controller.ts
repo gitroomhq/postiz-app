@@ -102,13 +102,11 @@ export class OAuthController {
     const code = await this._oauthService.createSelfHostedAuthorizationCode(
       app.id,
       { ...instance, email },
-      app.dynamic
-        ? {
-            codeChallenge: body.code_challenge,
-            codeChallengeMethod: body.code_challenge_method,
-            redirectUri: body.redirect_uri,
-          }
-        : undefined
+      this._oauthService.pkceBinding(app, {
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+        redirectUri: body.redirect_uri,
+      })
     );
 
     // Same redirect as an approved cloud authorization
@@ -129,6 +127,20 @@ export class OAuthController {
     @Body() body: TokenExchangeDto,
     @Headers('authorization') authorization?: string
   ) {
+    // client_secret_basic puts the credentials in the Authorization header,
+    // client_secret_post and public clients put them in the body
+    const basic = extractBasicCredentials(authorization);
+    const clientId = basic?.clientId || body.client_id;
+
+    // Only HubSpot gets refresh tokens, the service answers every other
+    // client with unsupported_grant_type, as before
+    if (body.grant_type === 'refresh_token') {
+      return this._oauthService.refreshAccessToken(
+        clientId,
+        body.refresh_token
+      );
+    }
+
     if (body.grant_type !== 'authorization_code') {
       throw new HttpException(
         { error: 'unsupported_grant_type' },
@@ -136,10 +148,6 @@ export class OAuthController {
       );
     }
 
-    // client_secret_basic puts the credentials in the Authorization header,
-    // client_secret_post and public clients put them in the body
-    const basic = extractBasicCredentials(authorization);
-    const clientId = basic?.clientId || body.client_id;
     if (!clientId) {
       throw new HttpException(
         { error: 'invalid_client' },
@@ -204,13 +212,11 @@ export class OAuthAuthorizedController {
       app.id,
       user.id,
       org.id,
-      app.dynamic
-        ? {
-            codeChallenge: body.code_challenge,
-            codeChallengeMethod: body.code_challenge_method,
-            redirectUri: body.redirect_uri,
-          }
-        : undefined
+      this._oauthService.pkceBinding(app, {
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+        redirectUri: body.redirect_uri,
+      })
     );
 
     const redirectUrl = new URL(redirectTarget);
