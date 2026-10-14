@@ -28,6 +28,7 @@ import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 
@@ -73,17 +74,29 @@ export const Prorate: FC<{
   );
 };
 
-const useCredits = (type: 'ai_images' | 'ai_videos' | 'clipping_minutes') => {
+const creditTypes = ['ai_images', 'ai_videos', 'clipping_minutes'] as const;
+
+const useLoadCredits = () => {
   const fetch = useFetch();
-  return useSWR<{ credits: number }>(
-    `/copilot/credits?type=${type}`,
-    async () => {
+  return useCallback(
+    async (
+      type: (typeof creditTypes)[number]
+    ): Promise<{ credits: number }> => {
       const response = await fetch(`/copilot/credits?type=${type}`);
       if (!response.ok) {
         throw new Error('Failed to load credits');
       }
       return response.json();
     },
+    []
+  );
+};
+
+const useCredits = (type: (typeof creditTypes)[number]) => {
+  const loadCredits = useLoadCredits();
+  return useSWR<{ credits: number }>(
+    `/copilot/credits?type=${type}`,
+    () => loadCredits(type),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -490,6 +503,31 @@ export const MainBillingComponent: FC<{
     }
     setSubscription(sub);
   }, [sub]);
+  const loadCredits = useLoadCredits();
+  // credits follow the plan stored by the Stripe webhook: wait for it, then
+  // show the new plan's totals and credits together
+  const showConfirmedPlan = useCallback(
+    async (billing: string, attempt = 0) => {
+      try {
+        const current = await (await fetch('/user/subscription')).json();
+        if (current?.subscription?.subscriptionTier !== billing) {
+          if (attempt < 9) {
+            await timer(1000);
+            return showConfirmedPlan(billing, attempt + 1);
+          }
+          return;
+        }
+        const credits = await Promise.all(creditTypes.map(loadCredits));
+        creditTypes.forEach((type, index) =>
+          mutate(`/copilot/credits?type=${type}`, credits[index], {
+            revalidate: false,
+          })
+        );
+        mutate('/user/subscription', current, { revalidate: false });
+      } catch (err) {}
+    },
+    []
+  );
   const updatePayment = useCallback(async () => {
     const { portal } = await (await fetch('/billing/portal')).json();
     window.location.href = portal;
@@ -686,9 +724,7 @@ export const MainBillingComponent: FC<{
           );
           mutate('/billing/invoices');
           mutate('/billing/renewal');
-          mutate('/copilot/credits?type=ai_images');
-          mutate('/copilot/credits?type=ai_videos');
-          mutate('/copilot/credits?type=clipping_minutes');
+          showConfirmedPlan(billing);
           toast.show('Subscription updated successfully');
         }
         setLoading(false);
@@ -876,7 +912,7 @@ export const MainBillingComponent: FC<{
       </div>
       {!!subscription?.id && (
         <BillingCycle
-          tier={subscription.subscriptionTier}
+          tier={sub?.subscriptionTier || subscription.subscriptionTier}
           canceled={!!subscription.cancelAt}
         />
       )}
