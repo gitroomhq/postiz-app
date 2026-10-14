@@ -507,13 +507,16 @@ export const MainBillingComponent: FC<{
   // credits follow the plan stored by the Stripe webhook: wait for it, then
   // show the new plan's totals and credits together
   const showConfirmedPlan = useCallback(
-    async (billing: string, attempt = 0) => {
+    async (billing: string, period: string, attempt = 0) => {
       try {
         const current = await (await fetch('/user/subscription')).json();
-        if (current?.subscription?.subscriptionTier !== billing) {
+        if (
+          current?.subscription?.subscriptionTier !== billing ||
+          current?.subscription?.period !== period
+        ) {
           if (attempt < 9) {
             await timer(1000);
-            return showConfirmedPlan(billing, attempt + 1);
+            return showConfirmedPlan(billing, period, attempt + 1);
           }
           return;
         }
@@ -724,7 +727,10 @@ export const MainBillingComponent: FC<{
           );
           mutate('/billing/invoices');
           mutate('/billing/renewal');
-          showConfirmedPlan(billing);
+          showConfirmedPlan(
+            billing,
+            monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'
+          );
           toast.show('Subscription updated successfully');
         }
         setLoading(false);
