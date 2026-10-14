@@ -332,6 +332,11 @@ export class UsersController {
     response.status(200).send();
   }
 
+  @Get('/delete-account-info')
+  getDeleteAccountInfo(@GetUserFromRequest() user: User) {
+    return this._userService.getDeleteAccountInfo(user.id);
+  }
+
   @Post('/delete-account')
   async deleteAccount(
     @GetUserFromRequest() user: User,
