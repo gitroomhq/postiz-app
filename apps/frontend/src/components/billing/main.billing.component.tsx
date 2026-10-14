@@ -332,9 +332,9 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
-  const [subscription, setSubscription] = useState<SubscriptionWithPlatform | undefined>(
-    sub
-  );
+  const [subscription, setSubscription] = useState<
+    SubscriptionWithPlatform | undefined
+  >(sub);
   const [loading, setLoading] = useState<boolean>(false);
   // which button started the request, so only that one shows a spinner
   const [clicked, setClicked] = useState('');
@@ -410,9 +410,23 @@ export const MainBillingComponent: FC<{
           !pricing[billing].team_members &&
           pricing[subscription?.subscriptionTier!]?.team_members
         ) {
-          messages.push(
-            `Your team members will be removed from your organization`
-          );
+          let hasMembers = true;
+          try {
+            const team = await (await fetch('/settings/team')).json();
+            hasMembers =
+              !Array.isArray(team?.users) ||
+              team.users.some(
+                (member: { user: { id: string } }) =>
+                  member.user.id !== user?.id
+              );
+          } catch (err: any) {
+            // keep the warning when the team cannot be loaded
+          }
+          if (hasMembers) {
+            messages.push(
+              `Your team members will be disabled and lose access to your organization until you upgrade to a plan that includes team members again`
+            );
+          }
         }
         if (billing === 'FREE') {
           if (
@@ -421,7 +435,8 @@ export const MainBillingComponent: FC<{
               `Are you sure you want to cancel your subscription?
               ${messages.join(', ')}`,
               'Yes, cancel',
-              'Cancel Subscription'
+              'Cancel Subscription',
+              'No, keep it'
             ))
           ) {
             const checkDiscount = await (
