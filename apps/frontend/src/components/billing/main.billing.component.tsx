@@ -290,9 +290,9 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
-  const [subscription, setSubscription] = useState<SubscriptionWithPlatform | undefined>(
-    sub
-  );
+  const [subscription, setSubscription] = useState<
+    SubscriptionWithPlatform | undefined
+  >(sub);
   const [loading, setLoading] = useState<boolean>(false);
   // which button started the request, so only that one shows a spinner
   const [clicked, setClicked] = useState('');
@@ -373,7 +373,8 @@ export const MainBillingComponent: FC<{
               `Are you sure you want to cancel your subscription?
               ${messages.join(', ')}`,
               'Yes, cancel',
-              'Cancel Subscription'
+              'Cancel Subscription',
+              'No, keep it'
             ))
           ) {
             const checkDiscount = await (
