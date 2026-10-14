@@ -96,8 +96,8 @@ const MentionList: FC = (props: any) => {
         ) : (
           props?.items?.map((item: any, index: any) => (
             <button
-              className={`flex gap-[10px] w-full p-2 text-start rounded hover:bg-boxHover ${
-                index === selectedIndex ? 'bg-boxHover' : ''
+              className={`flex gap-[10px] w-full p-2 text-start rounded ${
+                index === selectedIndex ? '!bg-newBgLineColor' : ''
               }`}
               key={item.id || index}
               onClick={() => selectItem(index)}
