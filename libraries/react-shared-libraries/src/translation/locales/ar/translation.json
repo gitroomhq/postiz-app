@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "دقيقة من تقطيع الفيديو بالذكاء الاصطناعي شهريًا",
   "billing_cycle": "دورة الفوترة",
   "billing_renews_on": "سيتم تجديد خطتك في",
+  "billing_trial_ends_on": "تنتهي الفترة التجريبية المجانية وسيتم تحصيل أول دفعة منك في",
   "billing_ai_credits_reset_monthly": "يتم إعادة تعيين أرصدة الذكاء الاصطناعي كل شهر.",
   "billing_ai_images": "صور الذكاء الاصطناعي",
   "billing_ai_videos": "فيديوهات الذكاء الاصطناعي",

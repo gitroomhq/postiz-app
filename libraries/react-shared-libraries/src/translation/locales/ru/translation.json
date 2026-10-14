@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "минут ИИ-нарезки видео в месяц",
   "billing_cycle": "Платежный цикл",
   "billing_renews_on": "Ваша подписка обновится",
+  "billing_trial_ends_on": "Ваш бесплатный пробный период заканчивается, и первая оплата будет списана",
   "billing_ai_credits_reset_monthly": "Кредиты ИИ сбрасываются каждый месяц.",
   "billing_ai_images": "ИИ-изображения",
   "billing_ai_videos": "ИИ-видео",

@@ -171,9 +171,7 @@ export class BillingController {
 
   @Get('/renewal')
   async getRenewal(@GetOrgFromRequest() org: Organization) {
-    return {
-      renewsAt: await (await this.provider(org)).getRenewalDate(org.id),
-    };
+    return (await this.provider(org)).getRenewalDate(org.id);
   }
 
   @Get('/')

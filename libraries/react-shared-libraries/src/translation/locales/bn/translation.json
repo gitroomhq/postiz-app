@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "মিনিট এআই ভিডিও ক্লিপিং প্রতি মাসে",
   "billing_cycle": "বিলিং চক্র",
   "billing_renews_on": "আপনার প্ল্যান পুনর্নবীকরণ হবে",
+  "billing_trial_ends_on": "আপনার ফ্রি ট্রায়াল শেষ হবে এবং আপনার প্রথম পেমেন্ট নেওয়া হবে",
   "billing_ai_credits_reset_monthly": "এআই ক্রেডিট প্রতি মাসে পুনরায় সেট হয়।",
   "billing_ai_images": "এআই ছবি",
   "billing_ai_videos": "এআই ভিডিও",

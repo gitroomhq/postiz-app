@@ -108,9 +108,11 @@ export abstract class PaymentProviderAbstract {
     return this.notSupported();
   }
 
-  // Unix seconds of the next billing cycle renewal, null when unknown
-  async getRenewalDate(organizationId: string): Promise<number | null> {
-    return null;
+  // Unix seconds of the next charge (the trial end while trialing), null when unknown
+  async getRenewalDate(
+    organizationId: string
+  ): Promise<{ renewsAt: number | null; trialing: boolean }> {
+    return { renewsAt: null, trialing: false };
   }
 
   // Post-checkout poll: is this subscription id active for the org

@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "分钟AI视频剪辑（每月）",
   "billing_cycle": "账单周期",
   "billing_renews_on": "您的套餐将在以下日期续订",
+  "billing_trial_ends_on": "您的免费试用将在以下日期结束，并将开始收取您的首次费用：",
   "billing_ai_credits_reset_monthly": "AI额度每月重置。",
   "billing_ai_images": "AI图片",
   "billing_ai_videos": "AI视频",

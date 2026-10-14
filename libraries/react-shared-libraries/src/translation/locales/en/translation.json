@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "minutes of AI video clipping per month",
   "billing_cycle": "Billing cycle",
   "billing_renews_on": "Your plan renews on",
+  "billing_trial_ends_on": "Your free trial ends and your first payment is charged on",
   "billing_ai_credits_reset_monthly": "AI credits reset every month.",
   "billing_ai_images": "AI images",
   "billing_ai_videos": "AI videos",

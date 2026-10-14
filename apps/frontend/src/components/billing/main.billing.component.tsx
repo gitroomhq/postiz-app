@@ -93,7 +93,7 @@ const useCredits = (type: 'ai_images' | 'ai_videos' | 'clipping_minutes') => {
 
 const useRenewal = () => {
   const fetch = useFetch();
-  return useSWR<{ renewsAt: number | null }>(
+  return useSWR<{ renewsAt: number | null; trialing: boolean }>(
     '/billing/renewal',
     async () => {
       const response = await fetch('/billing/renewal');
@@ -163,7 +163,12 @@ const BillingCycle: FC<{
         <div className="text-[14px] text-textItemBlur">
           {!canceled && !!renewal?.renewsAt && (
             <>
-              {t('billing_renews_on', 'Your plan renews on')}{' '}
+              {renewal.trialing
+                ? t(
+                    'billing_trial_ends_on',
+                    'Your free trial ends and your first payment is charged on'
+                  )
+                : t('billing_renews_on', 'Your plan renews on')}{' '}
               <bdi className="font-[600] text-newTextColor">
                 {newDayjs(renewal.renewsAt * 1000)
                   .local()
@@ -680,6 +685,10 @@ export const MainBillingComponent: FC<{
             }
           );
           mutate('/billing/invoices');
+          mutate('/billing/renewal');
+          mutate('/copilot/credits?type=ai_images');
+          mutate('/copilot/credits?type=ai_videos');
+          mutate('/copilot/credits?type=clipping_minutes');
           toast.show('Subscription updated successfully');
         }
         setLoading(false);

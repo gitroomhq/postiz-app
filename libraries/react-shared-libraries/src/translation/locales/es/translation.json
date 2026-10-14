@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "minutos de recorte de video con IA por mes",
   "billing_cycle": "Ciclo de facturación",
   "billing_renews_on": "Tu plan se renueva el",
+  "billing_trial_ends_on": "Tu prueba gratuita termina y se realiza tu primer pago el",
   "billing_ai_credits_reset_monthly": "Los créditos de IA se restablecen cada mes.",
   "billing_ai_images": "Imágenes de IA",
   "billing_ai_videos": "Videos de IA",

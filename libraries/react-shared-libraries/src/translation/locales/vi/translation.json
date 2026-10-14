@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "phút cắt video bằng AI mỗi tháng",
   "billing_cycle": "Chu kỳ thanh toán",
   "billing_renews_on": "Gói của bạn sẽ được gia hạn vào",
+  "billing_trial_ends_on": "Thời gian dùng thử miễn phí của bạn sẽ kết thúc và khoản thanh toán đầu tiên sẽ được tính vào",
   "billing_ai_credits_reset_monthly": "Tín dụng AI sẽ được đặt lại hàng tháng.",
   "billing_ai_images": "Hình ảnh AI",
   "billing_ai_videos": "Video AI",

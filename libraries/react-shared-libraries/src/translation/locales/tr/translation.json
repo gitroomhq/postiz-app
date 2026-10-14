@@ -539,6 +539,7 @@
   "billing_clipping_minutes_per_month": "dakika/ay yapay zeka video kırpma",
   "billing_cycle": "Fatura dönemi",
   "billing_renews_on": "Planınızın yenileneceği tarih",
+  "billing_trial_ends_on": "Ücretsiz denemeniz sona eriyor ve ilk ödemeniz şu tarihte tahsil edilecek:",
   "billing_ai_credits_reset_monthly": "Yapay zekâ kredileri her ay sıfırlanır.",
   "billing_ai_images": "Yapay zeka görselleri",
   "billing_ai_videos": "Yapay zeka videoları",
