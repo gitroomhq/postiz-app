@@ -170,7 +170,8 @@ export class McpRelayService {
 
       // Every tool any install has must run on the instance, an older one
       // would answer some calls with errors (tools of optional features, like
-      // clipping, depend on the instance setup, not its version)
+      // clipping, depend on the instance setup, not its version, and the
+      // optionalOnSelfHosted ones only ask an older instance to update)
       const missing = this._loadToolsService
         .coreToolNames()
         .filter((name) => !tools.includes(name));

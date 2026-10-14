@@ -1,12 +1,10 @@
 'use client';
 
-import { FC, ReactNode, useCallback } from 'react';
+import { FC, ReactNode } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
-import { useModals } from '@gitroom/frontend/components/layout/new-modal';
-import { AgentMediaModal } from '@gitroom/frontend/components/layout/agent.media.modal';
 
 interface MenuItemInterface {
   name: string;
@@ -21,16 +19,6 @@ interface MenuItemInterface {
 export const useMenuItem = () => {
   const { isGeneral } = useVariables();
   const t = useT();
-  const { openModal } = useModals();
-
-  const handleAgentMediaClick = useCallback(() => {
-    openModal({
-      title: t('agent_media_title', 'UGC videos by AgentMedia'),
-      closeOnClickOutside: true,
-      closeOnEscape: true,
-      children: <AgentMediaModal />,
-    });
-  }, [openModal, t]);
 
   const firstMenu = [
     {
@@ -117,107 +105,6 @@ export const useMenuItem = () => {
   ] satisfies MenuItemInterface[] as MenuItemInterface[];
 
   const secondMenu = [
-    {
-      name: t('make_ugc', 'Make UGC'),
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 27.19 27.19"
-          fill="none"
-        >
-          <g clipPath="url(#agent_media_clip)">
-            <rect
-              width="27.19"
-              height="27.19"
-              rx="6.43"
-              fill="url(#agent_media_bg)"
-            />
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M0 29.23V-2.06L22.12 9.99v7.46z"
-              fill="url(#agent_media_play)"
-            />
-            <mask
-              id="agent_media_mask"
-              width="23"
-              height="36"
-              x="0"
-              y="-4"
-              maskUnits="userSpaceOnUse"
-              style={{ maskType: 'alpha' }}
-            >
-              <path fill="#d9d9d9" d="M0-3.84h22.12v34.87H0z" />
-            </mask>
-            <g mask="url(#agent_media_mask)">
-              <path
-                fill="url(#agent_media_line1)"
-                d="m42.33-1.9-64.3 37.13 3.48 6.04L45.8 4.14z"
-              />
-              <path
-                fill="url(#agent_media_line2)"
-                d="M-18.57-13.72 45.74 23.4l-3.48 6.03L-22.05-7.7z"
-              />
-            </g>
-          </g>
-          <defs>
-            <radialGradient
-              id="agent_media_bg"
-              cx="0"
-              cy="0"
-              r="1"
-              gradientTransform="matrix(-38.3537 0 0 -29.9787 38.354 13.597)"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop />
-              <stop offset="1" stopColor="#6112ff" />
-            </radialGradient>
-            <linearGradient
-              id="agent_media_play"
-              x1="22.12"
-              x2="0"
-              y1="13.6"
-              y2="13.6"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop />
-              <stop offset="1" stopColor="#2a008d" />
-            </linearGradient>
-            <linearGradient
-              id="agent_media_line1"
-              x1="44.5"
-              x2="-20.41"
-              y1="0.37"
-              y2="37.84"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0.32" stopColor="#9162ff" />
-              <stop offset="0.69" stopColor="#4500e7" />
-            </linearGradient>
-            <linearGradient
-              id="agent_media_line2"
-              x1="-20.74"
-              x2="44.18"
-              y1="-11.46"
-              y2="26.02"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0.32" stopColor="#9162ff" />
-              <stop offset="0.69" stopColor="#4500e7" />
-            </linearGradient>
-            <clipPath id="agent_media_clip">
-              <rect width="27.19" height="27.19" rx="6.43" fill="#fff" />
-            </clipPath>
-          </defs>
-        </svg>
-      ),
-      path: '#',
-      role: ['ADMIN', 'SUPERADMIN', 'USER'],
-      requireBilling: true,
-      onClick: handleAgentMediaClick,
-    },
     {
       name: t('affiliate', 'Affiliate'),
       icon: (
