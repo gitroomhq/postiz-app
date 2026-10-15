@@ -30,6 +30,23 @@ const hubspotTokenExpiresIn = 10 * 365 * 24 * 60 * 60;
 const hubspotAppClientId = () => process.env.HUBSPOT_APP_CLIENT_ID?.trim();
 const hubspotAppClientSecret = () =>
   process.env.HUBSPOT_APP_CLIENT_SECRET?.trim();
+const hubspotInstallRedirectUri = () =>
+  `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/hubspot/callback`;
+
+// The link that installs the HubSpot app in a HubSpot account (listed in
+// Settings > Integrations), undefined when the install can't be completed here
+export const hubspotInstallUrl = () => {
+  const clientId = hubspotAppClientId();
+  if (!clientId || !hubspotAppClientSecret()) {
+    return undefined;
+  }
+
+  const url = new URL('https://app.hubspot.com/oauth/authorize');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', hubspotInstallRedirectUri());
+  url.searchParams.set('scope', 'oauth');
+  return url.toString();
+};
 
 // Postiz Cloud only, a self-hosted install has nothing to relay to
 export const selfHostedRelayEnabled = () =>
@@ -696,7 +713,7 @@ export class OAuthService {
           grant_type: 'authorization_code',
           client_id: clientId,
           client_secret: clientSecret,
-          redirect_uri: `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/hubspot/callback`,
+          redirect_uri: hubspotInstallRedirectUri(),
           code,
         }),
         signal: AbortSignal.timeout(30000),
