@@ -877,5 +877,7 @@
   "post_now_all_channels": "Publicar ahora en todos los canales",
   "schedule_post_in_all_channels_question": "Esta publicación se creó para más de un canal. ¿Quieres programarlas todas?",
   "schedule_all_channels": "Programar todos los canales",
-  "only_channel": "Solo"
+  "only_channel": "Solo",
+  "hubspot_installed": "Postiz está instalado en HubSpot",
+  "hubspot_installed_description": "Conecta aquí, en Postiz, los canales en los que quieres publicar. Luego, en HubSpot, abre Agent Hub > Agent Builder, añade una herramienta, elige Postiz MCP en MCP Servers y haz clic en Connect and add."
 }

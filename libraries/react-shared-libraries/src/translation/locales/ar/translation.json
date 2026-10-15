@@ -877,5 +877,7 @@
   "post_now_all_channels": "النشر الآن على جميع القنوات",
   "schedule_post_in_all_channels_question": "تم إنشاء هذا المنشور لأكثر من قناة. هل تريد جدولتها جميعًا؟",
   "schedule_all_channels": "جدولة جميع القنوات",
-  "only_channel": "فقط"
+  "only_channel": "فقط",
+  "hubspot_installed": "تم تثبيت Postiz في HubSpot",
+  "hubspot_installed_description": "اربط هنا في Postiz القنوات التي تريد النشر عليها. بعد ذلك، افتح Agent Hub > Agent Builder في HubSpot، وأضف أداة، واختر Postiz MCP ضمن MCP Servers، ثم انقر على Connect and add."
 }
