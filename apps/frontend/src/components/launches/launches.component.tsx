@@ -569,6 +569,7 @@ export const LaunchesComponent = () => {
                 identifier={integration.identifier}
                 gotoUrl={(url: string) => router.push(url)}
                 variables={integration.customFields || []}
+                refresh={integration.internalId}
               />
             ),
           });

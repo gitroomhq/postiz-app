@@ -76,6 +76,10 @@ COPY apps/backend/src/api/routes/integrations.controller.ts \
      /app/apps/backend/src/api/routes/integrations.controller.ts
 COPY apps/frontend/src/components/launches/add.provider.component.tsx \
      /app/apps/frontend/src/components/launches/add.provider.component.tsx
+COPY apps/frontend/src/components/launches/launches.component.tsx \
+     /app/apps/frontend/src/components/launches/launches.component.tsx
+COPY apps/frontend/src/components/launches/menu/menu.tsx \
+     /app/apps/frontend/src/components/launches/menu/menu.tsx
 COPY apps/frontend/src/components/new-launch/providers/show.all.providers.tsx \
      /app/apps/frontend/src/components/new-launch/providers/show.all.providers.tsx
 COPY apps/frontend/src/components/new-launch/providers/webhook \

@@ -156,7 +156,10 @@ export class WebhookProvider extends SocialAbstract implements SocialProvider {
     }
 
     return {
-      id: Buffer.from(channel.url).toString('base64'),
+      // A new connect is its own channel, even when the URL matches an
+      // existing one. Reconnect passes the current internal id as refresh
+      // and must keep it, or the connect migrates the row instead of updating it.
+      id: params.refresh || makeSecureId(16),
       name,
       accessToken: Buffer.from(JSON.stringify(channel)).toString('base64'),
       refreshToken: '',

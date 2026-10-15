@@ -102,16 +102,49 @@ describe('webhook channel', () => {
 describe('WebhookProvider', () => {
   const provider = new WebhookProvider();
 
-  it('keeps the same channel id when the URL does not change', async () => {
+  it('gives each new connection its own channel id', async () => {
+    const code = Buffer.from(
+      JSON.stringify({
+        name: 'Alerts',
+        url: 'https://example.com/hook',
+        headers: [{ name: 'X-Event', value: 'post' }],
+      })
+    ).toString('base64');
+    const auth = await provider.authenticate({
+      code,
+      codeVerifier: 'x',
+    });
+    const again = await provider.authenticate({
+      code,
+      codeVerifier: 'x',
+    });
+
+    expect(typeof auth).not.toBe('string');
+    expect(typeof again).not.toBe('string');
+    if (typeof auth === 'string' || typeof again === 'string') {
+      return;
+    }
+
+    expect(auth.id).not.toBe(again.id);
+    expect(auth.name).toBe('Alerts');
+    expect(auth.picture).toBe('/icons/platforms/webhook.png');
+    expect(JSON.parse(Buffer.from(auth.accessToken, 'base64').toString())).toEqual({
+      url: 'https://example.com/hook',
+      headers: [{ name: 'X-Event', value: 'post' }],
+    });
+  });
+
+  it('keeps the existing channel id when reconnecting', async () => {
     const auth = await provider.authenticate({
       code: Buffer.from(
         JSON.stringify({
           name: 'Alerts',
-          url: 'https://example.com/hook',
-          headers: [{ name: 'X-Event', value: 'post' }],
+          url: 'https://example.com/other',
+          headers: [],
         })
       ).toString('base64'),
       codeVerifier: 'x',
+      refresh: 'existing-channel',
     });
 
     expect(typeof auth).not.toBe('string');
@@ -119,13 +152,7 @@ describe('WebhookProvider', () => {
       return;
     }
 
-    expect(auth.id).toBe(Buffer.from('https://example.com/hook').toString('base64'));
-    expect(auth.name).toBe('Alerts');
-    expect(auth.picture).toBe('/icons/platforms/webhook.png');
-    expect(JSON.parse(Buffer.from(auth.accessToken, 'base64').toString())).toEqual({
-      url: 'https://example.com/hook',
-      headers: [{ name: 'X-Event', value: 'post' }],
-    });
+    expect(auth.id).toBe('existing-channel');
   });
 });
 
