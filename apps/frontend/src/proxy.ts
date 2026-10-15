@@ -125,7 +125,7 @@ export async function proxy(request: NextRequest) {
               domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
             }
           : {}),
-        expires: new Date(Date.now() + 15 * 60 * 1000),
+        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
       });
       return redirect;
     }
@@ -155,7 +155,7 @@ export async function proxy(request: NextRequest) {
                 domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
               }
             : {}),
-          expires: new Date(Date.now() + 15 * 60 * 1000),
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
         });
       }
       return redirect;
