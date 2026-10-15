@@ -166,6 +166,7 @@ export class IntegrationRepository {
   async updateIntegration(id: string, params: Partial<Integration>) {
     if (
       params.picture &&
+      !params.picture.startsWith('/icons/') &&
       (params.picture.indexOf(process.env.CLOUDFLARE_BUCKET_URL!) === -1 ||
         params.picture.indexOf(process.env.FRONTEND_URL!) === -1)
     ) {

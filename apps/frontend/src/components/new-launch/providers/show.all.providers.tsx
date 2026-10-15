@@ -41,6 +41,7 @@ import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
 import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
 import WebhookProvider from '@gitroom/frontend/components/new-launch/providers/webhook/webhook.provider';
+import BufferProvider from '@gitroom/frontend/components/new-launch/providers/buffer/buffer.provider';
 
 export const Providers = [
   {
@@ -186,6 +187,10 @@ export const Providers = [
   {
     identifier: 'webhook',
     component: WebhookProvider,
+  },
+  {
+    identifier: 'buffer',
+    component: BufferProvider,
   },
 ];
 export const ShowAllProviders = forwardRef((props, ref) => {

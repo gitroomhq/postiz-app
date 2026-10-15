@@ -273,6 +273,7 @@ export const ContinueIntegration: FC<{
       youtube: 'YouTube',
       gmb: 'Google Business',
       tumblr: 'Tumblr',
+      buffer: 'Buffer',
       'tiktok-business': 'TikTok Business',
     };
     return names[provider] || provider;

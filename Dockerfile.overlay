@@ -86,6 +86,18 @@ COPY apps/frontend/src/components/new-launch/providers/webhook \
      /app/apps/frontend/src/components/new-launch/providers/webhook
 COPY apps/frontend/public/icons/platforms/webhook.png \
      /app/apps/frontend/public/icons/platforms/webhook.png
+COPY libraries/nestjs-libraries/src/integrations/social/buffer.provider.ts \
+     /app/libraries/nestjs-libraries/src/integrations/social/buffer.provider.ts
+COPY apps/frontend/src/components/new-launch/providers/buffer \
+     /app/apps/frontend/src/components/new-launch/providers/buffer
+COPY apps/frontend/src/components/new-launch/providers/continue-provider/list.tsx \
+     /app/apps/frontend/src/components/new-launch/providers/continue-provider/list.tsx
+COPY apps/frontend/src/components/new-launch/providers/continue-provider/buffer \
+     /app/apps/frontend/src/components/new-launch/providers/continue-provider/buffer
+COPY apps/frontend/src/components/launches/continue.integration.tsx \
+     /app/apps/frontend/src/components/launches/continue.integration.tsx
+COPY apps/frontend/public/icons/platforms/buffer.png \
+     /app/apps/frontend/public/icons/platforms/buffer.png
 
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN pnpm run build:orchestrator && pnpm run build:backend && pnpm run build:frontend
@@ -105,3 +117,5 @@ COPY --from=build /app/libraries/react-shared-libraries/src /app/libraries/react
 COPY --from=build /app/apps/backend/src /app/apps/backend/src
 COPY --from=build /app/apps/frontend/public/icons/platforms/webhook.png \
      /app/apps/frontend/public/icons/platforms/webhook.png
+COPY --from=build /app/apps/frontend/public/icons/platforms/buffer.png \
+     /app/apps/frontend/public/icons/platforms/buffer.png
