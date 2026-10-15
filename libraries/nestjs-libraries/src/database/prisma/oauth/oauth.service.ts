@@ -25,6 +25,12 @@ const hubspotOAuthClientId = () =>
 // years (a hundred would not fit in a 32-bit integer)
 const hubspotTokenExpiresIn = 10 * 365 * 24 * 60 * 60;
 
+// The HubSpot app itself (HubSpot project > app > Auth tab), not the Postiz
+// app above: its redirect URL finishes the install, see completeHubspotInstall
+const hubspotAppClientId = () => process.env.HUBSPOT_APP_CLIENT_ID?.trim();
+const hubspotAppClientSecret = () =>
+  process.env.HUBSPOT_APP_CLIENT_SECRET?.trim();
+
 // Postiz Cloud only, a self-hosted install has nothing to relay to
 export const selfHostedRelayEnabled = () =>
   process.env.MCP_SELF_HOSTED_RELAY === 'true';
@@ -670,6 +676,51 @@ export class OAuthService {
       scope: this.grantedScope(app),
       ...this.refreshFields(app, refreshToken),
     };
+  }
+
+  // HubSpot only counts an install of the HubSpot app once its code is
+  // exchanged. Postiz makes no HubSpot API calls, so the tokens are not kept
+  async completeHubspotInstall(code: string) {
+    const clientId = hubspotAppClientId();
+    const clientSecret = hubspotAppClientSecret();
+    if (!clientId || !clientSecret) {
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch('https://api.hubapi.com/oauth/v3/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/hubspot/callback`,
+          code,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+    } catch (err) {
+      // timeout or network failure, fetch rejects instead of answering
+      throw new HttpException(
+        'Could not reach HubSpot to finish installing Postiz, please try again',
+        HttpStatus.BAD_GATEWAY,
+        { cause: err }
+      );
+    }
+
+    if (!response.ok) {
+      const value = await response.json().catch(() => null);
+      throw new HttpException(
+        `Could not finish installing Postiz in HubSpot${
+          value?.message ? `: ${value.message}` : ''
+        }`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    await response.body?.cancel();
   }
 
   // null when the relay is off or the token is unknown or revoked

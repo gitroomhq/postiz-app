@@ -8,8 +8,10 @@ import {
   HttpStatus,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
@@ -23,6 +25,7 @@ import {
 } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
 import { RegisterClientDto } from '@gitroom/nestjs-libraries/dtos/oauth/register-client.dto';
+import { HubspotInstallQueryDto } from '@gitroom/nestjs-libraries/dtos/oauth/hubspot-install.dto';
 import { extractBasicCredentials } from '@gitroom/nestjs-libraries/chat/oauth-types';
 import { McpRelayService } from '@gitroom/nestjs-libraries/chat/mcp.relay.service';
 import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
@@ -172,6 +175,19 @@ export class OAuthController {
   @Post('/userinfo')
   async userinfoPost(@Headers('authorization') authorization?: string) {
     return this._oauthService.getUserInfo(authorization);
+  }
+
+  // Public (HubSpot sends the person here after they install the HubSpot app)
+  // and capped per IP, since every attempt sends a request to HubSpot
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Get('/hubspot/callback')
+  async hubspotCallback(
+    @Query() query: HubspotInstallQueryDto,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    await this._oauthService.completeHubspotInstall(query.code);
+    return response.redirect(302, process.env.FRONTEND_URL!);
   }
 }
 
