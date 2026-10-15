@@ -877,5 +877,7 @@
   "post_now_all_channels": "Đăng ngay trên tất cả các kênh",
   "schedule_post_in_all_channels_question": "Bài đăng này được tạo cho nhiều kênh. Bạn có muốn lên lịch cho tất cả các kênh không?",
   "schedule_all_channels": "Lên lịch cho tất cả các kênh",
-  "only_channel": "Chỉ"
+  "only_channel": "Chỉ",
+  "hubspot_installed": "Postiz đã được cài đặt trong HubSpot",
+  "hubspot_installed_description": "Hãy kết nối tại đây, trong Postiz, các kênh bạn muốn đăng bài. Sau đó, trong HubSpot, mở Agent Hub > Agent Builder, thêm một công cụ, chọn Postiz MCP trong MCP Servers và nhấp vào Connect and add."
 }

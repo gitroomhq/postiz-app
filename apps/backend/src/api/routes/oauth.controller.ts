@@ -187,7 +187,14 @@ export class OAuthController {
     @Res({ passthrough: false }) response: Response
   ) {
     await this._oauthService.completeHubspotInstall(query.code);
-    return response.redirect(302, process.env.FRONTEND_URL!);
+
+    // The calendar explains what just happened (HubspotInstalled); returnUrl
+    // brings someone who has to sign in first back to it
+    const installed = `${process.env.FRONTEND_URL}/launches?hubspot=installed`;
+    return response.redirect(
+      302,
+      `${installed}&returnUrl=${encodeURIComponent(installed)}`
+    );
   }
 }
 
