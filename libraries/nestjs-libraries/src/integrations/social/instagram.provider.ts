@@ -391,6 +391,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('1772107') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram did not add the comment, the post itself was published. Please try again with different comment text',
+      };
+    }
+
     if (body.indexOf('2207082') > -1) {
       return {
         type: 'retry' as const,
