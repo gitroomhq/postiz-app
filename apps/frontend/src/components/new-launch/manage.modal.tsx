@@ -587,12 +587,26 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
       }));
 
       if (!dummy) {
-        const checkAllValid = await (
-          await fetch('/posts/valid', {
-            method: 'POST',
-            body: JSON.stringify({ type, posts }),
-          })
-        ).json();
+        const validResponse = await fetch('/posts/valid', {
+          method: 'POST',
+          body: JSON.stringify({ type, posts }),
+        });
+
+        if (!validResponse.ok) {
+          if (validResponse.status !== 402) {
+            const { message } = await validResponse.json().catch(() => ({}));
+            toaster.show(
+              typeof message === 'string'
+                ? message
+                : t('post_save_failed', 'Could not save the post'),
+              'warning'
+            );
+          }
+          setLoading(false);
+          return;
+        }
+
+        const checkAllValid = await validResponse.json();
 
         const focus = (id: string, where: 'fix' | 'preview') => {
           integrationById(id)?.ref?.current?.[where]?.();
