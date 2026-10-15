@@ -877,5 +877,7 @@
   "post_now_all_channels": "פרסם עכשיו בכל הערוצים",
   "schedule_post_in_all_channels_question": "הפוסט הזה נוצר עבור יותר מערוץ אחד. האם ברצונך לתזמן את כולם?",
   "schedule_all_channels": "תזמן את כל הערוצים",
-  "only_channel": "רק"
+  "only_channel": "רק",
+  "hubspot_installed": "Postiz הותקן ב-HubSpot",
+  "hubspot_installed_description": "חבר כאן ב-Postiz את הערוצים שאליהם תרצה לפרסם. לאחר מכן, ב-HubSpot, פתח את Agent Hub > Agent Builder, הוסף כלי, בחר את Postiz MCP תחת MCP Servers ולחץ על Connect and add."
 }
