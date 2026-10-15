@@ -879,5 +879,7 @@
   "post_now_all_channels": "Tüm kanallarda şimdi paylaş",
   "schedule_post_in_all_channels_question": "Bu gönderi birden fazla kanal için oluşturuldu. Hepsini zamanlamak istiyor musunuz?",
   "schedule_all_channels": "Tüm kanalları zamanla",
-  "only_channel": "Yalnızca şu kanal:"
+  "only_channel": "Yalnızca şu kanal:",
+  "hubspot_installed": "Postiz, HubSpot'a yüklendi",
+  "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın."
 }

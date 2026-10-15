@@ -879,5 +879,7 @@
   "post_now_all_channels": "すべてのチャンネルに今すぐ投稿",
   "schedule_post_in_all_channels_question": "この投稿は複数のチャンネル向けに作成されました。すべてのチャンネルでスケジュールしますか？",
   "schedule_all_channels": "すべてのチャンネルでスケジュール",
-  "only_channel": "このチャンネルのみ:"
+  "only_channel": "このチャンネルのみ:",
+  "hubspot_installed": "Postiz を HubSpot にインストールしました",
+  "hubspot_installed_description": "投稿したいチャンネルをここ Postiz で接続してください。次に HubSpot で Agent Hub > Agent Builder を開き、ツールを追加して MCP Servers から Postiz MCP を選択し、Connect and add をクリックしてください。"
 }

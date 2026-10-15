@@ -884,3 +884,5 @@ checksums:
     schedule_post_in_all_channels_question: 8fd19c2e5e74c4a8438ba180beaed615
     schedule_all_channels: 2c761cc9d12ac53696ddfbdabdff1088
     only_channel: 5687ae99e7f5b168e35532f895efd2e8
+    hubspot_installed: 5937d91a1e1f8093b2bf31c834ebc18d
+    hubspot_installed_description: d0044e3cca1e574871461cab9f8722c0
