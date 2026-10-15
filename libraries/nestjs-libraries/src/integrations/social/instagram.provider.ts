@@ -196,7 +196,7 @@ export class InstagramProvider
 
     if (body.indexOf('2207052') > -1) {
       return {
-        type: 'bad-body' as const,
+        type: 'retry' as const,
         value: 'Media fetch failed, please try again',
       };
     }
@@ -383,6 +383,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('1772107') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram did not add the comment, the post itself was published. Please try again with different comment text',
+      };
+    }
+
     if (body.indexOf('2207082') > -1) {
       return {
         type: 'retry' as const,
@@ -417,6 +425,14 @@ export class InstagramProvider
       return {
         type: 'bad-body' as const,
         value: 'Unknown error, please try again later or contact support',
+      };
+    }
+
+    if (body.indexOf('2207018') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          "One of the collaborators could not be tagged, please check the username is correct, the account is public, and that it allows collaborator invites",
       };
     }
 

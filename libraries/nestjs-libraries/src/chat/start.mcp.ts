@@ -25,6 +25,18 @@ const fixAcceptHeader = (req: Request) => {
   }
 };
 
+// 2026-07-28 clients hold a subscriptions/listen stream open for the whole
+// session, and the tool list never changes - the stream ends once the
+// subscription had time to be acknowledged
+const endListenStream = (req: Request, res: Response) => {
+  if (req.headers['mcp-method'] !== 'subscriptions/listen') {
+    return;
+  }
+
+  const timer = setTimeout(() => res.end(), 10000);
+  res.on('close', () => clearTimeout(timer));
+};
+
 const openAiOAuthClientId = process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
 const enableOidcEmailClaims = Boolean(openAiOAuthClientId);
 // The static app HubSpot agents connect with, see OAuthService
@@ -135,7 +147,7 @@ export const startMcp = async (app: INestApplication) => {
     appResources,
   };
 
-  const server = new MCPServer(serverConfig);
+  const server = new MCPServer({ ...serverConfig, protocolVersion: '2026-07-28' });
 
   // The directory-facing servers don't register the agent - it would be
   // exposed as an annotation-less catch-all ask_postiz tool, which the
@@ -143,6 +155,7 @@ export const startMcp = async (app: INestApplication) => {
   const oauthServer = new MCPServer({
     name: 'Postiz MCP',
     version: '1.0.0',
+    protocolVersion: '2026-07-28',
     tools,
     appResources,
   });
@@ -153,6 +166,7 @@ export const startMcp = async (app: INestApplication) => {
   const claudeOauthServer = new MCPServer({
     name: 'Postiz MCP',
     version: '1.0.0',
+    protocolVersion: '2026-07-28',
     tools: claudeTools,
     appResources: claudeAppResources,
   });
@@ -166,11 +180,13 @@ export const startMcp = async (app: INestApplication) => {
     selfHostedServer = new MCPServer({
       name: 'Postiz MCP',
       version: '1.0.0',
+      protocolVersion: '2026-07-28',
       tools: selfHostedTools,
     });
     claudeSelfHostedServer = new MCPServer({
       name: 'Postiz MCP',
       version: '1.0.0',
+      protocolVersion: '2026-07-28',
       tools: withoutClaudeHidden(selfHostedTools),
     });
   }
@@ -360,6 +376,7 @@ export const startMcp = async (app: INestApplication) => {
       return;
     }
 
+    endListenStream(req, res);
     fixAcceptHeader(req);
     await runWithContext({ requestId: token!, auth, relay: relay || undefined }, async () => {
       await (relay ? selfHostedServer! : mcpServer).startHTTP({
@@ -367,7 +384,6 @@ export const startMcp = async (app: INestApplication) => {
         httpPath: url.pathname,
         options: {
           serverless: true,
-          enableJsonResponse: true,
         },
         req,
         res,
@@ -409,6 +425,7 @@ export const startMcp = async (app: INestApplication) => {
 
     const url = new URL('/mcp', process.env.NEXT_PUBLIC_BACKEND_URL);
 
+    endListenStream(req, res);
     fixAcceptHeader(req);
     // @ts-ignore
     await runWithContext({ requestId: token, auth: req.auth }, async () => {
@@ -417,7 +434,6 @@ export const startMcp = async (app: INestApplication) => {
         httpPath: url.pathname,
         options: {
           serverless: true,
-          enableJsonResponse: true,
         },
         req,
         res,
@@ -450,6 +466,7 @@ export const startMcp = async (app: INestApplication) => {
       process.env.NEXT_PUBLIC_BACKEND_URL
     );
 
+    endListenStream(req, res);
     fixAcceptHeader(req);
     await runWithContext(
       // @ts-ignore
@@ -460,7 +477,6 @@ export const startMcp = async (app: INestApplication) => {
           httpPath: url.pathname,
           options: {
             serverless: true,
-            enableJsonResponse: true,
           },
           req,
           res,
