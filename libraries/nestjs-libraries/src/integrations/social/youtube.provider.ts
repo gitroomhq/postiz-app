@@ -13,6 +13,7 @@ import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
+  PublishedWithError,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
@@ -633,6 +634,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           path,
           uploadedBytes: 0,
           thumbnail: settings?.thumbnail?.path || '',
+          postDbId: firstPost.id,
         },
       },
     ];
@@ -647,6 +649,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       uploadedBytes: number;
       thumbnail: string;
       videoId?: string;
+      postDbId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -698,6 +701,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       uploadedBytes: number;
       thumbnail: string;
       videoId?: string;
+      postDbId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -810,31 +814,49 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
     }
 
+    const releaseURL = `https://www.youtube.com/watch?v=${videoId}`;
+
     if (pendingData.thumbnail) {
       const { client, youtube } = clientAndYoutube();
       client.setCredentials({ access_token: accessToken });
       const youtubeClient = youtube(client);
 
-      await this.runInConcurrent(async () =>
-        youtubeClient.thumbnails.set({
-          videoId,
-          media: {
-            body: (
-              await this.getSsrfSafeAxios()({
-                url: pendingData.thumbnail,
-                method: 'GET',
-                responseType: 'stream',
-              })
-            ).data,
-          },
-        })
-      );
+      try {
+        await this.runInConcurrent(async () =>
+          youtubeClient.thumbnails.set({
+            videoId,
+            media: {
+              body: (
+                await this.getSsrfSafeAxios()({
+                  url: pendingData.thumbnail,
+                  method: 'GET',
+                  responseType: 'stream',
+                })
+              ).data,
+            },
+          })
+        );
+      } catch (err) {
+        // the video is already live: a rejected thumbnail must not lose its id
+        // and URL (a token problem is left to the refresh + retry path, the
+        // thumbnail call is idempotent)
+        if (err instanceof BadBody && pendingData.postDbId) {
+          throw new PublishedWithError(
+            this.identifier,
+            pendingData.postDbId,
+            videoId,
+            releaseURL,
+            err.message
+          );
+        }
+        throw err;
+      }
     }
 
     return {
       status: 'completed',
       postId: videoId,
-      releaseURL: `https://www.youtube.com/watch?v=${videoId}`,
+      releaseURL,
     };
   }
 
