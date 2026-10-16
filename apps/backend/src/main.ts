@@ -9,6 +9,12 @@ Runtime.install({ shutdownSignals: [] });
 
 process.env.TZ = 'UTC';
 
+for (const key of ['FRONTEND_URL', 'MAIN_URL', 'NEXT_PUBLIC_BACKEND_URL']) {
+  if (process.env[key]) {
+    process.env[key] = process.env[key].replace(/\/+$/, '');
+  }
+}
+
 import cookieParser from 'cookie-parser';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
