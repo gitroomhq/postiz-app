@@ -207,7 +207,9 @@ export class AuthService {
             },
           }),
         });
-      } catch (err) {}
+      } catch (err) {
+        // best effort, a failed oauth call must not block the login
+      }
     }
   }
 

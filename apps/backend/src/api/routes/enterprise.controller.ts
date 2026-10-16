@@ -106,7 +106,9 @@ export class EnterpriseController {
       await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
 
       return url;
-    } catch (err) {}
+    } catch (err) {
+      // best effort, a failed enterprise login falls back to the standard flow
+    }
   }
 
   @Post('/delete-channel')

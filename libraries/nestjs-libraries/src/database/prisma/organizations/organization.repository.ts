@@ -525,7 +525,9 @@ export class OrganizationRepository {
           ...(type === 'start' ? { streakSince: new Date() } : {}),
         },
       });
-    } catch (err) {}
+    } catch (err) {
+      // best effort, streak tracking must not break the login
+    }
   }
 
   async getLastPublishDate(organizationId: string) {

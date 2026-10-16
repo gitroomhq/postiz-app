@@ -883,9 +883,13 @@ export class PostsService {
             ) {
               await workflow.terminate();
             }
-          } catch (err) {}
+          } catch (err) {
+            // best effort, the workflow may already be finished
+          }
         }
-      } catch (err) {}
+      } catch (err) {
+        // best effort, cancelling the workflow must not break the delete
+      }
 
       return { id: post.id };
     }
@@ -925,9 +929,13 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) {
+          // best effort, the workflow may already be finished
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      // best effort, cancelling the workflow must not break the delete
+    }
 
     if (state === 'DRAFT') {
       return;
@@ -958,7 +966,9 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) {}
+    } catch (err) {
+      // best effort, a failed webhook must not break the caller
+    }
   }
 
   /**
@@ -1255,7 +1265,9 @@ export class PostsService {
       let image = [];
       try {
         image = JSON.parse(p.image || '[]');
-      } catch (err) {}
+      } catch (err) {
+        // the stored value is not valid json, fall back to an empty list
+      }
       return {
         id: p.id,
         content: p.content,
@@ -1368,7 +1380,9 @@ export class PostsService {
         orgId,
         state
       );
-    } catch (err) {}
+    } catch (err) {
+      // best effort, starting the workflow must not break the caller
+    }
 
     return { id, state };
   }
@@ -1406,7 +1420,9 @@ export class PostsService {
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
         );
-      } catch (err) {}
+      } catch (err) {
+        // best effort, starting the workflow must not break the caller
+      }
     }
 
     return newDate;

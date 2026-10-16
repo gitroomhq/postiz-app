@@ -539,7 +539,9 @@ export class PostsRepository {
             body: typeof body === 'string' ? body : JSON.stringify(body),
           },
         });
-      } catch (err) {}
+      } catch (err) {
+        // best effort, a failed webhook must not break the caller
+      }
     }
 
     return update;

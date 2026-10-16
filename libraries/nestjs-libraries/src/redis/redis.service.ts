@@ -8,6 +8,10 @@ class MockRedis {
     return this.data.get(key);
   }
 
+  async ping() {
+    return 'PONG';
+  }
+
   async set(key: string, value: any) {
     this.data.set(key, value);
     return 'OK';

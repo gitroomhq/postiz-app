@@ -638,7 +638,9 @@ export class StripeService extends PaymentProviderAbstract {
             }
           : {}),
       });
-    } catch (err) {}
+    } catch (err) {
+      // best effort, a failed sync must not break the caller
+    }
 
     // Check for auto-apply promotion code (only for monthly plans)
     let autoApplyPromoCode: string | null = null;

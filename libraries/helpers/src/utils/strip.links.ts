@@ -1,7 +1,7 @@
 // Scheme'd URLs - keep this in sync with the URL detection used by the short
 // linking service
 const schemeUrl =
-  /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+  /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&//=]*)/;
 
 // Scheme-less domains (postiz.com, bit.ly/abc): X linkifies these into t.co
 // links exactly like full URLs, so they count as link posts too. The TLD list

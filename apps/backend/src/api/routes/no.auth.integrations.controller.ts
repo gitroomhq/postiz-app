@@ -311,7 +311,9 @@ export class NoAuthIntegrationsController {
           // @ts-ignore — undici option, not in lib.dom fetch types
           dispatcher: getSsrfSafeDispatcher(),
         });
-      } catch (err) {}
+      } catch (err) {
+        // best effort, the external profile is only used to build the prompt
+      }
 
       await ioRedis.del(`webhookUrl:${body.state}`);
     }

@@ -38,6 +38,8 @@ import { AutopostController } from '@gitroom/backend/api/routes/autopost.control
 import { SetsController } from '@gitroom/backend/api/routes/sets.controller';
 import { ThirdPartyController } from '@gitroom/backend/api/routes/third-party.controller';
 import { MonitorController } from '@gitroom/backend/api/routes/monitor.controller';
+import { HealthController } from '@gitroom/backend/api/routes/health.controller';
+import { HealthService } from '@gitroom/nestjs-libraries/health/health.service';
 import { NoAuthIntegrationsController } from '@gitroom/backend/api/routes/no.auth.integrations.controller';
 import { EnterpriseController } from '@gitroom/backend/api/routes/enterprise.controller';
 import { OAuthAppController } from '@gitroom/backend/api/routes/oauth-app.controller';
@@ -84,12 +86,14 @@ const authenticatedController = [
   controllers: process.env.MCP_ONLY
     ? [
         RootController,
+        HealthController,
         OAuthController,
         MediaWidgetController,
         ClippingWidgetController,
       ]
     : [
         RootController,
+        HealthController,
         PaymentController,
         StripeController,
         AuthController,
@@ -115,6 +119,7 @@ const authenticatedController = [
     PoliciesGuard,
     PermissionsService,
     CodesService,
+    HealthService,
     IntegrationManager,
     TrackService,
     ShortLinkService,

@@ -6,7 +6,7 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
   constructor(private _temporalService: TemporalService) {}
 
   async onModuleInit(): Promise<void> {
-    if (!!process.env.RUN_CRON) {
+    if (process.env.RUN_CRON) {
       try {
         await this._temporalService.client
           ?.getRawClient()
@@ -14,7 +14,9 @@ export class InfiniteWorkflowRegister implements OnModuleInit {
             workflowId: 'missing-post-workflow',
             taskQueue: 'main',
           });
-      } catch (err) {}
+      } catch (err) {
+        // best effort, the cron workflow may already be running
+      }
     }
   }
 }

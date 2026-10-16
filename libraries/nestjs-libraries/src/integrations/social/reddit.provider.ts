@@ -842,32 +842,30 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
       )
     ).json();
 
-    // eslint-disable-next-line no-async-promise-executor
-    const newData = await new Promise<{ id: string; name: string }[]>(
-      async (res) => {
-        try {
-          const flair = await (
-            await this.fetch(
-              `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
-              {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
+    const newData = await (async () => {
+      try {
+        const flair = await (
+          await this.fetch(
+            `https://oauth.reddit.com/${data.subreddit}/api/link_flair_v2`,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
               },
-              'reddit',
-              0,
-              false
-            )
-          ).json();
+            },
+            'reddit',
+            0,
+            false
+          )
+        ).json();
 
-          res(flair);
-        } catch (err) {
-          return res([]);
-        }
+        return flair as { id: string; name: string }[];
+      } catch (err) {
+        // best effort, a subreddit can be posted to without the flair list
+        return [];
       }
-    );
+    })();
 
     return {
       subreddit: data.subreddit,

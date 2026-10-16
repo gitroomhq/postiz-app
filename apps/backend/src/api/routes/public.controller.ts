@@ -245,6 +245,8 @@ export class PublicController {
 
     try {
       await pump(Readable.fromWeb(r.body as any), res);
-    } catch (err) {}
+    } catch (err) {
+      // best effort, the response has already started streaming
+    }
   }
 }

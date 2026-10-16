@@ -40,6 +40,8 @@ export class ListmonkProvider implements NewsletterInterface {
         headers,
         body: JSON.stringify(welcomeEmail),
       });
-    } catch (err) {}
+    } catch (err) {
+      // best effort, the subscriber exists even when the welcome email fails
+    }
   }
 }

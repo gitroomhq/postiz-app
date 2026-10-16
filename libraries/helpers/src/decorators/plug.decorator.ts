@@ -16,7 +16,7 @@ export function Plug(params: {
   }[];
 }) {
   return function (
-    target: Object,
+    target: object,
     propertyKey: string | symbol,
     descriptor: any
   ) {

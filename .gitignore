@@ -57,6 +57,10 @@ Thumbs.db
 
 # ignore Secrets folder
 .secrets/
+
+# Local Chrome profiles used for browser automation - they hold cookies, saved
+# logins and history, never commit them
+chrome_profile*/
 libraries/plugins/src/plugins.ts
 i18n.cache
 

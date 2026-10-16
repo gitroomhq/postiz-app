@@ -102,7 +102,9 @@ export const startMcp = async (app: INestApplication) => {
   let storageOrigin: string | undefined;
   try {
     storageOrigin = new URL(UploadFactory.createStorage().publicUrl!('')).origin;
-  } catch (err) {}
+  } catch (err) {
+    // best effort, the origin is only used to build absolute urls
+  }
 
   // MCP Apps widgets (ui:// resources). They run in the host's sandboxed iframe,
   // which can only reach the domains listed in the csp

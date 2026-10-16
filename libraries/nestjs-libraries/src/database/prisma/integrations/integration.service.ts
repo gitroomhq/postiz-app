@@ -50,7 +50,9 @@ export class IntegrationService {
     for (const item of data.filter((f) => f.active)) {
       try {
         await this._temporalService.terminateWorkflow(`autopost-${item.id}`);
-      } catch (err) {}
+      } catch (err) {
+        // best effort, the workflow may already be finished
+      }
     }
 
     return true;

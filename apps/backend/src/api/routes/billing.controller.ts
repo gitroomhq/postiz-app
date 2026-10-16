@@ -79,7 +79,9 @@ export class BillingController {
     const provider = await this.provider(org);
     try {
       await provider.finishTrial(org);
-    } catch (err) {}
+    } catch (err) {
+      // best effort, a failed trial finish must not break the request
+    }
     return {
       finish: true,
     };

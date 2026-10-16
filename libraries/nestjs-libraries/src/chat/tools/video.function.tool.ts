@@ -45,10 +45,10 @@ export class VideoFunctionTool implements AgentToolInterface {
           throw new Error('Function not found');
         }
 
-        const func = await this._moduleRef
+        const provider = this._moduleRef
           // @ts-ignore
-          .get(findVideo.target, { strict: false })
-          [inputData.functionName]();
+          .get(findVideo.target, { strict: false });
+        const func = await provider[inputData.functionName]();
         return func;
       },
     });

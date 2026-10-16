@@ -77,7 +77,9 @@ export class NotificationService {
               },
             ]),
           });
-      } catch (err) {}
+      } catch (err) {
+        // best effort, a failed notification must not break the caller
+      }
 
       return;
     }
