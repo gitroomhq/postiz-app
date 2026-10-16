@@ -332,6 +332,7 @@ CREATE TABLE "Integration" (
     "internalId" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "customName" TEXT,
     "picture" TEXT,
     "providerIdentifier" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -397,6 +398,7 @@ CREATE TABLE "Post" (
     "content" TEXT NOT NULL,
     "delay" INTEGER NOT NULL DEFAULT 0,
     "group" TEXT NOT NULL,
+    "batchId" TEXT,
     "title" TEXT,
     "description" TEXT,
     "parentPostId" TEXT,
@@ -1833,6 +1835,9 @@ CREATE INDEX "Comments_deletedAt_idx" ON "Comments"("deletedAt");
 
 -- CreateIndex
 CREATE INDEX "Post_group_idx" ON "Post"("group");
+
+-- CreateIndex
+CREATE INDEX "Post_batchId_idx" ON "Post"("batchId");
 
 -- CreateIndex
 CREATE INDEX "Post_deletedAt_idx" ON "Post"("deletedAt");
