@@ -1,6 +1,9 @@
 'use client';
 
-import { useCalendar, ListStateFilter } from '@gitroom/frontend/components/launches/calendar.context';
+import {
+  useCalendar,
+  ListStateFilter,
+} from '@gitroom/frontend/components/launches/calendar.context';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
@@ -11,37 +14,7 @@ import i18next from 'i18next';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { BottomSheet } from '@gitroom/frontend/components/ui/bottom.sheet.component';
 import { FilterIcon } from '@gitroom/frontend/components/ui/icons';
-
-// Helper function to get start and end dates based on display type
-function getDateRange(
-  display: 'day' | 'week' | 'month' | 'list',
-  referenceDate?: string
-) {
-  const date = referenceDate ? newDayjs(referenceDate) : newDayjs();
-
-  switch (display) {
-    case 'day':
-      return {
-        startDate: date.format('YYYY-MM-DD'),
-        endDate: date.format('YYYY-MM-DD'),
-      };
-    case 'week':
-      return {
-        startDate: date.startOf('isoWeek').format('YYYY-MM-DD'),
-        endDate: date.endOf('isoWeek').format('YYYY-MM-DD'),
-      };
-    case 'month':
-      return {
-        startDate: date.startOf('month').format('YYYY-MM-DD'),
-        endDate: date.endOf('month').format('YYYY-MM-DD'),
-      };
-    case 'list':
-      return {
-        startDate: date.format('YYYY-MM-DD'),
-        endDate: date.format('YYYY-MM-DD'),
-      };
-  }
-}
+import { getDateRange } from './calendar.date.range';
 
 export const Filters = () => {
   const calendar = useCalendar();
@@ -70,9 +43,10 @@ export const Filters = () => {
   };
 
   const setToday = useCallback(() => {
-    const today = newDayjs();
     const currentRange = getDateRange(
-      calendar.display as 'day' | 'week' | 'month'
+      calendar.display,
+      newDayjs(),
+      calendar.weekStart
     );
 
     // Check if we're already showing today's range
@@ -94,13 +68,13 @@ export const Filters = () => {
   const setDay = useCallback(() => {
     // If already in day view and showing today, don't change
     if (calendar.display === 'day') {
-      const todayRange = getDateRange('day');
+      const todayRange = getDateRange('day', newDayjs());
       if (calendar.startDate === todayRange.startDate) {
         return;
       }
     }
 
-    const range = getDateRange('day');
+    const range = getDateRange('day', newDayjs());
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,
@@ -110,19 +84,16 @@ export const Filters = () => {
   }, [calendar]);
 
   const setWeek = useCallback(() => {
-    // If already in week view and showing current week, don't change
-    if (calendar.display === 'week') {
-      const currentWeekRange = getDateRange('week');
-      if (calendar.startDate === currentWeekRange.startDate) {
-        return;
-      }
-    }
-
-    const range = getDateRange('week');
+    const weekStart =
+      calendar.display === 'week' && calendar.weekStart === 'monday'
+        ? 'today'
+        : 'monday';
+    const range = getDateRange('week', newDayjs(), weekStart);
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,
       display: 'week',
+      weekStart,
       customer: calendar.customer,
     });
   }, [calendar]);
@@ -130,13 +101,13 @@ export const Filters = () => {
   const setMonth = useCallback(() => {
     // If already in month view and showing current month, don't change
     if (calendar.display === 'month') {
-      const currentMonthRange = getDateRange('month');
+      const currentMonthRange = getDateRange('month', newDayjs());
       if (calendar.startDate === currentMonthRange.startDate) {
         return;
       }
     }
 
-    const range = getDateRange('month');
+    const range = getDateRange('month', newDayjs());
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,
@@ -150,7 +121,7 @@ export const Filters = () => {
       return;
     }
 
-    const range = getDateRange('list');
+    const range = getDateRange('list', newDayjs());
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,
@@ -164,7 +135,7 @@ export const Filters = () => {
       return;
     }
 
-    const range = getDateRange('week');
+    const range = getDateRange('week', newDayjs(), calendar.weekStart);
     calendar.setFilters({
       startDate: range.startDate,
       endDate: range.endDate,
@@ -208,7 +179,8 @@ export const Filters = () => {
 
     const range = getDateRange(
       calendar.display as 'day' | 'week' | 'month',
-      nextStart.format('YYYY-MM-DD')
+      nextStart,
+      calendar.weekStart
     );
     calendar.setFilters({
       startDate: range.startDate,
@@ -238,7 +210,8 @@ export const Filters = () => {
 
     const range = getDateRange(
       calendar.display as 'day' | 'week' | 'month',
-      prevStart.format('YYYY-MM-DD')
+      prevStart,
+      calendar.weekStart
     );
     calendar.setFilters({
       startDate: range.startDate,
@@ -296,7 +269,9 @@ export const Filters = () => {
       {!isListView && (
         <div className="flex flex-grow flex-row items-center gap-[10px] mobile:order-3 mobile:basis-full mobile:min-w-0 mobile:gap-[8px]">
           <div className="border h-[42px] border-newTableBorder bg-newTableBorder gap-[1px] flex items-center rounded-[8px] overflow-hidden mobile:flex-1 mobile:min-w-0">
-            <div
+            <button
+              type="button"
+              aria-label={t('previous_period', 'Previous period')}
               onClick={previous}
               className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] mobile:px-0 mobile:w-[36px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
             >
@@ -315,7 +290,7 @@ export const Filters = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-            </div>
+            </button>
             <div className="min-w-[200px] mobile:min-w-0 mobile:flex-1 text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] mobile:px-[4px] rounded-[5px] transition-all text-[14px] mobile:truncate">
                 <span className="mobile:hidden">{getDisplayText()}</span>
@@ -324,7 +299,9 @@ export const Filters = () => {
                 </span>
               </div>
             </div>
-            <div
+            <button
+              type="button"
+              aria-label={t('next_period', 'Next period')}
               onClick={next}
               className="cursor-pointer text-textColor rtl:rotate-180 px-[9px] mobile:px-0 mobile:w-[36px] bg-newBgColorInner h-full flex items-center justify-center hover:text-textItemFocused hover:bg-boxFocused"
             >
@@ -343,16 +320,17 @@ export const Filters = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-            </div>
+            </button>
           </div>
           <div className="flex-1 mobile:flex-none text-[14px] font-[500]">
             <div className="text-center flex h-[42px]">
-              <div
+              <button
+                type="button"
                 onClick={setToday}
                 className="hover:text-textItemFocused hover:bg-boxFocused py-[3px] px-[9px] flex justify-center items-center rounded-[8px] transition-all cursor-pointer text-[14px] bg-newBgColorInner border border-newTableBorder"
               >
                 {t('today', 'Today')}
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -392,7 +370,8 @@ export const Filters = () => {
             </div>
             <div className="min-w-[200px] mobile:min-w-0 mobile:flex-1 text-center bg-newBgColorInner h-full flex items-center justify-center">
               <div className="py-[3px] px-[9px] rounded-[5px] transition-all text-[14px]">
-                {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')} {Math.max(1, calendar.listTotalPages)}
+                {t('page', 'Page')} {calendar.listPage + 1} {t('of', 'of')}{' '}
+                {Math.max(1, calendar.listTotalPages)}
               </div>
             </div>
             <div
@@ -479,15 +458,27 @@ export const Filters = () => {
         >
           {t('day', 'Day')}
         </div>
-        <div
+        <button
+          type="button"
+          aria-pressed={calendar.display === 'week'}
+          title={
+            calendar.display === 'week' && calendar.weekStart === 'today'
+              ? t('switch_to_calendar_week', 'Switch to Monday–Sunday week')
+              : t(
+                  'switch_to_rolling_week',
+                  'Click Week again to show today and the next six days'
+                )
+          }
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer w-[74px] mobile:w-auto mobile:flex-1 mobile:min-w-fit mobile:px-[6px] mobile:whitespace-nowrap text-center rounded-[6px]',
             calendar.display === 'week' && 'text-textItemFocused bg-boxFocused'
           )}
           onClick={setWeek}
         >
-          {t('week', 'Week')}
-        </div>
+          {calendar.display === 'week' && calendar.weekStart === 'today'
+            ? t('seven_days', '7 days')
+            : t('week', 'Week')}
+        </button>
         <div
           className={clsx(
             'pt-[6px] pb-[5px] cursor-pointer w-[74px] mobile:w-auto mobile:flex-1 mobile:min-w-fit mobile:px-[6px] mobile:whitespace-nowrap text-center rounded-[6px]',
