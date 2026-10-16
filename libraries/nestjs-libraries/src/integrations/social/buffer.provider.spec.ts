@@ -234,8 +234,46 @@ describe('BufferProvider', () => {
     }
   });
 
-  it('fails a media URL that is not public https before calling Buffer', async () => {
+  it('sends an mp4 as video and prefers the fetchable url', async () => {
+    let sent: { variables: { input: { assets: unknown } } } = {
+      variables: { input: { assets: [] } },
+    };
+    jest.spyOn(global, 'fetch').mockImplementation(async (_url, init) => {
+      sent = JSON.parse(String(init?.body));
+      return jsonResponse({
+        data: { createPost: { post: { id: 'post-9', externalLink: '' } } },
+      }) as never;
+    });
+
+    await provider.post(
+      'chan-1',
+      KEY,
+      [
+        {
+          id: 'local-1',
+          message: 'Hello',
+          settings: {},
+          media: [
+            {
+              type: 'image',
+              path: '/uploads/clip.mp4',
+              url: 'https://cdn.example/clip.mp4',
+            } as never,
+          ],
+        },
+      ],
+      integration
+    );
+
+    expect(sent.variables.input.assets).toEqual([
+      { video: { url: 'https://cdn.example/clip.mp4' } },
+    ]);
+  });
+
+  it('fails a local media URL before calling Buffer and names that URL', async () => {
     const fetchMock = jest.spyOn(global, 'fetch');
+    const address =
+      'http://localhost:4200/uploads/2026/10/13/clip.mp4';
 
     await expect(
       provider.post(
@@ -246,12 +284,12 @@ describe('BufferProvider', () => {
             id: 'local-1',
             message: 'Hello',
             settings: {},
-            media: [{ type: 'image', path: '/uploads/a.jpg' }],
+            media: [{ type: 'image', path: address }],
           },
         ],
         integration
       )
-    ).rejects.toThrow('Media must be a public https URL.');
+    ).rejects.toThrow(address);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

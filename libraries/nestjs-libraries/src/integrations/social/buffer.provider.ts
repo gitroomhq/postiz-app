@@ -33,6 +33,54 @@ function safeMessage(message: string, secret: string) {
   return cleaned || 'Buffer could not publish this post.';
 }
 
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v', 'mkv'];
+
+function fileAddress(item: { path: string; url?: string }) {
+  const url = typeof item.url === 'string' ? item.url : '';
+  const path = typeof item.path === 'string' ? item.path : '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const base = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  if (path.startsWith('/uploads/')) return `${base}${path}`;
+  return `${base}/uploads/${path.replace(/^\//, '')}`;
+}
+
+function publicHttps(address: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(address);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== 'https:') return false;
+  const host = parsed.hostname.toLowerCase();
+  if (
+    host === 'localhost' ||
+    host === '0.0.0.0' ||
+    host.endsWith('.local') ||
+    host.endsWith('.localhost')
+  ) {
+    return false;
+  }
+  if (
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function videoFile(item: { type: string; path: string; url?: string }) {
+  const name = `${item.url || ''} ${item.path || ''}`.split('?')[0].toLowerCase();
+  return (
+    VIDEO_EXTENSIONS.some((ext) => name.endsWith(`.${ext}`)) ||
+    item.type === 'video'
+  );
+}
+
 @Rules(
   'Buffer publishes the scheduled post immediately to the connected Buffer profile. There is no settings panel. Images and videos are sent as the public URLs already stored on the post.'
 )
@@ -212,15 +260,15 @@ export class BufferProvider extends SocialAbstract implements SocialProvider {
     }
 
     const assets = media.map((item) => {
-      if (
-        (item.type !== 'image' && item.type !== 'video') ||
-        !item.path.startsWith('https://')
-      ) {
-        fail('Media must be a public https URL.');
+      const address = fileAddress(item);
+      if (!publicHttps(address)) {
+        fail(
+          `Buffer cannot download ${address}. The file has to be a public https URL that Buffer's servers can fetch.`
+        );
       }
-      return item.type === 'image'
-        ? { image: { url: item.path } }
-        : { video: { url: item.path } };
+      return videoFile(item)
+        ? { video: { url: address } }
+        : { image: { url: address } };
     });
 
     let data: {

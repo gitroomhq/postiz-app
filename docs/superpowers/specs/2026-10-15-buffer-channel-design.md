@@ -64,13 +64,17 @@ The input is:
 - `assets`: the post's media, in order
 
 An image is `{ image: { url } }`. A video is `{ video: { url } }`. The URL
-is the media `path` already stored on the post. No thumbnail offset, no
-document, no link card, no thread, no first comment, no tags, no
-`metadata`, no `dueAt`, and no draft flag.
+is the media `url` when that is already `http` or `https`, otherwise the
+`path` when that is, otherwise `FRONTEND_URL` plus the upload path. A file
+whose name ends in `mp4`, `mov`, `webm`, `m4v`, or `mkv` is a video even
+when the post labels it as an image. No thumbnail offset, no document, no
+link card, no thread, no first comment, no tags, no `metadata`, no
+`dueAt`, and no draft flag.
 
 A post with no text and no image or video fails before the call. A media
-item whose `path` is not a public `https` URL fails the post before the
-call. Postiz does not upload the file to Buffer.
+address that is not a public `https` URL (including `http` and localhost)
+fails the post before the call, and the message includes that address.
+Postiz does not upload the file to Buffer.
 
 The composer is the normal text and media editor. There is no Buffer
 settings panel. `settings` is the empty object that editor stores. The
