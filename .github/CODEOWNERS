@@ -1,0 +1,86 @@
+# Postiz code owners
+#
+# GitHub requests a review from the owners of every path a pull request touches.
+# The LAST matching pattern wins, so the file-type and config rules at the bottom
+# intentionally override the app/library rules above them.
+#
+# Owners must have write access to gitroomhq/postiz-app.
+
+# ---------------------------------------------------------------------------
+# Default owner for anything not matched below
+# ---------------------------------------------------------------------------
+
+*                               @nevo-david
+
+# ---------------------------------------------------------------------------
+# Applications
+# ---------------------------------------------------------------------------
+
+/apps/backend/                  @nevo-david
+/apps/frontend/                 @nevo-david
+/apps/orchestrator/             @nevo-david
+/apps/extension/                @nevo-david
+/apps/commands/                 @nevo-david
+/apps/sdk/                      @nevo-david
+
+# ---------------------------------------------------------------------------
+# Shared libraries
+# ---------------------------------------------------------------------------
+
+/libraries/nestjs-libraries/        @nevo-david
+/libraries/react-shared-libraries/  @nevo-david
+/libraries/helpers/                 @nevo-david
+
+# ---------------------------------------------------------------------------
+# CI, build and deployment
+# ---------------------------------------------------------------------------
+
+/.github/                       @egelhaus
+/.github/workflows/             @egelhaus
+/Jenkins/                       @egelhaus
+/.devcontainer/                 @egelhaus
+/dynamicconfig/                 @egelhaus
+/railway.toml                   @egelhaus
+/sonar-project.properties       @egelhaus
+
+# ---------------------------------------------------------------------------
+# Docker
+# ---------------------------------------------------------------------------
+
+Dockerfile*                     @egelhaus
+docker-compose*.yaml            @egelhaus
+docker-compose*.yml             @egelhaus
+/.dockerignore                  @egelhaus
+
+# ---------------------------------------------------------------------------
+# Documentation and legal
+# ---------------------------------------------------------------------------
+
+*.md                            @egelhaus
+/LICENSE                        @egelhaus
+/ICLA.md                        @egelhaus
+/CCLA.md                        @egelhaus
+/SECURITY.md                    @egelhaus
+/CODE_OF_CONDUCT.md             @egelhaus
+/CONTRIBUTING.md                @egelhaus
+
+# ---------------------------------------------------------------------------
+# Tooling and repo configuration
+# ---------------------------------------------------------------------------
+
+/tsconfig.json                  @nevo-david @egelhaus
+/tsconfig.base.json             @nevo-david @egelhaus
+/eslint.config.mjs              @nevo-david @egelhaus
+/.eslintignore                  @nevo-david @egelhaus
+/.prettierrc                    @nevo-david @egelhaus
+/.prettierignore                @nevo-david @egelhaus
+/jest.config.ts                 @nevo-david @egelhaus
+/jest.preset.js                 @nevo-david @egelhaus
+/.npmrc                         @nevo-david @egelhaus
+/.gitignore                     @nevo-david @egelhaus
+/.gitmodules                    @nevo-david @egelhaus
+/.coderabbit.yaml               @nevo-david @egelhaus
+/.env.example                   @nevo-david @egelhaus
+/i18n.json                      @nevo-david @egelhaus
+/i18n.lock                      @nevo-david @egelhaus
+/pnpm-workspace.yaml            @nevo-david @egelhaus

@@ -7,6 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { TemporalService } from 'nestjs-temporal-core';
+import { logger, errorType } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @Injectable()
 export class RefreshIntegrationService {
@@ -77,6 +78,13 @@ export class RefreshIntegrationService {
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
       .catch((err) => {
+        logger.error('provider_token_refresh_failed', {
+          provider: integration.providerIdentifier,
+          integration_id: integration.id,
+          org_id: integration.organizationId,
+          error_type: errorType(err),
+          reason: cause,
+        });
         refreshError = err;
         return false as const;
       });

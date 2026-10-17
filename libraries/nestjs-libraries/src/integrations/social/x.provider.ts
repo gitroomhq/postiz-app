@@ -1523,11 +1523,9 @@ export class XProvider extends SocialAbstract implements SocialProvider {
       ...(token ? { pagination_token: token } : {}),
     });
 
-    const list = tweets.data.data || [];
-
     return [
-      ...list,
-      ...(list.length === 100 && tweets.meta.next_token
+      ...tweets.tweets,
+      ...(tweets.tweets.length === 100 && tweets.meta.next_token
         ? await this.loadAllTweets(
             client,
             id,
@@ -1611,7 +1609,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
 
       return Object.entries(metrics).map(([key, value]) => ({
         label: key.replace('_count', '').replace('_', ' ').toUpperCase(),
-        percentageChange: 5,
+        percentageChange: 0,
         data: [
           {
             total: String(0),
