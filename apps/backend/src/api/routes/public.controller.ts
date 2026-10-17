@@ -98,15 +98,19 @@ export class PublicController {
     body: { fbclid?: string; tt: TrackEnum; additional: Record<string, any> }
   ) {
     const uniqueId = req?.cookies?.track || makeId(10);
-    const fbclid = req?.cookies?.fbclid || body.fbclid;
-    await this._trackService.track(
-      uniqueId,
-      ip,
-      userAgent,
-      body.tt,
-      body.additional,
-      fbclid
-    );
+    const fbc = req?.cookies?._fbc || req?.cookies?.fbclid || body.fbclid;
+    this._trackService
+      .track(
+        uniqueId,
+        ip,
+        userAgent,
+        body.tt,
+        body.additional,
+        fbc,
+        undefined,
+        req?.cookies?._fbp
+      )
+      .catch((err) => {});
     if (!req.cookies.track) {
       res.cookie('track', uniqueId, {
         domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),

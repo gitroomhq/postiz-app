@@ -60,6 +60,8 @@ export const FirstBillingComponent = () => {
   const t = useT();
   const [datafast_visitor_id] = useCookie('datafast_visitor_id', '');
   const [datafast_session_id] = useCookie('datafast_session_id', '');
+  const [fbc] = useCookie('_fbc', '');
+  const [fbp] = useCookie('_fbp', '');
 
   useEffect(() => {
     const stripePromise = loadStripe(stripeClient);
@@ -78,6 +80,8 @@ export const FirstBillingComponent = () => {
             ? { datafast_visitor_id, datafast_session_id }
             : {}),
           ...(dub ? { dub } : {}),
+          ...(fbc ? { fbc } : {}),
+          ...(fbp ? { fbp } : {}),
         }),
       })
     ).json();
