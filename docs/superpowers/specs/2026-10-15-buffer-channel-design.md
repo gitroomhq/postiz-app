@@ -32,7 +32,7 @@ is no OAuth app.
   add-channel grid, are `/icons/platforms/buffer.png`. The provider identifier
   is `buffer`, so those screens load that file with no special case. The file
   is Buffer's own icon from `https://buffer.com/icons/buffer-icon.svg`: three
-  stacked layers, fill `#132062`, on a transparent 50×50 PNG, the same size as
+  stacked layers, fill `#ffffff`, on a transparent 50×50 PNG, the same size as
   the other platform icons. It is not a redraw, and it is not the Instagram,
   LinkedIn, or other network logo of the connected profile. The large photo on
   the row stays that profile's Buffer avatar.
