@@ -56,7 +56,10 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
 import { ChevronUpIcon } from '@gitroom/frontend/components/ui/icons';
 
@@ -192,9 +195,7 @@ const usePostActions = (onMutate?: () => void) => {
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
-      const publishDate = dayjs
-        .utc(date || data.posts[0].publishDate)
-        .local();
+      const publishDate = fromUtc(date || data.posts[0].publishDate);
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -393,6 +394,12 @@ const usePostActions = (onMutate?: () => void) => {
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
 };
 
+// A day view slot is a minute of the user's day, on the day in view
+const slotDate = (startDate: string, time: number) =>
+  newDayjs(startDate)
+    .hour(Math.floor(time / 60))
+    .minute(time % 60);
+
 // One day view slot. Memoized, so the now line's minute tick doesn't re-render the slots
 const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
   ({ option, startDate }) => {
@@ -404,13 +411,7 @@ const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
           integrations: option.flatMap((p) => p.integration),
         }}
       >
-        <CalendarColumn
-          getDate={dayjs
-            .utc(startDate)
-            .startOf('day')
-            .add(option[0].time, 'minute')
-            .local()}
-        />
+        <CalendarColumn getDate={slotDate(startDate, option[0].time)} />
       </CalendarContext.Provider>
     );
   }
@@ -418,23 +419,36 @@ const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
 
 export const DayView = () => {
   const calendar = useCalendar();
-  const { integrations, posts, startDate } = calendar;
+  const { integrations, posts, postDates, startDate } = calendar;
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
 
   const options = useMemo(() => {
-    const createdPosts = posts.map((post) => ({
-      integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post?.integration?.picture || '',
-      identifier: post?.integration?.providerIdentifier || '',
-      id: post?.integration?.id || '',
-      name: post?.integration?.name || '',
-      time: dayjs
-        .utc(post.publishDate)
-        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
-    }));
+    const day = newDayjs(startDate);
+    // a recurring post comes with all its occurrences, only this day's make slots
+    const createdPosts = posts
+      .filter(
+        (post) =>
+          postDates.get(post).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
+      )
+      .map((post) => {
+        const date = postDates.get(post);
+        return {
+          integration: [
+            integrations.find((i) => i.id === post.integration.id)!,
+          ],
+          image: post?.integration?.picture || '',
+          identifier: post?.integration?.providerIdentifier || '',
+          id: post?.integration?.id || '',
+          name: post?.integration?.name || '',
+          time: date.hour() * 60 + date.minute(),
+        };
+      });
+    // posting times are minutes of the UTC day, moved to the clock of the day
+    // in view (on a DST change day, the ones before the change are an hour off)
+    const offset = day.hour(12).utcOffset();
     return sortBy(
       Object.values(
         groupBy(
@@ -447,7 +461,7 @@ export const DayView = () => {
                 name: p?.name,
                 id: p?.id,
                 image: p?.picture,
-                time: t?.time,
+                time: (((t?.time + offset) % 1440) + 1440) % 1440,
               }))
             ),
           ],
@@ -456,27 +470,17 @@ export const DayView = () => {
       ),
       (p) => p[0].time
     );
-  }, [integrations, posts]);
+  }, [integrations, posts, postDates, startDate]);
 
-  // the now line goes right before the first upcoming slot
+  // the now line goes right before the first upcoming slot, only on today
   const now = useNow();
   const nowIndex = useMemo(() => {
-    const upcoming = options.findIndex((option) =>
-      dayjs
-        .utc(startDate)
-        .startOf('day')
-        .add(option[0].time, 'minute')
-        .isAfter(now)
-    );
-    // now is between two slots of this page (the slots follow the UTC day,
-    // so outside UTC it can be the page next to today)
-    if (upcoming > 0) {
-      return upcoming;
-    }
-    // before the first or after the last slot, only shown on today
     if (!options.length || !newDayjs(startDate).isSame(now, 'day')) {
       return -1;
     }
+    const upcoming = options.findIndex((option) =>
+      slotDate(startDate, option[0].time).isAfter(now)
+    );
     return upcoming === -1 ? options.length : upcoming;
   }, [options, startDate, now]);
 
@@ -493,12 +497,9 @@ export const DayView = () => {
               />
             )}
             <div className="text-center text-[14px] min-h-[21px] shrink-0">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
+              {slotDate(startDate, option[0].time).format(
+                isUSCitizen() ? 'hh:mm A' : 'LT'
+              )}
             </div>
             <div
               key={option[0].time}
@@ -611,9 +612,8 @@ export const MonthView = () => {
   const calendarDays = useMemo(() => {
     const monthStart = newDayjs(startDate);
     const currentMonth = monthStart.month();
-    const currentYear = monthStart.year();
 
-    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
+    const startOfMonth = monthStart.startOf('month');
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
     const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
@@ -690,7 +690,7 @@ export const ListView = () => {
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
-      const dateKey = newDayjs(post.publishDate).local().format('YYYY-MM-DD');
+      const dateKey = fromUtc(post.publishDate).format('YYYY-MM-DD');
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -729,7 +729,7 @@ export const ListView = () => {
                   key={post.id}
                   display="day"
                   isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
+                  date={fromUtc(post.publishDate)}
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
@@ -778,6 +778,7 @@ export const CalendarColumn: FC<{
   const {
     integrations,
     posts,
+    postDates,
     changeDate,
     display,
     reloadCalendarView,
@@ -792,19 +793,20 @@ export const CalendarColumn: FC<{
   // Use shared post actions hook
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
   const postList = useMemo(() => {
-    return posts.filter((post) => {
-      const pList = dayjs.utc(post.publishDate).local();
-      const check =
-        display === 'day'
-          ? pList.format('YYYY-MM-DD HH:mm') ===
-            getDate.format('YYYY-MM-DD HH:mm')
-          : display === 'week'
-          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
-            pList.isBefore(getDate.endOf('hour'))
-          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
-      return check;
-    });
-  }, [posts, display, getDate]);
+    if (display === 'week') {
+      const start = getDate.startOf('hour').valueOf();
+      const end = getDate.endOf('hour').valueOf();
+      return posts.filter((post) => {
+        const time = postDates.get(post).valueOf();
+        return time >= start && time < end;
+      });
+    }
+    const format = display === 'day' ? 'YYYY-MM-DD HH:mm' : 'DD/MM/YYYY';
+    const cell = getDate.format(format);
+    return posts.filter(
+      (post) => postDates.get(post).format(format) === cell
+    );
+  }, [posts, postDates, display, getDate]);
   const [showAll, setShowAll] = useState(false);
   const showAllFunc = useCallback(() => {
     setShowAll(true);
@@ -1428,7 +1430,7 @@ const CalendarItem: FC<{
         </div>
         {showTime && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+            {fromUtc(post.publishDate).format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
         )}
       </div>

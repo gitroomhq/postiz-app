@@ -884,3 +884,6 @@ checksums:
     only_channel: 5687ae99e7f5b168e35532f895efd2e8
     hubspot_installed: 5937d91a1e1f8093b2bf31c834ebc18d
     hubspot_installed_description: d0044e3cca1e574871461cab9f8722c0
+    timezone: 370780b854bdbef55320f977a4fb9ddb
+    automatic_timezone: bb2d180231d5caccb2507ada3bb8329e
+    could_not_save_timezone: d0e1af80e2c1de9a40f748fd5198d7a5

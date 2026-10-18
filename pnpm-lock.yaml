@@ -378,7 +378,7 @@ importers:
         specifier: ^3.0.0
         version: 3.1.0
       dayjs:
-        specifier: ^1.11.10
+        specifier: 1.11.19
         version: 1.11.19
       dotenv:
         specifier: ^16.5.0

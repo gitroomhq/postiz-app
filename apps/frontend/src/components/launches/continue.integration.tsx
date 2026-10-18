@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { Redirect } from '@gitroom/frontend/components/layout/redirect';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import dayjs from 'dayjs';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
@@ -105,7 +104,7 @@ export const ContinueIntegration: FC<{
 
   useEffect(() => {
     (async () => {
-      const timezone = String(dayjs.tz().utcOffset());
+      const timezone = String(newDayjs().utcOffset());
 
       // Try public endpoint first (handles both public and fallback scenarios)
       let data = await fetch(`/integrations/social-connect/${provider}`, {

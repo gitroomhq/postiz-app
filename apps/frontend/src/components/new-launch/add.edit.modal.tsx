@@ -8,7 +8,10 @@ import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.moda
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -218,7 +221,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           addInternalValue(0, sibling.integration, postValues(sibling.posts));
           setChannelDate(
             sibling.integration,
-            dayjs.utc(sibling.posts[0].publishDate).local()
+            fromUtc(sibling.posts[0].publishDate)
           );
         }
       }

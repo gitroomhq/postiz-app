@@ -879,5 +879,8 @@
   "schedule_all_channels": "Programar todos los canales",
   "only_channel": "Solo",
   "hubspot_installed": "Postiz está instalado en HubSpot",
-  "hubspot_installed_description": "Conecta aquí, en Postiz, los canales en los que quieres publicar. Luego, en HubSpot, abre Agent Hub > Agent Builder, añade una herramienta, elige Postiz MCP en MCP Servers y haz clic en Connect and add."
+  "hubspot_installed_description": "Conecta aquí, en Postiz, los canales en los que quieres publicar. Luego, en HubSpot, abre Agent Hub > Agent Builder, añade una herramienta, elige Postiz MCP en MCP Servers y haz clic en Connect and add.",
+  "timezone": "Zona horaria",
+  "automatic_timezone": "Automática ({{timezone}})",
+  "could_not_save_timezone": "No se pudo guardar la zona horaria"
 }

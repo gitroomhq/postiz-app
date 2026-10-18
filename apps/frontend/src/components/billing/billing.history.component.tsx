@@ -2,12 +2,12 @@
 
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
-import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { capitalize } from 'lodash';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Select } from '@gitroom/react/form/select';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 
 interface Invoice {
   id: string;
@@ -57,12 +57,7 @@ const formatAmount = (amount: number, currency: string) => {
 };
 
 const formatDate = (unix: number | null) =>
-  unix
-    ? dayjs
-        .utc(unix * 1000)
-        .local()
-        .format('D MMM, YYYY')
-    : '';
+  unix ? fromUtc(unix * 1000).format('D MMM, YYYY') : '';
 
 const ActionLink: FC<{
   href: string;

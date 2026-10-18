@@ -879,5 +879,8 @@
   "schedule_all_channels": "সব চ্যানেলের সময়সূচী করুন",
   "only_channel": "শুধুমাত্র চ্যানেল:",
   "hubspot_installed": "Postiz HubSpot-এ ইনস্টল করা হয়েছে",
-  "hubspot_installed_description": "যেসব চ্যানেলে পোস্ট করতে চান, সেগুলো এখানে Postiz-এ সংযুক্ত করুন। এরপর HubSpot-এ Agent Hub > Agent Builder খুলুন, একটি টুল যোগ করুন, MCP Servers-এর অধীনে Postiz MCP বেছে নিন এবং Connect and add-এ ক্লিক করুন।"
+  "hubspot_installed_description": "যেসব চ্যানেলে পোস্ট করতে চান, সেগুলো এখানে Postiz-এ সংযুক্ত করুন। এরপর HubSpot-এ Agent Hub > Agent Builder খুলুন, একটি টুল যোগ করুন, MCP Servers-এর অধীনে Postiz MCP বেছে নিন এবং Connect and add-এ ক্লিক করুন।",
+  "timezone": "সময় অঞ্চল",
+  "automatic_timezone": "স্বয়ংক্রিয় ({{timezone}})",
+  "could_not_save_timezone": "সময় অঞ্চল সংরক্ষণ করা যায়নি"
 }

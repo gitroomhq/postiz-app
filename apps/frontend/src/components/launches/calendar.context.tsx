@@ -20,7 +20,10 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { extend } from 'dayjs';
 import useCookie from 'react-use-cookie';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { expandPostsList, expandPosts } from '@gitroom/helpers/utils/posts.list.minify';
 extend(isoWeek);
@@ -51,6 +54,9 @@ export const CalendarContext = createContext({
       }[];
     }
   >,
+  // the publish date of each post, in the user's timezone. Keyed by the post
+  // itself, the occurrences of a recurring post share the same id
+  postDates: new Map<object, dayjs.Dayjs>(),
   reloadCalendarView: () => {
     /** empty **/
   },
@@ -388,6 +394,16 @@ export const CalendarWeekProvider: FC<{
   // one clock for every calendar cell, instead of a timer per cell
   const currentHour = useNow('hour');
 
+  // every calendar cell looks for its posts in the whole list, so the dates
+  // are parsed once here instead of in each cell
+  const postDates = useMemo(
+    () =>
+      new Map<object, dayjs.Dayjs>(
+        internalData.map((post: Post) => [post, fromUtc(post.publishDate)])
+      ),
+    [internalData]
+  );
+
   return (
     <CalendarContext.Provider
       value={{
@@ -395,6 +411,7 @@ export const CalendarWeekProvider: FC<{
         reloadCalendarView,
         ...filters,
         posts: calendarIsLoading ? [] : filterByChannels(internalData),
+        postDates,
         loading,
         integrations,
         setFilters: setFiltersWrapper,
