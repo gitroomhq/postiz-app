@@ -8,7 +8,6 @@ import { useDebouncedCallback } from 'use-debounce';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
-import dayjs from 'dayjs';
 import clsx from 'clsx';
 import { capitalize } from 'lodash';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
@@ -26,7 +25,7 @@ import { useTrack } from '@gitroom/react/helpers/use.track';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
@@ -183,9 +182,7 @@ const BillingCycle: FC<{
                   )
                 : t('billing_renews_on', 'Your plan renews on')}{' '}
               <bdi className="font-[600] text-newTextColor">
-                {newDayjs(renewal.renewsAt * 1000)
-                  .local()
-                  .format('D MMM, YYYY')}
+                {fromUtc(renewal.renewsAt * 1000).format('D MMM, YYYY')}
               </bdi>
               {'. '}
             </>
@@ -742,10 +739,7 @@ export const MainBillingComponent: FC<{
       return {
         label: subscription?.cancelAt
           ? t('billing_downgrade_on', 'Downgrade on {{date}}', {
-              date: dayjs
-                .utc(subscription.cancelAt)
-                .local()
-                .format('D MMM, YYYY'),
+              date: fromUtc(subscription.cancelAt).format('D MMM, YYYY'),
             })
           : t('cancel_subscription_1', 'Cancel subscription'),
         onClick: moveToCheckout('FREE'),
@@ -819,7 +813,7 @@ export const MainBillingComponent: FC<{
               'Your subscription will be canceled at'
             )}{' '}
             <bdi className="font-[600]">
-              {newDayjs(subscription.cancelAt).local().format('D MMM, YYYY')}
+              {fromUtc(subscription.cancelAt).format('D MMM, YYYY')}
             </bdi>
             {'. '}
             {t(

@@ -8,6 +8,7 @@ import { Provider, Role } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { TimezoneDto } from '@gitroom/nestjs-libraries/dtos/users/timezone.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 
 @Injectable()
@@ -296,6 +297,20 @@ export class UsersRepository {
         sendSuccessEmails: body.sendSuccessEmails,
         sendFailureEmails: body.sendFailureEmails,
         sendStreakEmails: body.sendStreakEmails,
+      },
+    });
+  }
+
+  async updateTimezone(userId: string, body: TimezoneDto) {
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        timezoneName: body.timezoneName || null,
+      },
+      select: {
+        id: true,
       },
     });
   }

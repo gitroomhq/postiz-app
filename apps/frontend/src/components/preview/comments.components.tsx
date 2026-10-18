@@ -13,6 +13,7 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import {
   PreviewComment,
   usePreviewComments,
@@ -313,7 +314,7 @@ const CommentBody: FC<{ comment: PreviewComment }> = ({ comment }) => {
       </div>
       <div className="text-[12px] text-textItemBlur">
         {comment.name || t('reviewer', 'Reviewer')} ·{' '}
-        {dayjs(comment.createdAt).format('MMM D, YYYY HH:mm')}
+        {newDayjs(comment.createdAt).format('MMM D, YYYY HH:mm')}
       </div>
     </div>
   );

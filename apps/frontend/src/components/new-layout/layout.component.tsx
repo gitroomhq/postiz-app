@@ -43,6 +43,7 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
+import { setUserTimezone } from '@gitroom/frontend/components/layout/set.timezone';
 
 export const LayoutComponent = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
@@ -60,6 +61,8 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
     return await (await fetch(path)).json();
   }, []);
   const { data: user, mutate } = useSWR('/user/self', load, {
+    // set before anything renders a date in the user's timezone
+    onSuccess: (data) => setUserTimezone(data?.timezoneName),
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,

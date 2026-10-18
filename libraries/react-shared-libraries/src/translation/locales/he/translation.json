@@ -881,5 +881,8 @@
   "schedule_all_channels": "תזמן את כל הערוצים",
   "only_channel": "רק",
   "hubspot_installed": "Postiz הותקן ב-HubSpot",
-  "hubspot_installed_description": "חבר כאן ב-Postiz את הערוצים שאליהם תרצה לפרסם. לאחר מכן, ב-HubSpot, פתח את Agent Hub > Agent Builder, הוסף כלי, בחר את Postiz MCP תחת MCP Servers ולחץ על Connect and add."
+  "hubspot_installed_description": "חבר כאן ב-Postiz את הערוצים שאליהם תרצה לפרסם. לאחר מכן, ב-HubSpot, פתח את Agent Hub > Agent Builder, הוסף כלי, בחר את Postiz MCP תחת MCP Servers ולחץ על Connect and add.",
+  "timezone": "אזור זמן",
+  "automatic_timezone": "אוטומטי ({{timezone}})",
+  "could_not_save_timezone": "לא ניתן היה לשמור את אזור הזמן"
 }

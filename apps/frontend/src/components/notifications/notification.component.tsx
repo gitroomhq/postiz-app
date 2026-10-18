@@ -4,7 +4,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import useSWR from 'swr';
 import { FC, useCallback, useState } from 'react';
 import clsx from 'clsx';
-import dayjs from 'dayjs';
+import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useClickAway } from '@uidotdev/usehooks';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -27,8 +27,8 @@ export const ShowNotification: FC<{
   const [newNotification] = useState(
     new Date(notification.createdAt) > new Date(props.lastReadNotification)
   );
-  const createdAt = dayjs(notification.createdAt);
-  const isWithin24h = dayjs().diff(createdAt, 'hour') < 24;
+  const createdAt = newDayjs(notification.createdAt);
+  const isWithin24h = newDayjs().diff(createdAt, 'hour') < 24;
   const fullDate = createdAt.format('MMM D, YYYY h:mm A');
   return (
     <div

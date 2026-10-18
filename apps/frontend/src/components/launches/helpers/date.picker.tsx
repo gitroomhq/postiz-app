@@ -6,7 +6,10 @@ import { useClickOutside } from '@mantine/hooks';
 import { Button } from '@gitroom/react/form/button';
 import { isUSCitizen } from './isuscitizen.utils';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  newDayjs,
+  toPickerDate,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -66,15 +69,17 @@ export const DatePickerPanel: FC<{
 }> = (props) => {
   const { date, onChange, sheet } = props;
   const t = useT();
-  const [month, setMonth] = useState(date.toDate());
+  const [month, setMonth] = useState(toPickerDate(date));
 
+  // the pickers give machine-local dates, so their wall clock is read with
+  // plain dayjs and then placed in the user's timezone
   const changeDate = useCallback(
     (type: 'date' | 'time') => (day: Date) => {
       onChange(
         newDayjs(
           type === 'time'
-            ? date.format('YYYY-MM-DD') + ' ' + newDayjs(day).format('HH:mm:ss')
-            : newDayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
+            ? date.format('YYYY-MM-DD') + ' ' + dayjs(day).format('HH:mm:ss')
+            : dayjs(day).format('YYYY-MM-DD') + ' ' + date.format('HH:mm:ss')
         )
       );
     },
@@ -144,7 +149,7 @@ export const DatePickerPanel: FC<{
               setMonth(day);
               changeDate('date')(day);
             }}
-            value={date.toDate()}
+            value={toPickerDate(date)}
             dayClassName={(day, modifiers) =>
               clsx(
                 '!w-full !max-w-[40px] !h-[40px] !leading-[40px] !rounded-[8px] !text-[14px]',
@@ -152,7 +157,7 @@ export const DatePickerPanel: FC<{
                   ? '!bg-boxFocused !text-textItemFocused !font-[600] !outline-none'
                   : modifiers.outside
                   ? '!text-newTextColor/20 !font-[400]'
-                  : dayjs(day).isSame(dayjs(), 'day')
+                  : dayjs(day).isSame(toPickerDate(newDayjs()), 'day')
                   ? '!text-[#FC69FF] !font-[600]'
                   : '!text-textItemBlur !font-[400]'
               )
@@ -232,7 +237,7 @@ export const DatePickerPanel: FC<{
     <>
       <Calendar
         onChange={changeDate('date')}
-        value={date.toDate()}
+        value={toPickerDate(date)}
         dayClassName={(date, modifiers) => {
           if (modifiers.weekend) {
             return '!text-customColor28';
@@ -260,7 +265,7 @@ export const DatePickerPanel: FC<{
           input:
             'bg-sixth h-[40px] border border-tableBorder text-textColor rounded-[4px] outline-none',
         }}
-        defaultValue={date.toDate()}
+        defaultValue={toPickerDate(date)}
       />
     </>
   );

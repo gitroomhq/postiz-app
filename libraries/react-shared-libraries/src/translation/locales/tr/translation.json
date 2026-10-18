@@ -881,5 +881,8 @@
   "schedule_all_channels": "Tüm kanalları zamanla",
   "only_channel": "Yalnızca şu kanal:",
   "hubspot_installed": "Postiz, HubSpot'a yüklendi",
-  "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın."
+  "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın.",
+  "timezone": "Saat dilimi",
+  "automatic_timezone": "Otomatik ({{timezone}})",
+  "could_not_save_timezone": "Saat dilimi kaydedilemedi"
 }
