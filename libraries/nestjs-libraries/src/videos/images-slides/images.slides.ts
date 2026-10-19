@@ -23,6 +23,17 @@ const transloadit = new Transloadit({
   authSecret: process.env.TRANSLOADIT_SECRET || 'just empty text',
 });
 
+// ElevenLabs reports quota and permission problems as 401 with the reason in
+// the body, as either { detail: { status, message } } or { detail: 'text' }
+async function elevenLabsError(response: Response) {
+  const { detail } = await response.json().catch(() => ({ detail: undefined }));
+  const reason =
+    typeof detail === 'string'
+      ? detail
+      : detail?.message || detail?.status || response.statusText;
+  return `ElevenLabs ${response.status}: ${reason}`;
+}
+
 async function getAudioDuration(buffer: Buffer): Promise<number> {
   const metadata = await parseBuffer(buffer, 'audio/mpeg');
   return metadata.format.duration || 0;
@@ -75,43 +86,47 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
       customParams.prompt
     );
 
+    // Plain async calls so a failed image or voice request rejects Promise.all
+    // and fails the job, instead of a promise that never settles and a job that
+    // hangs until the workflow times out
     const generated = await Promise.all(
       list.reduce((all, current) => {
         all.push(
-          new Promise(async (res) => {
-            res({
-              len: 0,
-              url: await this._falService.generateImageFromText(
-                'ideogram/v2',
-                current.imagePrompt,
-                output === 'vertical'
-              ),
-            });
-          })
+          (async () => ({
+            len: 0,
+            url: await this._falService.generateImageFromText(
+              'ideogram/v2',
+              current.imagePrompt,
+              output === 'vertical'
+            ),
+          }))()
         );
 
         all.push(
-          new Promise(async (res) => {
-            const buffer = Buffer.from(
-              await (
-                await limit(() =>
-                  fetch(
-                    `https://api.elevenlabs.io/v1/text-to-speech/${customParams.voice}?output_format=mp3_44100_128`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
-                      },
-                      body: JSON.stringify({
-                        text: current.voiceText,
-                        model_id: 'eleven_multilingual_v2',
-                      }),
-                    }
-                  )
-                )
-              ).arrayBuffer()
+          (async () => {
+            const response = await limit(() =>
+              fetch(
+                `https://api.elevenlabs.io/v1/text-to-speech/${customParams.voice}?output_format=mp3_44100_128`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
+                  },
+                  body: JSON.stringify({
+                    text: current.voiceText,
+                    model_id: 'eleven_multilingual_v2',
+                  }),
+                  signal: AbortSignal.timeout(60000),
+                }
+              )
             );
+
+            if (!response.ok) {
+              throw new Error(await elevenLabsError(response));
+            }
+
+            const buffer = Buffer.from(await response.arrayBuffer());
 
             const { path } = await this.storage.uploadFile({
               buffer,
@@ -126,7 +141,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
               encoding: '',
             });
 
-            res({
+            return {
               len: await getAudioDuration(buffer),
               url:
                 path.indexOf('http') === -1
@@ -135,8 +150,8 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
                     process.env.NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY +
                     path
                   : path,
-            });
-          })
+            };
+          })()
         );
 
         return all;
@@ -172,6 +187,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
         'subtitles.srt': srt,
       },
       waitForCompletion: true,
+      timeout: 30 * 60 * 1000,
       params: {
         steps: {
           ...split.reduce((all, current, index) => {
@@ -242,18 +258,23 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
 
   @ExposeVideoFunction()
   async loadVoices(data: any) {
-    const { voices } = await (
-      await fetch(
-        'https://api.elevenlabs.io/v2/voices?page_size=40&category=premade',
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
-          },
-        }
-      )
-    ).json();
+    const response = await fetch(
+      'https://api.elevenlabs.io/v2/voices?page_size=40&category=premade',
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.ELEVENSLABS_API_KEY || '',
+        },
+        signal: AbortSignal.timeout(30000),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(await elevenLabsError(response));
+    }
+
+    const { voices } = await response.json();
 
     return {
       voices: voices.map((voice: any) => ({

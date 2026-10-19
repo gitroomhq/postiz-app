@@ -13,31 +13,12 @@
 </a>
 </p>
 
-<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
 <div align="center">
   <strong>
-  <h2>Your ultimate AI social media scheduling tool</h2><br />
-  <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, etc...<br /><br />
+    <a href="https://postiz.com">Postiz</a> is a social media management platform for scheduling, automating, and analyzing your content.
+    
+  Use Postiz Cloud for a fully managed experience, or deploy the open-source edition on your own infrastructure.
   </strong>
-  Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
-</div>
-
-<div class="flex" align="center">
-  <br />
-  <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
-  <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
-  <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
-  <img alt="Linkedin" src="https://postiz.com/svgs/socials/Linkedin.svg" width="32">
-  <img alt="Reddit" src="https://postiz.com/svgs/socials/Reddit.svg" width="32">
-  <img alt="TikTok" src="https://postiz.com/svgs/socials/TikTok.svg" width="32">
-  <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
-  <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
-  <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
-  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
-  <img alt="Slack" src="https://postiz.com/svgs/socials/Slack.svg" width="32">
-  <img alt="Discord" src="https://postiz.com/svgs/socials/Discord.svg" width="32">
-  <img alt="Mastodon" src="https://postiz.com/svgs/socials/Mastodon.svg" width="32">
-  <img alt="Bluesky" src="https://postiz.com/svgs/socials/Bluesky.svg" width="32">
 </div>
 
 <p align="center">
@@ -65,7 +46,46 @@
   <a href="https://apps.make.com/postiz">Make.com integration</a>
 </p>
 
-<br /><br />
+<br />
+
+<p align="center"><strong>Schedule posts to:</strong></p>
+<div class="flex" align="center">
+  <img alt="Instagram" src="https://postiz.com/svgs/socials/Instagram.svg" width="32">
+  <img alt="Youtube" src="https://postiz.com/svgs/socials/Youtube.svg" width="32">
+  <img alt="Dribbble" src="https://postiz.com/svgs/socials/Dribbble.svg" width="32">
+  <img alt="Linkedin" src="https://postiz.com/svgs/socials/Linkedin.svg" width="32">
+  <img alt="Reddit" src="https://postiz.com/svgs/socials/Reddit.svg" width="32">
+  <img alt="TikTok" src="https://postiz.com/svgs/socials/TikTok.svg" width="32">
+  <img alt="Facebook" src="https://postiz.com/svgs/socials/Facebook.svg" width="32">
+  <img alt="Pinterest" src="https://postiz.com/svgs/socials/Pinterest.svg" width="32">
+  <img alt="Threads" src="https://postiz.com/svgs/socials/Threads.svg" width="32">
+  <img alt="X" src="https://postiz.com/svgs/socials/X.svg" width="32">
+  <img alt="Slack" src="https://postiz.com/svgs/socials/Slack.svg" width="32">
+  <img alt="Discord" src="https://postiz.com/svgs/socials/Discord.svg" width="32">
+  <img alt="Mastodon" src="https://postiz.com/svgs/socials/Mastodon.svg" width="32">
+  <img alt="Bluesky" src="https://postiz.com/svgs/socials/Bluesky.svg" width="32">
+</div>
+
+<p align="center"><strong>With your favorite AI agent:</strong></p>
+<div class="flex" align="center">
+  <a href="https://postiz.com/chatgpt" title="ChatGPT"><img alt="ChatGPT" src=".github/agents/chatgpt.svg" width="32"></a>
+  <a href="https://postiz.com/claude" title="Claude"><img alt="Claude" src=".github/agents/claude.svg" width="32"></a>
+  <a href="https://postiz.com/claude-code" title="Claude Code"><img alt="Claude Code" src=".github/agents/claude-code.svg" width="32"></a>
+  <a href="https://postiz.com/codex" title="Codex"><img alt="Codex" src=".github/agents/codex.svg" width="32"></a>
+  <a href="https://postiz.com/cursor" title="Cursor"><img alt="Cursor" src=".github/agents/cursor.svg" width="32"></a>
+  <a href="https://postiz.com/openclaw" title="OpenClaw"><img alt="OpenClaw" src=".github/agents/openclaw.svg" width="32"></a>
+  <a href="https://postiz.com/hermes" title="Hermes Agent"><img alt="Hermes Agent" src=".github/agents/hermes-agent.svg" width="32"></a>
+  <a href="https://postiz.com/grok-bot" title="Grok Bot"><img alt="Grok Bot" src=".github/agents/grok-bot.svg" width="32"></a>
+  <a href="https://postiz.com/grok-build" title="Grok Build"><img alt="Grok Build" src=".github/agents/grok-build.svg" width="32"></a>
+  <a href="https://postiz.com/muse" title="Muse"><img alt="Muse" src=".github/agents/muse.svg" width="32"></a>
+  <a href="https://postiz.com/perplexity-computer" title="Perplexity Computer"><img alt="Perplexity Computer" src=".github/agents/perplexity-computer.svg" width="32"></a>
+  <a href="https://postiz.com/nanoclaw" title="nanoclaw"><img alt="nanoclaw" src=".github/agents/nanoclaw.svg" width="32"></a>
+  <a href="https://postiz.com/paperclip" title="Paperclip"><img alt="Paperclip" src=".github/agents/paperclip.svg" width="32"></a>
+  <a href="https://postiz.com/mcp" title="MCP Server"><img alt="MCP Server" src=".github/agents/mcp-server.svg" width="32"></a>
+  <a href="https://postiz.com/agent" title="AI Agents CLI"><img alt="AI Agents CLI" src=".github/agents/ai-agents-cli.svg" width="32"></a>
+</div>
+
+<br />
 
 ## 🔌 See the leading Postiz features
 
@@ -88,8 +108,8 @@
 | [Hostinger](https://www.hostinger.com/vps/docker/postiz?ref=postiz) | <img src=".github/sponsors/hostinger.png" alt="Hostinger" width="500"/> | Hostinger is on a mission to make online success possible for anyone – from developers to aspiring bloggers and business owners |
 | [Virlo](https://dev.virlo.ai/?ref=postiz) | <img src="https://github.com/user-attachments/assets/25182598-5344-45fc-b9cd-e4cfa16aabfd" alt="Virlo" width="500"/> | Virlo is the #1 social media trend spotting and all-in-one GTM tool for teams leveraging short-form video |
 | [ChatbotX](https://chatbotx.io/?ref=postiz) | <img src="https://github.com/user-attachments/assets/0aa6b058-9a64-46d3-bc26-337abc51737d" alt="ChatbotX" width="500"/> | The ManyChat alternative that you can self-host, white-label, and resell to your clients. Bring your own OpenClaw, Hermes, or Claude agents! |
+| [RapidProxy](https://www.rapidproxy.io/?ref=postiz) | <img width="700" height="412" alt="WP-PROXY-THUMBNAIL-41" src="https://github.com/user-attachments/assets/6cf5b2c9-2687-4181-8964-2e7b90eace4f" /> | RapidProxy provides 90M+ residential IPs for social media, browser automation, and AI workflows, with smart rotation and stable sessions. From $0.55/GB; use RAPID10 for 10% off.
 
-![Bronze Tier](https://opencollective.com/postiz/tiers/main-repository-bronze-tier.svg?avatarHeight=36&width=600&button=false)
 
 # Intro
 
@@ -97,7 +117,6 @@
 - Measure your work with analytics.
 - Collaborate with other team members to exchange or buy posts.
 - Invite your team members to collaborate, comment, and schedule posts.
-- At the moment, there is no difference between the hosted version and the self-hosted version
 - Perfect for automation (API) with platforms like N8N, Make.com, Zapier, etc.
 
 ## Tech Stack
@@ -115,15 +134,53 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 
 ## Sponsor Postiz
 
-We now give a few options to Sponsor Postiz:
+We now offer a few options to sponsor Postiz:
 - Just a donation: You like what we are building, and want to buy us some coffee so we can build faster.
 - Main repository: Get your logo with a backlink from the main Postiz repository. Postiz has over 7M downloads and 20k views per month.
 
 Link: https://opencollective.com/postiz
 
+ <br />
+  <br />
+
+## Postiz Cloud vs. Open-source
+
+Choose [Postiz Cloud](https://postiz.com/) for a fully managed experience, or deploy Postiz Open-source on your own infrastructure. Both provide the same core Postiz product and features.
+
+We do not "gate" features or limit the license.
+
+The main difference is the infrastructure you need to own, approval from social media providers, and deployment that might be hard at times (let your LLM deploy it)
+
+| Area | Postiz Cloud | Postiz Open-source (self-hosted) |
+|---|---|---|
+| **Cost** | Subscription per plan, 7-day free trial | Free forever (AGPL-3.0); you pay only for your own infra |
+| **Setup time** | Sign up and connect channels in minutes | Deploy with Docker / Coolify / Railway / any VPS; you configure Postgres, Redis, storage and env vars |
+| **Hosting & data** | Hosted by Postiz; data stored in our infrastructure | Runs on your own server; data never leaves your environment |
+| **Social platform apps** | Pre-approved apps for every channel, ready to use | You create your own developer apps on each platform and go through their approval (Meta, YouTube, TikTok can take weeks) |
+| **Channels** | Limited by plan tier | Unlimited, every supported provider |
+| **Posts per month** | Limited by plan tier | Unlimited |
+| **Team members** | Limited by plan tier | Unlimited |
+| **Scheduling, calendar views, cross-posting, repeated posts, post comments & delays, sets, signatures** | Included | Included |
+| **Internal & Global Plugs, RSS auto-post, customer groups** | Included per plan | Included |
+| **Analytics** | Included per plan | Included (requires your own app credentials with analytics scopes) |
+| **AI Copilot, AI images, AI videos** | Included with monthly quotas per plan; keys managed by Postiz | Available if you bring your own OpenAI (and other provider) API keys; no quota, you pay the provider |
+| **AI video clipping** | Included with monthly clipping minutes per plan | Requires your own provider keys and extra configuration |
+| **Smart Agent** | Included per plan | Available with your own LLM key |
+| **Public API & webhooks** | Included per plan | Included |
+| **Agentic surfaces (MCP, CLI, Claude / ChatGPT / Codex / OpenClaw / Cursor connectors)** | Included, hosted MCP endpoint | Included, you point the MCP / CLI at your own instance |
+| **Custom integrations** | Included per plan | Included; you can also modify the code and add providers |
+| **Updates & maintenance** | Automatic, zero downtime for you | You pull new images and run migrations yourself |
+| **Uptime, backups, security patches** | Managed by Postiz | Your responsibility |
+| **Support** | Priority support via Discord / email per plan | Community support on Discord and GitHub |
+| **Source access & customization** | No (SaaS) | Full source code, fork and modify freely under AGPL |
+| **Compliance / data residency** | Postiz-controlled regions | Any region or air-gapped environment you choose |
+
+<br />
+<br />
+  
 ## Postiz Compliance
 
-- Postiz is an open-source, self-hosted social media scheduling tool that supports platforms like X (formerly Twitter), Bluesky, Mastodon, Discord, and others.
+- This GitHub repository contains the open-source, self-hosted edition of Postiz. Postiz is also available as Postiz Cloud, a fully managed service at postiz.com.
 - Postiz hosted service uses official, platform-approved OAuth flows.
 - Postiz does not automate or scrape content from social media platforms.
 - Postiz does not collect, store, or proxy API keys or access tokens from users.

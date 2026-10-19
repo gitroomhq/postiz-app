@@ -52,6 +52,7 @@ const getList = (t: (key: string, fallback: string) => string) => [
 export const RepeatComponent: FC<{
   repeat: number | null;
   onChange: (newVal: number) => void;
+  list?: boolean;
 }> = (props) => {
   const { repeat } = props;
   const t = useT();
@@ -71,6 +72,42 @@ export const RepeatComponent: FC<{
     }
     return list.find((p) => p.value === repeat)?.label;
   }, [repeat, list]);
+
+  if (props.list) {
+    // the radio list starts with "do not repeat", the dropdown ends with cancel
+    const options = [
+      ...list.filter((p) => !p.value),
+      ...list.filter((p) => p.value),
+    ];
+    return (
+      <div className="flex flex-col gap-[8px]">
+        {options.map((p) => {
+          const selected = p.value ? repeat === p.value : !repeat;
+          return (
+            <div
+              onClick={() => props.onChange(Number(p.value))}
+              key={p.label}
+              className="min-h-[48px] px-[12px] flex items-center justify-between gap-[12px] cursor-pointer select-none"
+            >
+              <div className="text-[14px] font-[400]">
+                {p.value ? p.label : t('do_not_repeat', 'Do Not Repeat')}
+              </div>
+              <div
+                className={clsx(
+                  'w-[24px] h-[24px] rounded-full border-[1.5px] flex justify-center items-center',
+                  selected ? 'border-[#FC69FF]' : 'border-newTextColor/20'
+                )}
+              >
+                {selected && (
+                  <div className="w-[12px] h-[12px] rounded-full bg-[#FC69FF]" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div

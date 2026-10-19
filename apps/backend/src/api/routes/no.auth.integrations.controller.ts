@@ -62,7 +62,11 @@ export class NoAuthIntegrationsController {
       ? 'none'
       : await ioRedis.get(`login:${body.state}`);
     if (!getCodeVerifier) {
-      throw new Error('Invalid state');
+      // The state expires after an hour and is deleted once used (page reload)
+      throw new HttpException(
+        'This connection link expired or was already used, please connect the channel again',
+        400
+      );
     }
 
     const organization = await ioRedis.get(`organization:${body.state}`);
@@ -136,7 +140,14 @@ export class NoAuthIntegrationsController {
               refresh,
               auth.accessToken
             );
-            return res({ ...newAuth, refreshToken: body.refresh });
+            // keep the fresh refresh token and expiration from the new
+            // authentication, otherwise the stored refresh token is wiped and
+            // the channel breaks again as soon as the access token expires
+            return res({
+              ...newAuth,
+              refreshToken: auth.refreshToken,
+              expiresIn: auth.expiresIn,
+            });
           } catch (err: any) {
             return res({
               error: err.message,
@@ -164,6 +175,7 @@ export class NoAuthIntegrationsController {
           });
         }
 
+        console.log(`Authentication failed for ${integration}:`, err);
         return res({
           error: 'Authentication failed',
           accessToken: '',

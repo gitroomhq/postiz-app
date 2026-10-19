@@ -7,20 +7,23 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import { YoutubeSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/youtube.settings.dto';
 import {
   BadBody,
+  PublishedWithError,
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  stripQuery,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 
 const clientAndYoutube = () => {
@@ -235,7 +238,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       return {
         type: 'bad-body',
         value:
-          'Your account is not verified, we have uploaded your video but we could not set the thumbnail. Please verify your account and try again.',
+          'Your video was uploaded to YouTube successfully, but we could not set the thumbnail: custom thumbnails require a phone-verified YouTube channel. Verify your channel at youtube.com/verify, and set this video\'s thumbnail manually in YouTube Studio.',
       };
     }
 
@@ -252,6 +255,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         type: 'refresh-token',
         value: 'Please re-authenticate your YouTube account',
       };
+    }
+
+    return undefined;
+  }
+
+  refreshErrorMessage(err: any): string | undefined {
+    const data = err?.response?.data || {};
+    const text = `${data.error_subtype || ''} ${data.error_description || ''} ${
+      err?.message || ''
+    }`;
+
+    if (text.includes('invalid_rapt')) {
+      return `because your organization's Google Workspace session policy invalidated its access. Ask your Google Workspace admin to mark Postiz as a trusted app and turn on "Exempt trusted apps" (https://support.google.com/a/answer/9368756) to prevent this from happening again`;
     }
 
     return undefined;
@@ -281,7 +297,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(7);
+    const state = makeSecureId(7);
     const { client } = clientAndYoutube();
     return {
       url: client.generateAuthUrl({
@@ -291,7 +307,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/youtube`,
         scope: this.scopes.slice(0),
       }),
-      codeVerifier: makeId(11),
+      codeVerifier: makeSecureId(11),
       state,
     };
   }
@@ -392,10 +408,17 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     requiredId: string,
     accessToken: string
   ): Promise<Omit<AuthTokenDetails, 'refreshToken' | 'expiresIn'>> {
-    const pages = await this.pages(accessToken);
-    const findPage = pages.find((p) => p.id === requiredId);
+    const { client, youtube } = clientAndYoutube();
+    client.setCredentials({ access_token: accessToken });
 
-    if (!findPage) {
+    // don't go through pages() here, it swallows the real Google error and an
+    // empty list would be reported as a missing channel
+    const { data } = await youtube(client).channels.list({
+      part: ['id'],
+      mine: true,
+    });
+
+    if (!(data.items || []).some((p) => p.id === requiredId)) {
       throw new Error('Channel not found');
     }
 
@@ -432,6 +455,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`youtube: media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -460,6 +484,9 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       // identity encoding so the store keeps content-length and can answer
       // with the requested range: a transformed (compressed) response loses
       // its length, and a length-less object is answered with the full body.
+      setHeartbeatDetails(
+        `youtube: read media ${start}-${end} ${stripQuery(path)}`
+      );
       const response = await fetch(path, {
         headers: {
           Range: `bytes=${start}-${end}`,
@@ -494,6 +521,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     uploadUri: string,
     videoSize: number
   ): Promise<{ videoId: string } | { uploadedBytes: number }> {
+    setHeartbeatDetails('youtube: probe resumable session');
     const probe = await fetch(uploadUri, {
       method: 'PUT',
       headers: {
@@ -606,6 +634,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           path,
           uploadedBytes: 0,
           thumbnail: settings?.thumbnail?.path || '',
+          postDbId: firstPost.id,
         },
       },
     ];
@@ -620,6 +649,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       uploadedBytes: number;
       thumbnail: string;
       videoId?: string;
+      postDbId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -671,6 +701,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       uploadedBytes: number;
       thumbnail: string;
       videoId?: string;
+      postDbId?: string;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -710,6 +741,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
             end
           );
 
+          setHeartbeatDetails('youtube: upload chunk to google');
           const upload = await fetch(pendingData.uploadUri, {
             method: 'PUT',
             headers: {
@@ -782,31 +814,49 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
     }
 
+    const releaseURL = `https://www.youtube.com/watch?v=${videoId}`;
+
     if (pendingData.thumbnail) {
       const { client, youtube } = clientAndYoutube();
       client.setCredentials({ access_token: accessToken });
       const youtubeClient = youtube(client);
 
-      await this.runInConcurrent(async () =>
-        youtubeClient.thumbnails.set({
-          videoId,
-          media: {
-            body: (
-              await this.getSsrfSafeAxios()({
-                url: pendingData.thumbnail,
-                method: 'GET',
-                responseType: 'stream',
-              })
-            ).data,
-          },
-        })
-      );
+      try {
+        await this.runInConcurrent(async () =>
+          youtubeClient.thumbnails.set({
+            videoId,
+            media: {
+              body: (
+                await this.getSsrfSafeAxios()({
+                  url: pendingData.thumbnail,
+                  method: 'GET',
+                  responseType: 'stream',
+                })
+              ).data,
+            },
+          })
+        );
+      } catch (err) {
+        // the video is already live: a rejected thumbnail must not lose its id
+        // and URL (a token problem is left to the refresh + retry path, the
+        // thumbnail call is idempotent)
+        if (err instanceof BadBody && pendingData.postDbId) {
+          throw new PublishedWithError(
+            this.identifier,
+            pendingData.postDbId,
+            videoId,
+            releaseURL,
+            err.message
+          );
+        }
+        throw err;
+      }
     }
 
     return {
       status: 'completed',
       postId: videoId,
-      releaseURL: `https://www.youtube.com/watch?v=${videoId}`,
+      releaseURL,
     };
   }
 
@@ -1021,8 +1071,19 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
-      console.error('Error fetching YouTube post analytics:', err);
+    } catch (err: any) {
+      // Expired or revoked token, checkPostAnalytics refreshes it and retries once
+      if (err?.response?.status === 401) {
+        throw new RefreshToken(
+          this.identifier,
+          JSON.stringify(err.response.data || {}),
+          '{}'
+        );
+      }
+      console.error(
+        'Error fetching YouTube post analytics:',
+        err?.message || err
+      );
       return [];
     }
   }

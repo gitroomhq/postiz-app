@@ -29,10 +29,12 @@ interface VariableContextInterface {
   language: string;
   dub: boolean;
   transloadit: string[];
+  mediaProcessing: boolean;
   sentryDsn: string;
   extensionId: string;
   googleAdsId?: string;
   googleAdsTrialTracking?: string;
+  recaptchaSiteKey?: string;
 }
 const VariableContext = createContext({
   stripeClient: '',
@@ -63,8 +65,10 @@ const VariableContext = createContext({
   language: '',
   dub: false,
   transloadit: [],
+  mediaProcessing: false,
   sentryDsn: '',
   extensionId: '',
+  recaptchaSiteKey: '',
 } as VariableContextInterface);
 export const VariableContextComponent: FC<
   VariableContextInterface & {

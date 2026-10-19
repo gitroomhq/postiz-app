@@ -70,7 +70,7 @@ export class PermissionsService {
         // but only if the channel actually belongs to this org
         if (refreshChannelId) {
           const existingIntegration =
-            await this._integrationService.getIntegrationById(
+            await this._integrationService.getIntegrationByInternalId(
               orgId,
               refreshChannelId
             );

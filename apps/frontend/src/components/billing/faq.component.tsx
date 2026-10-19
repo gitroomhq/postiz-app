@@ -1,10 +1,11 @@
 'use client';
 
-import { FC, useCallback, useState } from 'react';
+import { FC, ReactNode, useCallback, useState } from 'react';
 import clsx from 'clsx';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import DeleteAccountComponent from '@gitroom/frontend/components/settings/delete-account.component';
 const useFaqList = () => {
   const { isGeneral } = useVariables();
   const user = useUser();
@@ -56,13 +57,31 @@ For example, you can schedule your posts on X, Facebook, Instagram, TikTok, YouT
         'If you have a team with multiple members, you can invite them to your workspace to collaborate on your posts and add their personal channels'
       ),
     },
+    ...(user?.tier?.current === 'FREE'
+      ? [
+          {
+            title: t(
+              'faq_how_can_i_delete_my_account',
+              'How can I delete my account?'
+            ),
+            description: t(
+              'faq_delete_account_description',
+              `If you don't want to continue using ${
+                isGeneral ? 'Postiz' : 'Gitroom'
+              }, you can delete your account, including all your organizations, channels and posts. This action cannot be undone.`
+            ),
+            content: <DeleteAccountComponent isLink={true} />,
+          },
+        ]
+      : []),
   ];
 };
 export const FAQSection: FC<{
   title: string;
   description: string;
+  content?: ReactNode;
 }> = (props) => {
-  const { title, description } = props;
+  const { title, description, content } = props;
   const [show, setShow] = useState(false);
   const changeShow = useCallback(() => {
     setShow(!show);
@@ -123,6 +142,16 @@ export const FAQSection: FC<{
             __html: description,
           }}
         />
+        {content && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="mt-[16px]"
+          >
+            {content}
+          </div>
+        )}
       </div>
     </div>
   );

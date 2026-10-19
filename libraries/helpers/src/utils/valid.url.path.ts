@@ -25,16 +25,21 @@ export class ValidUrlExtension implements ValidatorConstraintInterface {
   }
 }
 
+// also used for media urls that don't come through a DTO, like pictures in a post body
+export const isAllowedUploadPath = (text: string) => {
+  if (!process.env.RESTRICT_UPLOAD_DOMAINS) {
+    return true;
+  }
+
+  return (
+    (text || 'invalid url').indexOf(process.env.RESTRICT_UPLOAD_DOMAINS) > -1
+  );
+};
+
 @ValidatorConstraint({ name: 'checkValidPath', async: false })
 export class ValidUrlPath implements ValidatorConstraintInterface {
   validate(text: string, args: ValidationArguments) {
-    if (!process.env.RESTRICT_UPLOAD_DOMAINS) {
-      return true;
-    }
-
-    return (
-      (text || 'invalid url').indexOf(process.env.RESTRICT_UPLOAD_DOMAINS) > -1
-    );
+    return isAllowedUploadPath(text);
   }
 
   defaultMessage(args: ValidationArguments) {

@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 
 @Injectable()
 export class OrganizationRepository {
@@ -21,7 +22,7 @@ export class OrganizationRepository {
       },
       data: {
         name: name ? `${name}###${id}` : `Unnamed User###${id}`,
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
         isTrailing: false,
         subscription: {
           create: {
@@ -42,7 +43,7 @@ export class OrganizationRepository {
                   : `${saasName}+` + makeId(10) + '@postiz.com',
                 name: name ? `${name}###${id}` : `Unnamed User###${id}`,
                 providerName: 'LOCAL',
-                password: AuthService.hashPassword(makeId(500)),
+                password: AuthService.hashPassword(makeSecureId(500)),
                 timezone: 0,
               },
             },
@@ -72,6 +73,35 @@ export class OrganizationRepository {
 
   getCount() {
     return this._organization.model.organization.count();
+  }
+
+  getSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        user: {
+          isSuperAdmin: true,
+          deletedAt: null,
+        },
+      },
+    });
+  }
+
+  getPrivilegedNonSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        role: {
+          in: [Role.SUPERADMIN, Role.ADMIN],
+        },
+        user: {
+          isSuperAdmin: false,
+          deletedAt: null,
+        },
+      },
+    });
   }
 
   getUserOrg(id: string) {
@@ -114,6 +144,38 @@ export class OrganizationRepository {
             },
           },
           {
+            organization: {
+              OR: [
+                {
+                  paymentId: {
+                    equals: name,
+                  },
+                },
+                {
+                  subscription: {
+                    identifier: {
+                      equals: name,
+                    },
+                  },
+                },
+                {
+                  Integration: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+                {
+                  post: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          {
             user: {
               OR: [
                 {
@@ -141,13 +203,20 @@ export class OrganizationRepository {
       select: {
         id: true,
         role: true,
+        disabled: true,
         organization: {
           select: {
             id: true,
             name: true,
+            paymentId: true,
+            deletedAt: true,
             subscription: {
               select: {
                 subscriptionTier: true,
+                identifier: true,
+                isLifetime: true,
+                period: true,
+                cancelAt: true,
               },
             },
           },
@@ -157,6 +226,9 @@ export class OrganizationRepository {
             id: true,
             name: true,
             email: true,
+            activated: true,
+            providerName: true,
+            deletedAt: true,
           },
         },
       },
@@ -169,7 +241,7 @@ export class OrganizationRepository {
         id: orgId,
       },
       data: {
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
       },
     });
   }
@@ -212,6 +284,116 @@ export class OrganizationRepository {
         id,
       },
     });
+  }
+
+  getOrgByIdWithSubscription(id: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getAccountOverview(orgId: string) {
+    const [organization, members] = await Promise.all([
+      this._organization.model.organization.findUnique({
+        where: {
+          id: orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          deletedAt: true,
+          allowTrial: true,
+          isTrailing: true,
+          subscription: {
+            select: {
+              subscriptionTier: true,
+              period: true,
+              identifier: true,
+              totalChannels: true,
+              isLifetime: true,
+              cancelAt: true,
+              createdAt: true,
+              updatedAt: true,
+              deletedAt: true,
+            },
+          },
+        },
+      }),
+      this._userOrg.model.userOrganization.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          role: true,
+          disabled: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              activated: true,
+              providerName: true,
+              lastOnline: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!organization) {
+      return null;
+    }
+
+    const owner = members.find((member) => member.role === Role.SUPERADMIN);
+    const lastOnlineMax = members.reduce<Date | null>(
+      (latest, member) =>
+        !latest || member.user.lastOnline > latest
+          ? member.user.lastOnline
+          : latest,
+      null
+    );
+
+    return {
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        createdAt: organization.createdAt,
+        deletedAt: organization.deletedAt,
+        allowTrial: organization.allowTrial,
+        isTrailing: organization.isTrailing,
+      },
+      subscription: organization.subscription || null,
+      owner: owner
+        ? {
+            ...owner.user,
+            role: owner.role,
+            memberSince: owner.createdAt,
+          }
+        : null,
+      users: {
+        total: members.length,
+        activated: members.filter((member) => member.user.activated).length,
+        disabled: members.filter((member) => member.disabled).length,
+        lastOnlineMax,
+      },
+    };
   }
 
   getUsersByEmail(email: string) {
@@ -285,7 +467,7 @@ export class OrganizationRepository {
     return this._organization.model.organization.create({
       data: {
         name: body.company,
-        apiKey: AuthService.fixedEncryption(makeId(20)),
+        apiKey: AuthService.fixedEncryption(makeSecureId(20)),
         allowTrial: true,
         isTrailing: true,
         users: {
@@ -344,6 +526,32 @@ export class OrganizationRepository {
         },
       });
     } catch (err) {}
+  }
+
+  async getLastPublishDate(organizationId: string) {
+    const org = await this._organization.model.organization.findUnique({
+      where: {
+        id: organizationId,
+      },
+      select: {
+        post: {
+          where: {
+            state: 'PUBLISHED',
+          },
+          orderBy: {
+            publishDate: 'desc',
+          },
+          take: 1,
+          select: {
+            publishDate: true,
+          },
+        },
+      },
+    });
+
+    const publishDate = org?.post?.[0]?.publishDate;
+    // Never in the future, the streak workflow sleeps until a day after it
+    return publishDate ? Math.min(publishDate.getTime(), Date.now()) : null;
   }
 
   async getTeam(orgId: string) {
