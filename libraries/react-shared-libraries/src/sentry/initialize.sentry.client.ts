@@ -29,8 +29,13 @@ export const setSentryUser = (
   }
 };
 
-export const initializeSentryClient = (environment: string, dsn: string) =>
-  initializeSentryBasic(environment, dsn, {
+export const initializeSentryClient = (environment: string, dsn: string) => {
+  // A remounted layout must not build a second replay integration, Sentry throws on it
+  if (Sentry.getClient()) {
+    return;
+  }
+
+  return initializeSentryBasic(environment, dsn, {
     integrations: [
       // Add default integrations back
       Sentry.browserTracingIntegration(),
@@ -53,3 +58,4 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
 
     profilesSampleRate: 1.0,
   });
+};
