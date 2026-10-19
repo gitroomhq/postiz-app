@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Подключите здесь, в Postiz, каналы, в которых хотите публиковать. Затем в HubSpot откройте Agent Hub > Agent Builder, добавьте инструмент, выберите Postiz MCP в разделе MCP Servers и нажмите Connect and add.",
   "timezone": "Часовой пояс",
   "automatic_timezone": "Автоматически ({{timezone}})",
-  "could_not_save_timezone": "Не удалось сохранить часовой пояс"
+  "could_not_save_timezone": "Не удалось сохранить часовой пояс",
+  "thumbnails_and_alt_text": "Миниатюры и альтернативный текст",
+  "media_settings_section_description": "Щёлкните по медиафайлу, чтобы задать для него альтернативный текст или миниатюру, если это видео. Миниатюры применяются к видео в основном посте.",
+  "youtube_thumbnail_overrides_media": "В этом посте задана миниатюра для YouTube, которая заменяет миниатюру, установленную в настройках медиа."
 }

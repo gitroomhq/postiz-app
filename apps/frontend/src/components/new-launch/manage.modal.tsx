@@ -66,6 +66,10 @@ import { useShortlinkPreference } from '@gitroom/frontend/components/settings/sh
 import dayjs from 'dayjs';
 import { Button } from '@gitroom/react/form/button';
 import { useClickOutside } from '@mantine/hooks';
+import {
+  MediaSettingsSection,
+  useMediaSettingsValues,
+} from '@gitroom/frontend/components/new-launch/media.settings.section';
 
 export const ManageModal: FC<AddEditModalProps> = (props) => {
   const t = useT();
@@ -872,6 +876,9 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     );
   }, [current, selectedIntegrations, integrations]);
 
+  const mediaSettingsValues = useMediaSettingsValues();
+  const hasMediaSettings = mediaSettingsValues.some((p) => p.media?.length);
+
   // on phones, the settings, tags, repeat and delete live in a settings sheet
   const settingsButton = !dummy && (
     <div
@@ -1026,7 +1033,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                     'pb-[20px] px-[20px] select-none',
                     showSettings &&
                       'flex-1 flex pt-[20px] mobile:fixed mobile:inset-x-0 mobile:bottom-0 mobile:z-[600] mobile:max-h-[90%] mobile:p-0',
-                    current === 'global' && 'hidden'
+                    current === 'global' && !hasMediaSettings && 'hidden'
                   )}
                 >
                   <div className="flex-1 flex flex-col rounded-[12px] gap-[12px] overflow-hidden bg-newSettings mobile:rounded-none mobile:rounded-t-[24px] mobile:gap-0 mobile:pt-[8px] mobile:pb-[24px] mobile:bg-newBgColorInner mobile:animate-fade">
@@ -1060,6 +1067,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
                       )}
                     >
                       <div className="absolute mobile:static left-0 top-0 w-full h-full mobile:h-auto flex flex-col overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newBgColorInner scrollbar-track-newColColor">
+                        <MediaSettingsSection />
                         <div
                           id="social-settings"
                           className="flex flex-col gap-[20px] bg-newBgColor mobile:bg-transparent"
@@ -1252,7 +1260,7 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
           onClose={() => setMobileSheet(null)}
         >
           <div className="flex flex-col gap-[12px] pb-[30px]">
-            {hasChannelSettings && (
+            {(hasChannelSettings || hasMediaSettings) && (
               <BottomSheetRow
                 icon={<SettingsOutlineIcon size={24} />}
                 label={

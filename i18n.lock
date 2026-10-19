@@ -888,3 +888,6 @@ checksums:
     timezone: 370780b854bdbef55320f977a4fb9ddb
     automatic_timezone: bb2d180231d5caccb2507ada3bb8329e
     could_not_save_timezone: d0e1af80e2c1de9a40f748fd5198d7a5
+    thumbnails_and_alt_text: 20fe8924ed0e3ebe39a0d1953dc24df1
+    media_settings_section_description: 973eb95a5c09765efaa3e6365f7b460c
+    youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81

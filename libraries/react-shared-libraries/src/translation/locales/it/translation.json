@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Collega qui, in Postiz, i canali su cui vuoi pubblicare. Poi, in HubSpot, apri Agent Hub > Agent Builder, aggiungi uno strumento, scegli Postiz MCP in MCP Servers e fai clic su Connect and add.",
   "timezone": "Fuso orario",
   "automatic_timezone": "Automatico ({{timezone}})",
-  "could_not_save_timezone": "Impossibile salvare il fuso orario"
+  "could_not_save_timezone": "Impossibile salvare il fuso orario",
+  "thumbnails_and_alt_text": "Miniature e testo alternativo",
+  "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il testo alternativo o la miniatura se si tratta di un video. Le miniature si applicano ai video nel post principale.",
+  "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
 }

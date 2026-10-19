@@ -883,5 +883,8 @@
   "hubspot_installed_description": "请先在 Postiz 中连接您要发布内容的渠道。然后在 HubSpot 中打开 Agent Hub > Agent Builder，添加一个工具，在 MCP Servers 下选择 Postiz MCP，然后点击 Connect and add。",
   "timezone": "时区",
   "automatic_timezone": "自动 ({{timezone}})",
-  "could_not_save_timezone": "无法保存时区"
+  "could_not_save_timezone": "无法保存时区",
+  "thumbnails_and_alt_text": "缩略图与替代文本",
+  "media_settings_section_description": "点击媒体项可设置其替代文本，若是视频还可以设置缩略图。缩略图适用于主帖子中的视频。",
+  "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。"
 }

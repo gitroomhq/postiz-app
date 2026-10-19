@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Verbinden Sie hier in Postiz die Kanäle, auf denen Sie posten möchten. Öffnen Sie dann in HubSpot Agent Hub > Agent Builder, fügen Sie ein Tool hinzu, wählen Sie unter MCP Servers Postiz MCP aus und klicken Sie auf Connect and add.",
   "timezone": "Zeitzone",
   "automatic_timezone": "Automatisch ({{timezone}})",
-  "could_not_save_timezone": "Die Zeitzone konnte nicht gespeichert werden"
+  "could_not_save_timezone": "Die Zeitzone konnte nicht gespeichert werden",
+  "thumbnails_and_alt_text": "Vorschaubilder & Alt-Text",
+  "media_settings_section_description": "Klicken Sie auf ein Medienelement, um seinen Alt-Text oder (bei Videos) das Vorschaubild festzulegen. Vorschaubilder gelten für Videos im Hauptbeitrag.",
+  "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt."
 }

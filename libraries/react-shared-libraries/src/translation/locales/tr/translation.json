@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın.",
   "timezone": "Saat dilimi",
   "automatic_timezone": "Otomatik ({{timezone}})",
-  "could_not_save_timezone": "Saat dilimi kaydedilemedi"
+  "could_not_save_timezone": "Saat dilimi kaydedilemedi",
+  "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
+  "media_settings_section_description": "Bir medya öğesinin alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın. Küçük resimler, ana gönderideki videolar için geçerlidir.",
+  "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."
 }

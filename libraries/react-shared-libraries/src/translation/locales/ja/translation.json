@@ -883,5 +883,8 @@
   "hubspot_installed_description": "投稿したいチャンネルをここ Postiz で接続してください。次に HubSpot で Agent Hub > Agent Builder を開き、ツールを追加して MCP Servers から Postiz MCP を選択し、Connect and add をクリックしてください。",
   "timezone": "タイムゾーン",
   "automatic_timezone": "自動 ({{timezone}})",
-  "could_not_save_timezone": "タイムゾーンを保存できませんでした"
+  "could_not_save_timezone": "タイムゾーンを保存できませんでした",
+  "thumbnails_and_alt_text": "サムネイルと代替テキスト",
+  "media_settings_section_description": "メディアアイテムをクリックして代替テキスト、または動画の場合はサムネイルを設定できます。サムネイルはメイン投稿内の動画に適用されます。",
+  "youtube_thumbnail_overrides_media": "この投稿にはYouTube専用のサムネイルが設定されており、メディア設定で設定したサムネイルは上書きされます。"
 }

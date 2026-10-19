@@ -883,5 +883,8 @@
   "hubspot_installed_description": "게시할 채널을 여기 Postiz에서 연결하세요. 그런 다음 HubSpot에서 Agent Hub > Agent Builder를 열고 도구를 추가한 뒤 MCP Servers에서 Postiz MCP를 선택하고 Connect and add를 클릭하세요.",
   "timezone": "시간대",
   "automatic_timezone": "자동 ({{timezone}})",
-  "could_not_save_timezone": "시간대를 저장할 수 없습니다"
+  "could_not_save_timezone": "시간대를 저장할 수 없습니다",
+  "thumbnails_and_alt_text": "썸네일 및 대체 텍스트",
+  "media_settings_section_description": "미디어 항목을 클릭하여 대체 텍스트를 설정하거나, 비디오의 경우 썸네일을 설정하세요. 썸네일은 본문에 포함된 비디오에 적용됩니다.",
+  "youtube_thumbnail_overrides_media": "이 게시물에는 유튜브 전용 썸네일이 설정되어 있어, 미디어 설정에서 지정한 썸네일을 덮어씁니다."
 }
