@@ -271,7 +271,7 @@
   "claim": "Получить",
   "frequently_asked_questions": "Часто задаваемые вопросы",
   "autopost": "Автопостинг",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Автопостинг может автоматически публиковать новые элементы вашего RSS в социальных сетях",
+  "autopost_creates_drafts_from_your_rss_new_items": "Автопост создает черновики из новых элементов вашего RSS, просмотрите их и запланируйте публикацию через календарь.",
   "title": "Заголовок",
   "add_an_autopost": "Добавить автопостинг",
   "post_content": "Содержимое поста",

@@ -271,7 +271,7 @@
   "claim": "দাবি করুন",
   "frequently_asked_questions": "প্রায়শই জিজ্ঞাসিত প্রশ্ন",
   "autopost": "অটোপোস্ট",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "অটোপোস্ট স্বয়ংক্রিয়ভাবে আপনার RSS নতুন আইটেমগুলি সোশ্যাল মিডিয়ায় পোস্ট করতে পারে",
+  "autopost_creates_drafts_from_your_rss_new_items": "অটোপোস্ট আপনার আরএসএস-এর নতুন আইটেমগুলো থেকে খসড়া তৈরি করে, সেগুলো পর্যালোচনা করুন এবং প্রকাশের জন্য ক্যালেন্ডার থেকে শিডিউল করুন",
   "title": "শিরোনাম",
   "add_an_autopost": "একটি অটোপোস্ট যোগ করুন",
   "post_content": "পোস্ট বিষয়বস্তু",
