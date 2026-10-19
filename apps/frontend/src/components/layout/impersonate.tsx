@@ -885,18 +885,27 @@ const SwitchUser = () => {
     // one row per user-organization: dedupe by user id, drop the impersonated user
     const seen = new Set<string>();
     return (data || [])
-      .filter((curr: any) => curr.user.id !== currentUser?.id)
+      .filter((curr: any) => curr?.user?.id !== currentUser?.id)
       .filter((curr: any) => {
-        if (seen.has(curr.user.id)) {
+        if (seen.has(curr?.user?.id)) {
           return false;
         }
-        seen.add(curr.user.id);
+        seen.add(curr?.user?.id);
         return true;
       })
       .map((curr: any) => ({
-        id: curr.user.id,
-        name: curr.user.name,
-        email: curr.user.email,
+        id: curr?.user?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
+        orgs: (data || [])
+          .filter((org: any) => org?.user?.id === curr?.user?.id)
+          .map(
+            (org: any) =>
+              `${org?.organization?.name} (${org?.role} / ${
+                org?.organization?.subscription?.subscriptionTier || 'FREE'
+              })`
+          )
+          .join(', '),
       }));
   }, [data, currentUser?.id]);
 
@@ -980,17 +989,18 @@ const SwitchUser = () => {
             className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
             onClick={() => setName('')}
           />
-          <div className="absolute top-[100%] start-0 w-full bg-sixth border border-customColor6 text-textColor z-[999]">
+          <div className="absolute top-[100%] start-0 w-max min-w-full max-w-[90vw] bg-sixth border border-customColor6 text-textColor z-[999]">
             {mapData.map((item: any) => (
               <div
                 onClick={pick(item)}
-                key={item.id}
-                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                key={item?.id}
+                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
               >
                 {t('user_1', 'user:')}
-                {item.id.split('-').at(-1)} -{' '}
-                {item.name ? `${item.name} - ` : ''}
-                {item.email}
+                {item?.id?.split('-')?.at(-1)} -{' '}
+                {item?.name ? `${item?.name} - ` : ''}
+                {item?.email}
+                {item?.orgs ? ` - ${item?.orgs}` : ''}
               </div>
             ))}
           </div>
@@ -1051,24 +1061,27 @@ export const Impersonate = () => {
   const mapData = useMemo(() => {
     return data?.map(
       (curr: any) => ({
-        id: curr.id,
-        name: curr.user.name,
-        email: curr.user.email,
+        id: curr?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
+        orgName: curr?.organization?.name,
+        role: curr?.role,
+        tier: curr?.organization?.subscription?.subscriptionTier || 'FREE',
       }),
       []
     );
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
+      <div className="bg-forth h-[52px] mobile:h-auto mobile:py-[8px] mobile:px-[8px] flex justify-center items-center border-input border rounded-[8px] text-white">
         <div
           className={`relative flex flex-col ${
-            user?.impersonate ? 'w-full px-[20px]' : 'w-[600px]'
+            user?.impersonate ? 'w-full px-[20px] mobile:px-0' : 'w-[600px] mobile:w-full'
           }`}
         >
           <div className="relative z-[1]">
             {user?.impersonate ? (
-              <div className="text-center flex justify-center items-center gap-[10px]">
+              <div className="text-center flex justify-center items-center gap-[10px] mobile:flex-wrap">
                 <div className="whitespace-nowrap">
                   {t('currently_impersonating', 'Currently Impersonating')}
                 </div>
@@ -1086,8 +1099,8 @@ export const Impersonate = () => {
                 <SwitchUser />
               </div>
             ) : (
-              <div className="flex items-center gap-[10px]">
-                <div className="flex-1">
+              <div className="flex items-center gap-[10px] mobile:flex-wrap">
+                <div className="flex-1 mobile:basis-full">
                   <Input
                     autoComplete="off"
                     placeholder="Write the user details"
@@ -1112,15 +1125,16 @@ export const Impersonate = () => {
                 className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
+              <div className="absolute top-[100%] w-max min-w-full max-w-[90vw] start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
-                    onClick={setUser(user.id)}
-                    key={user.id}
-                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                    onClick={setUser(user?.id)}
+                    key={user?.id}
+                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
                   >
                     {t('user_1', 'user:')}
-                    {user.id.split('-').at(-1)} - {user.name} - {user.email}
+                    {user?.id?.split('-')?.at(-1)} - {user?.name} - {user?.email}{' '}
+                    - {user?.orgName} ({user?.role} / {user?.tier})
                   </div>
                 ))}
               </div>

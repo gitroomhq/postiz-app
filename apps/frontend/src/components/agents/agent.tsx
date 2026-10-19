@@ -107,12 +107,12 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   return (
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
+        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative mobile:w-full mobile:order-1',
         collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="flex items-center">
+      <div className="absolute top-0 start-0 w-full h-full p-[20px] mobile:p-[12px] mobile:static mobile:h-auto overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        <div className="flex items-center mobile:hidden">
           <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
             {t('select_channels', 'Select Channels')}
           </h2>
@@ -137,13 +137,17 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
             </svg>
           </div>
         </div>
-        <div className={clsx('flex flex-col gap-[15px]')}>
+        <div
+          className={clsx(
+            'flex flex-col gap-[15px] mobile:flex-row mobile:gap-[12px] mobile:ps-[12px] mobile:pt-[6px]'
+          )}
+        >
           {sortedIntegrations.map((integration, index) => (
             <div
               onClick={setIntegration(integration)}
               key={integration.id}
               className={clsx(
-                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px] hover:opacity-100 cursor-pointer',
+                'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px] hover:opacity-100 cursor-pointer mobile:shrink-0',
                 !selected.some((p) => p.id === integration.id) && 'opacity-20'
               )}
             >
@@ -182,7 +186,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
               </div>
               <div
                 className={clsx(
-                  'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden',
+                  'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden mobile:hidden',
                   integration.disabled && 'opacity-50'
                 )}
               >
@@ -203,7 +207,9 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <PropertiesContext.Provider value={{ properties }}>
       <AgentList onChange={setProperties} />
-      <div className="bg-newBgColorInner flex flex-1">{children}</div>
+      <div className="bg-newBgColorInner flex flex-1 mobile:order-3 mobile:min-h-[500px]">
+        {children}
+      </div>
       <Threads />
     </PropertiesContext.Provider>
   );
@@ -225,11 +231,11 @@ const Threads: FC = () => {
     <div
       className={clsx(
         'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        'w-[260px]'
+        'w-[260px] mobile:w-full mobile:order-2'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        <div className="mb-[15px] justify-center flex group-[.sidebar]:pb-[15px]">
+      <div className="absolute top-0 start-0 w-full h-full p-[20px] mobile:p-[12px] mobile:static mobile:h-auto mobile:flex mobile:gap-[8px] mobile:items-center overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+        <div className="mb-[15px] mobile:mb-0 justify-center flex group-[.sidebar]:pb-[15px] mobile:shrink-0">
           <Link
             href={`/agents`}
             className="text-white whitespace-nowrap flex-1 pt-[12px] pb-[14px] ps-[16px] pe-[20px] group-[.sidebar]:p-0 min-h-[44px] max-h-[44px] rounded-md bg-btnPrimary flex justify-center items-center gap-[5px] outline-none"
@@ -255,11 +261,11 @@ const Threads: FC = () => {
             </div>
           </Link>
         </div>
-        <div className="flex flex-col gap-[1px]">
+        <div className="flex flex-col gap-[1px] mobile:flex-row mobile:gap-[4px]">
           {data?.threads?.map((p: any) => (
             <Link
               className={clsx(
-                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer',
+                'overflow-ellipsis overflow-hidden whitespace-nowrap hover:bg-newBgColor px-[10px] py-[6px] rounded-[10px] cursor-pointer mobile:shrink-0 mobile:max-w-[180px] mobile:border mobile:border-newTableBorder',
                 p.id === id && 'bg-newBgColor'
               )}
               href={`/agents/${p.id}`}

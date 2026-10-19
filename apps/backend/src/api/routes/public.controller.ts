@@ -16,8 +16,7 @@ import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { Request, Response } from 'express';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
+import { applyTrackCookies } from '@gitroom/nestjs-libraries/track/track.cookies';
 import { AgentGraphInsertService } from '@gitroom/nestjs-libraries/agent/agent.graph.insert.service';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -27,6 +26,7 @@ import { promisify } from 'util';
 import { OnlyURL } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { CreatePublicCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
 
 const pump = promisify(pipeline);
 
@@ -53,8 +53,10 @@ export class PublicController {
 
   @Get(`/posts/:id`)
   async getPreview(@Param('id') id: string) {
+    // the batch only links the posts in the dashboard, it stays out of the
+    // public preview
     return (await this._postsService.getPostsRecursively(id, true)).map(
-      ({ childrenPost, ...p }) => ({
+      ({ childrenPost, batchId, ...p }) => ({
         ...p,
         ...(p.integration
           ? {
@@ -76,6 +78,15 @@ export class PublicController {
     return { comments: await this._postsService.getComments(postId) };
   }
 
+  @Post(`/posts/:id/comments`)
+  async createComment(
+    @Param('id') postId: string,
+    @Body() body: CreatePublicCommentDto,
+    @RealIP() ip: string
+  ) {
+    return this._postsService.createPublicComment(postId, body, null, ip);
+  }
+
   @Post('/t')
   async trackEvent(
     @Res() res: Response,
@@ -85,43 +96,19 @@ export class PublicController {
     @Body()
     body: { fbclid?: string; tt: TrackEnum; additional: Record<string, any> }
   ) {
-    const uniqueId = req?.cookies?.track || makeId(10);
-    const fbclid = req?.cookies?.fbclid || body.fbclid;
-    await this._trackService.track(
-      uniqueId,
-      ip,
-      userAgent,
-      body.tt,
-      body.additional,
-      fbclid
-    );
-    if (!req.cookies.track) {
-      res.cookie('track', uniqueId, {
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-            }
-          : {}),
-        sameSite: 'none',
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-      });
-    }
-
-    if (body.fbclid && !req.cookies.fbclid) {
-      res.cookie('fbclid', body.fbclid, {
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-            }
-          : {}),
-        sameSite: 'none',
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-      });
-    }
+    const { uniqueId, fbc, fbp } = applyTrackCookies(req, res, body.fbclid);
+    this._trackService
+      .track(
+        uniqueId,
+        ip,
+        userAgent,
+        body.tt,
+        body.additional,
+        fbc,
+        undefined,
+        fbp
+      )
+      .catch((err) => {});
 
     res.status(200).json({
       track: uniqueId,
@@ -153,7 +140,6 @@ export class PublicController {
       return { success: false };
     }
   }
-
 
   @Get('/stream')
   async streamFile(
