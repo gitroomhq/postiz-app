@@ -605,6 +605,7 @@
   "billing_download_invoice": "Scarica fattura",
   "billing_view_invoice": "Visualizza fattura",
   "billing_no_matching_invoices": "Nessuna fattura corrisponde alla ricerca",
+  "billing_no_invoices": "Nessuna fattura al momento",
   "select_channels": "Seleziona canali",
   "start_a_new_chat": "Inizia una nuova chat",
   "your_assistant": "Il tuo assistente",
