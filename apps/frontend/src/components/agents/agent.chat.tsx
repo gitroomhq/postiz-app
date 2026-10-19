@@ -83,7 +83,7 @@ You can select the channels you want to use from the left menu.
 
 You can see your previous conversations from the right menu.
 
-You can also use me as an MCP Server, check Settings >> Agents
+You can also use me as an MCP Server, check Settings >> Agents / Dev
 `),
             }}
             UserMessage={Message}
