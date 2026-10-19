@@ -62,9 +62,10 @@ export const initializeSentry = (appName: string) => {
         // Add our Profiling integration
         nodeProfilingIntegration(),
         Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        // AI calls are traced for timing and errors only; prompts and outputs are users' content and stay out.
         Sentry.openAIIntegration({
-          recordInputs: true,
-          recordOutputs: true,
+          recordInputs: false,
+          recordOutputs: false,
         }),
       ],
       tracesSampler: ({ name, attributes, normalizedRequest, inheritOrSampleWith }) => {
@@ -78,10 +79,18 @@ export const initializeSentry = (appName: string) => {
         if (method === 'GET' && /^(https?:\/\/[^/]+)?\/mcp(\/|-oauth|\?|$)/.test(path)) {
           return 0;
         }
+        if (name?.startsWith('prisma:')) {
+          return 0;
+        }
         return inheritOrSampleWith(
-          path.includes('/public/v1/analytics/') ? 0.01 : 0.1
+          path.includes('/public/v1/analytics/') ? 0.01 : 0.5
         );
       },
+      ignoreSpans: [
+        /^prisma:(client:serialize|engine:(query|serialize|response_json_serialization|connection))$/,
+        { op: 'db', name: /^(BEGIN|COMMIT|DEALLOCATE ALL)$/ },
+        { op: 'middleware.express' },
+      ],
       enableLogs: true,
       beforeSendLog: (log: any) => {
         log.attributes = redactLogAttributes({
@@ -97,7 +106,7 @@ export const initializeSentry = (appName: string) => {
       },
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.2,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.4,
       profileLifecycle: 'trace',
     });
   } catch (err) {

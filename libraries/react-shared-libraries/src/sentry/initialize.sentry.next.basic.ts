@@ -86,11 +86,11 @@ export const initializeSentryBasic = (environment: string, dsn: string, extensio
       environment: environment || 'development',
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
       dsn,
-      sendDefaultPii: true,
+      sendDefaultPii: false,
       enableLogs: true,
       ...restExtension,
       debug: environment === 'development',
-      tracesSampleRate: 0.1,
+      tracesSampleRate: 0.3,
 
       beforeSend(event: any, hint: any) {
         event.tags = { ...(event.tags || {}), service: 'frontend', component: 'nextjs' };
