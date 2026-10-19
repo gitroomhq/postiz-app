@@ -44,6 +44,9 @@ export class PublicAuthMiddleware implements NestMiddleware {
         }
 
         org = authorization.organization;
+        // The user who approved the OAuth app, so /me can show who is connected
+        // @ts-ignore
+        req.oauthUserId = authorization.userId;
       } else {
         org = await this._organizationService.getOrgByApiKey(auth);
         if (!org) {

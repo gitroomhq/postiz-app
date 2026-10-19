@@ -84,12 +84,13 @@ export const UText: FC<{
       data-tooltip-id="tooltip"
       data-tooltip-content="Underline"
       onClick={mark}
-      className="select-none cursor-pointer rounded-[6px] w-[30px] h-[30px] bg-newColColor flex justify-center items-center"
+      className="select-none cursor-pointer rounded-[6px] mobile:rounded-[8px] w-[30px] h-[30px] mobile:w-[40px] mobile:h-[40px] bg-newColColor mobile:bg-newSettings flex justify-center items-center"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="16"
         height="16"
+        className="mobile:w-[20px] mobile:h-[20px]"
         viewBox="0 0 16 16"
         fill="none"
       >

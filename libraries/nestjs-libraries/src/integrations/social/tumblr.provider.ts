@@ -9,7 +9,7 @@ import {
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { TumblrDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tumblr.dto';
 import { Integration } from '@prisma/client';
 import FormDataUpload from 'form-data';
@@ -264,7 +264,7 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     const redirectUri = this.redirectUri();
     const params = new URLSearchParams({
       client_id: process.env.TUMBLR_CLIENT_ID!,
@@ -276,7 +276,7 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
 
     return {
       url: `https://www.tumblr.com/oauth2/authorize?${params.toString()}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }

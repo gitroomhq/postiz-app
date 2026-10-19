@@ -91,7 +91,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
       <div className="flex-1 relative">
         <div className="absolute left-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner">
           {isLoading && (
-            <div className="grid grid-cols-4 gap-[8px]">
+            <div className="grid grid-cols-4 mobile:grid-cols-3 gap-[8px]">
               {[...new Array(8)].map((_, i) => (
                 <div
                   key={i}
@@ -106,7 +106,7 @@ const ThirdPartyMediaLibraryBrowser: FC<{
             </div>
           )}
           {!isLoading && !!data?.results?.length && (
-            <div className="grid grid-cols-4 gap-[8px]">
+            <div className="grid grid-cols-4 mobile:grid-cols-3 gap-[8px]">
               {data.results.map((item: any) => {
                 const isSelected = !!selected.find((s) => s.id === item.id);
                 return (

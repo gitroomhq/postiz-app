@@ -8,5 +8,8 @@ export interface AgentToolInterface {
   mcpOnly?: boolean;
   // a tool of a feature this install has not configured is left out everywhere
   available?(): boolean;
+  // a self-hosted instance without it can still connect through the cloud
+  // relay, calling it there asks to update the instance
+  optionalOnSelfHosted?: boolean;
   run(): ToolReturn;
 }

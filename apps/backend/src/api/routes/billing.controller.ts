@@ -20,6 +20,11 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
+import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import {
+  AuthorizationActions,
+  Sections,
+} from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -158,6 +163,17 @@ export class BillingController {
     };
   }
 
+  @Get('/invoices')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
+  async getInvoices(@GetOrgFromRequest() org: Organization) {
+    return (await this.provider(org)).getInvoices(org.id);
+  }
+
+  @Get('/renewal')
+  async getRenewal(@GetOrgFromRequest() org: Organization) {
+    return (await this.provider(org)).getRenewalDate(org.id);
+  }
+
   @Get('/')
   getCurrentBilling(@GetOrgFromRequest() org: Organization) {
     return this._paymentService.getSubscription(org.id);
@@ -169,14 +185,18 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @Body() body: { feedback: string }
   ) {
-    await this._notificationService.sendEmail(
-      process.env.EMAIL_FROM_ADDRESS,
-      'Subscription Cancelled',
-      `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-      user.email
-    );
+    const result = await (await this.provider(org)).setToCancel(org.id);
 
-    return (await this.provider(org)).setToCancel(org.id);
+    if (result.cancel_at) {
+      await this._notificationService.sendEmail(
+        process.env.EMAIL_FROM_ADDRESS,
+        'Subscription Cancelled',
+        `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
+        user.email
+      );
+    }
+
+    return result;
   }
 
   @Post('/prorate')

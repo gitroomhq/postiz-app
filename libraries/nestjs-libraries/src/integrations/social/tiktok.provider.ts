@@ -7,6 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import dayjs from 'dayjs';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import {
   BadBody,
   Disconnect,
@@ -338,7 +339,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = Math.random().toString(36).substring(2);
+    const state = makeSecureId(16);
 
     return {
       url:
@@ -447,8 +448,9 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     integration: Integration
   ): Promise<PendingCheckResponse> {
     let post: any;
+    let publicPostId: string | undefined;
     try {
-      post = await (
+      const raw = await (
         await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
@@ -465,7 +467,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           0,
           true
         )
-      ).json();
+      ).text();
+      ({ post, publicPostId } = this.parsePublishStatus(raw));
     } catch (err) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
@@ -477,27 +480,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { status: 'pending', pendingData };
     }
 
-    const { status, publicaly_available_post_id } = post?.data || {};
+    const { status } = post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
+      // the id stays 'missing' until the user publishes the draft - the
+      // publish id rides in the URL fragment so resolveReleaseId can ask later
       return {
         status: 'completed',
-        releaseURL: 'https://www.tiktok.com/messages?lang=en',
+        releaseURL: `https://www.tiktok.com/messages?lang=en#${pendingData.publishId}`,
         postId: 'missing',
       };
     }
 
     if (status === 'PUBLISH_COMPLETE') {
-      // an empty array is truthy, so index it once and branch on the value
-      const publicPostId = publicaly_available_post_id?.[0];
-
+      // the id only shows up once moderation approves the post - fall back to
+      // the profile URL and keep the publish_id (resolveReleaseId fixes it later)
       return {
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
-          : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
-        // TikTok returns the id as a number, releaseId in the db is a string
-        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+          : this.postUrl(integration, pendingData.publishId, publicPostId),
+        postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
 
@@ -512,6 +515,23 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
 
     return { status: 'pending', pendingData };
+  }
+
+  // photo posts (p_pub_... / p_inbox_...) live under /photo/, TikTok rejects
+  // /video/ for them
+  private postUrl(integration: Integration, publishId: string, postId: string) {
+    return `https://www.tiktok.com/@${integration.profile}/${
+      publishId.indexOf('p_') === 0 ? 'photo' : 'video'
+    }/${postId}`;
+  }
+
+  // TikTok returns publicaly_available_post_id as an int64, which JSON.parse
+  // rounds past 2^53 - pull the digits out of the raw body before parsing.
+  private parsePublishStatus(raw: string) {
+    const [, publicPostId] =
+      raw.match(/"publicaly_available_post_id"\s*:\s*\[\s*"?(\d+)/) || [];
+
+    return { post: JSON.parse(raw), publicPostId };
   }
 
   // UPLOAD does not publish - it only drops the media into the user's TikTok
@@ -580,6 +600,12 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           ...(isPhoto
             ? {
                 auto_add_music: firstPost.settings.autoAddMusic === 'yes',
+              }
+            : {}),
+          ...(!isPhoto && firstPost?.media?.[0]?.thumbnailTimestamp != null
+            ? {
+                video_cover_timestamp_ms:
+                  firstPost?.media?.[0]?.thumbnailTimestamp,
               }
             : {}),
         },
@@ -1126,17 +1152,38 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  async postAnalytics(
-    integrationId: string,
+  // Posts published before moderation finished keep their publish_id
+  // (v_pub_file~... / p_pub_url~...) as releaseId - resolve it to the post id
+  async resolveReleaseId(
     accessToken: string,
-    postId: string,
-    fromDate: number
-  ): Promise<AnalyticsData[]> {
-    const today = dayjs().format('YYYY-MM-DD');
+    releaseId: string,
+    integration: Integration,
+    settings: any,
+    releaseURL: string
+  ) {
+    // a draft sent to the inbox (UPLOAD) is stored as 'missing' with its
+    // publish id in the URL fragment
+    const draft = releaseId === 'missing';
+    const publishId = draft ? releaseURL?.split('#')[1] || '' : releaseId;
+    if (
+      publishId.indexOf('_pub_') === -1 &&
+      publishId.indexOf('_inbox_') === -1
+    ) {
+      return undefined;
+    }
 
-    if (postId.indexOf('v_pub_url') > -1) {
-      const post = await (
-        await fetch(
+    // TikTok only gives a post id to posts published for public viewership
+    // (a draft ignores the privacy setting, the user picks it in the app)
+    if (
+      !draft &&
+      ['SELF_ONLY', 'MUTUAL_FOLLOW_FRIENDS'].includes(settings?.privacy_level)
+    ) {
+      return { unavailable: true as const };
+    }
+
+    const { publicPostId } = this.parsePublishStatus(
+      await (
+        await this.fetch(
           'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
           {
             method: 'POST',
@@ -1145,18 +1192,57 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
               Authorization: `Bearer ${accessToken}`,
             },
             body: JSON.stringify({
-              publish_id: postId,
+              publish_id: publishId,
             }),
           }
         )
-      ).json();
+      ).text()
+    );
 
-      if (!post?.data?.publicaly_available_post_id?.[0]) {
-        return [];
-      }
-
-      postId = post.data.publicaly_available_post_id[0];
+    if (!publicPostId) {
+      // a draft with no public post (not published yet, or published as
+      // non-public) keeps opening the inbox instead of asking to retry
+      return draft ? undefined : { pending: true as const };
     }
+
+    return {
+      postId: publicPostId,
+      releaseURL: this.postUrl(integration, publishId, publicPostId),
+    };
+  }
+
+  async releaseUrl(accessToken: string, releaseId: string) {
+    const data = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/video/query/?fields=id,share_url',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            filters: {
+              video_ids: [releaseId],
+            },
+          }),
+        }
+      )
+    ).json();
+
+    // share_url carries tracking params (the app's client key among them)
+    return data?.data?.videos?.[0]?.share_url?.split('?')[0] as
+      | string
+      | undefined;
+  }
+
+  async postAnalytics(
+    integrationId: string,
+    accessToken: string,
+    postId: string,
+    fromDate: number
+  ): Promise<AnalyticsData[]> {
+    const today = dayjs().format('YYYY-MM-DD');
 
     try {
       // Query video details using the video ID

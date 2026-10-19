@@ -116,7 +116,8 @@ export class CopilotController {
   @Get('/credits')
   calculateCredits(
     @GetOrgFromRequest() organization: Organization,
-    @Query('type') type: 'ai_images' | 'ai_videos'
+    @Query('type')
+    type: 'ai_images' | 'ai_videos' | 'clipping_minutes'
   ) {
     return this._subscriptionService.checkCredits(
       organization,

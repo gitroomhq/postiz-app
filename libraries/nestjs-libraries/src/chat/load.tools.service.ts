@@ -46,6 +46,17 @@ export class LoadToolsService {
     );
   }
 
+  // Tools a self-hosted instance must have to connect through the relay
+  // (every install has them, whatever features it configured)
+  coreToolNames() {
+    return toolList
+      .map(
+        (p) => this._moduleRef.get(p, { strict: false }) as AgentToolInterface
+      )
+      .filter((p) => !p.mcpOnly && !p.available && !p.optionalOnSelfHosted)
+      .map((p) => p.name);
+  }
+
   async agent() {
     const tools = await this.loadTools();
     return new Agent({
@@ -63,6 +74,7 @@ export class LoadToolsService {
         - Schedule posts into the future, or now, adding texts, images and videos
         - List the posts scheduled between two dates (postsListTool)
         - Update the settings of a scheduled post or draft that was not published yet (postSettingsTool)
+        - Delete a post (deletePostTool)
         - Generate pictures for posts
         - Generate videos for posts
         - Generate text for posts
@@ -85,10 +97,11 @@ export class LoadToolsService {
       - In every message I will send you the list of needed social medias (id and platform), if you already have the information use it, if not, use the integrationSchema tool to get it.
       - Make sure you always take the last information I give you about the socials, it might have changed.
       - Before scheduling a post, always make sure you ask the user confirmation by providing all the details of the post (text, images, videos, date, time, social media platform, account).
+      - To reuse media that was already uploaded, use mediaListTool (search by filename) and pass the returned path as the attachment, instead of asking the user for a URL or uploading it again.
       - To find or inspect existing posts, use postsListTool with a UTC start and end date - it returns every post scheduled in that window. To cover "all my upcoming posts", pass a wide window starting now.
       - To change the provider settings of an existing post that was not published yet (scheduled or draft), first find it with postsListTool, then use postSettingsTool with the post's id. It only updates the settings - the content and the publish date stay as they are - and only the keys you pass are changed (get them with the integrationSchema tool). Show the user which post and which settings will change and get their confirmation first.
       - Never open the "modal with populated content" to edit an existing post - that modal only CREATES a new post, so using it to edit would duplicate the post. It is only for brand new posts.
-      - You can create, schedule and update posts, but you CANNOT delete posts - there is no delete capability. Never offer to delete a post. If the user asks you to delete one, tell them deletion is a destructive action and they should delete it themselves in the Postiz app (the calendar).
+      - To delete a post, first find it with postsListTool, then use deletePostTool with the post's id. It deletes the post on that one channel (with its comments) - when the same post was created for several channels, ask the user which channels to delete it from and call deletePostTool once per post id. A repeating post is listed once per repetition with the same id - deleting it deletes all the repetitions. Deleting a published post only removes it from Postiz, it stays live on the social network. Deletion cannot be undone, so show the user which post will be deleted (channel, date and text), mention the two cases above when they apply, and get their confirmation first.
       - Between tools, we will reference things like: [output:name] and [input:name] to set the information right.
       - When outputting a date for the user, make sure it's human readable with time
       - The content of the post, HTML, Each line must be wrapped in <p> here is the possible tags: h1, h2, h3, u, strong, li, ul, p (you can\'t have u and strong together), don't use a "code" box
