@@ -26,17 +26,18 @@ export const initializeSentryClient = (environment: string, dsn: string) =>
       // Add default integrations back
       Sentry.browserTracingIntegration(),
       Sentry.browserProfilingIntegration(),
+      // Session replays mask every text and input and block media, so a recording shows the layout of a
+      // page, never the posts, names or files on it.
       Sentry.replayIntegration({
-        maskAllText: false,
-        maskAllInputs: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        maskAllInputs: true,
+        blockAllMedia: true,
       }),
       Sentry.feedbackIntegration({
         // Disable the injection of the default widget
         autoInject: false,
         showEmail: false,
       }),
-      Sentry.replayCanvasIntegration(),
     ],
     replaysSessionSampleRate: 0.5,
     replaysOnErrorSampleRate: 1.0,
