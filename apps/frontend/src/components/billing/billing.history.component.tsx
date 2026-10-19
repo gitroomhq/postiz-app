@@ -77,7 +77,7 @@ const ActionLink: FC<{
   </a>
 );
 
-export const BillingHistory: FC = () => {
+export const BillingHistory: FC<{ modal?: boolean }> = ({ modal }) => {
   const t = useT();
   const { data, isLoading, error } = useInvoices();
   const [search, setSearch] = useState('');
@@ -187,15 +187,29 @@ export const BillingHistory: FC = () => {
   const columns =
     'grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_88px] gap-x-[16px] items-center px-[16px]';
 
+  if (modal && !isLoading && !rows.length) {
+    return (
+      <div className="text-center py-[20px] text-textItemBlur">
+        {t('billing_no_invoices', 'No invoices yet')}
+      </div>
+    );
+  }
+
   if (isLoading || error || !rows.length) {
     return null;
   }
 
   return (
-    <div className="flex flex-col gap-[20px] rounded-[12px] border border-newTableBorder bg-newBgColorInner shadow-previewShadow p-[24px] mobile:p-[16px]">
+    <div
+      className={clsx(
+        'flex flex-col gap-[20px]',
+        !modal &&
+          'rounded-[12px] border border-newTableBorder bg-newBgColorInner shadow-previewShadow p-[24px] mobile:p-[16px]'
+      )}
+    >
       <div className="flex items-center gap-[12px] mobile:flex-col mobile:items-stretch">
         <div className="flex-1 text-[20px] font-[600]">
-          {t('billing_history', 'Billing History')}
+          {!modal && t('billing_history', 'Billing History')}
         </div>
         <div className="flex items-center gap-[8px] mobile:flex-wrap">
           <div className="relative w-[240px] mobile:w-full">
