@@ -70,6 +70,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
           path.includes('/public/v1/analytics/') ? 0.01 : 0.1
         );
       },
+      // body-parser / multer errors raised before any controller runs: an
+      // oversized body (Nest already answers 413) and a client that dropped
+      // the connection mid-request. Neither is an application error.
+      ignoreErrors: [/^request entity too large$/, /^request aborted$/i],
       enableLogs: true,
 
       // Profiling
