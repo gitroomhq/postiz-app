@@ -706,7 +706,13 @@ export class PrivacyExportRepository {
           orders: purchases,
         };
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        // Prisma's defaults (2 s to start, 5 s in all) are too short for
+        // the preflight counts and a graph of up to 10,000 rows.
+        maxWait: 10_000,
+        timeout: 60_000,
+      }
     );
   }
 
