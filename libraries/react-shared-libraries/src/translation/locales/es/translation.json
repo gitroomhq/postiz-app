@@ -271,7 +271,7 @@
   "claim": "Reclamar",
   "frequently_asked_questions": "Preguntas frecuentes",
   "autopost": "Autopublicar",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "La autopublicación puede publicar automáticamente tus nuevos elementos RSS en las redes sociales",
+  "autopost_creates_drafts_from_your_rss_new_items": "La publicación automática crea borradores a partir de los nuevos elementos de tu RSS; revísalos y prográmalos desde el calendario para publicarlos",
   "title": "Título",
   "add_an_autopost": "Agregar una autopublicación",
   "post_content": "Contenido de la publicación",

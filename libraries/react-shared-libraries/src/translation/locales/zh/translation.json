@@ -271,7 +271,7 @@
   "claim": "领取",
   "frequently_asked_questions": "常见问题",
   "autopost": "自动发布",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "自动发布可以将您的RSS新内容自动发布到社交媒体",
+  "autopost_creates_drafts_from_your_rss_new_items": "自动发布会根据你的RSS新内容创建草稿，你可以在日历中审核并安排它们进行发布",
   "title": "标题",
   "add_an_autopost": "添加自动发布",
   "post_content": "发布内容",

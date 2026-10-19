@@ -271,7 +271,7 @@
   "claim": "Yêu cầu",
   "frequently_asked_questions": "Câu hỏi thường gặp",
   "autopost": "Tự động đăng",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Tự động đăng có thể tự động đăng các mục mới từ RSS của bạn lên mạng xã hội",
+  "autopost_creates_drafts_from_your_rss_new_items": "Tự động đăng tạo các bản nháp từ các mục mới trong RSS của bạn, hãy xem lại và lên lịch xuất bản từ lịch.",
   "title": "Tiêu đề",
   "add_an_autopost": "Thêm tự động đăng",
   "post_content": "Nội dung bài đăng",
