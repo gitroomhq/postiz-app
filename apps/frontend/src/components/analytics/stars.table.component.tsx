@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { UtcToLocalDateRender } from '@gitroom/react/helpers/utc.date.render';
 import { Button } from '@gitroom/react/form/button';
-import dayjs from 'dayjs';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -138,7 +138,7 @@ export const StarsTableComponent = () => {
     mutate();
   }, [searchParams]);
   const renderMediaLink = useCallback((date: string) => {
-    const local = dayjs.utc(date).local();
+    const local = fromUtc(date);
     const weekNumber = local.isoWeek();
     const year = local.year();
     return `/launches?week=${weekNumber}&year=${year}`;

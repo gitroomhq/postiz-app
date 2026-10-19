@@ -240,7 +240,7 @@ export const PlatformAnalytics = () => {
                   {(integration.inBetweenSteps ||
                     integration.refreshNeeded) && (
                     <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 -top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                         !
                       </div>
                       <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />

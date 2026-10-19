@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useState, useCallback } from 'react';
+import { useSWRConfig } from 'swr';
 import { useUser } from '../layout/user.context';
 import copy from 'copy-to-clipboard';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -9,7 +9,6 @@ import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
-import { DeveloperComponent } from '@gitroom/frontend/components/developer/developer.component';
 import { McpClientIcon } from '@gitroom/frontend/components/public-api/mcp.client.icons';
 import clsx from 'clsx';
 
@@ -924,50 +923,11 @@ const PublicApiContent = () => {
 
 export const PublicComponent = () => {
   const t = useT();
-  const fetch = useFetch();
-  const user = useUser();
-  const [subTab, setSubTab] = useState<'api' | 'developer'>('api');
-  const loadOrganizations = useCallback(async () => {
-    return await (await fetch('/user/organizations')).json();
-  }, []);
-  const { data: organizations } = useSWR('organizations', loadOrganizations, {
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    revalidateOnReconnect: false,
-  });
-  const currentOrg = useMemo(() => {
-    return organizations?.find((org: any) => org?.id === user?.orgId);
-  }, [organizations, user?.orgId]);
 
   return (
     <div className="flex flex-col gap-[20px]">
-      <h3 className="text-[20px]">
-        {t('developers', 'Developers')}
-        {currentOrg?.name ? ` - ${currentOrg.name}` : ''}
-      </h3>
-      <div className="flex gap-[6px]">
-        {(['api', 'developer'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={clsx(
-              'cursor-pointer px-[20px] h-[44px] text-[15px] font-[600] rounded-[8px] transition-colors',
-              subTab === tab
-                ? 'bg-[#612BD3] text-white'
-                : 'bg-btnSimple text-customColor18 hover:bg-boxHover hover:text-textColor'
-            )}
-            onClick={() => setSubTab(tab)}
-          >
-            {tab === 'api'
-              ? t('access', 'Access')
-              : t('apps', 'Apps')}
-          </button>
-        ))}
-      </div>
-      {subTab === 'api' && <PublicApiContent />}
-      {subTab === 'developer' && <DeveloperComponent />}
+      <h3 className="text-[20px]">{t('agents', 'Agents')}</h3>
+      <PublicApiContent />
     </div>
   );
 };

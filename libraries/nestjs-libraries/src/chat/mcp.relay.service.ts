@@ -108,7 +108,7 @@ export class McpRelayService {
       );
     }
 
-    // The MCP URL from Settings > Developers carries the API key:
+    // The MCP URL from Settings > Agents carries the API key:
     // <backend>/mcp/<key>
     const fromSettings = url.pathname.match(/^(.*?)\/mcp\/([^/]+)\/?$/);
     const key =
@@ -170,7 +170,8 @@ export class McpRelayService {
 
       // Every tool any install has must run on the instance, an older one
       // would answer some calls with errors (tools of optional features, like
-      // clipping, depend on the instance setup, not its version)
+      // clipping, depend on the instance setup, not its version, and the
+      // optionalOnSelfHosted ones only ask an older instance to update)
       const missing = this._loadToolsService
         .coreToolNames()
         .filter((name) => !tools.includes(name));
@@ -185,7 +186,7 @@ export class McpRelayService {
     }
 
     throw new HttpException(
-      `Could not find a Postiz MCP server at ${url.origin}. Paste the MCP URL from Settings > Developers of your instance, and make sure it runs Postiz v2.19.0 or newer`,
+      `Could not find a Postiz MCP server at ${url.origin}. Paste the MCP URL from Settings > Agents / Dev (Agents, Developers or Public API on older versions) of your instance, and make sure it runs Postiz v2.19.0 or newer`,
       HttpStatus.BAD_REQUEST
     );
   }

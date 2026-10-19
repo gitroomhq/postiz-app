@@ -15,6 +15,39 @@ const openAiOAuthClientId = () =>
 
 const enableOidcEmailClaims = () => Boolean(openAiOAuthClientId());
 
+// The static app HubSpot agents connect with (created under Settings >
+// Developers). HubSpot's MCP connector sends no client secret and requires a
+// refresh token, see isPublicClient and refreshFields
+const hubspotOAuthClientId = () =>
+  process.env.HUBSPOT_OAUTH_CLIENT_ID?.trim();
+
+// Postiz access tokens never expire, but HubSpot wants an expires_in: ten
+// years (a hundred would not fit in a 32-bit integer)
+const hubspotTokenExpiresIn = 10 * 365 * 24 * 60 * 60;
+
+// The HubSpot app itself (HubSpot project > app > Auth tab), not the Postiz
+// app above: its redirect URL finishes the install, see completeHubspotInstall
+const hubspotAppClientId = () => process.env.HUBSPOT_APP_CLIENT_ID?.trim();
+const hubspotAppClientSecret = () =>
+  process.env.HUBSPOT_APP_CLIENT_SECRET?.trim();
+const hubspotInstallRedirectUri = () =>
+  `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/hubspot/callback`;
+
+// The link that installs the HubSpot app in a HubSpot account (listed in
+// Settings > Integrations), undefined when the install can't be completed here
+export const hubspotInstallUrl = () => {
+  const clientId = hubspotAppClientId();
+  if (!clientId || !hubspotAppClientSecret()) {
+    return undefined;
+  }
+
+  const url = new URL('https://app.hubspot.com/oauth/authorize');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', hubspotInstallRedirectUri());
+  url.searchParams.set('scope', 'oauth');
+  return url.toString();
+};
+
 // Postiz Cloud only, a self-hosted install has nothing to relay to
 export const selfHostedRelayEnabled = () =>
   process.env.MCP_SELF_HOSTED_RELAY === 'true';
@@ -326,13 +359,18 @@ export class OAuthService {
     }
 
     // Dynamically registered clients must use their registered redirect_uris
-    // and PKCE; statically registered apps keep the existing lenient flow
+    // and PKCE; statically registered apps keep the existing lenient flow,
+    // except a public one (HubSpot), which has no secret and needs PKCE too
     if (app.dynamic) {
       const registered: string[] = JSON.parse(app.redirectUris || '[]');
       if (!options?.redirectUri || !registered.includes(options.redirectUri)) {
         throw new HttpException('Invalid redirect_uri', HttpStatus.BAD_REQUEST);
       }
-      if (app.tokenEndpointAuthMethod === 'none' && !options?.codeChallenge) {
+    }
+
+    const isPublicClient = this.isPublicClient(app);
+    if (app.dynamic || isPublicClient) {
+      if (isPublicClient && !options?.codeChallenge) {
         throw new HttpException(
           'code_challenge is required for this client',
           HttpStatus.BAD_REQUEST
@@ -351,6 +389,42 @@ export class OAuthService {
     }
 
     return app;
+  }
+
+  // Clients that authenticate with PKCE instead of a client secret: dynamic
+  // registrations with token_endpoint_auth_method=none, and HubSpot, whose
+  // MCP connector only takes a client id
+  private isPublicClient(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic' | 'tokenEndpointAuthMethod'>
+  ) {
+    return (
+      (app.dynamic && app.tokenEndpointAuthMethod === 'none') ||
+      app.clientId === hubspotOAuthClientId()
+    );
+  }
+
+  // What an authorization code is bound to: a dynamic client's PKCE challenge
+  // and redirect_uri, a public static app's PKCE challenge only (static apps
+  // always redirect to their stored redirectUrl). Other static apps keep the
+  // lenient flow and bind nothing
+  pkceBinding(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic' | 'tokenEndpointAuthMethod'>,
+    request: {
+      codeChallenge?: string;
+      codeChallengeMethod?: string;
+      redirectUri?: string;
+    }
+  ) {
+    if (app.dynamic) {
+      return request;
+    }
+    if (this.isPublicClient(app)) {
+      return {
+        codeChallenge: request.codeChallenge,
+        codeChallengeMethod: request.codeChallengeMethod,
+      };
+    }
+    return undefined;
   }
 
   async createAuthorizationCode(
@@ -430,10 +504,7 @@ export class OAuthService {
       );
     }
 
-    // Public clients (dynamic registration with token_endpoint_auth_method=none)
-    // authenticate with PKCE instead of a client secret
-    const isPublicClient = app.dynamic && app.tokenEndpointAuthMethod === 'none';
-    if (!isPublicClient) {
+    if (!this.isPublicClient(app)) {
       if (
         !clientSecret ||
         !app.clientSecret ||
@@ -482,6 +553,7 @@ export class OAuthService {
       access_token: token,
       token_type: 'bearer',
       scope: this.grantedScope(app),
+      ...this.refreshFields(app, token),
     };
   }
 
@@ -557,7 +629,115 @@ export class OAuthService {
       access_token: token,
       token_type: 'bearer',
       scope: this.grantedScope(app),
+      ...this.refreshFields(app, token),
     };
+  }
+
+  // HubSpot refuses a token response without a refresh token. Postiz access
+  // tokens never expire, so the refresh token is the access token itself:
+  // refreshing hands it back unchanged, and it stops working exactly when the
+  // access token does. No other client gets these fields
+  private refreshFields(app: Pick<OAuthApp, 'clientId'>, token: string) {
+    if (app.clientId !== hubspotOAuthClientId()) {
+      return {};
+    }
+
+    return {
+      refresh_token: token,
+      expires_in: hubspotTokenExpiresIn,
+    };
+  }
+
+  // The refresh_token grant, HubSpot only (see refreshFields): the refresh
+  // token is looked up like an access token and handed back while it is valid
+  async refreshAccessToken(clientId?: string, refreshToken?: string) {
+    if (!clientId || clientId !== hubspotOAuthClientId()) {
+      throw new HttpException(
+        { error: 'unsupported_grant_type' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const app = await this._oauthRepository.getAppByClientId(clientId);
+    if (!app) {
+      throw new HttpException(
+        { error: 'invalid_client' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    if (!refreshToken) {
+      throw new HttpException(
+        { error: 'invalid_request', error_description: 'refresh_token is required' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // a self-hosted connection only works while the relay is on
+    const encryptedToken = AuthService.fixedEncryption(refreshToken);
+    const authorization = refreshToken.startsWith('psh_')
+      ? selfHostedRelayEnabled()
+        ? await this._oauthRepository.findSelfHostedByAccessToken(encryptedToken)
+        : null
+      : await this._oauthRepository.findByAccessToken(encryptedToken);
+    if (!authorization || authorization.oauthAppId !== app.id) {
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return {
+      access_token: refreshToken,
+      token_type: 'bearer',
+      scope: this.grantedScope(app),
+      ...this.refreshFields(app, refreshToken),
+    };
+  }
+
+  // HubSpot only counts an install of the HubSpot app once its code is
+  // exchanged. Postiz makes no HubSpot API calls, so the tokens are not kept
+  async completeHubspotInstall(code: string) {
+    const clientId = hubspotAppClientId();
+    const clientSecret = hubspotAppClientSecret();
+    if (!clientId || !clientSecret) {
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch('https://api.hubapi.com/oauth/v3/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: hubspotInstallRedirectUri(),
+          code,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+    } catch (err) {
+      // timeout or network failure, fetch rejects instead of answering
+      throw new HttpException(
+        'Could not reach HubSpot to finish installing Postiz, please try again',
+        HttpStatus.BAD_GATEWAY,
+        { cause: err }
+      );
+    }
+
+    if (!response.ok) {
+      const value = await response.json().catch(() => null);
+      throw new HttpException(
+        `Could not finish installing Postiz in HubSpot${
+          value?.message ? `: ${value.message}` : ''
+        }`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    await response.body?.cancel();
   }
 
   // null when the relay is off or the token is unknown or revoked

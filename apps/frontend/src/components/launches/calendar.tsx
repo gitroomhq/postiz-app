@@ -5,7 +5,6 @@ import React, {
   Fragment,
   memo,
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -13,6 +12,7 @@ import {
   CalendarContext,
   Integrations,
   useCalendar,
+  useNow,
 } from '@gitroom/frontend/components/launches/calendar.context';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
@@ -38,14 +38,14 @@ import { useDrag, useDrop } from 'react-dnd';
 import { Integration, Post, State, Tags } from '@prisma/client';
 import { useAddProvider } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { timer } from '@gitroom/helpers/utils/timer';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, random, sortBy } from 'lodash';
+import { groupBy, sortBy } from 'lodash';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import { extend } from 'dayjs';
 import { isUSCitizen } from './helpers/isuscitizen.utils';
-import { useInterval } from '@mantine/hooks';
 import { StatisticsModal } from '@gitroom/frontend/components/launches/statistics';
 import { MissingReleaseModal } from '@gitroom/frontend/components/launches/missing-release.modal';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -56,8 +56,12 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import copy from 'copy-to-clipboard';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+} from '@gitroom/frontend/components/layout/set.timezone';
 import { Button } from '@gitroom/react/form/button';
+import { ChevronUpIcon } from '@gitroom/frontend/components/ui/icons';
 
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
@@ -93,6 +97,75 @@ export const hours = Array.from(
   (_, i) => i
 );
 
+// The current time badge at the start of the now line
+const NowTime: FC<{ time: string }> = ({ time }) => (
+  <div className="rounded-[6px] bg-newTableTextFocused px-[6px] text-[12px] leading-[20px] font-[500] text-black whitespace-nowrap">
+    {time}
+  </div>
+);
+
+// Current time line across the week. It ticks on its own so the grid doesn't
+// re-render every minute. An absolute grid child is placed inside the grid area
+// it names, here the current hour row (after the header row).
+const WeekNowLine: FC<{ days: dayjs.Dayjs[] }> = ({ days }) => {
+  const now = useNow();
+  const todayIndex = days.findIndex((day) => day.isSame(now, 'day'));
+  if (todayIndex === -1) {
+    return null;
+  }
+
+  const gridRow = `${now.hour() + 2} / ${now.hour() + 3}`;
+  const top = `${(now.minute() / 60) * 100}%`;
+  return (
+    <>
+      {/* covers this hour's label with the calendar background, the time takes its place */}
+      <div
+        className="absolute inset-0 bg-newBgColorInner pointer-events-none"
+        style={{ gridColumn: '1 / 2', gridRow }}
+      >
+        <div className="absolute end-0 -translate-y-1/2" style={{ top }}>
+          {/* same format as the hour labels */}
+          <NowTime time={now.format(isUSCitizen() ? 'h:mm A' : 'H:mm')} />
+        </div>
+      </div>
+      {/* a piece per day, so nothing shows through the gaps of the sticky header */}
+      {days.map((day, index) => (
+        <div
+          key={day.format('YYYY-MM-DD')}
+          className="absolute start-0 end-0 h-0 flex items-center z-[15] pointer-events-none"
+          style={{ gridColumn: `${index + 2} / ${index + 3}`, gridRow, top }}
+        >
+          {index === todayIndex ? (
+            <>
+              <div className="w-[3px] h-[12px] rounded-full bg-newTableTextFocused" />
+              <div className="flex-1 h-[3px] bg-newTableTextFocused" />
+            </>
+          ) : (
+            <div className="flex-1 h-[1px] bg-newTableTextFocused opacity-40" />
+          )}
+        </div>
+      ))}
+    </>
+  );
+};
+
+// Current time line between the slots of the day view, as tall as the slot's bottom margin
+const DayNowLine: FC<{ now: dayjs.Dayjs; className?: string }> = ({
+  now,
+  className,
+}) => (
+  <div
+    className={clsx(
+      'flex items-center h-[20px] shrink-0 pointer-events-none',
+      className
+    )}
+  >
+    {/* same format as the slot labels */}
+    <NowTime time={now.format(isUSCitizen() ? 'hh:mm A' : 'LT')} />
+    <div className="flex-1 h-[3px] bg-newTableTextFocused" />
+  </div>
+);
+
 // Shared hook for post actions (edit, delete, statistics)
 const usePostActions = (onMutate?: () => void) => {
   const t = useT();
@@ -122,9 +195,7 @@ const usePostActions = (onMutate?: () => void) => {
       const date = !isDuplicate
         ? null
         : (await (await fetch('/posts/find-slot')).json()).date;
-      const publishDate = dayjs
-        .utc(date || data.posts[0].publishDate)
-        .local();
+      const publishDate = fromUtc(date || data.posts[0].publishDate);
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
         : Fragment;
@@ -269,43 +340,115 @@ const usePostActions = (onMutate?: () => void) => {
         return;
       }
       tab.opener = null;
-      let releaseURL = post.releaseURL;
+      let release = {
+        releaseURL: '',
+        pending: true,
+        unavailable: false,
+        reconnect: false,
+      };
       try {
-        releaseURL =
-          (await (await fetch(`/posts/${post.id}/release-url`)).json())
-            .releaseURL || releaseURL;
+        release = await Promise.race([
+          fetch(`/posts/${post.id}/release-url`).then((r) => r.json()),
+          timer(5000).then(() => release),
+        ]);
       } catch (e) {}
+      if (release.unavailable) {
+        tab.close();
+        toaster.show(
+          t('post_has_no_public_link', 'This post has no public link'),
+          'warning'
+        );
+        return;
+      }
+      if (release.reconnect) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_reconnect_channel',
+            'Reconnect this channel to open the post link'
+          ),
+          'warning'
+        );
+        return;
+      }
+      // the platform has not released the post link yet, or the request
+      // failed or took too long
+      if (release.pending) {
+        tab.close();
+        toaster.show(
+          t(
+            'post_link_not_ready',
+            'The post link is not available yet, please try again in a minute'
+          ),
+          'warning'
+        );
+        return;
+      }
       // multi-target posts (several subreddits / communities / channels)
       // join their URLs with commas: open the first one
-      tab.location.href = releaseURL.split(',')[0];
+      tab.location.href = (release.releaseURL || post.releaseURL).split(',')[0];
     },
-    [fetch]
+    [fetch, toaster, t]
   );
 
   return { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost };
 };
 
+// A day view slot is a minute of the user's day, on the day in view
+const slotDate = (startDate: string, time: number) =>
+  newDayjs(startDate)
+    .hour(Math.floor(time / 60))
+    .minute(time % 60);
+
+// One day view slot. Memoized, so the now line's minute tick doesn't re-render the slots
+const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
+  ({ option, startDate }) => {
+    const calendar = useCalendar();
+    return (
+      <CalendarContext.Provider
+        value={{
+          ...calendar,
+          integrations: option.flatMap((p) => p.integration),
+        }}
+      >
+        <CalendarColumn getDate={slotDate(startDate, option[0].time)} />
+      </CalendarContext.Provider>
+    );
+  }
+);
+
 export const DayView = () => {
   const calendar = useCalendar();
-  const { integrations, posts, startDate } = calendar;
+  const { integrations, posts, postDates, startDate } = calendar;
 
   // Set dayjs locale based on current language
   const currentLanguage = i18next.resolvedLanguage || 'en';
   dayjs.locale(currentLanguage);
 
-  const currentDay = dayjs.utc(startDate);
-
   const options = useMemo(() => {
-    const createdPosts = posts.map((post) => ({
-      integration: [integrations.find((i) => i.id === post.integration.id)!],
-      image: post?.integration?.picture || '',
-      identifier: post?.integration?.providerIdentifier || '',
-      id: post?.integration?.id || '',
-      name: post?.integration?.name || '',
-      time: dayjs
-        .utc(post.publishDate)
-        .diff(dayjs.utc(post.publishDate).startOf('day'), 'minute'),
-    }));
+    const day = newDayjs(startDate);
+    // a recurring post comes with all its occurrences, only this day's make slots
+    const createdPosts = posts
+      .filter(
+        (post) =>
+          postDates.get(post).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
+      )
+      .map((post) => {
+        const date = postDates.get(post);
+        return {
+          integration: [
+            integrations.find((i) => i.id === post.integration.id)!,
+          ],
+          image: post?.integration?.picture || '',
+          identifier: post?.integration?.providerIdentifier || '',
+          id: post?.integration?.id || '',
+          name: post?.integration?.name || '',
+          time: date.hour() * 60 + date.minute(),
+        };
+      });
+    // posting times are minutes of the UTC day, moved to the clock of the day
+    // in view (on a DST change day, the ones before the change are an hour off)
+    const offset = day.hour(12).utcOffset();
     return sortBy(
       Object.values(
         groupBy(
@@ -318,7 +461,7 @@ export const DayView = () => {
                 name: p?.name,
                 id: p?.id,
                 image: p?.picture,
-                time: t?.time,
+                time: (((t?.time + offset) % 1440) + 1440) % 1440,
               }))
             ),
           ],
@@ -327,41 +470,48 @@ export const DayView = () => {
       ),
       (p) => p[0].time
     );
-  }, [integrations, posts]);
+  }, [integrations, posts, postDates, startDate]);
+
+  // the now line goes right before the first upcoming slot, only on today
+  const now = useNow();
+  const nowIndex = useMemo(() => {
+    if (!options.length || !newDayjs(startDate).isSame(now, 'day')) {
+      return -1;
+    }
+    const upcoming = options.findIndex((option) =>
+      slotDate(startDate, option[0].time).isAfter(now)
+    );
+    return upcoming === -1 ? options.length : upcoming;
+  }, [options, startDate, now]);
 
   return (
     <div className="flex flex-col gap-[10px] flex-1 relative">
       <div className="absolute start-0 top-0 w-full h-full flex flex-col overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
-        {options.map((option) => (
+        {options.map((option, index) => (
           <Fragment key={option[0].time}>
+            {/* sits in the 20px gap under the previous slot */}
+            {index === nowIndex && (
+              <DayNowLine
+                now={now}
+                className={clsx(index > 0 && '-mt-[20px]')}
+              />
+            )}
             <div className="text-center text-[14px] min-h-[21px] shrink-0">
-              {newDayjs()
-                .utc()
-                .startOf('day')
-                .add(option[0].time, 'minute')
-                .local()
-                .format(isUSCitizen() ? 'hh:mm A' : 'LT')}
+              {slotDate(startDate, option[0].time).format(
+                isUSCitizen() ? 'hh:mm A' : 'LT'
+              )}
             </div>
             <div
               key={option[0].time}
               className="min-h-[60px] shrink-0 rounded-[10px] flex justify-center items-center gap-[10px] mb-[20px]"
             >
-              <CalendarContext.Provider
-                value={{
-                  ...calendar,
-                  integrations: option.flatMap((p) => p.integration),
-                }}
-              >
-                <CalendarColumn
-                  getDate={currentDay
-                    .startOf('day')
-                    .add(option[0].time, 'minute')
-                    .local()}
-                />
-              </CalendarContext.Provider>
+              <DaySlotColumn option={option} startDate={startDate} />
             </div>
           </Fragment>
         ))}
+        {nowIndex === options.length && (
+          <DayNowLine now={now} className="-mt-[20px]" />
+        )}
       </div>
     </div>
   );
@@ -433,6 +583,7 @@ export const WeekView = () => {
               ))}
             </Fragment>
           ))}
+          <WeekNowLine days={localizedDays.map((day) => day.date)} />
         </div>
       </div>
     </div>
@@ -450,7 +601,10 @@ export const MonthView = () => {
     const days = [];
     // Starting from Monday (1) to Sunday (7)
     for (let i = 1; i <= 7; i++) {
-      days.push(newDayjs().day(i).format('dddd'));
+      days.push({
+        name: newDayjs().day(i).format('dddd'),
+        short: newDayjs().day(i).format('ddd'),
+      });
     }
     return days;
   }, [i18next.resolvedLanguage]);
@@ -458,9 +612,8 @@ export const MonthView = () => {
   const calendarDays = useMemo(() => {
     const monthStart = newDayjs(startDate);
     const currentMonth = monthStart.month();
-    const currentYear = monthStart.year();
 
-    const startOfMonth = newDayjs(new Date(currentYear, currentMonth, 1));
+    const startOfMonth = monthStart.startOf('month');
 
     // Calculate the day offset for Monday (isoWeekday() returns 1 for Monday)
     const startDayOfWeek = startOfMonth.isoWeekday(); // 1 for Monday, 7 for Sunday
@@ -490,19 +643,21 @@ export const MonthView = () => {
   return (
     <div className="flex flex-col text-textColor flex-1">
       <div className="flex-1 flex relative">
-        <div className="grid grid-cols-7 tablet:[grid-template-columns:repeat(7,_minmax(100px,_1fr))] grid-rows-[62px_auto] gap-[4px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
+        {/* on phones the whole month fits the width, posts show as channel avatars */}
+        <div className="grid grid-cols-7 tablet:[grid-template-columns:repeat(7,_minmax(100px,_1fr))] mobile:!grid-cols-7 grid-rows-[62px_auto] mobile:grid-rows-[36px_auto] gap-[4px] mobile:gap-[2px] rounded-[10px] absolute start-0 top-0 overflow-auto w-full h-full scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary">
           {localizedDays.map((day) => (
             <div
-              key={day}
-              className="z-[20] p-2 bg-newTableHeader flex justify-center items-center flex-col h-[62px] rounded-[8px] sticky top-0"
+              key={day.name}
+              className="z-[20] p-2 mobile:p-0 bg-newTableHeader flex justify-center items-center flex-col h-[62px] mobile:h-[36px] rounded-[8px] sticky top-0"
             >
-              <div>{day}</div>
+              <div className="mobile:hidden">{day.name}</div>
+              <div className="hidden mobile:block text-[13px]">{day.short}</div>
             </div>
           ))}
           {calendarDays.map((date, index) => (
             <div
               key={index}
-              className="text-center items-center justify-center flex"
+              className="text-center items-center justify-center flex mobile:min-w-0"
             >
               <CalendarColumn
                 getDate={newDayjs(date.day).endOf('day')}
@@ -535,7 +690,7 @@ export const ListView = () => {
   const groupedPosts = useMemo(() => {
     const groups: { [key: string]: any[] } = {};
     listPosts.forEach((post) => {
-      const dateKey = newDayjs(post.publishDate).local().format('YYYY-MM-DD');
+      const dateKey = fromUtc(post.publishDate).format('YYYY-MM-DD');
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -574,7 +729,7 @@ export const ListView = () => {
                   key={post.id}
                   display="day"
                   isBeforeNow={false}
-                  date={newDayjs(post.publishDate)}
+                  date={fromUtc(post.publishDate)}
                   state={post.state}
                   statistics={openStatistics(post.id)}
                   missingRelease={openMissingRelease(post.id)}
@@ -619,17 +774,18 @@ export const CalendarColumn: FC<{
   const t = useT();
 
   const { getDate, randomHour } = props;
-  const [num, setNum] = useState(0);
   const user = useUser();
   const {
     integrations,
     posts,
+    postDates,
     changeDate,
     display,
     reloadCalendarView,
     sets,
     signature,
     loading,
+    currentHour,
   } = useCalendar();
   const modal = useModals();
   const fetch = useFetch();
@@ -637,19 +793,20 @@ export const CalendarColumn: FC<{
   // Use shared post actions hook
   const { editPost, deletePost, copyDebugJson, openStatistics, openMissingRelease, openPost } = usePostActions();
   const postList = useMemo(() => {
-    return posts.filter((post) => {
-      const pList = dayjs.utc(post.publishDate).local();
-      const check =
-        display === 'day'
-          ? pList.format('YYYY-MM-DD HH:mm') ===
-            getDate.format('YYYY-MM-DD HH:mm')
-          : display === 'week'
-          ? pList.isSameOrAfter(getDate.startOf('hour')) &&
-            pList.isBefore(getDate.endOf('hour'))
-          : pList.format('DD/MM/YYYY') === getDate.format('DD/MM/YYYY');
-      return check;
-    });
-  }, [posts, display, getDate]);
+    if (display === 'week') {
+      const start = getDate.startOf('hour').valueOf();
+      const end = getDate.endOf('hour').valueOf();
+      return posts.filter((post) => {
+        const time = postDates.get(post).valueOf();
+        return time >= start && time < end;
+      });
+    }
+    const format = display === 'day' ? 'YYYY-MM-DD HH:mm' : 'DD/MM/YYYY';
+    const cell = getDate.format(format);
+    return posts.filter(
+      (post) => postDates.get(post).format(format) === cell
+    );
+  }, [posts, postDates, display, getDate]);
   const [showAll, setShowAll] = useState(false);
   const showAllFunc = useCallback(() => {
     setShowAll(true);
@@ -664,29 +821,13 @@ export const CalendarColumn: FC<{
     return postList.slice(0, 3);
   }, [postList, showAll]);
 
-  const isBeforeNow = useMemo(() => {
-    const originalUtc = getDate.startOf('hour');
-    return originalUtc
-      .startOf('hour')
-      .isBefore(newDayjs().startOf('hour').utc());
-  }, [getDate, num]);
-
-  const { start, stop } = useInterval(
-    useCallback(() => {
-      if (isBeforeNow) {
-        return;
-      }
-      setNum(num + 1);
-    }, [isBeforeNow]),
-    random(120000, 150000)
+  // currentHour comes from one shared clock, so passed hours get blocked
+  // while the calendar stays open
+  const isBeforeNow = useMemo(
+    () => getDate.startOf('hour').isBefore(currentHour),
+    [getDate, currentHour]
   );
 
-  useEffect(() => {
-    start();
-    return () => {
-      stop();
-    };
-  }, []);
   const [{ canDrop }, drop] = useDrop(() => ({
     accept: 'post',
     drop: async (item: any) => {
@@ -787,7 +928,7 @@ export const CalendarColumn: FC<{
     collect: (monitor) => ({
       canDrop: isBeforeNow ? false : !!monitor.canDrop() && !!monitor.isOver(),
     }),
-  }), [posts]);
+  }), [posts, isBeforeNow]);
 
   const addModal = useCallback(async () => {
     const set: any = !sets.length
@@ -877,11 +1018,27 @@ export const CalendarColumn: FC<{
       ref={drop as any}
     >
       {display === 'month' && (
-        <div className={clsx('pt-[6px] text-[14px]')}>{getDate.date()}</div>
+        <div
+          className={clsx(
+            'pt-[3px] text-[14px] mobile:pt-[2px] mobile:text-[12px] flex justify-center'
+          )}
+        >
+          {/* every day number gets the same box so only today's is filled */}
+          <div
+            className={clsx(
+              'h-[24px] min-w-[24px] px-[5px] mobile:h-[20px] mobile:min-w-[20px] mobile:px-[4px] rounded-[6px] flex items-center justify-center',
+              getDate.isSame(currentHour, 'day') &&
+                'bg-newTableTextFocused text-black font-[600]'
+            )}
+          >
+            {getDate.date()}
+          </div>
+        </div>
       )}
       <div
         className={clsx(
           'relative flex flex-col flex-1 text-white rounded-[8px] min-h-[70px]',
+          display === 'month' && 'mobile:min-h-[44px]',
           canDrop && 'border border-[#612BD3]'
         )}
       >
@@ -889,7 +1046,9 @@ export const CalendarColumn: FC<{
           className={clsx(
             'flex-col text-[12px] pointer w-full flex scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
             isBeforeNow ? 'flex-1' : 'cursor-pointer',
-            isBeforeNow && postList.length === 0 && 'col-calendar'
+            isBeforeNow && postList.length === 0 && 'col-calendar',
+            // the "Date passed" hint is wider than a phone month cell
+            display === 'month' && 'mobile:before:hidden'
           )}
         >
           {loading && (
@@ -904,7 +1063,12 @@ export const CalendarColumn: FC<{
                 'text-textColor p-[2.5px] relative flex flex-col justify-center items-center'
               )}
             >
-              <div className="relative w-full flex flex-col items-center p-[2.5px]">
+              <div
+                className={clsx(
+                  'relative w-full flex flex-col items-center p-[2.5px]',
+                  display === 'month' && 'mobile:p-0'
+                )}
+              >
                 <CalendarItem
                   display={display as 'day' | 'week' | 'month'}
                   isBeforeNow={isBeforeNow}
@@ -928,7 +1092,14 @@ export const CalendarColumn: FC<{
               className="text-center hover:underline py-[5px] text-textColor"
               onClick={showAllFunc}
             >
-              {t('show_more', '+ Show more')} ({postList.length - 3})
+              <span className={clsx(display === 'month' && 'mobile:hidden')}>
+                {t('show_more', '+ Show more')} ({postList.length - 3})
+              </span>
+              {display === 'month' && (
+                <span className="hidden mobile:inline">
+                  +{postList.length - 3}
+                </span>
+              )}
             </div>
           )}
           {showAll && postList.length > 3 && (
@@ -936,7 +1107,12 @@ export const CalendarColumn: FC<{
               className="text-center hover:underline py-[5px]"
               onClick={showLessFunc}
             >
-              {t('show_less', '- Show less')}
+              <span className={clsx(display === 'month' && 'mobile:hidden')}>
+                {t('show_less', '- Show less')}
+              </span>
+              {display === 'month' && (
+                <ChevronUpIcon size={16} className="hidden mobile:inline" />
+              )}
             </div>
           )}
         </div>
@@ -961,8 +1137,9 @@ export const CalendarColumn: FC<{
                     'group hover:before:h-[30px] w-full h-full rounded-[10px] flex justify-center items-center text-white'
                   )}
                 >
+                  {/* z-[16]: above the now line (z-[15]), under the sticky day headers (z-[20]) */}
                   <div
-                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px]`}
+                    className={`group-hover:before:content-["+"] pb-[5px] flex justify-center items-center rounded-[8px] transition-all group-hover:bg-btnPrimary w-full h-full max-w-[40px] max-h-[40px] relative z-[16]`}
                   />
                 </div>
               )}
@@ -1092,7 +1269,10 @@ const CalendarItem: FC<{
     >
       {state === 'ERROR' && (
         <div
-          className="absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer"
+          className={clsx(
+            'absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-red-500 flex items-center justify-center text-white text-[11px] font-bold cursor-pointer',
+            display === 'month' && 'mobile:hidden'
+          )}
           data-tooltip-id="tooltip"
           data-tooltip-class-name="!max-w-[400px] break-words"
           data-tooltip-content={post.error || 'An error occurred while publishing this post'}
@@ -1101,7 +1281,12 @@ const CalendarItem: FC<{
         </div>
       )}
       {state === 'PUBLISHED' && (
-        <div className="absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-white text-[11px] font-bold">
+        <div
+          className={clsx(
+            'absolute -top-[6px] -start-[6px] z-20 w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-white text-[11px] font-bold',
+            display === 'month' && 'mobile:hidden'
+          )}
+        >
           ✓
         </div>
       )}
@@ -1115,7 +1300,8 @@ const CalendarItem: FC<{
       )}
       <div
         className={clsx(
-          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[6px] px-[5px] bg-btnPrimary'
+          'text-white text-[11px] max-h-[24px] h-[24px] min-h-[24px] w-full rounded-tr-[10px] rounded-tl-[10px] flex items-center justify-center gap-[6px] px-[5px] bg-btnPrimary',
+          display === 'month' && 'mobile:hidden'
         )}
         style={{
           backgroundColor: post?.tags?.[0]?.tag?.color,
@@ -1140,24 +1326,6 @@ const CalendarItem: FC<{
             <CopyDebug />
           </div>
         )}
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer',
-            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
-          )}
-          onClick={duplicatePost}
-        >
-          <Duplicate />
-        </div>
-        <div
-          className={clsx(
-            'hidden group-hover:block hover:underline cursor-pointer text-red-500',
-            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
-          )}
-          onClick={deletePost}
-        >
-          <DeletePost />
-        </div>{' '}
         {(state === 'PUBLISHED' || state === 'ERROR') &&
           !post.intervalInDays &&
           post.releaseURL?.startsWith('http') && (
@@ -1205,12 +1373,32 @@ const CalendarItem: FC<{
         >
           <Preview />
         </div>
+        <div
+          className={clsx(
+            'hidden group-hover:block hover:underline cursor-pointer',
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
+          )}
+          onClick={duplicatePost}
+        >
+          <Duplicate />
+        </div>
+        <div
+          className={clsx(
+            'hidden group-hover:block hover:underline cursor-pointer text-red-500',
+            post?.tags?.[0]?.tag?.color && 'text-shadow-tags'
+          )}
+          onClick={deletePost}
+        >
+          <DeletePost />
+        </div>
       </div>
       <div
         onClick={editPost}
         className={clsx(
           'gap-[5px] w-full flex h-full flex-1 rounded-br-[10px] rounded-bl-[10px] p-[8px] text-[14px] bg-newColColor',
           'relative',
+          display === 'month' &&
+            'mobile:p-[4px] mobile:rounded-[10px] mobile:justify-center',
           isBeforeNow && '!grayscale'
         )}
       >
@@ -1224,7 +1412,12 @@ const CalendarItem: FC<{
             src={`/icons/platforms/${post.integration?.providerIdentifier}.png`}
           />
         </div>
-        <div className="w-full flex-1 flex flex-col min-h-[40px]">
+        <div
+          className={clsx(
+            'w-full flex-1 flex flex-col min-h-[40px]',
+            display === 'month' && 'mobile:hidden'
+          )}
+        >
           <div className="text-start">
             {state === 'DRAFT' ? t('draft', 'Draft') + ': ' : ''}
           </div>
@@ -1237,7 +1430,7 @@ const CalendarItem: FC<{
         </div>
         {showTime && (
           <div className="text-textColor/50 text-[12px] whitespace-nowrap flex items-center">
-            {newDayjs(post.publishDate).local().format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
+            {fromUtc(post.publishDate).format(isUSCitizen() ? 'hh:mm A' : 'HH:mm')}
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { FC } from 'react';
 
-// Logos for the MCP clients shown in Settings > Developers and in onboarding.
+// Logos for the MCP clients shown in Settings > Agents and in onboarding.
 // Monochrome marks use currentColor so they follow the button text color,
 // brand marks (Claude, VS Code, Gemini) keep their colors.
 const icons: Record<string, FC<{ size: number }>> = {

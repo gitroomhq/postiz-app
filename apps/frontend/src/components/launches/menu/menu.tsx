@@ -28,7 +28,7 @@ import { useRouter } from 'next/navigation';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
-import dayjs from 'dayjs';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { ModalWrapperComponent } from '@gitroom/frontend/components/new-launch/modal.wrapper.component';
 import copy from 'copy-to-clipboard';
 import { Input } from '@gitroom/react/form/input';
@@ -284,7 +284,7 @@ export const Menu: FC<{
             integrations={integrations}
             selectedChannels={[integration.id]}
             // focusedChannel={integration.id}
-            date={dayjs.utc(date).local()}
+            date={fromUtc(date)}
           />
         ),
         size: '80%',

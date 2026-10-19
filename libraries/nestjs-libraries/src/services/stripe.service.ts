@@ -12,6 +12,7 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import {
+  PaymentInvoice,
   PaymentPlatform,
   PaymentProvider,
   PaymentProviderAbstract,
@@ -181,7 +182,7 @@ export class StripeService extends PaymentProviderAbstract {
       return { ok: false };
     }
 
-    return this._subscriptionService.createOrUpdateSubscription(
+    const result = await this._subscriptionService.createOrUpdateSubscription(
       STRIPE_PROVIDER,
       event.data.object.status !== 'active',
       uniqueId,
@@ -191,6 +192,22 @@ export class StripeService extends PaymentProviderAbstract {
       period,
       event.data.object.cancel_at
     );
+
+    if (event.data.object.status === 'trialing') {
+      this.trackSubscription(
+        event.data.object.metadata,
+        event.data.object.id,
+        TrackEnum.StartTrial,
+        {
+          value:
+            pricing[billing][
+              period === 'YEARLY' ? 'year_price' : 'month_price'
+            ],
+        }
+      ).catch((err) => {});
+    }
+
+    return result;
   }
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
     const { uniqueId, billing, period } = event.data.object.metadata as {
@@ -741,6 +758,62 @@ export class StripeService extends PaymentProviderAbstract {
     return this.createBillingPortalLink(customer);
   }
 
+  async getRenewalDate(organizationId: string) {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    const [sub] = await this.getLiveSubscriptions(customer);
+    const trialing = sub?.status === 'trialing';
+    return {
+      renewsAt:
+        (trialing ? sub.trial_end : sub?.items.data[0]?.current_period_end) ||
+        null,
+      trialing,
+    };
+  }
+
+  async getInvoices(organizationId: string): Promise<PaymentInvoice[]> {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    if (!customer || !customer.startsWith('cus_')) {
+      return [];
+    }
+
+    const invoices = await stripe.invoices.list({
+      customer,
+      limit: 100,
+    });
+
+    return invoices.data
+      .filter((invoice) => invoice.status !== 'draft')
+      .map((invoice) => {
+        // snapshot of the subscription metadata ({ billing, period }) when the invoice was finalized
+        const metadata = invoice.parent?.subscription_details?.metadata;
+        return {
+          id: invoice.id,
+          number: invoice.number,
+          tier: metadata?.billing || null,
+          period: metadata?.period || null,
+          description: invoice.lines.data[0]?.description || null,
+          amount: invoice.total,
+          currency: invoice.currency,
+          created: invoice.created,
+          periodEnd: Math.max(
+            invoice.period_end,
+            ...invoice.lines.data.map((line) => line.period.end)
+          ),
+          // an open invoice that was already attempted is a failed charge waiting for a retry
+          status:
+            invoice.status === 'paid'
+              ? 'paid'
+              : invoice.status === 'void'
+              ? 'void'
+              : invoice.status === 'uncollectible' || invoice.attempted
+              ? 'failed'
+              : 'pending',
+          downloadUrl: invoice.invoice_pdf || null,
+          viewUrl: invoice.hosted_invoice_url || null,
+        };
+      });
+  }
+
   async finishTrial(organization: Organization) {
     const list = (
       await stripe.subscriptions.list({
@@ -1027,25 +1100,107 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
-    // get subscription from payment
-    const subscriptionId =
-      event.data.object.parent?.subscription_details?.subscription;
-    if (!subscriptionId) {
-      return { ok: true };
-    }
-    const subscription = await stripe.subscriptions.retrieve(
-      typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
-    );
-
-    const { userId, ud } = subscription.metadata;
-    const user = await this._userService.getUserById(userId);
-    if (user && user.ip && user.agent) {
-      this._trackService.track(ud, user.ip, user.agent, TrackEnum.Purchase, {
-        value: event.data.object.amount_paid / 100,
-      });
-    }
-
+    // only feeds the Facebook pixel, it runs in the background so it can
+    // never fail or slow down the webhook
+    this.trackConversion(event.data.object).catch((err) => {});
     return { ok: true };
+  }
+
+  // The first charge of a subscription is the conversion: a trial that turned
+  // into a paid plan, or a plan paid upfront. The $0 invoice that starts a
+  // trial and the renewals are not tracked.
+  private async trackConversion(invoice: Stripe.Invoice) {
+    try {
+      // webhook payloads follow the API version of the endpoint: parent is the
+      // 2025-03-31+ shape, subscription the older one
+      const subscriptionId =
+        invoice.parent?.subscription_details?.subscription ||
+        (invoice as any).subscription;
+      if (!subscriptionId || invoice.amount_paid <= 0) {
+        return;
+      }
+
+      // invoices of other services sharing the Stripe account stop here
+      const subscription = await stripe.subscriptions.retrieve(
+        typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
+      );
+      if (
+        subscription.metadata?.service !== 'gitroom' ||
+        !subscription.metadata?.userId
+      ) {
+        return;
+      }
+
+      const paidInvoices = await stripe.invoices.list({
+        subscription: subscription.id,
+        status: 'paid',
+        limit: 100,
+      });
+      const paidBefore = paidInvoices.data.some(
+        (f) =>
+          f.id !== invoice.id &&
+          f.amount_paid > 0 &&
+          (f.created < invoice.created ||
+            (f.created === invoice.created && f.id < invoice.id))
+      );
+      if (paidBefore) {
+        return;
+      }
+
+      await this.trackSubscription(
+        subscription.metadata,
+        invoice.id,
+        TrackEnum.Purchase,
+        {
+          value: invoice.amount_paid / 100,
+          currency: invoice.currency,
+        }
+      );
+    } catch (err) {
+      console.error(
+        'stripe_pixel_conversion_failed',
+        { stripe_invoice_id: invoice.id },
+        err
+      );
+    }
+  }
+
+  // Facebook pixel event for the user who checked out the subscription.
+  // Never throws, tracking must not affect billing.
+  private async trackSubscription(
+    metadata: Stripe.Metadata,
+    eventId: string,
+    tt: TrackEnum,
+    additional: Record<string, any>
+  ) {
+    try {
+      const { userId, fbc, fbp } = metadata || {};
+      if (!userId) {
+        return;
+      }
+
+      const user = await this._userService.getUserById(userId);
+      if (!user) {
+        return;
+      }
+
+      await this._trackService.track(
+        eventId,
+        user.ip,
+        user.agent,
+        tt,
+        additional,
+        fbc,
+        user,
+        fbp
+      );
+    } catch (err) {
+      console.error(
+        'stripe_pixel_event_failed',
+        { stripe_object_id: eventId, event: TrackEnum[tt] },
+        err
+      );
+    }
   }
 
   async getCharges(organizationId: string) {

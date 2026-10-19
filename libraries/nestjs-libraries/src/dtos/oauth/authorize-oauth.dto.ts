@@ -30,7 +30,8 @@ export class AuthorizeOAuthQueryDto {
   code_challenge?: string;
 
   // Not validated with IsIn: static clients may send arbitrary values that
-  // were always ignored; only dynamic clients get S256 enforced (in the service)
+  // were always ignored; only dynamic clients and HubSpot get S256 enforced
+  // (in the service)
   @IsString()
   @IsOptional()
   code_challenge_method?: string;
@@ -69,7 +70,8 @@ export class ApproveOAuthDto {
   code_challenge?: string;
 
   // Not validated with IsIn: static clients may send arbitrary values that
-  // were always ignored; only dynamic clients get S256 enforced (in the service)
+  // were always ignored; only dynamic clients and HubSpot get S256 enforced
+  // (in the service)
   @IsString()
   @IsOptional()
   code_challenge_method?: string;
@@ -102,13 +104,13 @@ export class AuthorizeSelfHostedDto {
   resource?: string;
 
   // The instance as the person knows it: its address, its backend address or
-  // the MCP URL from Settings > Developers (resolved in McpRelayService)
+  // the MCP URL from Settings > Agents (resolved in McpRelayService)
   @IsString()
   @IsDefined()
   @MaxLength(2048)
   instance_url: string;
 
-  // Optional because the MCP URL from Settings > Developers carries the key
+  // Optional because the MCP URL from Settings > Agents carries the key
   @IsString()
   @IsOptional()
   @MaxLength(512)

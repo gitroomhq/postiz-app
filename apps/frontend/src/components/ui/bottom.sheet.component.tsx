@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, ReactNode } from 'react';
+import React, { FC, ReactNode, useEffect } from 'react';
 import {
   ChevronRightIcon,
   CloseIcon,
@@ -52,6 +52,14 @@ export const BottomSheet: FC<{
   // the main action under the content, like Done or Save
   button?: { label: string; onClick: () => void; disabled?: boolean };
 }> = ({ title, onClose, children, button }) => {
+  // the support chat bubble would cover the sheet button
+  useEffect(() => {
+    document.querySelector('body')?.classList.add('bottomSheetOpen');
+    return () => {
+      document.querySelector('body')?.classList.remove('bottomSheetOpen');
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[600] flex flex-col justify-end">
       <div
