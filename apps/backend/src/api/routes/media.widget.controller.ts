@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Post,
@@ -25,7 +26,8 @@ export class MediaWidgetController {
   async upload(
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
+    @Body('adjust') adjust: string = 'false'
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
@@ -36,7 +38,8 @@ export class MediaWidgetController {
       req.uploadSession,
       file.filename,
       file.path,
-      file.originalname
+      file.originalname,
+      adjust === 'true'
     );
   }
 
