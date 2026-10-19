@@ -271,7 +271,7 @@
   "claim": "Resgatar",
   "frequently_asked_questions": "Perguntas Frequentes",
   "autopost": "Autopost",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "O Autopost pode publicar automaticamente seus novos itens RSS nas redes sociais",
+  "autopost_creates_drafts_from_your_rss_new_items": "O Autopost cria rascunhos a partir dos novos itens do seu RSS; revise-os e agende a publicação deles pelo calendário.",
   "title": "Título",
   "add_an_autopost": "Adicionar um autopost",
   "post_content": "Conteúdo da postagem",

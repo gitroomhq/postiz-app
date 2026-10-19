@@ -271,7 +271,7 @@
   "claim": "Einlösen",
   "frequently_asked_questions": "Häufig gestellte Fragen",
   "autopost": "Automatisches Posten",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Autopost kann Ihre neuen RSS-Einträge automatisch in sozialen Medien veröffentlichen",
+  "autopost_creates_drafts_from_your_rss_new_items": "Autopost erstellt Entwürfe aus neuen RSS-Einträgen. Überprüfe und plane sie im Kalender, um sie zu veröffentlichen.",
   "title": "Titel",
   "add_an_autopost": "Autopost hinzufügen",
   "post_content": "Beitragsinhalt",

@@ -271,7 +271,7 @@
   "claim": "Talep Et",
   "frequently_asked_questions": "Sıkça Sorulan Sorular",
   "autopost": "Otomatik Paylaşım",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Otomatik paylaşım, RSS'inizdeki yeni öğeleri sosyal medyaya otomatik olarak gönderebilir",
+  "autopost_creates_drafts_from_your_rss_new_items": "Otomatik gönderi, RSS'inizdeki yeni öğelerden taslaklar oluşturur; bunları inceleyip yayımlamak için takvimden zamanlayabilirsiniz.",
   "title": "Başlık",
   "add_an_autopost": "Otomatik paylaşım ekle",
   "post_content": "Paylaşım içeriği",

@@ -275,7 +275,7 @@ checksums:
     claim: 5649a7cd8b85ad2a53c9ff27704b4dad
     frequently_asked_questions: 212c5c784d5580b2f8b9481cb102cb4c
     autopost: 516cc6b9321aa2b3da4d89bc6ded71ab
-    autopost_can_automatically_posts_your_rss_new_items_to_social_media: a088be5dc3884e6e548b6fdd3ad833a8
+    autopost_creates_drafts_from_your_rss_new_items: 653344b55572758e30fe600c4c7ae3fc
     title: 344e64395eaff6822a57d18623853e1a
     add_an_autopost: a3f7c9403df5038af2e46064153ce36a
     post_content: 8a21638d6bacafe3cb39a4dd5e780a26
