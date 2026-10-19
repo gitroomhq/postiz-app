@@ -271,7 +271,7 @@
   "claim": "مطالبة",
   "frequently_asked_questions": "الأسئلة الشائعة",
   "autopost": "النشر التلقائي",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "يمكن للنشر التلقائي نشر العناصر الجديدة من موجز RSS الخاص بك تلقائيًا على وسائل التواصل الاجتماعي",
+  "autopost_creates_drafts_from_your_rss_new_items": "النشر التلقائي ينشئ مسودات من عناصر RSS الجديدة الخاصة بك، راجعها وجدولها من التقويم لنشرها",
   "title": "العنوان",
   "add_an_autopost": "إضافة نشر تلقائي",
   "post_content": "محتوى المنشور",
