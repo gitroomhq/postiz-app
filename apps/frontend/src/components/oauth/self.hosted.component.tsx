@@ -107,7 +107,7 @@ export const OAuthSelfHosted: FC<{
           removeError={true}
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Settings > Agents on your instance"
+          placeholder="Settings > Agents / Dev on your instance"
           autoComplete="off"
           spellCheck={false}
         />
