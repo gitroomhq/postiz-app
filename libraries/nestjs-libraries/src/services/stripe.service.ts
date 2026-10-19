@@ -869,6 +869,15 @@ export class StripeService extends PaymentProviderAbstract {
       };
     }
 
+    // The update itself succeeds on a declined card, the subscription just
+    // moves to past_due, so the failure is only visible here
+    if (
+      invoice?.status === 'open' &&
+      paymentIntent?.status === 'requires_payment_method'
+    ) {
+      throw new Error('The subscription payment failed');
+    }
+
     return { requiresAction: false };
   }
 
