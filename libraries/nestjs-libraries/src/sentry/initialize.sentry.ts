@@ -50,9 +50,10 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         // Add our Profiling integration
         nodeProfilingIntegration(),
         Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        // AI calls are traced for timing and errors only; prompts and outputs are users' content and stay out.
         Sentry.openAIIntegration({
-          recordInputs: true,
-          recordOutputs: true,
+          recordInputs: false,
+          recordOutputs: false,
         }),
       ],
       tracesSampler: ({ name, attributes, normalizedRequest, inheritOrSampleWith }) => {
