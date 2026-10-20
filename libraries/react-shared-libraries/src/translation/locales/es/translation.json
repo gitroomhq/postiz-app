@@ -887,5 +887,9 @@
   "could_not_save_timezone": "No se pudo guardar la zona horaria",
   "finish_trial_failed": "No pudimos finalizar tu prueba",
   "finish_trial_failed_description": "No pudimos cobrar en tu tarjeta. Por favor, inténtalo de nuevo.",
-  "try_again": "Intentar de nuevo"
+  "try_again": "Intentar de nuevo",
+  "finish_trial": "Finalizar prueba",
+  "finish_trial_confirmation": "Finalizar la prueba cobrará tu plan inmediatamente, ¿estás seguro?",
+  "finish_trial_charge_me_now": "Finalizar la prueba, cobrarme ahora",
+  "trial": "Prueba"
 }

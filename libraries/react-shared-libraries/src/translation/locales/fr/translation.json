@@ -886,5 +886,9 @@
   "could_not_save_timezone": "Impossible d'enregistrer le fuseau horaire",
   "finish_trial_failed": "Nous n'avons pas pu terminer votre essai",
   "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
-  "try_again": "Réessayer"
+  "try_again": "Réessayer",
+  "finish_trial": "Terminer l'essai",
+  "finish_trial_confirmation": "Terminer l'essai facturera immédiatement votre abonnement, êtes-vous sûr ?",
+  "finish_trial_charge_me_now": "Terminer l'essai, facturez-moi maintenant",
+  "trial": "Essai"
 }

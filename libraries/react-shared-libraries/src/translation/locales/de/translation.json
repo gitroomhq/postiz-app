@@ -887,5 +887,9 @@
   "could_not_save_timezone": "Die Zeitzone konnte nicht gespeichert werden",
   "finish_trial_failed": "Wir konnten Ihre Testphase nicht abschließen",
   "finish_trial_failed_description": "Wir konnten Ihre Karte nicht belasten. Bitte versuchen Sie es erneut.",
-  "try_again": "Erneut versuchen"
+  "try_again": "Erneut versuchen",
+  "finish_trial": "Testphase beenden",
+  "finish_trial_confirmation": "Wenn Sie die Testphase beenden, wird Ihr Tarif sofort abgerechnet. Sind Sie sicher?",
+  "finish_trial_charge_me_now": "Testphase beenden, jetzt abrechnen",
+  "trial": "Testphase"
 }

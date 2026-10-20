@@ -886,5 +886,9 @@
   "could_not_save_timezone": "Saat dilimi kaydedilemedi",
   "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
   "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
-  "try_again": "Tekrar deneyin"
+  "try_again": "Tekrar deneyin",
+  "finish_trial": "Denemeyi bitir",
+  "finish_trial_confirmation": "Denemeyi bitirmek planınızı hemen ücretlendirecek, emin misiniz?",
+  "finish_trial_charge_me_now": "Denemeyi bitir, şimdi ücretlendir",
+  "trial": "Deneme"
 }

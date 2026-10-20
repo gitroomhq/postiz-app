@@ -887,5 +887,9 @@
   "could_not_save_timezone": "Không thể lưu múi giờ",
   "finish_trial_failed": "Chúng tôi không thể hoàn tất phiên dùng thử của bạn",
   "finish_trial_failed_description": "Chúng tôi không thể thanh toán thẻ của bạn. Vui lòng thử lại.",
-  "try_again": "Thử lại"
+  "try_again": "Thử lại",
+  "finish_trial": "Kết thúc dùng thử",
+  "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ khiến gói của bạn bị tính phí ngay lập tức, bạn có chắc chắn không?",
+  "finish_trial_charge_me_now": "Kết thúc dùng thử, tính phí ngay",
+  "trial": "Dùng thử"
 }

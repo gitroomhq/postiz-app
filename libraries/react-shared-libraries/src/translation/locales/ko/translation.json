@@ -886,5 +886,9 @@
   "could_not_save_timezone": "시간대를 저장할 수 없습니다",
   "finish_trial_failed": "체험을 완료할 수 없습니다",
   "finish_trial_failed_description": "카드를 결제할 수 없습니다. 다시 시도해 주세요.",
-  "try_again": "다시 시도하기"
+  "try_again": "다시 시도하기",
+  "finish_trial": "체험 종료",
+  "finish_trial_confirmation": "체험을 종료하면 요금제가 즉시 청구됩니다. 계속하시겠습니까?",
+  "finish_trial_charge_me_now": "체험 종료, 지금 결제하기",
+  "trial": "체험"
 }

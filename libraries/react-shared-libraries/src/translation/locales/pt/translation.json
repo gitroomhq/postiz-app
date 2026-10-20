@@ -886,5 +886,9 @@
   "could_not_save_timezone": "Não foi possível salvar o fuso horário",
   "finish_trial_failed": "Não foi possível finalizar sua avaliação",
   "finish_trial_failed_description": "Não conseguimos cobrar no seu cartão. Por favor, tente novamente.",
-  "try_again": "Tentar novamente"
+  "try_again": "Tentar novamente",
+  "finish_trial": "Finalizar avaliação",
+  "finish_trial_confirmation": "Finalizar a avaliação cobrará seu plano imediatamente. Tem certeza?",
+  "finish_trial_charge_me_now": "Finalizar a avaliação, cobrar agora",
+  "trial": "Avaliação"
 }

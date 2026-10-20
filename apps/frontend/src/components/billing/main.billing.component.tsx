@@ -478,6 +478,21 @@ export const MainBillingComponent: FC<{
     !!queryParams.get('finishTrial')
   );
 
+  const finishTrialNow = useCallback(async () => {
+    if (
+      await deleteDialog(
+        t(
+          'finish_trial_confirmation',
+          'Finishing the trial will charge your plan immediately, are you sure?'
+        ),
+        t('finish_trial_charge_me_now', 'Finish the trial, charge me now'),
+        t('trial', 'Trial')
+      )
+    ) {
+      setFinishTrial(true);
+    }
+  }, []);
+
   const [subscription, setSubscription] = useState<
     SubscriptionWithPlatform | undefined
   >(sub);
@@ -844,7 +859,16 @@ export const MainBillingComponent: FC<{
 
   return (
     <div className="flex flex-col gap-[24px]">
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+      {finishTrial && (
+        <FinishTrial
+          close={() => {
+            setFinishTrial(false);
+            mutate('/user/self');
+            mutate('/billing/invoices');
+            mutate('/billing/renewal');
+          }}
+        />
+      )}
       <div className="flex items-center gap-[16px] mobile:flex-col mobile:items-stretch">
         <div className="flex-1 flex flex-col gap-[4px]">
           <div className="text-[20px] font-[600]">
@@ -1005,6 +1029,15 @@ export const MainBillingComponent: FC<{
             >
               {t('billing_update_payment_method', 'Update payment method')}
             </button>
+            {user?.isTrailing && (
+              <button
+                type="button"
+                onClick={finishTrialNow}
+                className="h-[44px] px-[16px] rounded-[8px] bg-btnSimple text-btnText text-[14px] font-[500] hover:opacity-80 transition-opacity"
+              >
+                {t('finish_trial', 'Finish trial')}
+              </button>
+            )}
           </div>
         </div>
       )}

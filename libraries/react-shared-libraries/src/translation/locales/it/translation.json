@@ -886,5 +886,9 @@
   "could_not_save_timezone": "Impossibile salvare il fuso orario",
   "finish_trial_failed": "Non siamo riusciti a completare la tua prova",
   "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
-  "try_again": "Riprova"
+  "try_again": "Riprova",
+  "finish_trial": "Termina la prova",
+  "finish_trial_confirmation": "Terminando la prova il tuo piano verrà addebitato immediatamente, sei sicuro?",
+  "finish_trial_charge_me_now": "Termina la prova, addebitami ora",
+  "trial": "Prova"
 }
