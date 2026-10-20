@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın.",
   "timezone": "Saat dilimi",
   "automatic_timezone": "Otomatik ({{timezone}})",
-  "could_not_save_timezone": "Saat dilimi kaydedilemedi"
+  "could_not_save_timezone": "Saat dilimi kaydedilemedi",
+  "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
+  "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
+  "try_again": "Tekrar deneyin"
 }

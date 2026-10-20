@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Подключите здесь, в Postiz, каналы, в которых хотите публиковать. Затем в HubSpot откройте Agent Hub > Agent Builder, добавьте инструмент, выберите Postiz MCP в разделе MCP Servers и нажмите Connect and add.",
   "timezone": "Часовой пояс",
   "automatic_timezone": "Автоматически ({{timezone}})",
-  "could_not_save_timezone": "Не удалось сохранить часовой пояс"
+  "could_not_save_timezone": "Не удалось сохранить часовой пояс",
+  "finish_trial_failed": "Мы не смогли завершить ваш пробный период",
+  "finish_trial_failed_description": "Не удалось списать средства с вашей карты. Пожалуйста, попробуйте еще раз.",
+  "try_again": "Попробовать еще раз"
 }

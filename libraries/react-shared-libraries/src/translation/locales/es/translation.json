@@ -620,6 +620,7 @@
   "email_already_exists": "El correo electrónico ya existe",
   "google": "Google",
   "apple": "Manzana",
+  "apple": "Apple",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "Escanee el código QR con su teléfono o abra el enlace en su teléfono, luego apruebe Postiz en la app de Farcaster.",
   "farcaster_open_in_farcaster": "Abrir en Farcaster",
@@ -883,5 +884,8 @@
   "hubspot_installed_description": "Conecta aquí, en Postiz, los canales en los que quieres publicar. Luego, en HubSpot, abre Agent Hub > Agent Builder, añade una herramienta, elige Postiz MCP en MCP Servers y haz clic en Connect and add.",
   "timezone": "Zona horaria",
   "automatic_timezone": "Automática ({{timezone}})",
-  "could_not_save_timezone": "No se pudo guardar la zona horaria"
+  "could_not_save_timezone": "No se pudo guardar la zona horaria",
+  "finish_trial_failed": "No pudimos finalizar tu prueba",
+  "finish_trial_failed_description": "No pudimos cobrar en tu tarjeta. Por favor, inténtalo de nuevo.",
+  "try_again": "Intentar de nuevo"
 }
