@@ -64,14 +64,14 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
                 />
               </svg>
               {!!current?.name && (
-                <div className="max-w-[240px] truncate">{current?.name}</div>
+                <div className="max-w-[240px] truncate mobile:hidden">{current?.name}</div>
               )}
             </div>
           )}
           {data?.length > 1 && (
             <div
               className={clsx(
-                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
+                'hidden py-[12px] px-[12px] group-hover:flex absolute top-[100%] end-0 z-[300] w-max max-w-[400px] bg-third border-tableBorder border gap-[12px] cursor-pointer flex-col',
                 asOpenSelect ? '!flex !relative max-w-[500px] mx-auto mb-[10px]' : '',
               )}
             >
@@ -106,7 +106,7 @@ export const OrganizationSelector: FC<{ asOpenSelect?: boolean }> = ({
           )}
         </div>
       </div>
-      {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator" />}
+      {!asOpenSelect && <div className="w-[1px] h-[20px] bg-blockSeparator mobile:hidden" />}
     </>
   );
 };

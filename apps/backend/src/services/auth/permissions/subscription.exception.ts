@@ -50,5 +50,10 @@ const getErrorMessage = (error: {
         default:
           return 'You have reached the maximum number of generated videos for your subscription. Please upgrade your subscription to generate more videos.';
       }
+    case Sections.CLIPPING_MINUTES:
+      switch (error.action) {
+        default:
+          return 'You have used all the clipping minutes of your subscription for this month. Please upgrade your subscription to clip more videos.';
+      }
   }
 };

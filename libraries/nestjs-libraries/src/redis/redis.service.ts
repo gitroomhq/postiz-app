@@ -1,4 +1,5 @@
 import { Redis } from 'ioredis';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 // Create a mock Redis implementation for testing environments
 class MockRedis {
@@ -18,13 +19,46 @@ class MockRedis {
     return 1;
   }
 
+  async rpush(key: string, value: any) {
+    this.data.set(key, [...(this.data.get(key) || []), value]);
+    return this.data.get(key).length;
+  }
+
+  async lrange(key: string, start: number, end: number) {
+    const list = this.data.get(key) || [];
+    return list.slice(start, end === -1 ? undefined : end + 1);
+  }
+
+  async expire() {
+    return 1;
+  }
+
   // Add other Redis methods as needed for your tests
 }
 
+const createRedis = () => {
+  if (!process.env.REDIS_URL) {
+    logger.error('redis_fallback_to_memory', {
+      reason: 'REDIS_URL is not set',
+    });
+
+    return new MockRedis() as unknown as Redis;
+  }
+
+  const client = new Redis(process.env.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    connectTimeout: 10000,
+  });
+
+  client.on('error', (err) => {
+    logger.error('redis_connection_error', {
+      error_type: errorType(err),
+      error_message: errorMessage(err),
+    });
+  });
+
+  return client;
+};
+
 // Use real Redis if REDIS_URL is defined, otherwise use MockRedis
-export const ioRedis = process.env.REDIS_URL
-  ? new Redis(process.env.REDIS_URL, {
-      maxRetriesPerRequest: null,
-      connectTimeout: 10000,
-    })
-  : (new MockRedis() as unknown as Redis); // Type cast to Redis to maintain interface compatibility
+export const ioRedis = createRedis();

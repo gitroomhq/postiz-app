@@ -7,6 +7,7 @@ import {
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { TemporalService } from 'nestjs-temporal-core';
+import { logger, errorType } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @Injectable()
 export class RefreshIntegrationService {
@@ -73,11 +74,33 @@ export class RefreshIntegrationService {
     socialProvider: SocialProvider,
     cause = ''
   ): Promise<AuthTokenDetails | false> {
+    let refreshError: any = undefined;
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
-      .catch((err) => false);
+      .catch((err) => {
+        logger.error('provider_token_refresh_failed', {
+          provider: integration.providerIdentifier,
+          integration_id: integration.id,
+          org_id: integration.organizationId,
+          error_type: errorType(err),
+          reason: cause,
+        });
+        refreshError = err;
+        return false as const;
+      });
 
     if (!refresh || !refresh.accessToken) {
+      if (refreshError) {
+        console.error(
+          `Could not refresh ${integration.providerIdentifier} integration ${integration.id}`,
+          refreshError?.response?.data || refreshError?.message || refreshError
+        );
+      }
+
+      // informAboutRefreshError (with the failure cause) already notifies
+      // the user, and refreshNeeded sets the same flag disconnectChannel
+      // would — calling disconnectChannel here sent a second, cause-less
+      // copy of the same email for every failed refresh.
       await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
@@ -86,12 +109,7 @@ export class RefreshIntegrationService {
       await this._integrationService.informAboutRefreshError(
         integration.organizationId,
         integration,
-        cause
-      );
-
-      await this._integrationService.disconnectChannel(
-        integration.organizationId,
-        integration
+        socialProvider.refreshErrorMessage?.(refreshError) || cause
       );
 
       return false;
@@ -104,11 +122,20 @@ export class RefreshIntegrationService {
       return refresh;
     }
 
-    const reConnect = await socialProvider.reConnect(
-      integration.rootInternalId,
-      integration.internalId,
-      refresh.accessToken
-    );
+    let reConnect;
+    try {
+      reConnect = await socialProvider.reConnect(
+        integration.rootInternalId,
+        integration.internalId,
+        refresh.accessToken
+      );
+    } catch (err: any) {
+      console.error(
+        `Could not reconnect ${integration.providerIdentifier} integration ${integration.id} after a successful token refresh`,
+        err?.response?.data || err?.message || err
+      );
+      throw err;
+    }
 
     return {
       ...refresh,

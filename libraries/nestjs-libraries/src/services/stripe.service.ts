@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
@@ -11,19 +11,78 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import {
+  PaymentInvoice,
+  PaymentPlatform,
+  PaymentProvider,
+  PaymentProviderAbstract,
+} from '@gitroom/nestjs-libraries/services/payment/payment.provider.interface';
+
+import { STRIPE_PROVIDER } from '@gitroom/nestjs-libraries/services/payment/payment.providers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
 
-@Injectable()
-export class StripeService {
+@PaymentProvider({ provider: STRIPE_PROVIDER })
+export class StripeService extends PaymentProviderAbstract {
+  platform: PaymentPlatform = 'web';
+
   constructor(
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
     private _trackService: TrackService
-  ) {}
+  ) {
+    super();
+  }
   validateRequest(rawBody: Buffer, signature: string, endpointSecret: string) {
     return stripe.webhooks.constructEvent(rawBody, signature, endpointSecret);
+  }
+
+  validateWebhook(
+    rawBody: Buffer,
+    headers: Record<string, string | string[] | undefined>
+  ) {
+    return this.validateRequest(
+      rawBody,
+      headers['stripe-signature'] as string,
+      process.env.STRIPE_SIGNING_KEY
+    );
+  }
+
+  async processWebhook(event: Stripe.Event) {
+    logger.info('stripe_webhook_received', {
+      stripe_event_type: event.type,
+      stripe_event_id: event.id,
+    });
+
+    // Maybe it comes from another stripe webhook
+    if (
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      event?.data?.object?.metadata?.service !== 'gitroom' &&
+      event.type !== 'invoice.payment_succeeded'
+    ) {
+      logger.info('stripe_webhook_ignored', {
+        stripe_event_type: event.type,
+        stripe_event_id: event.id,
+        reason: 'not_addressed_to_this_service',
+      });
+      return { ok: true };
+    }
+
+    switch (event.type) {
+      case 'invoice.payment_succeeded':
+        return this.paymentSucceeded(event);
+      case 'customer.subscription.created':
+        return this.createSubscription(event);
+      case 'customer.subscription.updated':
+        return this.updateSubscription(event);
+      case 'customer.subscription.deleted':
+        return this.deleteSubscription(event);
+      default:
+        return { ok: true };
+    }
   }
 
   async checkValidCard(
@@ -86,26 +145,53 @@ export class StripeService {
       await stripe.paymentIntents.cancel(paymentIntent.id as string);
       return true;
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'check_valid_card',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       try {
         await stripe.paymentMethods.detach(paymentMethods.data[0].id);
         await stripe.subscriptions.cancel(event.data.object.id as string);
       } catch (err) {
-        /*dont do anything*/
+        logger.error('stripe_operation_failed', {
+          operation: 'check_valid_card_cleanup',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
       return false;
     }
   }
 
   async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
-    const {
-      uniqueId,
-      billing,
-      period,
-    } = event.data.object.metadata as {
+    const { uniqueId, billing, period } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
     };
+
+    const liveSubscriptions = await this.getLiveSubscriptions(
+      event.data.object.customer as string
+    );
+    const isDuplicate = liveSubscriptions.some(
+      (f) =>
+        f.id !== event.data.object.id &&
+        (f.created < event.data.object.created ||
+          (f.created === event.data.object.created &&
+            f.id < event.data.object.id))
+    );
+    if (isDuplicate) {
+      if (liveSubscriptions.some((f) => f.id === event.data.object.id)) {
+        await stripe.subscriptions.cancel(event.data.object.id);
+      }
+      console.log('stripe_duplicate_subscription_cancelled', {
+        stripe_event_type: event.type,
+        stripe_event_id: event.id,
+        stripe_subscription_id: event.data.object.id,
+      });
+      return { ok: true };
+    }
 
     try {
       const check = await this.checkValidCard(event);
@@ -113,10 +199,16 @@ export class StripeService {
         return { ok: false };
       }
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_subscription',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { ok: false };
     }
 
-    return this._subscriptionService.createOrUpdateSubscription(
+    const result = await this._subscriptionService.createOrUpdateSubscription(
+      STRIPE_PROVIDER,
       event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
@@ -125,13 +217,25 @@ export class StripeService {
       period,
       event.data.object.cancel_at
     );
+
+    if (event.data.object.status === 'trialing') {
+      this.trackSubscription(
+        event.data.object.metadata,
+        event.data.object.id,
+        TrackEnum.StartTrial,
+        {
+          value:
+            pricing[billing][
+              period === 'YEARLY' ? 'year_price' : 'month_price'
+            ],
+        }
+      ).catch((err) => {});
+    }
+
+    return result;
   }
   async updateSubscription(event: Stripe.CustomerSubscriptionUpdatedEvent) {
-    const {
-      uniqueId,
-      billing,
-      period,
-    } = event.data.object.metadata as {
+    const { uniqueId, billing, period } = event.data.object.metadata as {
       billing: 'STANDARD' | 'PRO';
       period: 'MONTHLY' | 'YEARLY';
       uniqueId: string;
@@ -143,6 +247,7 @@ export class StripeService {
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
+      STRIPE_PROVIDER,
       event.data.object.status !== 'active',
       uniqueId,
       event.data.object.customer as string,
@@ -154,8 +259,41 @@ export class StripeService {
   }
 
   async deleteSubscription(event: Stripe.CustomerSubscriptionDeletedEvent) {
-    await this._subscriptionService.deleteSubscription(
-      event.data.object.customer as string
+    const customer = event.data.object.customer as string;
+    const [survivor] = await this.getLiveSubscriptions(customer);
+    if (!survivor) {
+      await this._subscriptionService.deleteSubscription(
+        customer,
+        STRIPE_PROVIDER
+      );
+      return;
+    }
+
+    const { uniqueId, billing, period } = survivor.metadata as {
+      billing: 'STANDARD' | 'PRO';
+      period: 'MONTHLY' | 'YEARLY';
+      uniqueId: string;
+    };
+    console.log('stripe_subscription_deleted_survivor_kept', {
+      stripe_event_type: event.type,
+      stripe_event_id: event.id,
+      stripe_subscription_id: event.data.object.id,
+      stripe_survivor_id: survivor.id,
+      outcome: pricing[billing] && period ? 'resynced' : 'metadata_missing',
+    });
+    if (!pricing[billing] || !period) {
+      return;
+    }
+
+    return this._subscriptionService.createOrUpdateSubscription(
+      STRIPE_PROVIDER,
+      survivor.status !== 'active',
+      uniqueId,
+      customer,
+      pricing[billing].channel!,
+      billing,
+      period,
+      survivor.cancel_at
     );
   }
 
@@ -190,7 +328,14 @@ export class StripeService {
           .update(customerId, {
             email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.error('stripe_operation_failed', {
+              operation: 'update_customer_email',
+              stripe_customer_id: customerId,
+              error_type: errorType(err),
+              error_message: errorMessage(err),
+            });
+          })
       )
     );
   }
@@ -202,7 +347,10 @@ export class StripeService {
 
     const users = await this._organizationService.getTeam(organization.id);
     const customer = await stripe.customers.create({
-      email: users.users[0].user.email.indexOf('@') > -1 ? users.users[0].user.email : `${users.users[0].user.email}@postiz.com`,
+      email:
+        users.users[0].user.email.indexOf('@') > -1
+          ? users.users[0].user.email
+          : `${users.users[0].user.email}@postiz.com`,
       name: organization.name,
     });
     await this._subscriptionService.updateCustomerId(
@@ -285,8 +433,6 @@ export class StripeService {
         },
       }));
 
-    const proration_date = Math.floor(Date.now() / 1000);
-
     const currentUserSubscription = {
       data: (
         await stripe.subscriptions.list({
@@ -301,8 +447,7 @@ export class StripeService {
         customer,
         subscription: currentUserSubscription?.data?.[0]?.id,
         subscription_details: {
-          proration_behavior: 'create_prorations',
-          billing_cycle_anchor: 'now',
+          proration_behavior: 'always_invoice',
           items: [
             {
               id: currentUserSubscription?.data?.[0]?.items?.data?.[0]?.id,
@@ -310,14 +455,18 @@ export class StripeService {
               quantity: 1,
             },
           ],
-          proration_date: proration_date,
         },
       });
 
       return {
-        price: price?.amount_remaining ? price?.amount_remaining / 100 : 0,
+        price: price?.amount_due ? price?.amount_due / 100 : 0,
       };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'prorate_preview',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { price: 0 };
     }
   }
@@ -331,28 +480,52 @@ export class StripeService {
     });
   }
 
+  private async getLiveSubscriptions(customer?: string | null) {
+    if (!customer || !customer.startsWith('cus_')) {
+      return [];
+    }
+
+    return (
+      await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+        expand: ['data.latest_invoice'],
+      })
+    ).data.filter(
+      (f) =>
+        f.status !== 'canceled' &&
+        f.status !== 'incomplete' &&
+        f.status !== 'incomplete_expired'
+    );
+  }
+
   async setToCancel(organizationId: string) {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
-    const currentUserSubscription = {
-      data: (
-        await stripe.subscriptions.list({
-          customer,
-          status: 'all',
-          expand: ['data.latest_invoice'],
-        })
-      ).data.filter((f) => f.status !== 'canceled'),
-    };
+    const subscriptions = await this.getLiveSubscriptions(customer);
 
-    const sub = currentUserSubscription.data[0];
+    const sub = subscriptions[0];
+
+    if (!sub) {
+      throw new BadRequestException('No active subscription found');
+    }
+
+    if (!sub) {
+      throw new BadRequestException('No active subscription found');
+    }
 
     // If the user is toggling back (un-cancelling), just remove the cancel
     if (sub.cancel_at_period_end) {
-      const { cancel_at } = await stripe.subscriptions.update(sub.id, {
-        cancel_at_period_end: false,
-        metadata: { service: 'gitroom', id },
-      });
+      let cancel_at: number | null = null;
+      for (const s of subscriptions) {
+        const updated = await stripe.subscriptions.update(s.id, {
+          cancel_at_period_end: false,
+          metadata: { service: 'gitroom', id },
+        });
+        cancel_at = cancel_at || updated.cancel_at;
+      }
+      await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
       return {
         id,
@@ -369,8 +542,13 @@ export class StripeService {
 
     if (hasFailedPayment) {
       // Payment already failed — cancel immediately and delete subscription
-      await stripe.subscriptions.cancel(sub.id);
-      await this._subscriptionService.deleteSubscription(customer);
+      for (const s of subscriptions) {
+        await stripe.subscriptions.cancel(s.id);
+      }
+      await this._subscriptionService.deleteSubscription(
+        customer,
+        STRIPE_PROVIDER
+      );
 
       return {
         id,
@@ -379,10 +557,17 @@ export class StripeService {
     }
 
     // Payment succeeded — cancel at end of billing period
-    const { cancel_at } = await stripe.subscriptions.update(sub.id, {
-      cancel_at_period_end: true,
-      metadata: { service: 'gitroom', id },
-    });
+    let cancel_at: number | null = null;
+    for (const s of subscriptions) {
+      const updated = await stripe.subscriptions.update(s.id, {
+        cancel_at_period_end: true,
+        metadata: { service: 'gitroom', id },
+      });
+      if (updated.cancel_at && (!cancel_at || updated.cancel_at < cancel_at)) {
+        cancel_at = updated.cancel_at;
+      }
+    }
+    await this._subscriptionService.updateCancelAt(organizationId, cancel_at);
 
     return {
       id,
@@ -391,6 +576,9 @@ export class StripeService {
   }
 
   async cancelAllSubscriptions(organizationId: string) {
+    if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+      return;
+    }
     // getOrgById must not filter deletedAt, this can run for an organization
     // that was already soft deleted by an account deletion
     const org = await this._organizationService.getOrgById(organizationId);
@@ -410,7 +598,10 @@ export class StripeService {
       await stripe.subscriptions.cancel(subscription.id);
     }
 
-    await this._subscriptionService.deleteSubscription(org.paymentId);
+    await this._subscriptionService.deleteSubscription(
+      org.paymentId,
+      STRIPE_PROVIDER
+    );
   }
 
   async getCustomerByOrganizationId(organizationId: string) {
@@ -490,7 +681,10 @@ export class StripeService {
 
     try {
       await stripe.customers.update(customer, {
-        email: user.email.indexOf('@') > -1 ? user.email : `${user.email}@postiz.com`,
+        email:
+          user.email.indexOf('@') > -1
+            ? user.email
+            : `${user.email}@postiz.com`,
         ...(body.dub
           ? {
               metadata: {
@@ -500,7 +694,13 @@ export class StripeService {
             }
           : {}),
       });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_embedded_checkout',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     // Check for auto-apply promotion code (only for monthly plans)
     let autoApplyPromoCode: string | null = null;
@@ -599,20 +799,137 @@ export class StripeService {
     return { url };
   }
 
-  async finishTrial(paymentId: string) {
-    const list = (
-      await stripe.subscriptions.list({
-        customer: paymentId,
-      })
-    ).data.filter((f) => f.status === 'trialing');
-
-    return stripe.subscriptions.update(list[0].id, {
-      trial_end: 'now',
-    });
+  async portalLink(organizationId: string) {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    return this.createBillingPortalLink(customer);
   }
 
-  async checkDiscount(customer: string) {
-    if (!process.env.STRIPE_DISCOUNT_ID) {
+  async getRenewalDate(organizationId: string) {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    const [sub] = await this.getLiveSubscriptions(customer);
+    const trialing = sub?.status === 'trialing';
+    return {
+      renewsAt:
+        (trialing ? sub.trial_end : sub?.items.data[0]?.current_period_end) ||
+        null,
+      trialing,
+    };
+  }
+
+  async getInvoices(organizationId: string): Promise<PaymentInvoice[]> {
+    const customer = await this.getCustomerByOrganizationId(organizationId);
+    if (!customer || !customer.startsWith('cus_')) {
+      return [];
+    }
+
+    const invoices = await stripe.invoices.list({
+      customer,
+      limit: 100,
+    });
+
+    return invoices.data
+      .filter((invoice) => invoice.status !== 'draft')
+      .map((invoice) => {
+        // snapshot of the subscription metadata ({ billing, period }) when the invoice was finalized
+        const metadata = invoice.parent?.subscription_details?.metadata;
+        return {
+          id: invoice.id,
+          number: invoice.number,
+          tier: metadata?.billing || null,
+          period: metadata?.period || null,
+          description: invoice.lines.data[0]?.description || null,
+          amount: invoice.total,
+          currency: invoice.currency,
+          created: invoice.created,
+          periodEnd: Math.max(
+            invoice.period_end,
+            ...invoice.lines.data.map((line) => line.period.end)
+          ),
+          // an open invoice that was already attempted is a failed charge waiting for a retry
+          status:
+            invoice.status === 'paid'
+              ? 'paid'
+              : invoice.status === 'void'
+              ? 'void'
+              : invoice.status === 'uncollectible' || invoice.attempted
+              ? 'failed'
+              : 'pending',
+          downloadUrl: invoice.invoice_pdf || null,
+          viewUrl: invoice.hosted_invoice_url || null,
+        };
+      });
+  }
+
+  async finishTrial(organization: Organization) {
+    const list = (
+      await stripe.subscriptions.list({
+        customer: organization.paymentId,
+      })
+    ).data;
+
+    const trialing = list.find((f) => f.status === 'trialing');
+    if (!trialing) {
+      const subscription = await stripe.subscriptions.retrieve(list[0].id, {
+        expand: ['latest_invoice'],
+      });
+      const invoice = subscription.latest_invoice as Stripe.Invoice | null;
+      if (invoice?.status === 'open' && invoice.id) {
+        await stripe.invoices.pay(invoice.id).catch(() => {});
+      }
+      return this.getRequiredActionFromSubscription(list[0].id);
+    }
+
+    await stripe.subscriptions.update(trialing.id, {
+      trial_end: 'now',
+    });
+
+    return this.getRequiredActionFromSubscription(trialing.id);
+  }
+
+  private async getRequiredActionFromSubscription(subscriptionId: string) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+      expand: ['latest_invoice'],
+    });
+
+    const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+    const invoice = latestInvoice?.id
+      ? await stripe.invoices.retrieve(latestInvoice.id, {
+          expand: ['payments.data.payment.payment_intent'],
+        })
+      : null;
+    const paymentIntent = invoice?.payments?.data
+      .map((p) => p.payment.payment_intent)
+      .find((p): p is Stripe.PaymentIntent => typeof p === 'object' && !!p);
+
+    if (
+      invoice?.status === 'open' &&
+      paymentIntent &&
+      (paymentIntent.status === 'requires_action' ||
+        paymentIntent.status === 'requires_confirmation')
+    ) {
+      return {
+        requiresAction: true,
+        // Returning the client_secret to the paying customer's browser is Stripe's
+        // intended flow: https://docs.stripe.com/api/payment_intents/object#payment_intent_object-client_secret
+        clientSecret: paymentIntent.client_secret,
+      };
+    }
+
+    // The update itself succeeds on a declined card, the subscription just
+    // moves to past_due, so the failure is only visible here
+    if (
+      invoice?.status === 'open' &&
+      paymentIntent?.status === 'requires_payment_method'
+    ) {
+      throw new Error('The subscription payment failed');
+    }
+
+    return { requiresAction: false };
+  }
+
+  async checkDiscount(organization: Organization) {
+    const customer = organization.paymentId;
+    if (!process.env.STRIPE_DISCOUNT_ID || !customer) {
       return false;
     }
 
@@ -650,8 +967,9 @@ export class StripeService {
     return true;
   }
 
-  async applyDiscount(customer: string) {
-    const check = this.checkDiscount(customer);
+  async applyDiscount(organization: Organization) {
+    const customer = organization.paymentId;
+    const check = this.checkDiscount(organization);
     if (!check) {
       return false;
     }
@@ -716,6 +1034,9 @@ export class StripeService {
     const priceData = pricing[body.billing];
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
+    if ((await this.getLiveSubscriptions(customer)).length) {
+      return { blocked: true };
+    }
     const allProducts = await stripe.products.list({
       active: true,
       expand: ['data.prices'],
@@ -870,8 +1191,22 @@ export class StripeService {
         ],
       });
 
+      const action = await this.getRequiredActionFromSubscription(
+        currentUserSubscription.data[0].id
+      );
+      if (action.requiresAction) {
+        return { id, ...action };
+      }
+
       return { id };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'subscribe',
+        stripe_customer_id: customer,
+        outcome: 'fallback_billing_portal',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       const { url } = await this.createBillingPortalLink(customer);
       return {
         portal: url,
@@ -880,25 +1215,107 @@ export class StripeService {
   }
 
   async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
-    // get subscription from payment
-    const subscriptionId =
-      event.data.object.parent?.subscription_details?.subscription;
-    if (!subscriptionId) {
-      return { ok: true };
-    }
-    const subscription = await stripe.subscriptions.retrieve(
-      typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
-    );
-
-    const { userId, ud } = subscription.metadata;
-    const user = await this._userService.getUserById(userId);
-    if (user && user.ip && user.agent) {
-      this._trackService.track(ud, user.ip, user.agent, TrackEnum.Purchase, {
-        value: event.data.object.amount_paid / 100,
-      });
-    }
-
+    // only feeds the Facebook pixel, it runs in the background so it can
+    // never fail or slow down the webhook
+    this.trackConversion(event.data.object).catch((err) => {});
     return { ok: true };
+  }
+
+  // The first charge of a subscription is the conversion: a trial that turned
+  // into a paid plan, or a plan paid upfront. The $0 invoice that starts a
+  // trial and the renewals are not tracked.
+  private async trackConversion(invoice: Stripe.Invoice) {
+    try {
+      // webhook payloads follow the API version of the endpoint: parent is the
+      // 2025-03-31+ shape, subscription the older one
+      const subscriptionId =
+        invoice.parent?.subscription_details?.subscription ||
+        (invoice as any).subscription;
+      if (!subscriptionId || invoice.amount_paid <= 0) {
+        return;
+      }
+
+      // invoices of other services sharing the Stripe account stop here
+      const subscription = await stripe.subscriptions.retrieve(
+        typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
+      );
+      if (
+        subscription.metadata?.service !== 'gitroom' ||
+        !subscription.metadata?.userId
+      ) {
+        return;
+      }
+
+      const paidInvoices = await stripe.invoices.list({
+        subscription: subscription.id,
+        status: 'paid',
+        limit: 100,
+      });
+      const paidBefore = paidInvoices.data.some(
+        (f) =>
+          f.id !== invoice.id &&
+          f.amount_paid > 0 &&
+          (f.created < invoice.created ||
+            (f.created === invoice.created && f.id < invoice.id))
+      );
+      if (paidBefore) {
+        return;
+      }
+
+      await this.trackSubscription(
+        subscription.metadata,
+        invoice.id,
+        TrackEnum.Purchase,
+        {
+          value: invoice.amount_paid / 100,
+          currency: invoice.currency,
+        }
+      );
+    } catch (err) {
+      console.error(
+        'stripe_pixel_conversion_failed',
+        { stripe_invoice_id: invoice.id },
+        err
+      );
+    }
+  }
+
+  // Facebook pixel event for the user who checked out the subscription.
+  // Never throws, tracking must not affect billing.
+  private async trackSubscription(
+    metadata: Stripe.Metadata,
+    eventId: string,
+    tt: TrackEnum,
+    additional: Record<string, any>
+  ) {
+    try {
+      const { userId, fbc, fbp } = metadata || {};
+      if (!userId) {
+        return;
+      }
+
+      const user = await this._userService.getUserById(userId);
+      if (!user) {
+        return;
+      }
+
+      await this._trackService.track(
+        eventId,
+        user.ip,
+        user.agent,
+        tt,
+        additional,
+        fbc,
+        user,
+        fbp
+      );
+    } catch (err) {
+      console.error(
+        'stripe_pixel_event_failed',
+        { stripe_object_id: eventId, event: TrackEnum[tt] },
+        err
+      );
+    }
   }
 
   async getCharges(organizationId: string) {
@@ -966,6 +1383,12 @@ export class StripeService {
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
+        logger.error('stripe_operation_failed', {
+          operation: 'refund_charge',
+          stripe_charge_id: chargeId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
         failed.push(chargeId);
       }
     }
@@ -981,19 +1404,19 @@ export class StripeService {
 
     const customer = org.paymentId;
 
-    const subscriptions = (
-      await stripe.subscriptions.list({
-        customer,
-        status: 'all',
-      })
-    ).data.filter((f) => f.status !== 'canceled');
+    const subscriptions = await this.getLiveSubscriptions(customer);
 
     if (!subscriptions.length) {
       throw new Error('No active subscription found');
     }
 
-    await stripe.subscriptions.cancel(subscriptions[0].id);
-    await this._subscriptionService.deleteSubscription(customer);
+    for (const subscription of subscriptions) {
+      await stripe.subscriptions.cancel(subscription.id);
+    }
+    await this._subscriptionService.deleteSubscription(
+      customer,
+      STRIPE_PROVIDER
+    );
 
     return { cancelled: true };
   }
@@ -1065,7 +1488,11 @@ export class StripeService {
         });
         nextPayment = preview.total / 100;
       } catch (err) {
-        /* no upcoming invoice */
+        logger.warn('stripe_operation_failed', {
+          operation: 'preview_upcoming_invoice',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
     }
 
@@ -1228,9 +1655,7 @@ export class StripeService {
             ? invoiceSubscription
             : invoiceSubscription?.id;
 
-        chargeSubscription = subscriptions.find(
-          (f) => f.id === subscriptionId
-        );
+        chargeSubscription = subscriptions.find((f) => f.id === subscriptionId);
 
         if (chargeSubscription) {
           lastCharge = charge;
@@ -1306,7 +1731,10 @@ export class StripeService {
     }
 
     if (preview.subscriptionIds.length) {
-      await this._subscriptionService.deleteSubscription(org?.paymentId!);
+      await this._subscriptionService.deleteSubscription(
+        org?.paymentId!,
+        STRIPE_PROVIDER
+      );
     }
 
     return {
@@ -1339,6 +1767,7 @@ export class StripeService {
       const findPricing = pricing[nextPackage];
 
       await this._subscriptionService.createOrUpdateSubscription(
+        STRIPE_PROVIDER,
         false,
         makeId(10),
         organizationId,
@@ -1355,7 +1784,12 @@ export class StripeService {
         success: true,
       };
     } catch (err) {
-      console.log(err);
+      logger.error('stripe_operation_failed', {
+        operation: 'modify_subscription',
+        org_id: organizationId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return {
         success: false,
       };

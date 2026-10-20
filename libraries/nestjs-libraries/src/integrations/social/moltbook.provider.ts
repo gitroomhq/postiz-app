@@ -4,8 +4,9 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { MoltbookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/moltbook.dto';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 
@@ -15,6 +16,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
   name = 'Moltbook';
+  dto = MoltbookDto;
   isBetweenSteps = false;
   scopes = [] as string[];
   isWeb3 = true;
@@ -37,10 +39,10 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: state,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }

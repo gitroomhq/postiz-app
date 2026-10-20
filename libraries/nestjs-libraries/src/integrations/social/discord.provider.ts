@@ -4,7 +4,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { Integration } from '@prisma/client';
 import { DiscordDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/discord.dto';
@@ -61,14 +61,14 @@ export class DiscordProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: `https://discord.com/oauth2/authorize?client_id=${
         process.env.DISCORD_CLIENT_ID
       }&permissions=377957124096&response_type=code&redirect_uri=${encodeURIComponent(
         `${process.env.FRONTEND_URL}/integrations/social/discord`
       )}&integration_type=0&scope=bot+identify+guilds&state=${state}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }

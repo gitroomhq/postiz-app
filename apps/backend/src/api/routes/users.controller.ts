@@ -13,7 +13,7 @@ import { sign } from 'jsonwebtoken';
 import { Organization, User } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
-import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { Response, Request } from 'express';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
@@ -25,12 +25,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
+import { TimezoneDto } from '@gitroom/nestjs-libraries/dtos/users/timezone.dto';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { applyTrackCookies } from '@gitroom/nestjs-libraries/track/track.cookies';
 import {
   AuthorizationActions,
   Sections,
@@ -41,7 +42,7 @@ import {
 export class UsersController {
   constructor(
     private _subscriptionService: SubscriptionService,
-    private _stripeService: StripeService,
+    private _paymentService: PaymentService,
     private _authService: AuthService,
     private _orgService: OrganizationService,
     private _userService: UsersService,
@@ -77,23 +78,6 @@ export class UsersController {
     );
 
     return { token };
-  }
-
-  @Get('/agent-media-sso')
-  async getAgentMediaSsoUrl(
-    @GetUserFromRequest() user: User,
-    @GetOrgFromRequest() organization: Organization
-  ) {
-    if (!process.env.AGENT_MEDIA_SSO_KEY) {
-      throw new HttpException('Agent Media SSO is not configured', 400);
-    }
-
-    const token = sign(
-      { id: organization.id, displayName: organization.name },
-      process.env.AGENT_MEDIA_SSO_KEY
-    );
-
-    return { url: `https://agent-media.ai/sso/${token}` };
   }
 
   @Get('/self')
@@ -214,7 +198,7 @@ export class UsersController {
       adminId
     );
 
-    await this._stripeService.syncCustomerEmailsAfterSwitch([kept, switched]);
+    await this._paymentService.syncCustomerEmailsAfterSwitch([kept, switched]);
 
     return { success: true };
   }
@@ -250,6 +234,14 @@ export class UsersController {
     return this._userService.updateEmailNotifications(user.id, body);
   }
 
+  @Post('/timezone')
+  async updateTimezone(
+    @GetUserFromRequest() user: User,
+    @Body() body: TimezoneDto
+  ) {
+    return this._userService.updateTimezone(user.id, body);
+  }
+
   @Post('/api-key/rotate')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async rotateApiKey(@GetOrgFromRequest() organization: Organization) {
@@ -259,10 +251,9 @@ export class UsersController {
   @Get('/subscription')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async getSubscription(@GetOrgFromRequest() organization: Organization) {
-    const subscription =
-      await this._subscriptionService.getSubscriptionByOrganizationId(
-        organization.id
-      );
+    const subscription = await this._paymentService.getSubscription(
+      organization.id
+    );
 
     return subscription ? { subscription } : { subscription: undefined };
   }
@@ -270,7 +261,7 @@ export class UsersController {
   @Get('/subscription/tiers')
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async tiers() {
-    return this._stripeService.getPackages();
+    return this._paymentService.getDefaultProvider('web').getPackages();
   }
 
   @Post('/join-org')
@@ -299,16 +290,57 @@ export class UsersController {
 
   @Get('/organizations')
   async getOrgs(@GetUserFromRequest() user: User) {
-    return (await this._orgService.getOrgsByUserId(user.id)).filter(
-      (f) => !f.users[0].disabled
-    );
+    return (await this._orgService.getOrgsByUserId(user.id))
+      .filter((f) => !f.users[0].disabled)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        users: p.users,
+        subscription: p.subscription,
+      }));
   }
 
   @Post('/change-org')
-  changeOrg(
+  async changeOrg(
+    @GetUserFromRequest() user: User,
     @Body('id') id: string,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request
   ) {
+    // While impersonating, the org is pinned to the impersonated
+    // UserOrganization row and `showorg` is never read, so move the
+    // impersonation to the requested org instead.
+    const impersonate = req.cookies.impersonate || req.headers.impersonate;
+    if (impersonate && user.isSuperAdmin) {
+      const userOrg = await this._orgService.getUserOrgByOrganization(
+        user.id,
+        id
+      );
+
+      if (!userOrg || userOrg.disabled) {
+        throw new HttpException('Invalid organization', 400);
+      }
+
+      response.cookie('impersonate', userOrg.id, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('impersonate', userOrg.id);
+      }
+
+      response.status(200).send();
+      return;
+    }
+
     response.cookie('showorg', id, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
@@ -326,6 +358,11 @@ export class UsersController {
     }
 
     response.status(200).send();
+  }
+
+  @Get('/delete-account-info')
+  getDeleteAccountInfo(@GetUserFromRequest() user: User) {
+    return this._userService.getDeleteAccountInfo(user.id);
   }
 
   @Post('/delete-account')
@@ -348,20 +385,15 @@ export class UsersController {
       user.id
     );
 
-    if (process.env.STRIPE_PUBLISHABLE_KEY) {
-      for (const org of ownedOrgs) {
-        if (!org.paymentId) {
-          continue;
-        }
-        try {
-          await this._stripeService.cancelAllSubscriptions(org.id);
-        } catch (err) {
-          console.log(err);
-          throw new HttpException(
-            'Could not cancel your subscription, please try again or contact support',
-            400
-          );
-        }
+    for (const org of ownedOrgs) {
+      try {
+        await this._paymentService.cancelAllSubscriptions(org.id);
+      } catch (err) {
+        console.log(err);
+        throw new HttpException(
+          'Could not cancel your subscription, please try again or contact support',
+          400
+        );
       }
     }
 
@@ -425,30 +457,19 @@ export class UsersController {
     @Body()
     body: { tt: TrackEnum; fbclid: string; additional: Record<string, any> }
   ) {
-    const uniqueId = req?.cookies?.track || makeId(10);
-    const fbclid = req?.cookies?.fbclid || body.fbclid;
-    await this._trackService.track(
-      uniqueId,
-      ip,
-      userAgent,
-      body.tt,
-      body.additional,
-      fbclid,
-      user
-    );
-    if (!req.cookies.track) {
-      res.cookie('track', uniqueId, {
-        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
-        ...(!process.env.NOT_SECURED
-          ? {
-              secure: true,
-              httpOnly: true,
-              sameSite: 'none',
-            }
-          : {}),
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
-      });
-    }
+    const { uniqueId, fbc, fbp } = applyTrackCookies(req, res, body.fbclid);
+    this._trackService
+      .track(
+        uniqueId,
+        ip,
+        userAgent,
+        body.tt,
+        body.additional,
+        fbc,
+        user,
+        fbp
+      )
+      .catch((err) => {});
 
     res.status(200).json({
       track: uniqueId,

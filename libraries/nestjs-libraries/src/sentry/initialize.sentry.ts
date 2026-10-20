@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nestjs';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { capitalize } from 'lodash';
+import { redactLogAttributes } from '@gitroom/helpers/utils/redact.log.attributes';
 
 export const setSentryUserContext = (params: {
   userId?: string;
@@ -9,12 +10,21 @@ export const setSentryUserContext = (params: {
   paymentId?: string | null;
 }) => {
   try {
-    Sentry.setUser(
-      params.userId
-        ? { id: params.userId, ...(params.email ? { email: params.email } : {}) }
-        : null
-    );
+    if (params.userId) {
+      Sentry.setUser({
+        id: params.userId,
+        ...(params.email ? { email: params.email } : {}),
+      });
+      Sentry.setTag('user.id', params.userId);
+    } else {
+      Sentry.setUser(null);
+    }
+    if (params.email) {
+      // 'user' itself is a reserved tag key - Sentry discards it if set directly
+      Sentry.setTag('user.email', params.email);
+    }
     if (params.orgId) {
+      Sentry.setTag('organization', params.orgId);
       Sentry.setTag('organization.id', params.orgId);
     }
     if (params.paymentId?.startsWith('cus_')) {
@@ -25,7 +35,7 @@ export const setSentryUserContext = (params: {
   }
 };
 
-export const initializeSentry = (appName: string, allowLogs = false) => {
+export const initializeSentry = (appName: string) => {
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
     return null;
   }
@@ -44,22 +54,59 @@ export const initializeSentry = (appName: string, allowLogs = false) => {
         },
       },
       environment: process.env.NODE_ENV || 'development',
+      release: process.env.NEXT_PUBLIC_APP_VERSION || undefined,
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       spotlight: process.env.SENTRY_SPOTLIGHT === '1',
+      sendDefaultPii: true,
       integrations: [
         // Add our Profiling integration
         nodeProfilingIntegration(),
         Sentry.consoleLoggingIntegration({ levels: ['log', 'info', 'warn', 'error', 'debug', 'assert', 'trace'] }),
+        // AI calls are traced for timing and errors only; prompts and outputs are users' content and stay out.
         Sentry.openAIIntegration({
-          recordInputs: true,
-          recordOutputs: true,
+          recordInputs: false,
+          recordOutputs: false,
         }),
       ],
-      tracesSampleRate: 1.0,
+      tracesSampler: ({ name, attributes, normalizedRequest, inheritOrSampleWith }) => {
+        const path = String(
+          normalizedRequest?.url || attributes?.['http.target'] || attributes?.['url.path'] || name || ''
+        );
+        const method = String(
+          normalizedRequest?.method || attributes?.['http.request.method'] || attributes?.['http.method'] || ''
+        );
+        // MCP stream GETs are declined with 405; never trace them
+        if (method === 'GET' && /^(https?:\/\/[^/]+)?\/mcp(\/|-oauth|\?|$)/.test(path)) {
+          return 0;
+        }
+        if (name?.startsWith('prisma:')) {
+          return 0;
+        }
+        return inheritOrSampleWith(
+          path.includes('/public/v1/analytics/') ? 0.01 : 0.5
+        );
+      },
+      ignoreSpans: [
+        /^prisma:(client:serialize|engine:(query|serialize|response_json_serialization|connection))$/,
+        { op: 'db', name: /^(BEGIN|COMMIT|DEALLOCATE ALL)$/ },
+        { op: 'middleware.express' },
+      ],
       enableLogs: true,
+      beforeSendLog: (log: any) => {
+        log.attributes = redactLogAttributes({
+          ...(log.attributes || {}),
+          service: appName,
+          component: 'nestjs',
+        });
+        return log;
+      },
+      beforeSend(event: any) {
+        event.tags = { ...(event.tags || {}), service: appName, component: 'nestjs' };
+        return event;
+      },
 
       // Profiling
-      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.45,
+      profileSessionSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.4,
       profileLifecycle: 'trace',
     });
   } catch (err) {

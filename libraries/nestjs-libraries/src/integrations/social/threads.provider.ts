@@ -6,7 +6,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { timer } from '@gitroom/helpers/utils/timer';
 import dayjs from 'dayjs';
 import {
@@ -30,7 +30,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     'threads_manage_insights',
     // 'threads_profile_discovery',
   ];
-  override maxConcurrentJob = 2; // Threads has moderate rate limits
+  override maxConcurrentJob = 20; // Threads limits are per profile
   refreshCron = true;
 
   editor = 'normal' as const;
@@ -40,7 +40,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
 
   override handleErrors(body: string):
     | {
-        type: 'refresh-token' | 'bad-body';
+        type: 'refresh-token' | 'bad-body' | 'retry';
         value: string;
       }
     | undefined {
@@ -69,6 +69,13 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         type: 'bad-body',
         value:
           "One of the media URLs is invalid or inaccessible, make sure it's being uploaded to Postiz first",
+      };
+    }
+    if (body.includes('4279009')) {
+      return {
+        type: 'retry',
+        value:
+          'Threads could not find the media container yet, please try again in a few seconds',
       };
     }
     if (body.includes('text must be at most 500 characters')) {
@@ -104,10 +111,10 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url:
-        'https://www.threads.net/oauth/authorize' +
+        'https://www.threads.com/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
@@ -118,7 +125,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         )}` +
         `&state=${state}` +
         `&scope=${encodeURIComponent(this.scopes.join(','))}`,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
@@ -186,7 +193,9 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
         this.identifier,
         JSON.stringify({ status, error_message }),
         '{}',
-        error_message || 'Threads could not process the media'
+        error_message && error_message !== 'UNKNOWN'
+          ? error_message
+          : 'Threads could not process the media, please check the media format and try again'
       );
     }
 
@@ -732,7 +741,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return (
       data?.map((d: any) => ({
         label: capitalize(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
@@ -868,8 +877,11 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
       }
 
       return result;
-    } catch (err) {
-      console.error('Error fetching Threads post analytics:', err);
+    } catch (err: any) {
+      console.error(
+        'Error fetching Threads post analytics:',
+        err?.cause?.code || err?.message || err
+      );
       return [];
     }
   }

@@ -6,7 +6,7 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { timer } from '@gitroom/helpers/utils/timer';
 import {
   BadBody,
@@ -18,6 +18,7 @@ import { Integration } from '@prisma/client';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class WhopProvider extends SocialAbstract implements SocialProvider {
+  override maxConcurrentJob = 3; // Whop limits are per token
   identifier = 'whop';
   name = 'Whop';
   isBetweenSteps = false;
@@ -103,10 +104,10 @@ export class WhopProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     const codeVerifier = randomBytes(32).toString('base64url');
     const codeChallenge = this.generateCodeChallenge(codeVerifier);
-    const nonce = makeId(16);
+    const nonce = makeSecureId(16);
 
     return {
       url:

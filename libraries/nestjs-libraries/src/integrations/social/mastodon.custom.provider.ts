@@ -4,7 +4,7 @@ import {
   PostResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { MastodonProvider } from '@gitroom/nestjs-libraries/integrations/social/mastodon.provider';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
@@ -38,22 +38,24 @@ export class MastodonCustomProvider extends MastodonProvider {
       client_secret,
     };
   }
-  override async generateAuthUrl(
-    refresh?: string,
-    external?: ClientInformation
-  ) {
-    const state = makeId(6);
+  // Signature must match IAuthenticator: the controller passes the client
+  // information as the only argument. A leading `refresh` parameter used to sit
+  // in front of it, which silently bound the client information to the wrong
+  // name and produced "undefined/oauth/authorize?client_id=undefined". The
+  // refresh marker is the controller's business, stored in Redis against the
+  // state - it was never part of this URL.
+  override async generateAuthUrl(external?: ClientInformation) {
+    const state = makeSecureId(6);
     const url = this.generateUrlDynamic(
       external?.instanceUrl!,
       state,
       external?.client_id!,
-      process.env.FRONTEND_URL!,
-      refresh
+      process.env.FRONTEND_URL!
     );
 
     return {
       url,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }

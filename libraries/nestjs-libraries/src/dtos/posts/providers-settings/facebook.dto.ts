@@ -1,4 +1,5 @@
 import { IsIn, IsOptional, IsString, ValidateIf, IsUrl } from 'class-validator';
+import { JSONSchema } from 'class-validator-jsonschema';
 
 // Maximum characters Facebook allows on a background ("text format") post.
 export const FACEBOOK_PRESET_MAX_CHARS = 130;
@@ -108,4 +109,11 @@ export class FacebookDto {
   @IsOptional()
   @IsString()
   text_format_preset_id?: string;
+
+  @IsOptional()
+  @IsString()
+  @JSONSchema({
+    description: 'Title of the video, used only for video (non-story) posts',
+  })
+  title?: string;
 }

@@ -18,7 +18,8 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
-import { shuffle } from 'lodash';
+import { groupBy, shuffle, uniqBy } from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -34,6 +35,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
+import { resolve, sep } from 'path';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
@@ -53,7 +55,10 @@ import { stripLinks } from '@gitroom/helpers/utils/strip.links';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { weightedLength } from '@gitroom/helpers/utils/count.length';
+import { postContentPlainText } from '@gitroom/helpers/utils/sanitize.post.content';
+import { CreatePublicCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
+import { countLength } from '@gitroom/helpers/utils/count.length';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -80,6 +85,20 @@ export class PostsService {
 
   updatePost(id: string, postId: string, releaseURL: string) {
     return this._postRepository.updatePost(id, postId, releaseURL);
+  }
+
+  updateResolvedRelease(
+    id: string,
+    orgId: string,
+    releaseId: string,
+    releaseURL: string
+  ) {
+    return this._postRepository.updateResolvedRelease(
+      id,
+      orgId,
+      releaseId,
+      releaseURL
+    );
   }
 
   async getMissingContent(
@@ -146,8 +165,148 @@ export class PostsService {
     return this._postRepository.getPostById(postId, orgId);
   }
 
+  async getPostTimeline(postId: string, orgId: string) {
+    return this._postRepository.getPostTimeline(postId, orgId);
+  }
+
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
-    return this._postRepository.updateReleaseId(postId, orgId, releaseId);
+    const post = await this._postRepository.getPostById(postId, orgId);
+
+    // the URL is a bonus: connecting must not fail when it cannot be fetched
+    let releaseURL: string | undefined;
+    if (post?.releaseId === 'missing') {
+      try {
+        releaseURL = await this._integrationManager
+          .getSocialIntegration(post.integration.providerIdentifier)
+          .releaseUrl?.(
+            post.integration.token,
+            String(releaseId),
+            post.integration
+          );
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return this._postRepository.updateReleaseId(
+      postId,
+      orgId,
+      releaseId,
+      releaseURL
+    );
+  }
+
+  async resolveRelease(
+    orgId: string,
+    post: {
+      id: string;
+      releaseId: string;
+      releaseURL: string;
+      settings: string;
+      integration: Integration;
+    }
+  ) {
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    const resolved = await integrationProvider.resolveReleaseId?.(
+      post.integration.token,
+      post.releaseId,
+      post.integration,
+      JSON.parse(post.settings || '{}'),
+      post.releaseURL
+    );
+    if (
+      !resolved ||
+      !('postId' in resolved) ||
+      resolved.postId === post.releaseId
+    ) {
+      return {
+        releaseId: post.releaseId,
+        releaseURL: post.releaseURL,
+        pending: !!resolved && 'pending' in resolved,
+        unavailable: !!resolved && 'unavailable' in resolved,
+      };
+    }
+
+    await this._postRepository.updateResolvedRelease(
+      post.id,
+      orgId,
+      resolved.postId,
+      resolved.releaseURL
+    );
+    return {
+      releaseId: resolved.postId,
+      releaseURL: resolved.releaseURL,
+      pending: false,
+      unavailable: false,
+    };
+  }
+
+  async getReleaseURL(
+    orgId: string,
+    postId: string,
+    forceRefresh = false
+  ): Promise<{
+    releaseURL: string;
+    pending?: boolean;
+    unavailable?: boolean;
+    reconnect?: boolean;
+  }> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || !post.releaseURL) {
+      return { releaseURL: '' };
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.resolveReleaseId) {
+      return { releaseURL: post.releaseURL };
+    }
+
+    const getIntegration = post.integration!;
+
+    // only refreshed once the platform rejects the token, so a post that is
+    // already resolved never reaches the platform
+    if (forceRefresh) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return { releaseURL: post.releaseURL, reconnect: true };
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return { releaseURL: post.releaseURL, reconnect: true };
+      }
+    }
+
+    try {
+      const { releaseURL, pending, unavailable } = await this.resolveRelease(
+        orgId,
+        post
+      );
+      return { releaseURL, pending, unavailable };
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken && !forceRefresh) {
+        return this.getReleaseURL(orgId, postId, true);
+      }
+    }
+
+    return { releaseURL: post.releaseURL, pending: true };
   }
 
   async checkPostAnalytics(
@@ -208,10 +367,12 @@ export class PostsService {
     // }
 
     try {
+      const { releaseId } = await this.resolveRelease(orgId, post);
+
       const loadAnalytics = await integrationProvider.postAnalytics(
         getIntegration.internalId,
         getIntegration.token,
-        post.releaseId,
+        releaseId,
         date
       );
       await ioRedis.set(
@@ -224,10 +385,11 @@ export class PostsService {
       );
       return loadAnalytics;
     } catch (e) {
-      console.log(e);
-      if (e instanceof RefreshToken) {
+      // Retry once with a refreshed token
+      if (e instanceof RefreshToken && !forceRefresh) {
         return this.checkPostAnalytics(orgId, postId, date, true);
       }
+      console.log(e);
     }
 
     return [];
@@ -264,7 +426,7 @@ export class PostsService {
             post.integration.id
           );
 
-          if (!integration) {
+          if (!integration || integration.deletedAt) {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
@@ -349,15 +511,28 @@ export class PostsService {
         (
           await Promise.all(
             (imagesList || []).map(async (p: any) => {
-              if (!p.path && p.id) {
+              if (!p.id) {
+                return p;
+              }
+
+              if (!p.path) {
                 imageUpdateNeeded = true;
                 return this._mediaService.getMediaById(p.id);
+              }
+
+              // the normalizer may have replaced the file after the post was
+              // composed; a record still processing publishes the original
+              const fresh = await this._mediaService.getMediaById(p.id);
+              if (fresh?.status === 'ready' && fresh.path !== p.path) {
+                imageUpdateNeeded = true;
+                return { ...p, name: fresh.name, path: fresh.path };
               }
 
               return p;
             })
           )
         )
+          .filter((m) => this.isAllowedMediaPath(m?.path))
           .map((m) => {
             return {
               ...m,
@@ -437,8 +612,28 @@ export class PostsService {
 
       return getImageList;
     } catch (err: any) {
-      return imagesList;
+      return (imagesList || []).filter((m) =>
+        this.isAllowedMediaPath(m?.path)
+      );
     }
+  }
+
+  // a media path that isn't a remote url is read straight from the worker's
+  // disk, so it has to resolve inside UPLOAD_DIRECTORY
+  private isAllowedMediaPath(path: unknown) {
+    if (typeof path !== 'string' || /^https?:\/\//.test(path)) {
+      return true;
+    }
+
+    // containing "http" anywhere skips the UPLOAD_DIRECTORY prefix, and the
+    // providers would then read it relative to the working directory
+    if (path.indexOf('http') > -1) {
+      return false;
+    }
+
+    const base = resolve(String(process.env.UPLOAD_DIRECTORY));
+    const filePath = resolve(process.env.UPLOAD_DIRECTORY + path);
+    return filePath.startsWith(base + sep);
   }
 
   async getPostGroupDebugExport(orgId: string, group: string) {
@@ -489,15 +684,63 @@ export class PostsService {
   }
 
   async getPostsByGroup(orgId: string, group: string) {
-    const convertToJPEG = false;
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
     const posts = this.arrangePostsByGroup(loadAll, undefined);
+    if (!posts.length) {
+      throw new NotFoundException('Post not found');
+    }
 
+    const batch = posts[0].batchId
+      ? await this._postRepository.getPostsByBatch(
+          orgId,
+          posts[0].batchId,
+          group
+        )
+      : [];
+
+    // the other channels the post was created with, the editor holds one
+    // post per channel, and a channel that repeats differently is its own post
+    const siblings = uniqBy(
+      Object.values(groupBy(batch, (post) => post.group))
+        .map((batchPosts) => this.arrangePostsByGroup(batchPosts, undefined))
+        .filter(
+          (batchPosts) =>
+            batchPosts.length &&
+            batchPosts[0].integrationId !== posts[0].integrationId &&
+            batchPosts[0].intervalInDays === posts[0].intervalInDays
+        ),
+      (batchPosts) => batchPosts[0].integrationId
+    );
+
+    return {
+      ...(await this.groupForEditor(posts)),
+      siblings: await Promise.all(
+        siblings.map((batchPosts) => this.groupForEditor(batchPosts))
+      ),
+    };
+  }
+
+  // the post as the editor loads it, its channel without the tokens
+  private async groupForEditor(
+    posts: PostWithConditionals[],
+    convertToJPEG = false
+  ) {
     return {
       group: posts?.[0]?.group,
       posts: await Promise.all(
-        (posts || []).map(async (post) => ({
+        (posts || []).map(async ({ integration, ...post }) => ({
           ...post,
+          ...(integration
+            ? {
+                integration: {
+                  id: integration.id,
+                  name: integration.name,
+                  picture: integration.picture,
+                  providerIdentifier: integration.providerIdentifier,
+                  profile: integration.profile,
+                },
+              }
+            : {}),
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
@@ -506,8 +749,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
   }
 
@@ -531,24 +774,11 @@ export class PostsService {
 
   async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
-    const list = {
-      group: posts?.[0]?.group,
-      posts: await Promise.all(
-        (posts || []).map(async (post) => ({
-          ...post,
-          image: await this.updateMedia(
-            post.id,
-            JSON.parse(post.image || '[]'),
-            convertToJPEG
-          ),
-        }))
-      ),
-      integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
-    };
+    if (!posts?.[0]) {
+      throw new NotFoundException('Post not found');
+    }
 
-    return list;
+    return this.groupForEditor(posts, convertToJPEG);
   }
 
   async getOldPosts(orgId: string, date: string) {
@@ -679,6 +909,8 @@ export class PostsService {
           } catch (err) {}
         }
       } catch (err) {}
+
+      return { id: post.id };
     }
 
     return { error: true };
@@ -688,8 +920,8 @@ export class PostsService {
     return this._postRepository.countPostsFromDay(orgId, date);
   }
 
-  getPostByForWebhookId(id: string) {
-    return this._postRepository.getPostByForWebhookId(id);
+  getPostByForWebhookId(id: string, integrationId: string) {
+    return this._postRepository.getPostByForWebhookId(id, integrationId);
   }
 
   async startWorkflow(
@@ -716,9 +948,24 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) {
+          logger.warn('workflow_terminate_failed', {
+            workflow_id: executionInfo.workflowId,
+            post_id: postId,
+            org_id: orgId,
+            error_type: errorType(err),
+            error_message: errorMessage(err),
+          });
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('workflow_list_failed', {
+        post_id: postId,
+        org_id: orgId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     if (state === 'DRAFT') {
       return;
@@ -727,7 +974,7 @@ export class PostsService {
     try {
       await this._temporalService.client
         .getRawClient()
-        ?.workflow.start('postWorkflowV107', {
+        ?.workflow.start('postWorkflowV112', {
           workflowId: `post_${postId}`,
           taskQueue: 'main',
           workflowIdConflictPolicy: 'TERMINATE_EXISTING',
@@ -749,7 +996,17 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: postId,
+        org_id: orgId,
+        task_queue: taskQueue,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
   }
 
   /**
@@ -778,7 +1035,7 @@ export class PostsService {
           post?.integration?.id
         );
 
-        if (!integration) {
+        if (!integration || integration.deletedAt) {
           throw new BadRequestException(
             `Integration with id ${post?.integration?.id} not found`
           );
@@ -826,21 +1083,21 @@ export class PostsService {
           errors = err?.message || 'Invalid media';
         }
 
-        const maximumCharacters = provider.maxLength(additionalSettings, settings);
-        const isX = integration.providerIdentifier === 'x';
+        const maximumCharacters = provider.maxLength(
+          additionalSettings,
+          settings
+        );
 
         const emptyContent = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
-          const length = isX ? weightedLength(strip) : strip.length;
+          const length = countLength(integration.providerIdentifier, strip);
           return length === 0 && (a.image || []).length === 0;
         });
 
         const tooLong = (post.value || []).some((a) => {
           const strip = stripHtmlValidation('normal', a.content || '', true);
-          const weighted = isX ? weightedLength(strip) : strip.length;
-          const totalCharacters =
-            weighted > strip.length ? weighted : strip.length;
-          return totalCharacters > (maximumCharacters || 1000000);
+          const counted = countLength(integration.providerIdentifier, strip);
+          return counted > (maximumCharacters || 1000000);
         });
 
         return {
@@ -878,7 +1135,11 @@ export class PostsService {
   // the platform: require the explicit `republish` opt-in instead. The message
   // doubles as the confirmation dialog for API/MCP automation.
   private guardAgainstRepublish(
-    post: { state: State; publishDate: Date; integration?: { providerIdentifier: string } } | null,
+    post: {
+      state: State;
+      publishDate: Date;
+      integration?: { providerIdentifier: string };
+    } | null,
     source: 'createPost' | 'changeDate'
   ) {
     if (post?.state !== 'PUBLISHED') {
@@ -891,9 +1152,29 @@ export class PostsService {
     throw new BadRequestException(
       `This post was already published on ${dayjs
         .utc(post.publishDate)
-        .format('YYYY-MM-DD HH:mm')} UTC. Saving it this way would publish it again to ${
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC. Saving it this way would publish it again to ${
         post.integration?.providerIdentifier || 'the channel'
       }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
+    );
+  }
+
+  // A schedule-type save carrying a past date would publish within seconds
+  // (the workflow's initial sleep is max(0, publishDate - now)): reject it.
+  // The one-minute grace absorbs clock skew and form latency. Like the
+  // republish guard, the message doubles as the dialog for API/MCP automation.
+  private guardAgainstPastSchedule(date: string) {
+    if (!date || dayjs.utc(date).isAfter(dayjs.utc().subtract(1, 'minute'))) {
+      return;
+    }
+
+    throw new BadRequestException(
+      `Publish date ${dayjs
+        .utc(date)
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC is in the past - saving would publish immediately. Pick a future date, or use type 'now' to intentionally publish right now.`
     );
   }
 
@@ -904,6 +1185,7 @@ export class PostsService {
     keepGroup = false
   ): Promise<any[]> {
     const postList = [];
+    const batchId = uuidv4();
     for (const post of body.posts) {
       if (
         (body.type === 'schedule' || body.type === 'now') &&
@@ -914,6 +1196,10 @@ export class PostsService {
           await this._postRepository.getPostById(post.value[0].id, orgId),
           'createPost'
         );
+      }
+
+      if (body.type === 'schedule') {
+        this.guardAgainstPastSchedule(body.date);
       }
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
@@ -938,17 +1224,25 @@ export class PostsService {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        body.type === 'now'
+          ? dayjs().format('YYYY-MM-DDTHH:mm:00')
+          : post.date || body.date,
         post,
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
+        batchId
       );
 
       if (!posts?.length) {
         return [] as any[];
       }
+
+      const existingIds = (post.value || []).map((p) => p.id).filter(Boolean);
+      await this.detachStaleAnchors(
+        posts.filter((p) => existingIds.includes(p.id))
+      );
 
       if (body.type !== 'update') {
         this.startWorkflow(
@@ -1134,6 +1428,12 @@ export class PostsService {
       throw new BadRequestException('Post not found');
     }
 
+    // Queueing a past-dated draft would publish it within seconds, the same
+    // trap createPost and changeDate already guard against.
+    if (status === 'schedule') {
+      this.guardAgainstPastSchedule(getPostById.publishDate.toISOString());
+    }
+
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
     await this._postRepository.changeState(id, state);
 
@@ -1144,7 +1444,16 @@ export class PostsService {
         orgId,
         state
       );
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: getPostById.id,
+        org_id: orgId,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     return { id, state };
   }
@@ -1160,6 +1469,12 @@ export class PostsService {
 
     if (action === 'schedule' && !republish) {
       this.guardAgainstRepublish(getPostById, 'changeDate');
+    }
+
+    // Drafts stay drafts on a date move, nothing fires - only guard saves
+    // that (re)queue an actual publish.
+    if (action === 'schedule' && getPostById.state !== 'DRAFT') {
+      this.guardAgainstPastSchedule(date);
     }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
@@ -1182,7 +1497,16 @@ export class PostsService {
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
         );
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'postWorkflowV110',
+          post_id: getPostById.id,
+          org_id: orgId,
+          post_state: getPostById.state,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return newDate;
@@ -1292,8 +1616,9 @@ export class PostsService {
     );
     return this.findFreeDateTimeRecursive(
       orgId,
-      findTimes,
-      dayjs.utc().startOf('day')
+      findTimes.length ? findTimes : [120, 400, 700],
+      dayjs.utc().startOf('day'),
+      0
     );
   }
 
@@ -1309,8 +1634,17 @@ export class PostsService {
   private async findFreeDateTimeRecursive(
     orgId: string,
     times: number[],
-    date: dayjs.Dayjs
+    date: dayjs.Dayjs,
+    daysChecked: number
   ): Promise<string> {
+    // stop searching after a year so an empty times list can never recurse forever
+    if (daysChecked > 365) {
+      return date
+        .clone()
+        .add(times[0] || 0, 'minutes')
+        .format('YYYY-MM-DDTHH:mm:00');
+    }
+
     const list = await this._postRepository.getPostsCountsByDates(
       orgId,
       times,
@@ -1318,7 +1652,12 @@ export class PostsService {
     );
 
     if (!list.length) {
-      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+      return this.findFreeDateTimeRecursive(
+        orgId,
+        times,
+        date.add(1, 'day'),
+        daysChecked + 1
+      );
     }
 
     const num = list.reduce<null | number>((prev, curr) => {
@@ -1331,8 +1670,170 @@ export class PostsService {
     return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
   }
 
-  getComments(postId: string) {
-    return this._postRepository.getComments(postId);
+  async getComments(previewId: string) {
+    const posts = await this.getPostsRecursively(previewId, false);
+    const comments = await this._postRepository.getCommentsForPosts(
+      posts.map((p) => p.id)
+    );
+
+    return comments.map((comment) => ({
+      id: comment.id,
+      postId: comment.postId,
+      parentId: comment.parentId,
+      content: comment.content,
+      anchorStart: comment.anchorStart,
+      anchorEnd: comment.anchorEnd,
+      anchorQuote: comment.anchorQuote,
+      resolvedAt: comment.resolvedAt,
+      createdAt: comment.createdAt,
+      name: comment.userId
+        ? [comment.user?.name, comment.user?.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim() || null
+        : comment.displayName,
+    }));
+  }
+
+  async createPublicComment(
+    previewId: string,
+    body: CreatePublicCommentDto,
+    userId: string | null,
+    ip: string
+  ) {
+    const posts = await this.getPostsRecursively(previewId, false);
+    if (!posts.length) {
+      throw new NotFoundException('Post not found');
+    }
+
+    let post = body.postId ? posts.find((p) => p.id === body.postId) : posts[0];
+    if (!post) {
+      throw new BadRequestException('Post does not belong to this preview');
+    }
+
+    if (!userId) {
+      if (!body.displayName?.trim()) {
+        throw new BadRequestException('Name is required');
+      }
+      await this.verifyRecaptcha(body.recaptchaToken, ip);
+    }
+
+    const hasStart = typeof body.anchorStart === 'number';
+    const hasEnd = typeof body.anchorEnd === 'number';
+    if (hasStart !== hasEnd) {
+      throw new BadRequestException('Both anchor offsets are required');
+    }
+
+    if (body.parentId) {
+      const parent = await this._postRepository.getCommentById(body.parentId);
+      if (!parent || !posts.some((p) => p.id === parent.postId)) {
+        throw new BadRequestException('Parent comment not found');
+      }
+      if (parent.parentId) {
+        throw new BadRequestException(
+          'Replies can only be added to a root comment'
+        );
+      }
+      if (hasStart || body.anchorQuote) {
+        throw new BadRequestException('Replies cannot be anchored');
+      }
+      post = posts.find((p) => p.id === parent.postId)!;
+    }
+
+    if (hasStart) {
+      const plainText = postContentPlainText(post.content);
+      if (
+        body.anchorStart! < 0 ||
+        body.anchorStart! >= body.anchorEnd! ||
+        body.anchorEnd! > plainText.length
+      ) {
+        throw new BadRequestException('Anchor is out of range');
+      }
+      if (
+        body.anchorQuote !== plainText.slice(body.anchorStart!, body.anchorEnd!)
+      ) {
+        throw new BadRequestException('Anchor does not match the post text');
+      }
+    }
+
+    return this._postRepository.createComment(
+      post.organizationId,
+      userId,
+      post.id,
+      body.content,
+      {
+        displayName: userId ? undefined : body.displayName!.trim(),
+        parentId: body.parentId,
+        anchorStart: hasStart ? body.anchorStart : undefined,
+        anchorEnd: hasStart ? body.anchorEnd : undefined,
+        anchorQuote: hasStart ? body.anchorQuote : undefined,
+      }
+    );
+  }
+
+  private async verifyRecaptcha(token: string | undefined, ip: string) {
+    if (!process.env.RECAPTCHA_SECRET_KEY) {
+      return;
+    }
+
+    if (!token) {
+      throw new BadRequestException('Captcha verification failed');
+    }
+
+    const result = await (
+      await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: token,
+          remoteip: ip,
+        }),
+      })
+    ).json();
+
+    if (!result?.success) {
+      throw new BadRequestException('Captcha verification failed');
+    }
+  }
+
+  async resolveComment(orgId: string, commentId: string, resolved: boolean) {
+    const comment = await this._postRepository.getCommentById(commentId);
+    if (!comment || comment.post.organizationId !== orgId) {
+      throw new NotFoundException('Comment not found');
+    }
+    if (comment.parentId) {
+      throw new BadRequestException('Only root comments can be resolved');
+    }
+
+    return this._postRepository.setCommentResolved(
+      commentId,
+      resolved ? new Date() : null
+    );
+  }
+
+  // A comment anchored to a span of text keeps its quote but loses the
+  // highlight once the span no longer reads the same on the new content.
+  async detachStaleAnchors(posts: { id: string; content: string }[]) {
+    for (const post of posts) {
+      const anchored = await this._postRepository.getAnchoredCommentsForPost(
+        post.id
+      );
+      if (!anchored.length) {
+        continue;
+      }
+
+      const plainText = postContentPlainText(post.content);
+      const stale = anchored
+        .filter(
+          (c) => c.anchorQuote !== plainText.slice(c.anchorStart!, c.anchorEnd!)
+        )
+        .map((c) => c.id);
+
+      if (stale.length) {
+        await this._postRepository.detachAnchorsForPost(post.id, stale);
+      }
+    }
   }
 
   getTags(orgId: string) {
@@ -1349,14 +1850,5 @@ export class PostsService {
 
   deleteTag(id: string, orgId: string) {
     return this._postRepository.deleteTag(id, orgId);
-  }
-
-  createComment(
-    orgId: string,
-    userId: string,
-    postId: string,
-    comment: string
-  ) {
-    return this._postRepository.createComment(orgId, userId, postId, comment);
   }
 }

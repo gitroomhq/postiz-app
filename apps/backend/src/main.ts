@@ -1,5 +1,5 @@
 import { initializeSentry } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
-initializeSentry('backend', true);
+initializeSentry('backend');
 import compression from 'compression';
 
 import { loadSwagger } from '@gitroom/helpers/swagger/load.swagger';
@@ -10,7 +10,7 @@ Runtime.install({ shutdownSignals: [] });
 process.env.TZ = 'UTC';
 
 import cookieParser from 'cookie-parser';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
@@ -22,6 +22,7 @@ import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
 
 async function start() {
   const app = await NestFactory.create(AppModule, {
+    logger: new ConsoleLogger({ forceConsole: true, colors: false }),
     rawBody: true,
     cors: {
       ...(!process.env.NOT_SECURED ? { credentials: true } : {}),
@@ -31,6 +32,8 @@ async function start() {
         'auth',
         'showorg',
         'impersonate',
+        'x-postiz-org',
+        'x-postiz-include-deleted',
         'x-copilotkit-runtime-client-gql-version',
       ],
       exposedHeaders: [
@@ -44,6 +47,15 @@ async function start() {
         process.env.FRONTEND_URL,
         'http://localhost:6274',
         ...(process.env.MAIN_URL ? [process.env.MAIN_URL] : []),
+        // Optional: the Canva app calls the public API from its iframe origin
+        // (browsers send it lowercase, e.g. https://app-aabbcc.canva-apps.com)
+        ...(process.env.CANVA_APP_ORIGIN
+          ? [
+              process.env.CANVA_APP_ORIGIN.trim()
+                .replace(/\/+$/, '')
+                .toLowerCase(),
+            ]
+          : []),
       ],
     },
   });

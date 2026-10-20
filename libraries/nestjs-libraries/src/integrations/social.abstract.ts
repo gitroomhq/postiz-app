@@ -5,14 +5,66 @@ import {
   PendingCheckResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
 import { ApplicationFailure } from '@temporalio/activity';
-import { readOrFetch } from '@gitroom/helpers/utils/read.or.fetch';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
-import { createReadStream, statSync } from 'fs';
+import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
+import { logger } from '@gitroom/nestjs-libraries/sentry/logger';
+
+const RATE_LIMIT_HEADERS = {
+  rate_limit_remaining: [
+    'x-rate-limit-remaining',
+    'x-ratelimit-remaining',
+    'ratelimit-remaining',
+  ],
+  rate_limit_limit: ['x-rate-limit-limit', 'x-ratelimit-limit', 'ratelimit-limit'],
+  rate_limit_reset: [
+    'x-rate-limit-reset',
+    'x-ratelimit-reset',
+    'ratelimit-reset',
+    'retry-after',
+  ],
+};
+
+const readRateLimits = (headers: Headers) => {
+  const found: Record<string, string> = {};
+
+  for (const [attribute, names] of Object.entries(RATE_LIMIT_HEADERS)) {
+    for (const name of names) {
+      const value = headers?.get?.(name);
+      if (value) {
+        found[attribute] = value;
+        break;
+      }
+    }
+  }
+
+  return found;
+};
+
+// Media reads answer headers in well under a second and the chunk sizes the
+// providers ask for finish in under two, with the slowest healthy read we
+// measured at about eleven, so two minutes is only ever reached by a stalled
+// transfer.
+const MEDIA_READ_TIMEOUT = 120_000;
+
+// AbortSignal.timeout rejects with a TimeoutError, which undici may surface
+// directly or wrap as the cause of the fetch rejection.
+const isReadTimeout = (err: any) =>
+  err?.name === 'TimeoutError' || err?.cause?.name === 'TimeoutError';
+
+export const stripQuery = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (err) {
+    return url.split('?')[0];
+  }
+};
 
 export type ValidityMedia = {
   path: string;
@@ -74,6 +126,28 @@ export class Disconnect extends ApplicationFailure {
           body: truncateForTemporal(body, MAX_FAILURE_FIELD),
         },
       ]
+    );
+  }
+}
+
+// The platform already accepted the post (it is live) but a follow-up mutation
+// on it failed (e.g. YouTube rejected the thumbnail after the upload): the post
+// still ends in ERROR, yet its platform id / URL must survive so the user can
+// reach the live post instead of re-publishing it. The post activity records
+// them and rethrows as BadBody, like Disconnect.
+export class PublishedWithError extends ApplicationFailure {
+  constructor(
+    identifier: string,
+    public readonly postDbId: string,
+    public readonly releaseId: string,
+    public readonly releaseURL: string,
+    message = ''
+  ) {
+    super(
+      truncateForTemporal(message, MAX_FAILURE_MESSAGE),
+      'published_with_error',
+      true,
+      [{ identifier, postDbId, releaseId, releaseURL }]
     );
   }
 }
@@ -173,11 +247,13 @@ export abstract class SocialAbstract {
     pendingData: any,
     integration: Integration
   ): Promise<PendingCheckResponse> {
+    // 'Unknown Error' keeps this developer guard out of the user-facing
+    // post.error (changeState only surfaces curated bad_body messages)
     throw new BadBody(
       this.identifier,
+      '{"error":"checkPostStatus is not implemented for this provider"}',
       '{}',
-      '{}',
-      'checkPostStatus is not implemented for this provider'
+      'Unknown Error'
     );
   }
 
@@ -189,9 +265,9 @@ export abstract class SocialAbstract {
   ): Promise<PendingCheckResponse> {
     throw new BadBody(
       this.identifier,
+      '{"error":"finalizePost is not implemented for this provider"}',
       '{}',
-      '{}',
-      'finalizePost is not implemented for this provider'
+      'Unknown Error'
     );
   }
 
@@ -219,10 +295,53 @@ export abstract class SocialAbstract {
       path?.indexOf('http') === -1
         ? `${process.env.FRONTEND_URL}/${path}`
         : path;
+    setHeartbeatDetails(`read media ${stripQuery(url)}`);
     const { width = 0, height = 0 } = await sharp(
-      await readOrFetch(url)
+      await this.readOrFetch(url)
     ).metadata();
     return { width, height };
+  }
+
+  // Reads the whole media into memory: used for images, which the providers
+  // hand straight to sharp. Lives here rather than in a helper so it can
+  // classify a stall like the ranged reads below do.
+  protected async readOrFetch(path: string, retried = false): Promise<Buffer> {
+    if (path.indexOf('http') !== 0) {
+      return readFileSync(path);
+    }
+
+    try {
+      return (
+        // the media path is user-influenced, so it goes through the same
+        // SSRF-safe client as every other outbound media read
+        await this.getSsrfSafeAxios()({
+          url: path,
+          method: 'GET',
+          responseType: 'arraybuffer',
+          // Same stall as the ranged reads: headers arrive fast and the body
+          // then stops, and without a deadline the read never settles and
+          // holds the activity's worker slot. Images are a few MB and arrive
+          // in about a second.
+          signal: AbortSignal.timeout(MEDIA_READ_TIMEOUT),
+        })
+      ).data;
+    } catch (err: any) {
+      // axios reports an aborted signal as a canceled request
+      if (err?.code !== 'ERR_CANCELED' && !isReadTimeout(err)) {
+        throw err;
+      }
+
+      if (!retried) {
+        return this.readOrFetch(path, true);
+      }
+
+      throw new BadBody(
+        '',
+        JSON.stringify({ timeoutMs: MEDIA_READ_TIMEOUT, path: stripQuery(path) }),
+        Buffer.from('{}'),
+        'We could not read the media for this post, so it was not published'
+      );
+    }
   }
 
   // Resolves the total byte size of the media without loading it into memory:
@@ -233,6 +352,7 @@ export abstract class SocialAbstract {
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
       // (fetch transparently decompresses encoded bodies).
+      setHeartbeatDetails(`media size ${stripQuery(path)}`);
       const head = await fetch(path, {
         method: 'HEAD',
         headers: { 'accept-encoding': 'identity' },
@@ -262,28 +382,62 @@ export abstract class SocialAbstract {
     path: string,
     start: number,
     end: number,
-    identifier = ''
+    identifier = '',
+    retried = false
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
-      const response = await fetch(path, {
-        headers: {
-          Range: `bytes=${start}-${end}`,
-          'accept-encoding': 'identity',
-        },
-        dispatcher: getSsrfSafeDispatcher(),
-      } as any);
-      // Anything but 206 means the server ignored the Range header: buffering
-      // response.body here would silently load the whole file into memory and
-      // upload corrupted chunks.
-      if (response.status !== 206) {
+      setHeartbeatDetails(
+        `media chunk ${start}-${end} ${stripQuery(path)}`
+      );
+      try {
+        const response = await fetch(path, {
+          headers: {
+            Range: `bytes=${start}-${end}`,
+            'accept-encoding': 'identity',
+          },
+          dispatcher: getSsrfSafeDispatcher(),
+          // The store answers the headers in well under a second and then
+          // stops mid-body. Without a deadline that read never settles, and
+          // the activity keeps its worker slot until the process restarts: a
+          // startToCloseTimeout fails the activity on the server but does not
+          // stop the function, which nothing here subscribes to cancellation
+          // to notice. Healthy reads of these chunk sizes finish in under 2s.
+          signal: AbortSignal.timeout(MEDIA_READ_TIMEOUT),
+        } as any);
+        // Anything but 206 means the server ignored the Range header: buffering
+        // response.body here would silently load the whole file into memory and
+        // upload corrupted chunks.
+        if (response.status !== 206) {
+          throw new BadBody(
+            identifier,
+            '{}',
+            Buffer.from('{}'),
+            `Media server did not honor the range request (status ${response.status})`
+          );
+        }
+        return Buffer.from(await response.arrayBuffer());
+      } catch (err) {
+        if (!isReadTimeout(err)) {
+          throw err;
+        }
+
+        // A stall is transient and nothing has been sent to the platform yet,
+        // so read the same range once more before giving up.
+        if (!retried) {
+          return this.mediaChunk(path, start, end, identifier, true);
+        }
+
+        // BadBody rather than a retryable error: the read already retried
+        // itself, and repeating the publish would re-read the same media and
+        // re-upload everything already sent while holding the provider's
+        // queue slot. The message is what the user is shown.
         throw new BadBody(
           identifier,
-          '{}',
+          JSON.stringify({ timeoutMs: MEDIA_READ_TIMEOUT, start, end }),
           Buffer.from('{}'),
-          `Media server did not honor the range request (status ${response.status})`
+          'We could not read the media for this post, so it was not published'
         );
       }
-      return Buffer.from(await response.arrayBuffer());
     }
 
     return new Promise((resolve, reject) => {
@@ -447,6 +601,12 @@ export abstract class SocialAbstract {
     ignoreConcurrency = false,
     message = ''
   ): Promise<Response> {
+    // A platform that accepts the connection and then goes silent leaves the
+    // activity with nothing logged until startToCloseTimeout. Record the call
+    // first so the timeout failure names it. Query string is dropped - some
+    // providers carry access_token there and details are stored by Temporal.
+    setHeartbeatDetails(`fetch ${stripQuery(url)}`);
+
     const request = await fetch(url, {
       ...options,
       // @ts-ignore - undici-only option, not in the lib.dom RequestInit type
@@ -464,7 +624,21 @@ export abstract class SocialAbstract {
       json = '{}';
     }
 
+    const base = {
+      provider: this.identifier,
+      integration_identifier: identifier,
+      request_path: stripQuery(url),
+      response_status: request.status,
+      retry_attempt: totalRetries,
+      ...readRateLimits(request.headers),
+    };
+
     if (totalRetries > 2) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'retries_exhausted',
+        reason: message || 'Unknown Error',
+      });
       // Include the platform's actual response body so the failure is
       // diagnosable, instead of an empty '{}'.
       throw new BadBody(identifier, json, options.body || '{}', message);
@@ -478,6 +652,11 @@ export abstract class SocialAbstract {
       json.includes('rate_limit_exceeded') ||
       json.includes('Rate limit')
     ) {
+      logger.warn('provider_rate_limited', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -490,6 +669,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'retry') {
+      logger.warn('provider_request_retried', {
+        ...base,
+        outcome: 'retry',
+        reason: handleError?.value || 'Unknown Error',
+      });
       await timer(5000);
       return this.fetch(
         url,
@@ -502,6 +686,11 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'disconnect') {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'disconnect',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new Disconnect(
         identifier,
         json,
@@ -515,6 +704,11 @@ export abstract class SocialAbstract {
         (handleError?.type === 'refresh-token' || !handleError)) ||
       handleError?.type === 'refresh-token'
     ) {
+      logger.error('provider_request_failed', {
+        ...base,
+        outcome: 'refresh_token',
+        reason: handleError?.value || 'Unknown Error',
+      });
       throw new RefreshToken(
         identifier,
         json,
@@ -523,6 +717,11 @@ export abstract class SocialAbstract {
       );
     }
 
+    logger.error('provider_request_failed', {
+      ...base,
+      outcome: 'bad_body',
+      reason: handleError?.value || 'Unknown Error',
+    });
     throw new BadBody(
       identifier,
       json,

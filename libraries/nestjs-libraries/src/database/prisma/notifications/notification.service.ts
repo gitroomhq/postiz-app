@@ -5,6 +5,7 @@ import { OrganizationRepository } from '@gitroom/nestjs-libraries/database/prism
 import { TemporalService } from 'nestjs-temporal-core';
 import { TypedSearchAttributes } from '@temporalio/common';
 import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 export type NotificationType = 'success' | 'fail' | 'info';
 
@@ -77,7 +78,15 @@ export class NotificationService {
               },
             ]),
           });
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'digestEmailWorkflow',
+          workflow_id: 'digest_email_workflow_' + orgId,
+          org_id: orgId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
 
       return;
     }
