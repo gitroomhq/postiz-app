@@ -61,7 +61,7 @@ export class PinterestProvider
     'pins:write',
     'user_accounts:read',
   ];
-  override maxConcurrentJob = 3; // Pinterest has more lenient rate limits
+  override maxConcurrentJob = 10; // Pinterest limits are per user
   maxLength() {
     return 500;
   }
@@ -121,6 +121,13 @@ export class PinterestProvider
         value: 'You can upload a maximum of 5 images per post on Pinterest.',
       };
     }
+    if (body.indexOf('Something went wrong on our end') > -1) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest reported a temporary error on their side. Please try posting again.',
+      };
+    }
     if (body.indexOf('Unable to reach the URL') > -1) {
       return {
         type: 'retry' as const,
@@ -142,6 +149,13 @@ export class PinterestProvider
       return {
         type: 'bad-body' as const,
         value: 'The specified board was not found. Please check the board ID.',
+      };
+    }
+    if (body.indexOf('You are not permitted to access that resource') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'The connected Pinterest account is not permitted to post to this board. Please check the board ID and that the account owns or can write to the board.',
       };
     }
     if (body.indexOf('cover_image_url or cover_image_content_type') > -1) {

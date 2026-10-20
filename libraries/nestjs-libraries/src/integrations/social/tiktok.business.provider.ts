@@ -90,6 +90,22 @@ export class TiktokBusinessProvider
     if ((firstItems?.length ?? 0) > 35) {
       return 'You can select up to 35 pictures';
     }
+
+    // TikTok fails the whole photo post when a single image is oversized, and
+    // the status only says `picture_size_check_failed` without naming it.
+    if (firstItems?.every((p) => (p?.path?.indexOf?.('mp4') ?? -1) === -1)) {
+      const dimensions = await Promise.all(
+        firstItems?.map((p) => this.getImageDimensions(p?.path)) ?? []
+      );
+      const tooBig = dimensions.findIndex(
+        (p) => Math.min(p?.width ?? 0, p?.height ?? 0) > 1080
+      );
+      if (tooBig > -1) {
+        return `Image ${tooBig + 1} is ${dimensions[tooBig]?.width}x${
+          dimensions[tooBig]?.height
+        }, TikTok allows a maximum of 1080px on the shorter side`;
+      }
+    }
     return true;
   }
 
@@ -221,7 +237,7 @@ export class TiktokBusinessProvider
       return {
         type: 'bad-body' as const,
         value:
-          'Video must be at least 360p, Picture must not exceed 1080x1920',
+          'Media size not supported by TikTok: images up to 1080px on the shorter side, videos at least 360px on both sides',
       };
     }
 
@@ -425,9 +441,10 @@ export class TiktokBusinessProvider
     pendingData: { publishId: string },
     integration: Integration
   ): Promise<PendingCheckResponse> {
+    let body: string;
     let post: any;
     try {
-      post = await (
+      body = await (
         await this.fetch(
           `${this.baseUrl}/business/publish/status/?business_id=${encodeURIComponent(
             integration.internalId
@@ -442,7 +459,8 @@ export class TiktokBusinessProvider
           0,
           true
         )
-      ).json();
+      ).text();
+      post = JSON.parse(body);
     } catch (err) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
@@ -469,12 +487,14 @@ export class TiktokBusinessProvider
       return { status: 'pending', pendingData };
     }
 
-    const { status, post_ids, reason } = post?.data || {};
+    const { status, reason } = post?.data || {};
 
     if (status === 'SEND_TO_USER_INBOX') {
+      // the id stays 'missing' until the user publishes the draft - the
+      // share id rides in the URL fragment so resolveReleaseId can ask later
       return {
         status: 'completed',
-        releaseURL: 'https://www.tiktok.com/messages?lang=en',
+        releaseURL: `https://www.tiktok.com/messages?lang=en#${pendingData.publishId}`,
         postId: 'missing',
       };
     }
@@ -482,15 +502,15 @@ export class TiktokBusinessProvider
     if (status === 'PUBLISH_COMPLETE') {
       // post_ids can lag up to 3 minutes behind PUBLISH_COMPLETE, and never
       // shows up at all for non-public posts - fall back to the profile URL
-      // and keep the share_id (postAnalytics resolves it later).
-      const publicPostId = post_ids?.[0];
+      // and keep the share_id (resolveReleaseId fixes it later).
+      const publicPostId = this.publicPostId(body);
 
       return {
         status: 'completed',
         releaseURL: !publicPostId
           ? `https://www.tiktok.com/@${integration.profile}`
-          : `https://www.tiktok.com/@${integration.profile}/video/${publicPostId}`,
-        postId: !publicPostId ? pendingData.publishId : String(publicPostId),
+          : this.postUrl(integration, pendingData.publishId, publicPostId),
+        postId: !publicPostId ? pendingData.publishId : publicPostId,
       };
     }
 
@@ -929,6 +949,20 @@ export class TiktokBusinessProvider
     return videoListData?.data?.videos;
   }
 
+  // photo posts (p_pub_... / p_inbox_...) live under /photo/, TikTok rejects
+  // /video/ for them
+  private postUrl(integration: Integration, publishId: string, postId: string) {
+    return `https://www.tiktok.com/@${integration.profile}/${
+      publishId.indexOf('p_') === 0 ? 'photo' : 'video'
+    }/${postId}`;
+  }
+
+  // post_ids holds int64 ids that exceed Number.MAX_SAFE_INTEGER, so the id
+  // must be read from the raw body instead of the parsed JSON
+  private publicPostId(body: string) {
+    return body.match(/"post_ids"\s*:\s*\[\s*"?(\d+)"?/)?.[1];
+  }
+
   private throwIfTokenError(body: { code?: number }) {
     if (body?.code === 0) {
       return;
@@ -1099,6 +1133,76 @@ export class TiktokBusinessProvider
     }
   }
 
+  // Posts saved before post_ids became available keep their share_id
+  // (v_pub_... / p_pub_...) as releaseId - resolve it to the public post id
+  async resolveReleaseId(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration,
+    settings: any,
+    releaseURL: string
+  ) {
+    // a draft sent to the inbox (UPLOAD) is stored as 'missing' with its
+    // share id in the URL fragment
+    const draft = releaseId === 'missing';
+    const publishId = draft ? releaseURL?.split('#')[1] || '' : releaseId;
+    if (
+      publishId.indexOf('_pub_') === -1 &&
+      publishId.indexOf('_inbox_') === -1
+    ) {
+      return undefined;
+    }
+
+    // privacy_level only applies to photo posts here (and not to a draft, the
+    // user picks it in the app), and TikTok only gives a post id to posts
+    // published for public viewership
+    if (
+      !draft &&
+      publishId.indexOf('p_pub_') === 0 &&
+      ['SELF_ONLY', 'MUTUAL_FOLLOW_FRIENDS'].includes(settings?.privacy_level)
+    ) {
+      return { unavailable: true as const };
+    }
+
+    const body = await (
+      await this.fetch(
+        `${this.baseUrl}/business/publish/status/?business_id=${encodeURIComponent(
+          integration.internalId
+        )}&publish_id=${encodeURIComponent(publishId)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Access-Token': accessToken,
+          },
+        }
+      )
+    ).text();
+
+    this.throwIfTokenError(JSON.parse(body));
+
+    const publicPostId = this.publicPostId(body);
+    if (!publicPostId) {
+      // a draft with no public post (not published yet, or published as
+      // non-public) keeps opening the inbox instead of asking to retry
+      return draft ? undefined : { pending: true as const };
+    }
+
+    return {
+      postId: publicPostId,
+      releaseURL: this.postUrl(integration, publishId, publicPostId),
+    };
+  }
+
+  // a post connected by hand: /video/<id> also reaches photo posts, TikTok
+  // redirects it to /photo/<id>
+  async releaseUrl(
+    accessToken: string,
+    releaseId: string,
+    integration: Integration
+  ) {
+    return `https://www.tiktok.com/@${integration.profile}/video/${releaseId}`;
+  }
+
   async postAnalytics(
     integrationId: string,
     accessToken: string,
@@ -1106,33 +1210,6 @@ export class TiktokBusinessProvider
     fromDate: number
   ): Promise<AnalyticsData[]> {
     const today = dayjs().format('YYYY-MM-DD');
-
-    // Posts saved before post_ids became available keep their share_id
-    // (v_pub_url~... / p_pub_url~...) as releaseId - resolve it to the public
-    // post id first.
-    if (postId.indexOf('_pub_url') > -1) {
-      const post = await (
-        await this.fetch(
-          `${this.baseUrl}/business/publish/status/?business_id=${encodeURIComponent(
-            integrationId
-          )}&publish_id=${encodeURIComponent(postId)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Access-Token': accessToken,
-            },
-          }
-        )
-      ).json();
-
-      this.throwIfTokenError(post);
-
-      if (!post?.data?.post_ids?.[0]) {
-        return [];
-      }
-
-      postId = String(post.data.post_ids[0]);
-    }
 
     try {
       const videoQueryData = await (
@@ -1196,11 +1273,14 @@ export class TiktokBusinessProvider
       }
 
       return result;
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof RefreshToken || err instanceof Disconnect) {
         throw err;
       }
-      console.error('Error fetching TikTok Business post analytics:', err);
+      console.error(
+        'Error fetching TikTok Business post analytics:',
+        err?.cause?.code || err?.message || err
+      );
       return [];
     }
   }

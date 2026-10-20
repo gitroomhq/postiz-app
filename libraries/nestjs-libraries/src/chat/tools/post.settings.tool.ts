@@ -17,7 +17,7 @@ export class PostSettingsTool implements AgentToolInterface {
         annotations: {
           title: 'Update Post Settings',
           readOnlyHint: false,
-          destructiveHint: false,
+          destructiveHint: true,
           idempotentHint: false,
           openWorldHint: false,
         },

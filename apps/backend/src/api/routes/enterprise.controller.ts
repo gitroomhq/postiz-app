@@ -20,8 +20,7 @@ export class EnterpriseController {
   private verifyEnterpriseToken<T extends object>(params: string): T {
     const payload = AuthService.verifyJWT(params) as any;
     if (
-      !payload ||
-      typeof payload !== 'object' ||
+      !payload || typeof payload !== 'object' ||
       'providerName' in payload || // login token (full User row)
       'orgId' in payload || // team invite token
       'expires' in payload // password reset token

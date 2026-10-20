@@ -15,6 +15,7 @@ export class UploadWidgetStatusTool implements AgentToolInterface {
     return createTool({
       id: 'uploadWidgetStatusTool',
       description: `List the media the user uploaded with the upload widget, using the sessionId returned by uploadWidgetTool.
+It lists only the files uploaded in that widget session, not the whole media library.
 An empty list means the user did not upload anything yet. A media with the status "processing" is still being prepared: wait about 10 seconds and call again.
 A media with the status "ready" can be used as a post attachment with its { id, path }.`,
       mcp: {

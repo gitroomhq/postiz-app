@@ -8,7 +8,14 @@ import { ManageModal } from '@gitroom/frontend/components/new-launch/manage.moda
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
 import { useShallow } from 'zustand/react/shallow';
 import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
-import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
+import {
+  fromUtc,
+  newDayjs,
+} from '@gitroom/frontend/components/layout/set.timezone';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { Post } from '@prisma/client';
 
 export interface AddEditModalProps {
   dummy?: boolean;
@@ -68,6 +75,9 @@ export const AddEditModal: FC<AddEditModalProps> = (props) => {
 
 export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
+  const modal = useModals();
+  const toaster = useToaster();
+  const t = useT();
   const { addOrRemoveSelectedIntegration, selectedIntegrations, integrations } =
     useLaunchStore(
       useShallow((state) => ({
@@ -84,7 +94,9 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
           const integration = integrations.find(
             (i) => i.id === post.integration.id
           );
-          addOrRemoveSelectedIntegration(integration, post.settings);
+          if (integration) {
+            addOrRemoveSelectedIntegration(integration, post.settings);
+          }
         }
       }
     }
@@ -93,7 +105,28 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
       const integration = integrations.find(
         (i) => i.id === existingData.integration
       );
+      if (!integration) {
+        toaster.show(
+          t(
+            'we_are_experiencing_some_difficulty_try_to_refresh_the_page',
+            'We are experiencing some difficulty, try to refresh the page'
+          ),
+          'warning'
+        );
+        modal.closeAll();
+        return;
+      }
       addOrRemoveSelectedIntegration(integration, existingData.settings);
+
+      // the other channels the post was created with
+      for (const sibling of existingData.siblings || []) {
+        const siblingIntegration = integrations.find(
+          (i) => i.id === sibling.integration
+        );
+        if (siblingIntegration) {
+          addOrRemoveSelectedIntegration(siblingIntegration, sibling.settings);
+        }
+      }
     }
 
     if (props?.selectedChannels?.length) {
@@ -113,6 +146,21 @@ export const AddEditModalInner: FC<AddEditModalProps> = (props) => {
   return <AddEditModalInnerInner {...props} />;
 };
 
+// an existing post, as the values of the editor
+const postValues = (posts: Post[]) =>
+  posts.map((post) => ({
+    delay: post.delay,
+    content: /<p[\s>]/i.test(post.content)
+      ? post.content
+      : post.content
+          .split('\n')
+          .map((line: string) => `<p>${line}</p>`)
+          .join(''),
+    id: post.id,
+    // @ts-ignore
+    media: post.image as any[],
+  }));
+
 export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
   const existingData = useExistingData();
   const {
@@ -125,6 +173,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
     setTags,
     setEditor,
     setRepeater,
+    selectedIntegrations,
+    setChannelDate,
   } = useLaunchStore(
     useShallow((state) => ({
       reset: state.reset,
@@ -136,6 +186,8 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       setTags: state.setTags,
       setEditor: state.setEditor,
       setRepeater: state.setRepeater,
+      selectedIntegrations: state.selectedIntegrations,
+      setChannelDate: state.setChannelDate,
     }))
   );
 
@@ -151,23 +203,28 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
           value: p.tag.name,
         })) || []
       );
+
       addInternalValue(
         0,
         existingData.integration,
-        existingData.posts.map((post) => ({
-          delay: post.delay,
-          content:
-            post.content.indexOf('<p>') > -1
-              ? post.content
-              : post.content
-                  .split('\n')
-                  .map((line: string) => `<p>${line}</p>`)
-                  .join(''),
-          id: post.id,
-          // @ts-ignore
-          media: post.image as any[],
-        }))
+        postValues(existingData.posts)
       );
+
+      // the other channels the post was created with, each with its own
+      // content and date
+      for (const sibling of existingData.siblings || []) {
+        if (
+          selectedIntegrations.some(
+            (p) => p.integration.id === sibling.integration
+          )
+        ) {
+          addInternalValue(0, sibling.integration, postValues(sibling.posts));
+          setChannelDate(
+            sibling.integration,
+            fromUtc(sibling.posts[0].publishDate)
+          );
+        }
+      }
       setCurrent(existingData.integration);
     } else {
       setEditor('normal');
@@ -182,7 +239,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
       props.onlyValues?.length
         ? props.onlyValues.map((p) => ({
             content:
-              p.content.indexOf('<p>') > -1
+              /<p[\s>]/i.test(p.content)
                 ? p.content
                 : p.content
                     .split('\n')
@@ -195,7 +252,7 @@ export const AddEditModalInnerInner: FC<AddEditModalProps> = (props) => {
         ? props.set.posts[0].value.map((p: any) => ({
             id: makeId(10),
             content:
-              p.content.indexOf('<p>') > -1
+              /<p[\s>]/i.test(p.content)
                 ? p.content
                 : p.content
                     .split('\n')

@@ -84,12 +84,12 @@
       "annotations": {
         "readOnlyHint": false,
         "openWorldHint": false,
-        "destructiveHint": false
+        "destructiveHint": true
       },
       "justifications": {
         "read_only_justification": "Merges new provider settings into an existing draft or scheduled post.",
         "open_world_justification": "Only updates settings stored on an unpublished Postiz post and does not reach any external or publicly visible system.",
-        "destructive_justification": "Does not delete posts, change content, change publish dates, revoke access, or publish content immediately."
+        "destructive_justification": "Overwrites existing provider settings on an unpublished draft or scheduled post, which changes how it will be published; it does not delete posts, change content or dates, or publish immediately."
       }
     },
     "generateVideoOptions": {

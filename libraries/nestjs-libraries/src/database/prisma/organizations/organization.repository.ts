@@ -528,6 +528,32 @@ export class OrganizationRepository {
     } catch (err) {}
   }
 
+  async getLastPublishDate(organizationId: string) {
+    const org = await this._organization.model.organization.findUnique({
+      where: {
+        id: organizationId,
+      },
+      select: {
+        post: {
+          where: {
+            state: 'PUBLISHED',
+          },
+          orderBy: {
+            publishDate: 'desc',
+          },
+          take: 1,
+          select: {
+            publishDate: true,
+          },
+        },
+      },
+    });
+
+    const publishDate = org?.post?.[0]?.publishDate;
+    // Never in the future, the streak workflow sleeps until a day after it
+    return publishDate ? Math.min(publishDate.getTime(), Date.now()) : null;
+  }
+
   async getTeam(orgId: string) {
     return this._organization.model.organization.findUnique({
       where: {

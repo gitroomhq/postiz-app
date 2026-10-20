@@ -32,7 +32,7 @@ type MastodonPendingData = {
 };
 
 export class MastodonProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 5; // Mastodon instances typically have generous limits
+  override maxConcurrentJob = 10; // Mastodon limits are per user, not per app
   identifier = 'mastodon';
   name = 'Mastodon';
   isBetweenSteps = false;

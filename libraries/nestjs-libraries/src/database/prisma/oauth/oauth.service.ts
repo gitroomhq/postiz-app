@@ -8,11 +8,49 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { extractBearerToken } from '@gitroom/nestjs-libraries/chat/oauth-types';
 import { createHash } from 'crypto';
 import { OAuthApp } from '@prisma/client';
+import type { SelfHostedInstance } from '@gitroom/nestjs-libraries/chat/mcp.relay.service';
 
 const openAiOAuthClientId = () =>
   process.env.OPENAI_OAUTH_CLIENT_ID?.trim();
 
 const enableOidcEmailClaims = () => Boolean(openAiOAuthClientId());
+
+// The static app HubSpot agents connect with (created under Settings >
+// Developers). HubSpot's MCP connector sends no client secret and requires a
+// refresh token, see isPublicClient and refreshFields
+const hubspotOAuthClientId = () =>
+  process.env.HUBSPOT_OAUTH_CLIENT_ID?.trim();
+
+// Postiz access tokens never expire, but HubSpot wants an expires_in: ten
+// years (a hundred would not fit in a 32-bit integer)
+const hubspotTokenExpiresIn = 10 * 365 * 24 * 60 * 60;
+
+// The HubSpot app itself (HubSpot project > app > Auth tab), not the Postiz
+// app above: its redirect URL finishes the install, see completeHubspotInstall
+const hubspotAppClientId = () => process.env.HUBSPOT_APP_CLIENT_ID?.trim();
+const hubspotAppClientSecret = () =>
+  process.env.HUBSPOT_APP_CLIENT_SECRET?.trim();
+const hubspotInstallRedirectUri = () =>
+  `${process.env.NEXT_PUBLIC_BACKEND_URL}/oauth/hubspot/callback`;
+
+// The link that installs the HubSpot app in a HubSpot account (listed in
+// Settings > Integrations), undefined when the install can't be completed here
+export const hubspotInstallUrl = () => {
+  const clientId = hubspotAppClientId();
+  if (!clientId || !hubspotAppClientSecret()) {
+    return undefined;
+  }
+
+  const url = new URL('https://app.hubspot.com/oauth/authorize');
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('redirect_uri', hubspotInstallRedirectUri());
+  url.searchParams.set('scope', 'oauth');
+  return url.toString();
+};
+
+// Postiz Cloud only, a self-hosted install has nothing to relay to
+export const selfHostedRelayEnabled = () =>
+  process.env.MCP_SELF_HOSTED_RELAY === 'true';
 
 // Verified-domain match: exact host or a subdomain of it (spoof-safe, the
 // leading dot means evilclaude.ai and claude.ai.evil.com are both rejected)
@@ -259,6 +297,54 @@ export class OAuthService {
     ].join(' ');
   }
 
+  // Only MCP connections can be relayed to an instance: dynamically registered
+  // clients (registration is only advertised to MCP clients), the ChatGPT app,
+  // or a client asking for one of the /mcp-oauth resources (RFC 8707). Apps
+  // that use Postiz OAuth for the public API never get the option, a relayed
+  // token doesn't work there
+  allowsSelfHosted(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic'>,
+    resource?: string
+  ) {
+    if (!selfHostedRelayEnabled()) {
+      return false;
+    }
+    if (app.dynamic || app.clientId === openAiOAuthClientId()) {
+      return true;
+    }
+    try {
+      return !!resource && new URL(resource).pathname.startsWith('/mcp-oauth');
+    } catch {
+      return false;
+    }
+  }
+
+  // The ChatGPT app reads the email from userinfo; a self-hosted connection
+  // has no cloud user to take it from, so the consent screen asks for one
+  selfHostedRequiresEmail(app: Pick<OAuthApp, 'clientId'>) {
+    return enableOidcEmailClaims() && app.clientId === openAiOAuthClientId();
+  }
+
+  // On top of validateAuthorizationRequest, for a self-hosted connection
+  validateSelfHostedRequest(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic'>,
+    options: { resource?: string; email?: string }
+  ) {
+    if (!this.allowsSelfHosted(app, options.resource)) {
+      throw new HttpException(
+        'This application can not connect to a self-hosted instance',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    if (!options.email && this.selfHostedRequiresEmail(app)) {
+      throw new HttpException(
+        'Enter your email address',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+  }
+
   async validateAuthorizationRequest(
     clientId: string,
     options?: {
@@ -273,13 +359,18 @@ export class OAuthService {
     }
 
     // Dynamically registered clients must use their registered redirect_uris
-    // and PKCE; statically registered apps keep the existing lenient flow
+    // and PKCE; statically registered apps keep the existing lenient flow,
+    // except a public one (HubSpot), which has no secret and needs PKCE too
     if (app.dynamic) {
       const registered: string[] = JSON.parse(app.redirectUris || '[]');
       if (!options?.redirectUri || !registered.includes(options.redirectUri)) {
         throw new HttpException('Invalid redirect_uri', HttpStatus.BAD_REQUEST);
       }
-      if (app.tokenEndpointAuthMethod === 'none' && !options?.codeChallenge) {
+    }
+
+    const isPublicClient = this.isPublicClient(app);
+    if (app.dynamic || isPublicClient) {
+      if (isPublicClient && !options?.codeChallenge) {
         throw new HttpException(
           'code_challenge is required for this client',
           HttpStatus.BAD_REQUEST
@@ -298,6 +389,42 @@ export class OAuthService {
     }
 
     return app;
+  }
+
+  // Clients that authenticate with PKCE instead of a client secret: dynamic
+  // registrations with token_endpoint_auth_method=none, and HubSpot, whose
+  // MCP connector only takes a client id
+  private isPublicClient(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic' | 'tokenEndpointAuthMethod'>
+  ) {
+    return (
+      (app.dynamic && app.tokenEndpointAuthMethod === 'none') ||
+      app.clientId === hubspotOAuthClientId()
+    );
+  }
+
+  // What an authorization code is bound to: a dynamic client's PKCE challenge
+  // and redirect_uri, a public static app's PKCE challenge only (static apps
+  // always redirect to their stored redirectUrl). Other static apps keep the
+  // lenient flow and bind nothing
+  pkceBinding(
+    app: Pick<OAuthApp, 'clientId' | 'dynamic' | 'tokenEndpointAuthMethod'>,
+    request: {
+      codeChallenge?: string;
+      codeChallengeMethod?: string;
+      redirectUri?: string;
+    }
+  ) {
+    if (app.dynamic) {
+      return request;
+    }
+    if (this.isPublicClient(app)) {
+      return {
+        codeChallenge: request.codeChallenge,
+        codeChallengeMethod: request.codeChallengeMethod,
+      };
+    }
+    return undefined;
   }
 
   async createAuthorizationCode(
@@ -328,6 +455,40 @@ export class OAuthService {
     return code;
   }
 
+  async createSelfHostedAuthorizationCode(
+    oauthAppId: string,
+    instance: SelfHostedInstance & { email?: string },
+    pkce?: {
+      codeChallenge?: string;
+      codeChallengeMethod?: string;
+      redirectUri?: string;
+    }
+  ) {
+    this._oauthRepository
+      .deleteAbandonedSelfHostedAuthorizations(
+        new Date(Date.now() - 24 * 60 * 60 * 1000)
+      )
+      .catch(() => {});
+
+    // The prefix sends the code to the self-hosted table at the token
+    // endpoint (regular codes use the same alphabet, without an underscore)
+    const code = 'psc_' + makeSecureId(32);
+
+    await this._oauthRepository.createSelfHostedAuthorization({
+      oauthAppId,
+      mcpUrl: instance.mcpUrl,
+      apiKey: AuthService.fixedEncryption(instance.apiKey),
+      email: instance.email,
+      authorizationCode: AuthService.fixedEncryption(code),
+      codeExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      codeChallenge: pkce?.codeChallenge,
+      codeChallengeMethod: pkce?.codeChallengeMethod,
+      redirectUri: pkce?.redirectUri,
+    });
+
+    return code;
+  }
+
   async exchangeCodeForToken(
     code: string,
     clientId: string,
@@ -343,10 +504,7 @@ export class OAuthService {
       );
     }
 
-    // Public clients (dynamic registration with token_endpoint_auth_method=none)
-    // authenticate with PKCE instead of a client secret
-    const isPublicClient = app.dynamic && app.tokenEndpointAuthMethod === 'none';
-    if (!isPublicClient) {
+    if (!this.isPublicClient(app)) {
       if (
         !clientSecret ||
         !app.clientSecret ||
@@ -359,6 +517,15 @@ export class OAuthService {
       }
     }
 
+    if (code.startsWith('psc_')) {
+      return this.exchangeSelfHostedCodeForToken(
+        app,
+        code,
+        codeVerifier,
+        redirectUri
+      );
+    }
+
     const encryptedCode = AuthService.fixedEncryption(code);
     const auth = await this._oauthRepository.findByCode(encryptedCode);
     if (!auth || auth.oauthAppId !== app.id) {
@@ -368,6 +535,39 @@ export class OAuthService {
       );
     }
 
+    this.verifyCodeGrant(auth, codeVerifier, redirectUri);
+
+    const token = 'pos_' + makeSecureId(40);
+    const encryptedToken = AuthService.fixedEncryption(token);
+    const {
+      organizationId,
+      organization: { paymentId },
+    } = await this._oauthRepository.exchangeCodeForToken(
+      auth.id,
+      encryptedToken
+    );
+
+    return {
+      id: organizationId,
+      cus: paymentId,
+      access_token: token,
+      token_type: 'bearer',
+      scope: this.grantedScope(app),
+      ...this.refreshFields(app, token),
+    };
+  }
+
+  // Expiry, PKCE and redirect_uri checks of an authorization code, shared by
+  // cloud and self-hosted authorizations
+  private verifyCodeGrant(
+    auth: {
+      codeExpiresAt: Date | null;
+      codeChallenge: string | null;
+      redirectUri: string | null;
+    },
+    codeVerifier?: string,
+    redirectUri?: string
+  ) {
     if (!auth.codeExpiresAt || new Date() > auth.codeExpiresAt) {
       throw new HttpException(
         { error: 'invalid_grant', error_description: 'Code has expired' },
@@ -397,24 +597,172 @@ export class OAuthService {
         HttpStatus.BAD_REQUEST
       );
     }
+  }
 
-    const token = 'pos_' + makeSecureId(40);
-    const encryptedToken = AuthService.fixedEncryption(token);
-    const {
-      organizationId,
-      organization: { paymentId },
-    } = await this._oauthRepository.exchangeCodeForToken(
+  // A self-hosted connection has no organization (or payment) to return,
+  // only the token
+  private async exchangeSelfHostedCodeForToken(
+    app: OAuthApp,
+    code: string,
+    codeVerifier?: string,
+    redirectUri?: string
+  ) {
+    const auth = await this._oauthRepository.findSelfHostedByCode(
+      AuthService.fixedEncryption(code)
+    );
+    if (!auth || auth.oauthAppId !== app.id) {
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    this.verifyCodeGrant(auth, codeVerifier, redirectUri);
+
+    const token = 'psh_' + makeSecureId(40);
+    await this._oauthRepository.exchangeSelfHostedCodeForToken(
       auth.id,
-      encryptedToken
+      AuthService.fixedEncryption(token)
     );
 
     return {
-      id: organizationId,
-      cus: paymentId,
       access_token: token,
       token_type: 'bearer',
       scope: this.grantedScope(app),
+      ...this.refreshFields(app, token),
     };
+  }
+
+  // HubSpot refuses a token response without a refresh token. Postiz access
+  // tokens never expire, so the refresh token is the access token itself:
+  // refreshing hands it back unchanged, and it stops working exactly when the
+  // access token does. No other client gets these fields
+  private refreshFields(app: Pick<OAuthApp, 'clientId'>, token: string) {
+    if (app.clientId !== hubspotOAuthClientId()) {
+      return {};
+    }
+
+    return {
+      refresh_token: token,
+      expires_in: hubspotTokenExpiresIn,
+    };
+  }
+
+  // The refresh_token grant, HubSpot only (see refreshFields): the refresh
+  // token is looked up like an access token and handed back while it is valid
+  async refreshAccessToken(clientId?: string, refreshToken?: string) {
+    if (!clientId || clientId !== hubspotOAuthClientId()) {
+      throw new HttpException(
+        { error: 'unsupported_grant_type' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const app = await this._oauthRepository.getAppByClientId(clientId);
+    if (!app) {
+      throw new HttpException(
+        { error: 'invalid_client' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    if (!refreshToken) {
+      throw new HttpException(
+        { error: 'invalid_request', error_description: 'refresh_token is required' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // a self-hosted connection only works while the relay is on
+    const encryptedToken = AuthService.fixedEncryption(refreshToken);
+    const authorization = refreshToken.startsWith('psh_')
+      ? selfHostedRelayEnabled()
+        ? await this._oauthRepository.findSelfHostedByAccessToken(encryptedToken)
+        : null
+      : await this._oauthRepository.findByAccessToken(encryptedToken);
+    if (!authorization || authorization.oauthAppId !== app.id) {
+      throw new HttpException(
+        { error: 'invalid_grant' },
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return {
+      access_token: refreshToken,
+      token_type: 'bearer',
+      scope: this.grantedScope(app),
+      ...this.refreshFields(app, refreshToken),
+    };
+  }
+
+  // HubSpot only counts an install of the HubSpot app once its code is
+  // exchanged. Postiz makes no HubSpot API calls, so the tokens are not kept
+  async completeHubspotInstall(code: string) {
+    const clientId = hubspotAppClientId();
+    const clientSecret = hubspotAppClientSecret();
+    if (!clientId || !clientSecret) {
+      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+    }
+
+    let response: Response;
+    try {
+      response = await fetch('https://api.hubapi.com/oauth/v3/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: hubspotInstallRedirectUri(),
+          code,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+    } catch (err) {
+      // timeout or network failure, fetch rejects instead of answering
+      throw new HttpException(
+        'Could not reach HubSpot to finish installing Postiz, please try again',
+        HttpStatus.BAD_GATEWAY,
+        { cause: err }
+      );
+    }
+
+    if (!response.ok) {
+      const value = await response.json().catch(() => null);
+      throw new HttpException(
+        `Could not finish installing Postiz in HubSpot${
+          value?.message ? `: ${value.message}` : ''
+        }`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    await response.body?.cancel();
+  }
+
+  // null when the relay is off or the token is unknown or revoked
+  async getSelfHostedByAccessToken(token: string) {
+    if (!selfHostedRelayEnabled()) {
+      return null;
+    }
+
+    const authorization =
+      await this._oauthRepository.findSelfHostedByAccessToken(
+        AuthService.fixedEncryption(token)
+      );
+    if (!authorization) {
+      return null;
+    }
+
+    return {
+      id: authorization.id,
+      mcpUrl: authorization.mcpUrl,
+      apiKey: AuthService.fixedDecryption(authorization.apiKey),
+    };
+  }
+
+  deleteSelfHostedAuthorization(id: string) {
+    return this._oauthRepository.deleteSelfHostedAuthorization(id);
   }
 
   async getOrgByOAuthToken(token: string) {
@@ -441,6 +789,10 @@ export class OAuthService {
       );
     }
 
+    if (token.startsWith('psh_')) {
+      return this.getSelfHostedUserInfo(token);
+    }
+
     const authorizationRecord = await this.getOrgByOAuthToken(token);
     if (!authorizationRecord) {
       throw new HttpException(
@@ -465,6 +817,40 @@ export class OAuthService {
       sub: user.id,
       email: user.email,
       email_verified: user.activated,
+    };
+  }
+
+  // A self-hosted connection has no cloud user: the subject is the connection
+  // and the email is the one typed on the consent screen, which nobody verified
+  private async getSelfHostedUserInfo(token: string) {
+    const selfHosted = selfHostedRelayEnabled()
+      ? await this._oauthRepository.findSelfHostedUserInfo(
+          AuthService.fixedEncryption(token)
+        )
+      : null;
+    if (!selfHosted) {
+      throw new HttpException(
+        { error: 'invalid_token', error_description: 'Token is invalid or revoked' },
+        HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    if (!this.allowsEmailClaims(selfHosted.oauthApp)) {
+      throw new HttpException(
+        {
+          error: 'insufficient_scope',
+          error_description:
+            'This OAuth client is not authorized to access email claims',
+        },
+        HttpStatus.FORBIDDEN
+      );
+    }
+
+    return {
+      sub: selfHosted.id,
+      ...(selfHosted.email
+        ? { email: selfHosted.email, email_verified: false }
+        : {}),
     };
   }
 

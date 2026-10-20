@@ -119,6 +119,18 @@ export class SubscriptionRepository {
     });
   }
 
+  updateCancelAt(organizationId: string, cancelAt: number | null) {
+    return this._subscription.model.subscription.updateMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+      },
+      data: {
+        cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
+      },
+    });
+  }
+
   async getSubscriptionByOrgId(orgId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
@@ -315,6 +327,18 @@ export class SubscriptionRepository {
       where: {
         id,
         organizationId,
+      },
+    });
+  }
+
+  deleteCreditsFrom(organizationId: string, from: dayjs.Dayjs, type: string) {
+    return this._credits.model.credits.deleteMany({
+      where: {
+        organizationId,
+        type,
+        createdAt: {
+          gte: from.toDate(),
+        },
       },
     });
   }

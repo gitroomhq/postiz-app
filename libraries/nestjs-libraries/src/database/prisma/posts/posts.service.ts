@@ -18,7 +18,8 @@ import {
 } from '@prisma/client';
 import { GetPostsDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.dto';
 import { GetPostsListDto } from '@gitroom/nestjs-libraries/dtos/posts/get.posts.list.dto';
-import { shuffle } from 'lodash';
+import { groupBy, shuffle, uniqBy } from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 import { CreateGeneratedPostsDto } from '@gitroom/nestjs-libraries/dtos/generator/create.generated.posts.dto';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
@@ -34,6 +35,7 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
+import { resolve, sep } from 'path';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
@@ -82,6 +84,20 @@ export class PostsService {
 
   updatePost(id: string, postId: string, releaseURL: string) {
     return this._postRepository.updatePost(id, postId, releaseURL);
+  }
+
+  updateResolvedRelease(
+    id: string,
+    orgId: string,
+    releaseId: string,
+    releaseURL: string
+  ) {
+    return this._postRepository.updateResolvedRelease(
+      id,
+      orgId,
+      releaseId,
+      releaseURL
+    );
   }
 
   async getMissingContent(
@@ -153,7 +169,143 @@ export class PostsService {
   }
 
   async updateReleaseId(orgId: string, postId: string, releaseId: string) {
-    return this._postRepository.updateReleaseId(postId, orgId, releaseId);
+    const post = await this._postRepository.getPostById(postId, orgId);
+
+    // the URL is a bonus: connecting must not fail when it cannot be fetched
+    let releaseURL: string | undefined;
+    if (post?.releaseId === 'missing') {
+      try {
+        releaseURL = await this._integrationManager
+          .getSocialIntegration(post.integration.providerIdentifier)
+          .releaseUrl?.(
+            post.integration.token,
+            String(releaseId),
+            post.integration
+          );
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return this._postRepository.updateReleaseId(
+      postId,
+      orgId,
+      releaseId,
+      releaseURL
+    );
+  }
+
+  async resolveRelease(
+    orgId: string,
+    post: {
+      id: string;
+      releaseId: string;
+      releaseURL: string;
+      settings: string;
+      integration: Integration;
+    }
+  ) {
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    const resolved = await integrationProvider.resolveReleaseId?.(
+      post.integration.token,
+      post.releaseId,
+      post.integration,
+      JSON.parse(post.settings || '{}'),
+      post.releaseURL
+    );
+    if (
+      !resolved ||
+      !('postId' in resolved) ||
+      resolved.postId === post.releaseId
+    ) {
+      return {
+        releaseId: post.releaseId,
+        releaseURL: post.releaseURL,
+        pending: !!resolved && 'pending' in resolved,
+        unavailable: !!resolved && 'unavailable' in resolved,
+      };
+    }
+
+    await this._postRepository.updateResolvedRelease(
+      post.id,
+      orgId,
+      resolved.postId,
+      resolved.releaseURL
+    );
+    return {
+      releaseId: resolved.postId,
+      releaseURL: resolved.releaseURL,
+      pending: false,
+      unavailable: false,
+    };
+  }
+
+  async getReleaseURL(
+    orgId: string,
+    postId: string,
+    forceRefresh = false
+  ): Promise<{
+    releaseURL: string;
+    pending?: boolean;
+    unavailable?: boolean;
+    reconnect?: boolean;
+  }> {
+    const post = await this._postRepository.getPostById(postId, orgId);
+    if (!post || !post.releaseURL) {
+      return { releaseURL: '' };
+    }
+
+    const integrationProvider = this._integrationManager.getSocialIntegration(
+      post.integration.providerIdentifier
+    );
+
+    if (!integrationProvider.resolveReleaseId) {
+      return { releaseURL: post.releaseURL };
+    }
+
+    const getIntegration = post.integration!;
+
+    // only refreshed once the platform rejects the token, so a post that is
+    // already resolved never reaches the platform
+    if (forceRefresh) {
+      const data = await this._refreshIntegrationService.refresh(
+        getIntegration
+      );
+      if (!data) {
+        return { releaseURL: post.releaseURL, reconnect: true };
+      }
+
+      const { accessToken } = data;
+
+      if (accessToken) {
+        getIntegration.token = accessToken;
+
+        if (integrationProvider.refreshWait) {
+          await timer(10000);
+        }
+      } else {
+        await this._integrationService.disconnectChannel(orgId, getIntegration);
+        return { releaseURL: post.releaseURL, reconnect: true };
+      }
+    }
+
+    try {
+      const { releaseURL, pending, unavailable } = await this.resolveRelease(
+        orgId,
+        post
+      );
+      return { releaseURL, pending, unavailable };
+    } catch (e) {
+      console.log(e);
+      if (e instanceof RefreshToken && !forceRefresh) {
+        return this.getReleaseURL(orgId, postId, true);
+      }
+    }
+
+    return { releaseURL: post.releaseURL, pending: true };
   }
 
   async checkPostAnalytics(
@@ -214,10 +366,12 @@ export class PostsService {
     // }
 
     try {
+      const { releaseId } = await this.resolveRelease(orgId, post);
+
       const loadAnalytics = await integrationProvider.postAnalytics(
         getIntegration.internalId,
         getIntegration.token,
-        post.releaseId,
+        releaseId,
         date
       );
       await ioRedis.set(
@@ -230,10 +384,11 @@ export class PostsService {
       );
       return loadAnalytics;
     } catch (e) {
-      console.log(e);
-      if (e instanceof RefreshToken) {
+      // Retry once with a refreshed token
+      if (e instanceof RefreshToken && !forceRefresh) {
         return this.checkPostAnalytics(orgId, postId, date, true);
       }
+      console.log(e);
     }
 
     return [];
@@ -376,6 +531,7 @@ export class PostsService {
             })
           )
         )
+          .filter((m) => this.isAllowedMediaPath(m?.path))
           .map((m) => {
             return {
               ...m,
@@ -455,8 +611,28 @@ export class PostsService {
 
       return getImageList;
     } catch (err: any) {
-      return imagesList;
+      return (imagesList || []).filter((m) =>
+        this.isAllowedMediaPath(m?.path)
+      );
     }
+  }
+
+  // a media path that isn't a remote url is read straight from the worker's
+  // disk, so it has to resolve inside UPLOAD_DIRECTORY
+  private isAllowedMediaPath(path: unknown) {
+    if (typeof path !== 'string' || /^https?:\/\//.test(path)) {
+      return true;
+    }
+
+    // containing "http" anywhere skips the UPLOAD_DIRECTORY prefix, and the
+    // providers would then read it relative to the working directory
+    if (path.indexOf('http') > -1) {
+      return false;
+    }
+
+    const base = resolve(String(process.env.UPLOAD_DIRECTORY));
+    const filePath = resolve(process.env.UPLOAD_DIRECTORY + path);
+    return filePath.startsWith(base + sep);
   }
 
   async getPostGroupDebugExport(orgId: string, group: string) {
@@ -507,18 +683,63 @@ export class PostsService {
   }
 
   async getPostsByGroup(orgId: string, group: string) {
-    const convertToJPEG = false;
     const loadAll = await this._postRepository.getPostsByGroup(orgId, group);
     const posts = this.arrangePostsByGroup(loadAll, undefined);
     if (!posts.length) {
       throw new NotFoundException('Post not found');
     }
 
+    const batch = posts[0].batchId
+      ? await this._postRepository.getPostsByBatch(
+          orgId,
+          posts[0].batchId,
+          group
+        )
+      : [];
+
+    // the other channels the post was created with, the editor holds one
+    // post per channel, and a channel that repeats differently is its own post
+    const siblings = uniqBy(
+      Object.values(groupBy(batch, (post) => post.group))
+        .map((batchPosts) => this.arrangePostsByGroup(batchPosts, undefined))
+        .filter(
+          (batchPosts) =>
+            batchPosts.length &&
+            batchPosts[0].integrationId !== posts[0].integrationId &&
+            batchPosts[0].intervalInDays === posts[0].intervalInDays
+        ),
+      (batchPosts) => batchPosts[0].integrationId
+    );
+
+    return {
+      ...(await this.groupForEditor(posts)),
+      siblings: await Promise.all(
+        siblings.map((batchPosts) => this.groupForEditor(batchPosts))
+      ),
+    };
+  }
+
+  // the post as the editor loads it, its channel without the tokens
+  private async groupForEditor(
+    posts: PostWithConditionals[],
+    convertToJPEG = false
+  ) {
     return {
       group: posts?.[0]?.group,
       posts: await Promise.all(
-        (posts || []).map(async (post) => ({
+        (posts || []).map(async ({ integration, ...post }) => ({
           ...post,
+          ...(integration
+            ? {
+                integration: {
+                  id: integration.id,
+                  name: integration.name,
+                  picture: integration.picture,
+                  providerIdentifier: integration.providerIdentifier,
+                  profile: integration.profile,
+                },
+              }
+            : {}),
           image: await this.updateMedia(
             post.id,
             JSON.parse(post.image || '[]'),
@@ -552,24 +773,11 @@ export class PostsService {
 
   async getPost(orgId: string, id: string, convertToJPEG = false) {
     const posts = await this.getPostsRecursively(id, true, orgId, true);
-    const list = {
-      group: posts?.[0]?.group,
-      posts: await Promise.all(
-        (posts || []).map(async (post) => ({
-          ...post,
-          image: await this.updateMedia(
-            post.id,
-            JSON.parse(post.image || '[]'),
-            convertToJPEG
-          ),
-        }))
-      ),
-      integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
-    };
+    if (!posts?.[0]) {
+      throw new NotFoundException('Post not found');
+    }
 
-    return list;
+    return this.groupForEditor(posts, convertToJPEG);
   }
 
   async getOldPosts(orgId: string, date: string) {
@@ -700,6 +908,8 @@ export class PostsService {
           } catch (err) {}
         }
       } catch (err) {}
+
+      return { id: post.id };
     }
 
     return { error: true };
@@ -931,6 +1141,7 @@ export class PostsService {
     keepGroup = false
   ): Promise<any[]> {
     const postList = [];
+    const batchId = uuidv4();
     for (const post of body.posts) {
       if (
         (body.type === 'schedule' || body.type === 'now') &&
@@ -965,12 +1176,15 @@ export class PostsService {
       const { posts } = await this._postRepository.createOrUpdatePost(
         body.type,
         orgId,
-        body.type === 'now' ? dayjs().format('YYYY-MM-DDTHH:mm:00') : body.date,
+        body.type === 'now'
+          ? dayjs().format('YYYY-MM-DDTHH:mm:00')
+          : post.date || body.date,
         post,
         body.tags,
         creationMethod,
         body.inter,
-        keepGroup
+        keepGroup,
+        batchId
       );
 
       if (!posts?.length) {
@@ -1324,8 +1538,9 @@ export class PostsService {
     );
     return this.findFreeDateTimeRecursive(
       orgId,
-      findTimes,
-      dayjs.utc().startOf('day')
+      findTimes.length ? findTimes : [120, 400, 700],
+      dayjs.utc().startOf('day'),
+      0
     );
   }
 
@@ -1341,8 +1556,17 @@ export class PostsService {
   private async findFreeDateTimeRecursive(
     orgId: string,
     times: number[],
-    date: dayjs.Dayjs
+    date: dayjs.Dayjs,
+    daysChecked: number
   ): Promise<string> {
+    // stop searching after a year so an empty times list can never recurse forever
+    if (daysChecked > 365) {
+      return date
+        .clone()
+        .add(times[0] || 0, 'minutes')
+        .format('YYYY-MM-DDTHH:mm:00');
+    }
+
     const list = await this._postRepository.getPostsCountsByDates(
       orgId,
       times,
@@ -1350,7 +1574,12 @@ export class PostsService {
     );
 
     if (!list.length) {
-      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
+      return this.findFreeDateTimeRecursive(
+        orgId,
+        times,
+        date.add(1, 'day'),
+        daysChecked + 1
+      );
     }
 
     const num = list.reduce<null | number>((prev, curr) => {

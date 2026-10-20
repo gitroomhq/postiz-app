@@ -112,9 +112,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       };
     }
 
+    // code 368 "Temporarily blocked for policies violations" (subcode
+    // 1390008): Meta documents it as temporary, "wait and retry the operation"
     if (body.indexOf('1390008') > -1) {
       return {
-        type: 'bad-body' as const,
+        type: 'retry' as const,
         value: 'You are posting too fast, please slow down',
       };
     }
@@ -1183,9 +1185,11 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
   ): Promise<AnalyticsData[]> {
     try {
       // Metric names verified against the Graph API v23.0 video_insights docs:
-      //   - total_video_impressions: times the video was shown
       //   - total_video_views: 3s+ (or full, if shorter) plays
       //   - total_video_reactions_by_type_total: reactions object, keyed by type
+      // total_video_impressions is no longer accepted (Graph answers
+      // "The value must be a valid insights metric", which fails the whole
+      // request), so it is not requested.
       // Reels never return the total_video_* metrics (the edge answers with an
       // empty data array), only the reels ones, so both sets are requested at
       // once and Graph simply omits the metrics that don't apply:
@@ -1196,7 +1200,7 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // response doesn't throw an ApplicationFailure — we want a quiet `[]` instead.
       const { data, error } = await (
         await fetch(
-          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_impressions,total_video_views,total_video_reactions_by_type_total,fb_reels_total_plays,post_video_likes_by_reaction_type,post_video_social_actions&access_token=${accessToken}`
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${videoId}/video_insights?metric=total_video_views,total_video_reactions_by_type_total,fb_reels_total_plays,post_video_likes_by_reaction_type,post_video_social_actions&access_token=${accessToken}`
         )
       ).json();
 
@@ -1226,10 +1230,6 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
         let total = '';
 
         switch (metric.name) {
-          case 'total_video_impressions':
-            label = 'Impressions';
-            total = String(value);
-            break;
           case 'total_video_views':
             label = 'Views';
             total = String(value);

@@ -8,21 +8,35 @@ import {
   HttpStatus,
   Post,
   Query,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { OAuthService } from '@gitroom/nestjs-libraries/database/prisma/oauth/oauth.service';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { User, Organization } from '@prisma/client';
-import { AuthorizeOAuthQueryDto, ApproveOAuthDto } from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
+import {
+  AuthorizeOAuthQueryDto,
+  ApproveOAuthDto,
+  AuthorizeSelfHostedDto,
+} from '@gitroom/nestjs-libraries/dtos/oauth/authorize-oauth.dto';
 import { TokenExchangeDto } from '@gitroom/nestjs-libraries/dtos/oauth/token-exchange.dto';
 import { RegisterClientDto } from '@gitroom/nestjs-libraries/dtos/oauth/register-client.dto';
+import { HubspotInstallQueryDto } from '@gitroom/nestjs-libraries/dtos/oauth/hubspot-install.dto';
 import { extractBasicCredentials } from '@gitroom/nestjs-libraries/chat/oauth-types';
+import { McpRelayService } from '@gitroom/nestjs-libraries/chat/mcp.relay.service';
+import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 
 @ApiTags('OAuth')
 @Controller('/oauth')
 export class OAuthController {
-  constructor(private _oauthService: OAuthService) {}
+  constructor(
+    private _oauthService: OAuthService,
+    private _mcpRelayService: McpRelayService
+  ) {}
 
   // Dynamic Client Registration (RFC 7591), used by MCP clients like Claude
   @Post('/register')
@@ -42,6 +56,11 @@ export class OAuthController {
       }
     );
 
+    const selfHosted = this._oauthService.allowsSelfHosted(
+      app,
+      query.resource
+    );
+
     return {
       app: {
         name: app.name,
@@ -51,7 +70,57 @@ export class OAuthController {
         redirectUrl: app.redirectUrl,
       },
       state: query.state,
+      selfHosted,
+      selfHostedEmail:
+        selfHosted && this._oauthService.selfHostedRequiresEmail(app),
     };
+  }
+
+  // Public (the person may have no account here) and capped per client,
+  // since every attempt sends requests to the instance
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Post('/authorize/self-hosted')
+  async authorizeSelfHosted(@Body() body: AuthorizeSelfHostedDto) {
+    const app = await this._oauthService.validateAuthorizationRequest(
+      body.client_id,
+      {
+        redirectUri: body.redirect_uri,
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+      }
+    );
+
+    const email = body.email?.trim();
+    this._oauthService.validateSelfHostedRequest(app, {
+      resource: body.resource,
+      email,
+    });
+
+    const instance = await this._mcpRelayService.connect(
+      body.instance_url,
+      body.api_key
+    );
+
+    const code = await this._oauthService.createSelfHostedAuthorizationCode(
+      app.id,
+      { ...instance, email },
+      this._oauthService.pkceBinding(app, {
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+        redirectUri: body.redirect_uri,
+      })
+    );
+
+    // Same redirect as an approved cloud authorization
+    const redirectUrl = new URL(
+      app.dynamic ? body.redirect_uri! : app.redirectUrl
+    );
+    redirectUrl.searchParams.set('code', code);
+    if (body.state) {
+      redirectUrl.searchParams.set('state', body.state);
+    }
+    return { redirect: redirectUrl.toString() };
   }
 
   @Post('/token')
@@ -61,6 +130,20 @@ export class OAuthController {
     @Body() body: TokenExchangeDto,
     @Headers('authorization') authorization?: string
   ) {
+    // client_secret_basic puts the credentials in the Authorization header,
+    // client_secret_post and public clients put them in the body
+    const basic = extractBasicCredentials(authorization);
+    const clientId = basic?.clientId || body.client_id;
+
+    // Only HubSpot gets refresh tokens, the service answers every other
+    // client with unsupported_grant_type, as before
+    if (body.grant_type === 'refresh_token') {
+      return this._oauthService.refreshAccessToken(
+        clientId,
+        body.refresh_token
+      );
+    }
+
     if (body.grant_type !== 'authorization_code') {
       throw new HttpException(
         { error: 'unsupported_grant_type' },
@@ -68,10 +151,6 @@ export class OAuthController {
       );
     }
 
-    // client_secret_basic puts the credentials in the Authorization header,
-    // client_secret_post and public clients put them in the body
-    const basic = extractBasicCredentials(authorization);
-    const clientId = basic?.clientId || body.client_id;
     if (!clientId) {
       throw new HttpException(
         { error: 'invalid_client' },
@@ -96,6 +175,26 @@ export class OAuthController {
   @Post('/userinfo')
   async userinfoPost(@Headers('authorization') authorization?: string) {
     return this._oauthService.getUserInfo(authorization);
+  }
+
+  // Public (HubSpot sends the person here after they install the HubSpot app)
+  // and capped per IP, since every attempt sends a request to HubSpot
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Get('/hubspot/callback')
+  async hubspotCallback(
+    @Query() query: HubspotInstallQueryDto,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    await this._oauthService.completeHubspotInstall(query.code);
+
+    // The calendar explains what just happened (HubspotInstalled); returnUrl
+    // brings someone who has to sign in first back to it
+    const installed = `${process.env.FRONTEND_URL}/launches?hubspot=installed`;
+    return response.redirect(
+      302,
+      `${installed}&returnUrl=${encodeURIComponent(installed)}`
+    );
   }
 }
 
@@ -136,13 +235,11 @@ export class OAuthAuthorizedController {
       app.id,
       user.id,
       org.id,
-      app.dynamic
-        ? {
-            codeChallenge: body.code_challenge,
-            codeChallengeMethod: body.code_challenge_method,
-            redirectUri: body.redirect_uri,
-          }
-        : undefined
+      this._oauthService.pkceBinding(app, {
+        codeChallenge: body.code_challenge,
+        codeChallengeMethod: body.code_challenge_method,
+        redirectUri: body.redirect_uri,
+      })
     );
 
     const redirectUrl = new URL(redirectTarget);

@@ -92,6 +92,10 @@ export class OrganizationService {
     return this._organizationRepository.setStreak(organizationId, type);
   }
 
+  async getLastPublishDate(organizationId: string) {
+    return this._organizationRepository.getLastPublishDate(organizationId);
+  }
+
   getOrgByCustomerId(customerId: string) {
     return this._organizationRepository.getOrgByCustomerId(customerId);
   }

@@ -1073,15 +1073,15 @@ export const Impersonate = () => {
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
+      <div className="bg-forth h-[52px] mobile:h-auto mobile:py-[8px] mobile:px-[8px] flex justify-center items-center border-input border rounded-[8px] text-white">
         <div
           className={`relative flex flex-col ${
-            user?.impersonate ? 'w-full px-[20px]' : 'w-[600px]'
+            user?.impersonate ? 'w-full px-[20px] mobile:px-0' : 'w-[600px] mobile:w-full'
           }`}
         >
           <div className="relative z-[1]">
             {user?.impersonate ? (
-              <div className="text-center flex justify-center items-center gap-[10px]">
+              <div className="text-center flex justify-center items-center gap-[10px] mobile:flex-wrap">
                 <div className="whitespace-nowrap">
                   {t('currently_impersonating', 'Currently Impersonating')}
                 </div>
@@ -1099,8 +1099,8 @@ export const Impersonate = () => {
                 <SwitchUser />
               </div>
             ) : (
-              <div className="flex items-center gap-[10px]">
-                <div className="flex-1">
+              <div className="flex items-center gap-[10px] mobile:flex-wrap">
+                <div className="flex-1 mobile:basis-full">
                   <Input
                     autoComplete="off"
                     placeholder="Write the user details"
