@@ -620,7 +620,6 @@
   "email_address": "E-Mail-Adresse",
   "email_already_exists": "E-Mail existiert bereits",
   "google": "Google",
-  "apple": "Apfel",
   "apple": "Apple",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "Scanne den QR-Code mit deinem Handy oder öffne den Link auf deinem Handy und bestätige dann Postiz in der Farcaster-App.",
@@ -894,6 +893,7 @@
   "finish_trial_charge_me_now": "Testphase beenden, jetzt abrechnen",
   "trial": "Testphase",
   "thumbnails_and_alt_text": "Vorschaubilder & Alt-Text",
-  "media_settings_section_description": "Klicken Sie auf ein Medienelement, um seinen Alt-Text oder (bei Videos) das Vorschaubild festzulegen. Vorschaubilder gelten für Videos im Hauptbeitrag.",
+  "media_settings_section_description": "Klicken Sie auf ein Medienelement, um dessen Alternativtext oder, falls es sich um ein Video handelt, dessen Thumbnail festzulegen.",
+  "media_settings_section_tooltip": "Thumbnails werden auf Videos im Hauptbeitrag angewendet. YouTube kann benutzerdefinierte Thumbnails bei Videos, die als Shorts behandelt werden (vertikal, bis zu 3 Minuten), ignorieren, ohne dass die Veröffentlichung fehlschlägt.",
   "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt."
 }

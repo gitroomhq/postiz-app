@@ -620,7 +620,6 @@
   "email_address": "Địa chỉ email",
   "email_already_exists": "Email đã tồn tại",
   "google": "Google",
-  "apple": "Apple",
   "apple": "Táo",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "Quét mã QR bằng điện thoại của bạn hoặc mở liên kết trên điện thoại, sau đó phê duyệt Postiz trong ứng dụng Farcaster.",
@@ -894,6 +893,7 @@
   "finish_trial_charge_me_now": "Kết thúc dùng thử, tính phí ngay",
   "trial": "Dùng thử",
   "thumbnails_and_alt_text": "Hình thu nhỏ & văn bản thay thế",
-  "media_settings_section_description": "Bấm vào một mục phương tiện để đặt văn bản thay thế cho nó, hoặc hình thu nhỏ nếu đó là video. Hình thu nhỏ áp dụng cho các video trong bài đăng chính.",
+  "media_settings_section_description": "Nhấp vào một mục phương tiện để đặt văn bản thay thế hoặc thay đổi hình thu nhỏ nếu đó là video.",
+  "media_settings_section_tooltip": "Hình thu nhỏ áp dụng cho các video trong bài đăng chính. YouTube có thể bỏ qua hình thu nhỏ tùy chỉnh trên các video mà họ coi là Shorts (dọc, tối đa 3 phút) mà không báo lỗi khi đăng tải.",
   "youtube_thumbnail_overrides_media": "Bài viết này có hình thu nhỏ riêng cho YouTube, thay thế hình thu nhỏ được đặt trong cài đặt phương tiện."
 }

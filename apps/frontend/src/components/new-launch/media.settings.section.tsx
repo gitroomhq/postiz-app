@@ -77,13 +77,35 @@ export const MediaSettingsSection: FC = () => {
   return (
     <div className="flex flex-col gap-[12px] m-[12px] mobile:mx-[16px] p-[12px] bg-newBgColorInner rounded-[8px]">
       <div className="flex flex-col gap-[4px]">
-        <div className="text-[14px] font-[600]">
+        <div className="flex items-center gap-[6px] text-[14px] font-[600]">
           {t('thumbnails_and_alt_text', 'Thumbnails & alt text')}
+          <svg
+            data-tooltip-id="tooltip"
+            data-tooltip-class-name="!max-w-[400px] break-words"
+            data-tooltip-content={t(
+              'media_settings_section_tooltip',
+              'Thumbnails apply to videos in the main post. YouTube may ignore custom thumbnails on videos it treats as Shorts (vertical, up to 3 minutes) without failing the publish.'
+            )}
+            className="cursor-help text-[#A3A3A3]"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+          </svg>
         </div>
         <div className="text-[12px] text-[#A3A3A3]">
           {t(
             'media_settings_section_description',
-            'Click a media item to set its alt text, or its thumbnail if it is a video. Thumbnails apply to videos in the main post.'
+            'Click a media item to set its alt text, or its thumbnail if it is a video.'
           )}
         </div>
       </div>
