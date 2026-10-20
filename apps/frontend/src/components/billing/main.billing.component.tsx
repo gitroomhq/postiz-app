@@ -854,6 +854,8 @@ export const MainBillingComponent: FC<{
           close={() => {
             setFinishTrial(false);
             mutate('/user/self');
+            mutate('/billing/invoices');
+            mutate('/billing/renewal');
           }}
         />
       )}
