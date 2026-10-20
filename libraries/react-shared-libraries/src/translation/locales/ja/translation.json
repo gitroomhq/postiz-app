@@ -620,6 +620,7 @@
   "email_already_exists": "メールアドレスは既に存在します",
   "google": "Google",
   "apple": "アップル",
+  "apple": "りんご",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "スマートフォンでQRコードをスキャンするか、リンクをスマートフォンで開き、FarcasterアプリでPostizを承認してください。",
   "farcaster_open_in_farcaster": "Farcasterで開く",
@@ -885,5 +886,12 @@
   "hubspot_installed_description": "投稿したいチャンネルをここ Postiz で接続してください。次に HubSpot で Agent Hub > Agent Builder を開き、ツールを追加して MCP Servers から Postiz MCP を選択し、Connect and add をクリックしてください。",
   "timezone": "タイムゾーン",
   "automatic_timezone": "自動 ({{timezone}})",
-  "could_not_save_timezone": "タイムゾーンを保存できませんでした"
+  "could_not_save_timezone": "タイムゾーンを保存できませんでした",
+  "finish_trial_failed": "トライアルを完了できませんでした",
+  "finish_trial_failed_description": "カードへの請求ができませんでした。もう一度お試しください。",
+  "try_again": "再試行",
+  "finish_trial": "トライアルを終了する",
+  "finish_trial_confirmation": "トライアルを終了すると、すぐにプランの料金が請求されます。本当によろしいですか？",
+  "finish_trial_charge_me_now": "トライアルを終了して、今すぐ請求する",
+  "trial": "トライアル"
 }

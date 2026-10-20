@@ -885,5 +885,12 @@
   "hubspot_installed_description": "请先在 Postiz 中连接您要发布内容的渠道。然后在 HubSpot 中打开 Agent Hub > Agent Builder，添加一个工具，在 MCP Servers 下选择 Postiz MCP，然后点击 Connect and add。",
   "timezone": "时区",
   "automatic_timezone": "自动 ({{timezone}})",
-  "could_not_save_timezone": "无法保存时区"
+  "could_not_save_timezone": "无法保存时区",
+  "finish_trial_failed": "我们未能完成您的试用",
+  "finish_trial_failed_description": "我们无法扣款，请重试。",
+  "try_again": "重试",
+  "finish_trial": "结束试用",
+  "finish_trial_confirmation": "结束试用将立即对您的套餐进行扣费，您确定要继续吗？",
+  "finish_trial_charge_me_now": "结束试用，立即扣费",
+  "trial": "试用"
 }

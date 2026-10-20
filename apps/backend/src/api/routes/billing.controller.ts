@@ -80,7 +80,11 @@ export class BillingController {
   async finishTrial(@GetOrgFromRequest() org: Organization) {
     const provider = await this.provider(org);
     try {
-      await provider.finishTrial(org);
+      const action = await provider.finishTrial(org);
+      if (action.requiresAction) {
+        return { finish: false, ...action };
+      }
+      return { finish: true };
     } catch (err) {
       logger.error('stripe_operation_failed', {
         operation: 'finish_trial',
@@ -88,10 +92,8 @@ export class BillingController {
         error_type: errorType(err),
         error_message: errorMessage(err),
       });
+      return { finish: false };
     }
-    return {
-      finish: true,
-    };
   }
 
   @Get('/is-trial-finished')

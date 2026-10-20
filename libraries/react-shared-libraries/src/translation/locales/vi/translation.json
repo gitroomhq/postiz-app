@@ -620,6 +620,7 @@
   "email_already_exists": "Email đã tồn tại",
   "google": "Google",
   "apple": "Apple",
+  "apple": "Táo",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "Quét mã QR bằng điện thoại của bạn hoặc mở liên kết trên điện thoại, sau đó phê duyệt Postiz trong ứng dụng Farcaster.",
   "farcaster_open_in_farcaster": "Mở trong Farcaster",
@@ -885,5 +886,12 @@
   "hubspot_installed_description": "Hãy kết nối tại đây, trong Postiz, các kênh bạn muốn đăng bài. Sau đó, trong HubSpot, mở Agent Hub > Agent Builder, thêm một công cụ, chọn Postiz MCP trong MCP Servers và nhấp vào Connect and add.",
   "timezone": "Múi giờ",
   "automatic_timezone": "Tự động ({{timezone}})",
-  "could_not_save_timezone": "Không thể lưu múi giờ"
+  "could_not_save_timezone": "Không thể lưu múi giờ",
+  "finish_trial_failed": "Chúng tôi không thể hoàn tất phiên dùng thử của bạn",
+  "finish_trial_failed_description": "Chúng tôi không thể thanh toán thẻ của bạn. Vui lòng thử lại.",
+  "try_again": "Thử lại",
+  "finish_trial": "Kết thúc dùng thử",
+  "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ khiến gói của bạn bị tính phí ngay lập tức, bạn có chắc chắn không?",
+  "finish_trial_charge_me_now": "Kết thúc dùng thử, tính phí ngay",
+  "trial": "Dùng thử"
 }

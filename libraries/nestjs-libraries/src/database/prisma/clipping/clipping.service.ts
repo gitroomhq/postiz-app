@@ -191,7 +191,10 @@ export class ClippingService {
     }
 
     if (org.isTrailing) {
-      throw new HttpException('Clipping is not available in trial mode', 406);
+      throw new HttpException(
+        `Clipping is not available in trial mode. To use it now, open ${process.env.FRONTEND_URL}/billing and click "Finish trial" (this charges the plan immediately)`,
+        406
+      );
     }
 
     if ((await this.balance(org.id)) <= 0) {

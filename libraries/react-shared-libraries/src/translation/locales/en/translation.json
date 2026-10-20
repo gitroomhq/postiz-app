@@ -887,5 +887,12 @@
   "hubspot_installed_description": "Connect the channels you want to post to here in Postiz. Then, in HubSpot, open Agent Hub > Agent Builder, add a tool, pick Postiz MCP under MCP Servers and click Connect and add.",
   "timezone": "Timezone",
   "automatic_timezone": "Automatic ({{timezone}})",
-  "could_not_save_timezone": "Could not save the timezone"
+  "could_not_save_timezone": "Could not save the timezone",
+  "finish_trial_failed": "We could not finish your trial",
+  "finish_trial_failed_description": "We could not charge your card. Please try again.",
+  "try_again": "Try again",
+  "finish_trial": "Finish trial",
+  "finish_trial_confirmation": "Finishing the trial will charge your plan immediately, are you sure?",
+  "finish_trial_charge_me_now": "Finish the trial, charge me now",
+  "trial": "Trial"
 }
