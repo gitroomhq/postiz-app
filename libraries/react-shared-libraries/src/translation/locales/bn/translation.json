@@ -884,5 +884,15 @@
   "hubspot_installed_description": "যেসব চ্যানেলে পোস্ট করতে চান, সেগুলো এখানে Postiz-এ সংযুক্ত করুন। এরপর HubSpot-এ Agent Hub > Agent Builder খুলুন, একটি টুল যোগ করুন, MCP Servers-এর অধীনে Postiz MCP বেছে নিন এবং Connect and add-এ ক্লিক করুন।",
   "timezone": "সময় অঞ্চল",
   "automatic_timezone": "স্বয়ংক্রিয় ({{timezone}})",
-  "could_not_save_timezone": "সময় অঞ্চল সংরক্ষণ করা যায়নি"
+  "could_not_save_timezone": "সময় অঞ্চল সংরক্ষণ করা যায়নি",
+  "finish_trial_failed": "আমরা আপনার ট্রায়াল শেষ করতে পারিনি",
+  "finish_trial_failed_description": "আমরা আপনার কার্ড থেকে টাকা কেটে নিতে পারিনি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "try_again": "আবার চেষ্টা করুন",
+  "finish_trial": "পরীক্ষা শেষ করুন",
+  "finish_trial_confirmation": "পরীক্ষা শেষ করলে আপনার পরিকল্পনাটি সঙ্গে সঙ্গে চার্জ করা হবে, আপনি কি নিশ্চিত?",
+  "finish_trial_charge_me_now": "পরীক্ষা শেষ করুন, এখনই চার্জ করুন",
+  "trial": "পরীক্ষা",
+  "thumbnails_and_alt_text": "থাম্বনেইল ও অল্ট টেক্সট",
+  "media_settings_section_description": "কোনো মিডিয়া আইটেমের অল্ট টেক্সট সেট করতে, অথবা এটি যদি ভিডিও হয় তাহলে থাম্বনেইল সেট করতে ক্লিক করুন। থাম্বনেইল শুধুমাত্র মূল পোস্টের ভিডিওতে প্রযোজ্য।",
+  "youtube_thumbnail_overrides_media": "এই পোস্টে ইউটিউব-নির্দিষ্ট থাম্বনেইল সেট করা আছে, যা মিডিয়া সেটিংসে দেওয়া থাম্বনেইলকে অগ্রাহ্য করবে।"
 }

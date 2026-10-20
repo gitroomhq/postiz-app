@@ -884,5 +884,15 @@
   "hubspot_installed_description": "اربط هنا في Postiz القنوات التي تريد النشر عليها. بعد ذلك، افتح Agent Hub > Agent Builder في HubSpot، وأضف أداة، واختر Postiz MCP ضمن MCP Servers، ثم انقر على Connect and add.",
   "timezone": "المنطقة الزمنية",
   "automatic_timezone": "تلقائي ({{timezone}})",
-  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية"
+  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية",
+  "finish_trial_failed": "لم نتمكن من إنهاء الفترة التجريبية الخاصة بك",
+  "finish_trial_failed_description": "لم نتمكن من خصم المبلغ من بطاقتك. يرجى المحاولة مرة أخرى.",
+  "try_again": "حاول مرة أخرى",
+  "finish_trial": "إنهاء الفترة التجريبية",
+  "finish_trial_confirmation": "إنهاء الفترة التجريبية سيؤدي إلى خصم رسوم خطتك مباشرة، هل أنت متأكد؟",
+  "finish_trial_charge_me_now": "أنهِ الفترة التجريبية وخصم الرسوم الآن",
+  "trial": "فترة تجريبية",
+  "thumbnails_and_alt_text": "الصور المصغرة ونصوص البدائل",
+  "media_settings_section_description": "انقر على عنصر وسائط لتعيين نص بديل له، أو صورته المصغرة إذا كان فيديو. الصور المصغرة تنطبق على مقاطع الفيديو في المنشور الرئيسي.",
+  "youtube_thumbnail_overrides_media": "يحتوي هذا المنشور على صورة مصغرة مخصصة لليوتيوب، والتي تتجاوز الصورة المصغرة المحددة في إعدادات الوسائط."
 }
