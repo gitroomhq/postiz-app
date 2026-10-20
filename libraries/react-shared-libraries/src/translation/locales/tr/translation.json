@@ -605,6 +605,7 @@
   "billing_download_invoice": "Faturayı indir",
   "billing_view_invoice": "Faturayı görüntüle",
   "billing_no_matching_invoices": "Aramanızla eşleşen fatura yok",
+  "billing_no_invoices": "Henüz fatura yok",
   "select_channels": "Kanalları Seç",
   "start_a_new_chat": "Yeni bir sohbet başlat",
   "your_assistant": "Asistanınız",

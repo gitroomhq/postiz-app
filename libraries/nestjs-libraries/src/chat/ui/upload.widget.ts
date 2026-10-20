@@ -26,6 +26,12 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   #drop.disabled { opacity: 0.5; pointer-events: none; }
   #drop small { display: block; color: var(--muted); margin-top: 4px; }
   input[type=file] { display: none; }
+  #options { position: relative; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+  #options label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  #options input { margin: 0; }
+  .info { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: 11px; font-style: normal; cursor: help; }
+  .info span { display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg); font-size: 12px; line-height: 1.4; z-index: 1; }
+  .info:hover span, .info:focus span { display: block; }
   #files { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; margin-top: 12px; }
   #files:empty { display: none; }
   .tile { min-width: 0; }
@@ -43,11 +49,16 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   .name { margin-top: 4px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .note { font-size: 11px; color: var(--bad); }
   .note:empty { display: none; }
+  .tile.ok .note { color: var(--muted); }
   #error { color: var(--bad); margin-top: 12px; }
   #error:empty { display: none; }
 </style>
 </head>
 <body>
+  <div id="options">
+    <label><input id="adjust" type="checkbox" /> Adjust media to platform limits</label>
+    <i class="info" tabindex="0" aria-label="About adjusting media">i<span>Platforms reject media that is too large, too small or in an unsupported format. Videos are resized to 1080p MP4 and oversized images are scaled down; if that fails, the original is used. Check it before choosing files.</span></i>
+  </div>
   <label id="drop" class="disabled">
     Choose files or drop them here
     <small>Images up to ${megabytes('image/png')} MB and videos up to ${megabytes('video/mp4')} MB</small>
@@ -122,8 +133,9 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     );
   }
 
-  function uploadFile(file, ticket) {
+  function uploadFile(file, ticket, adjust) {
     var form = new FormData();
+    form.append('adjust', adjust ? 'true' : 'false');
     form.append('file', file);
     return fetch(BACKEND + '/media-widget/upload?ticket=' + encodeURIComponent(ticket), { method: 'POST', body: form }).then(function (res) {
       if (!res.ok) return readError(res).then(function (err) { throw err; });
@@ -205,7 +217,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     tile.appendChild(note);
     list.appendChild(tile);
     preview(file, box, label);
-    return function (kind, text, path) {
+    return function (kind, text, path, hint) {
       if (path) {
         var copy = document.createElement('button');
         copy.type = 'button';
@@ -222,7 +234,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
       tile.className = 'tile ' + kind;
       state.textContent = kind === 'ok' ? '✓' : kind === 'bad' ? '✕' : text;
       state.title = text;
-      note.textContent = kind === 'bad' ? text : '';
+      note.textContent = kind === 'bad' ? text : hint || '';
       resize();
     };
   }
@@ -256,23 +268,24 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     drop.className = 'disabled';
     fail('');
     var done = [];
+    var adjust = document.getElementById('adjust').checked;
     getTicket()
       .then(function (ticket) {
         return files.reduce(function (chain, file) {
           var set = row(file);
           return chain.then(function () {
             set('', 'Uploading…');
-            return uploadFile(file, ticket)
+            return uploadFile(file, ticket, adjust)
               .then(function (media) {
                 if (media.status === 'processing') set('', 'Processing…');
                 return waitUntilReady(media, ticket);
               })
               .then(function (media) {
-                if (media.status === 'failed') throw new Error(media.processingError || 'Processing failed');
+                // the upload only accepts formats the platforms take as-is, so a failed adjustment keeps a usable original
                 var item = { id: media.id, path: media.path, name: media.originalName || file.name };
                 uploaded.push(item);
                 done.push(item);
-                set('ok', 'Uploaded', media.path);
+                set('ok', 'Uploaded', media.path, media.status === 'failed' ? 'Adjustment failed, original kept' : '');
               })
               .catch(function (err) { set('bad', err.message || 'Upload failed'); });
           });
