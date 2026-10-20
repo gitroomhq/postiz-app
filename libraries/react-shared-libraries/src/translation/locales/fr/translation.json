@@ -884,6 +884,13 @@
   "timezone": "Fuseau horaire",
   "automatic_timezone": "Automatique ({{timezone}})",
   "could_not_save_timezone": "Impossible d'enregistrer le fuseau horaire",
+  "finish_trial_failed": "Nous n'avons pas pu terminer votre essai",
+  "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
+  "try_again": "Réessayer",
+  "finish_trial": "Terminer l'essai",
+  "finish_trial_confirmation": "Terminer l'essai facturera immédiatement votre abonnement, êtes-vous sûr ?",
+  "finish_trial_charge_me_now": "Terminer l'essai, facturez-moi maintenant",
+  "trial": "Essai",
   "thumbnails_and_alt_text": "Vignettes et texte alternatif",
   "media_settings_section_description": "Cliquez sur un élément multimédia pour définir son texte alternatif, ou sa vignette s'il s'agit d'une vidéo. Les vignettes s'appliquent aux vidéos de la publication principale.",
   "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias."

@@ -477,7 +477,10 @@ export class MediaService {
     }
 
     if (!video.trial && org.isTrailing) {
-      throw new HttpException('This video is not available in trial mode', 406);
+      throw new HttpException(
+        `This video is not available in trial mode. To use it now, open ${process.env.FRONTEND_URL}/billing and click "Finish trial" (this charges the plan immediately)`,
+        406
+      );
     }
 
     return true;
@@ -502,7 +505,10 @@ export class MediaService {
     }
 
     if (!video.trial && org.isTrailing) {
-      throw new HttpException('This video is not available in trial mode', 406);
+      throw new HttpException(
+        `This video is not available in trial mode. To use it now, open ${process.env.FRONTEND_URL}/billing and click "Finish trial" (this charges the plan immediately)`,
+        406
+      );
     }
 
     await video.instance.processAndValidate(body.customParams);

@@ -884,6 +884,13 @@
   "timezone": "Saat dilimi",
   "automatic_timezone": "Otomatik ({{timezone}})",
   "could_not_save_timezone": "Saat dilimi kaydedilemedi",
+  "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
+  "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
+  "try_again": "Tekrar deneyin",
+  "finish_trial": "Denemeyi bitir",
+  "finish_trial_confirmation": "Denemeyi bitirmek planınızı hemen ücretlendirecek, emin misiniz?",
+  "finish_trial_charge_me_now": "Denemeyi bitir, şimdi ücretlendir",
+  "trial": "Deneme",
   "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
   "media_settings_section_description": "Bir medya öğesinin alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın. Küçük resimler, ana gönderideki videolar için geçerlidir.",
   "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."

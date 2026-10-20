@@ -888,6 +888,13 @@ checksums:
     timezone: 370780b854bdbef55320f977a4fb9ddb
     automatic_timezone: bb2d180231d5caccb2507ada3bb8329e
     could_not_save_timezone: d0e1af80e2c1de9a40f748fd5198d7a5
+    finish_trial_failed: 2e24d567f3cbb2b636087ab1d7001509
+    finish_trial_failed_description: f67cb5adf7e1f3dbf1412edbf62e4974
+    try_again: 33dd8820e743e35a66e6977f69e9d3b5
+    finish_trial: 1d20d4471820f251c64a436b63db678f
+    finish_trial_confirmation: 5e7b2ea52e07fffa3c401a43eb7c94d4
+    finish_trial_charge_me_now: 13a748bb479d826430c8d5102e0d7705
+    trial: 4fd32760caf3bd7169935b0a6d2b5b67
     thumbnails_and_alt_text: 20fe8924ed0e3ebe39a0d1953dc24df1
     media_settings_section_description: 973eb95a5c09765efaa3e6365f7b460c
     youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81
