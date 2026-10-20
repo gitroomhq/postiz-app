@@ -883,5 +883,8 @@
   "hubspot_installed_description": "যেসব চ্যানেলে পোস্ট করতে চান, সেগুলো এখানে Postiz-এ সংযুক্ত করুন। এরপর HubSpot-এ Agent Hub > Agent Builder খুলুন, একটি টুল যোগ করুন, MCP Servers-এর অধীনে Postiz MCP বেছে নিন এবং Connect and add-এ ক্লিক করুন।",
   "timezone": "সময় অঞ্চল",
   "automatic_timezone": "স্বয়ংক্রিয় ({{timezone}})",
-  "could_not_save_timezone": "সময় অঞ্চল সংরক্ষণ করা যায়নি"
+  "could_not_save_timezone": "সময় অঞ্চল সংরক্ষণ করা যায়নি",
+  "finish_trial_failed": "আমরা আপনার ট্রায়াল শেষ করতে পারিনি",
+  "finish_trial_failed_description": "আমরা আপনার কার্ড থেকে টাকা কেটে নিতে পারিনি। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "try_again": "আবার চেষ্টা করুন"
 }

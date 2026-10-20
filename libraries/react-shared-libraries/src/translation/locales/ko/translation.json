@@ -883,5 +883,8 @@
   "hubspot_installed_description": "게시할 채널을 여기 Postiz에서 연결하세요. 그런 다음 HubSpot에서 Agent Hub > Agent Builder를 열고 도구를 추가한 뒤 MCP Servers에서 Postiz MCP를 선택하고 Connect and add를 클릭하세요.",
   "timezone": "시간대",
   "automatic_timezone": "자동 ({{timezone}})",
-  "could_not_save_timezone": "시간대를 저장할 수 없습니다"
+  "could_not_save_timezone": "시간대를 저장할 수 없습니다",
+  "finish_trial_failed": "체험을 완료할 수 없습니다",
+  "finish_trial_failed_description": "카드를 결제할 수 없습니다. 다시 시도해 주세요.",
+  "try_again": "다시 시도하기"
 }

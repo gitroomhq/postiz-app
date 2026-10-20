@@ -883,5 +883,8 @@
   "hubspot_installed_description": "اربط هنا في Postiz القنوات التي تريد النشر عليها. بعد ذلك، افتح Agent Hub > Agent Builder في HubSpot، وأضف أداة، واختر Postiz MCP ضمن MCP Servers، ثم انقر على Connect and add.",
   "timezone": "المنطقة الزمنية",
   "automatic_timezone": "تلقائي ({{timezone}})",
-  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية"
+  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية",
+  "finish_trial_failed": "لم نتمكن من إنهاء الفترة التجريبية الخاصة بك",
+  "finish_trial_failed_description": "لم نتمكن من خصم المبلغ من بطاقتك. يرجى المحاولة مرة أخرى.",
+  "try_again": "حاول مرة أخرى"
 }

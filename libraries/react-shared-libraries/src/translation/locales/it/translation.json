@@ -883,5 +883,8 @@
   "hubspot_installed_description": "Collega qui, in Postiz, i canali su cui vuoi pubblicare. Poi, in HubSpot, apri Agent Hub > Agent Builder, aggiungi uno strumento, scegli Postiz MCP in MCP Servers e fai clic su Connect and add.",
   "timezone": "Fuso orario",
   "automatic_timezone": "Automatico ({{timezone}})",
-  "could_not_save_timezone": "Impossibile salvare il fuso orario"
+  "could_not_save_timezone": "Impossibile salvare il fuso orario",
+  "finish_trial_failed": "Non siamo riusciti a completare la tua prova",
+  "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
+  "try_again": "Riprova"
 }
