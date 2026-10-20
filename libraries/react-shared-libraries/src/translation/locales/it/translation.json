@@ -893,6 +893,7 @@
   "finish_trial_charge_me_now": "Termina la prova, addebitami ora",
   "trial": "Prova",
   "thumbnails_and_alt_text": "Miniature e testo alternativo",
-  "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il testo alternativo o la miniatura se si tratta di un video. Le miniature si applicano ai video nel post principale.",
+  "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il suo testo alternativo o la sua miniatura, se si tratta di un video.",
+  "media_settings_section_tooltip": "Le miniature si applicano ai video nel post principale. YouTube potrebbe ignorare le miniature personalizzate sui video che considera Shorts (verticali, fino a 3 minuti) senza però impedire la pubblicazione.",
   "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
 }
