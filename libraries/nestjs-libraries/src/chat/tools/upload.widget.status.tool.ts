@@ -15,9 +15,10 @@ export class UploadWidgetStatusTool implements AgentToolInterface {
     return createTool({
       id: 'uploadWidgetStatusTool',
       description: `List the media the user uploaded with the upload widget, using the sessionId returned by uploadWidgetTool.
+Only for files uploaded through the upload widget (uploadWidgetTool, shown in apps that display MCP Apps). For a media id returned by uploadFromUrlTool, the public API or the Postiz CLI, use mediaStatusTool instead.
 It lists only the files uploaded in that widget session, not the whole media library.
 An empty list means the user did not upload anything yet. A media with the status "processing" is still being prepared: wait about 10 seconds and call again.
-A media with the status "ready" can be used as a post attachment with its { id, path }.`,
+A media with the status "ready" can be used as a post attachment with its { id, path }. "ready" with a warning means the adjustment failed and the original file was kept and will be used for publishing.`,
       mcp: {
         annotations: {
           title: 'Upload Widget Status',
@@ -39,6 +40,7 @@ A media with the status "ready" can be used as a post attachment with its { id, 
               id: z.string(),
               path: z.string(),
               status: z.string(),
+              warning: z.string().optional(),
               error: z.string().optional(),
             })
           )
@@ -56,12 +58,7 @@ A media with the status "ready" can be used as a post attachment with its { id, 
             inputData.sessionId
           );
           return {
-            media: media.map((p) => ({
-              id: p.id,
-              path: p.path,
-              status: p.status,
-              ...(p.processingError ? { error: p.processingError } : {}),
-            })),
+            media: media.map((p) => this._mediaService.toUploadStatus(p)),
           };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
