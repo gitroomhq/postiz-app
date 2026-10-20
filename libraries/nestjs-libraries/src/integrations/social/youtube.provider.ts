@@ -633,7 +633,10 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
           videoSize,
           path,
           uploadedBytes: 0,
-          thumbnail: settings?.thumbnail?.path || '',
+          // the YouTube setting wins, so posts that set both keep publishing
+          // with the one they always had
+          thumbnail:
+            settings?.thumbnail?.path || firstPost?.media?.[0]?.thumbnail || '',
           postDbId: firstPost.id,
         },
       },

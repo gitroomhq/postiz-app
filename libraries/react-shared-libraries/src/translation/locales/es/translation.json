@@ -891,5 +891,8 @@
   "finish_trial": "Finalizar prueba",
   "finish_trial_confirmation": "Finalizar la prueba cobrará tu plan inmediatamente, ¿estás seguro?",
   "finish_trial_charge_me_now": "Finalizar la prueba, cobrarme ahora",
-  "trial": "Prueba"
+  "trial": "Prueba",
+  "thumbnails_and_alt_text": "Miniaturas y texto alternativo",
+  "media_settings_section_description": "Haz clic en un elemento multimedia para establecer su texto alternativo, o su miniatura si es un video. Las miniaturas se aplican a los videos de la publicación principal.",
+  "youtube_thumbnail_overrides_media": "Esta publicación tiene una miniatura específica de YouTube, que reemplaza la miniatura establecida en la configuración de medios."
 }
