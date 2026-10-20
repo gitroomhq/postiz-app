@@ -44,7 +44,7 @@ export const countLength = (integrationType: string, text: string): number => {
   }
 
   if (integrationType === 'threads') {
-    return new TextEncoder().encode(text).length;
+    return [...text].length;
   }
 
   return text.length;
