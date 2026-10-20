@@ -892,5 +892,8 @@
   "finish_trial": "체험 종료",
   "finish_trial_confirmation": "체험을 종료하면 요금제가 즉시 청구됩니다. 계속하시겠습니까?",
   "finish_trial_charge_me_now": "체험 종료, 지금 결제하기",
-  "trial": "체험"
+  "trial": "체험",
+  "thumbnails_and_alt_text": "썸네일 및 대체 텍스트",
+  "media_settings_section_description": "미디어 항목을 클릭하여 대체 텍스트를 설정하거나, 비디오의 경우 썸네일을 설정하세요. 썸네일은 본문에 포함된 비디오에 적용됩니다.",
+  "youtube_thumbnail_overrides_media": "이 게시물에는 유튜브 전용 썸네일이 설정되어 있어, 미디어 설정에서 지정한 썸네일을 덮어씁니다."
 }

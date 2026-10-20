@@ -893,5 +893,8 @@
   "finish_trial": "Kết thúc dùng thử",
   "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ khiến gói của bạn bị tính phí ngay lập tức, bạn có chắc chắn không?",
   "finish_trial_charge_me_now": "Kết thúc dùng thử, tính phí ngay",
-  "trial": "Dùng thử"
+  "trial": "Dùng thử",
+  "thumbnails_and_alt_text": "Hình thu nhỏ & văn bản thay thế",
+  "media_settings_section_description": "Bấm vào một mục phương tiện để đặt văn bản thay thế cho nó, hoặc hình thu nhỏ nếu đó là video. Hình thu nhỏ áp dụng cho các video trong bài đăng chính.",
+  "youtube_thumbnail_overrides_media": "Bài viết này có hình thu nhỏ riêng cho YouTube, thay thế hình thu nhỏ được đặt trong cài đặt phương tiện."
 }

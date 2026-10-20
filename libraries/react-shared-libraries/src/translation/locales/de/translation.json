@@ -893,5 +893,8 @@
   "finish_trial": "Testphase beenden",
   "finish_trial_confirmation": "Wenn Sie die Testphase beenden, wird Ihr Tarif sofort abgerechnet. Sind Sie sicher?",
   "finish_trial_charge_me_now": "Testphase beenden, jetzt abrechnen",
-  "trial": "Testphase"
+  "trial": "Testphase",
+  "thumbnails_and_alt_text": "Vorschaubilder & Alt-Text",
+  "media_settings_section_description": "Klicken Sie auf ein Medienelement, um seinen Alt-Text oder (bei Videos) das Vorschaubild festzulegen. Vorschaubilder gelten für Videos im Hauptbeitrag.",
+  "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt."
 }

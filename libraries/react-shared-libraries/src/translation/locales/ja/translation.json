@@ -893,5 +893,8 @@
   "finish_trial": "トライアルを終了する",
   "finish_trial_confirmation": "トライアルを終了すると、すぐにプランの料金が請求されます。本当によろしいですか？",
   "finish_trial_charge_me_now": "トライアルを終了して、今すぐ請求する",
-  "trial": "トライアル"
+  "trial": "トライアル",
+  "thumbnails_and_alt_text": "サムネイルと代替テキスト",
+  "media_settings_section_description": "メディアアイテムをクリックして代替テキスト、または動画の場合はサムネイルを設定できます。サムネイルはメイン投稿内の動画に適用されます。",
+  "youtube_thumbnail_overrides_media": "この投稿にはYouTube専用のサムネイルが設定されており、メディア設定で設定したサムネイルは上書きされます。"
 }

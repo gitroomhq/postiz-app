@@ -892,5 +892,8 @@
   "finish_trial": "Finalizar avaliação",
   "finish_trial_confirmation": "Finalizar a avaliação cobrará seu plano imediatamente. Tem certeza?",
   "finish_trial_charge_me_now": "Finalizar a avaliação, cobrar agora",
-  "trial": "Avaliação"
+  "trial": "Avaliação",
+  "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
+  "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, caso seja um vídeo. Miniaturas se aplicam a vídeos na publicação principal.",
+  "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
 }
