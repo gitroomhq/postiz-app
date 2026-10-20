@@ -271,7 +271,7 @@
   "claim": "Resgatar",
   "frequently_asked_questions": "Perguntas Frequentes",
   "autopost": "Autopost",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "O Autopost pode publicar automaticamente seus novos itens RSS nas redes sociais",
+  "autopost_creates_drafts_from_your_rss_new_items": "O Autopost cria rascunhos a partir dos novos itens do seu RSS; revise-os e agende a publicação deles pelo calendário.",
   "title": "Título",
   "add_an_autopost": "Adicionar um autopost",
   "post_content": "Conteúdo da postagem",
@@ -605,6 +605,7 @@
   "billing_download_invoice": "Baixar fatura",
   "billing_view_invoice": "Ver fatura",
   "billing_no_matching_invoices": "Nenhuma fatura corresponde à sua pesquisa",
+  "billing_no_invoices": "Ainda não há faturas",
   "select_channels": "Selecionar canais",
   "start_a_new_chat": "Iniciar um novo chat",
   "your_assistant": "Seu Assistente",
@@ -883,5 +884,15 @@
   "hubspot_installed_description": "Conecte aqui, no Postiz, os canais em que você deseja publicar. Depois, no HubSpot, abra Agent Hub > Agent Builder, adicione uma ferramenta, escolha Postiz MCP em MCP Servers e clique em Connect and add.",
   "timezone": "Fuso horário",
   "automatic_timezone": "Automático ({{timezone}})",
-  "could_not_save_timezone": "Não foi possível salvar o fuso horário"
+  "could_not_save_timezone": "Não foi possível salvar o fuso horário",
+  "finish_trial_failed": "Não foi possível finalizar sua avaliação",
+  "finish_trial_failed_description": "Não conseguimos cobrar no seu cartão. Por favor, tente novamente.",
+  "try_again": "Tentar novamente",
+  "finish_trial": "Finalizar avaliação",
+  "finish_trial_confirmation": "Finalizar a avaliação cobrará seu plano imediatamente. Tem certeza?",
+  "finish_trial_charge_me_now": "Finalizar a avaliação, cobrar agora",
+  "trial": "Avaliação",
+  "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
+  "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, caso seja um vídeo. Miniaturas se aplicam a vídeos na publicação principal.",
+  "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
 }

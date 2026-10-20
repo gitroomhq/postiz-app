@@ -271,7 +271,7 @@
   "claim": "청구",
   "frequently_asked_questions": "자주 묻는 질문",
   "autopost": "자동 게시",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "자동 게시 기능은 RSS의 새 항목을 소셜 미디어에 자동으로 게시할 수 있습니다.",
+  "autopost_creates_drafts_from_your_rss_new_items": "자동 게시 기능은 RSS의 새로운 항목에서 초안을 생성합니다. 달력에서 검토하고 예약하여 게시할 수 있습니다.",
   "title": "제목",
   "add_an_autopost": "자동 게시 추가",
   "post_content": "게시물 내용",
@@ -605,6 +605,7 @@
   "billing_download_invoice": "인보이스 다운로드",
   "billing_view_invoice": "인보이스 보기",
   "billing_no_matching_invoices": "검색과 일치하는 인보이스가 없습니다",
+  "billing_no_invoices": "아직 송장이 없습니다",
   "select_channels": "채널 선택",
   "start_a_new_chat": "새 채팅 시작",
   "your_assistant": "당신의 어시스턴트",
@@ -883,5 +884,15 @@
   "hubspot_installed_description": "게시할 채널을 여기 Postiz에서 연결하세요. 그런 다음 HubSpot에서 Agent Hub > Agent Builder를 열고 도구를 추가한 뒤 MCP Servers에서 Postiz MCP를 선택하고 Connect and add를 클릭하세요.",
   "timezone": "시간대",
   "automatic_timezone": "자동 ({{timezone}})",
-  "could_not_save_timezone": "시간대를 저장할 수 없습니다"
+  "could_not_save_timezone": "시간대를 저장할 수 없습니다",
+  "finish_trial_failed": "체험을 완료할 수 없습니다",
+  "finish_trial_failed_description": "카드를 결제할 수 없습니다. 다시 시도해 주세요.",
+  "try_again": "다시 시도하기",
+  "finish_trial": "체험 종료",
+  "finish_trial_confirmation": "체험을 종료하면 요금제가 즉시 청구됩니다. 계속하시겠습니까?",
+  "finish_trial_charge_me_now": "체험 종료, 지금 결제하기",
+  "trial": "체험",
+  "thumbnails_and_alt_text": "썸네일 및 대체 텍스트",
+  "media_settings_section_description": "미디어 항목을 클릭하여 대체 텍스트를 설정하거나, 비디오의 경우 썸네일을 설정하세요. 썸네일은 본문에 포함된 비디오에 적용됩니다.",
+  "youtube_thumbnail_overrides_media": "이 게시물에는 유튜브 전용 썸네일이 설정되어 있어, 미디어 설정에서 지정한 썸네일을 덮어씁니다."
 }

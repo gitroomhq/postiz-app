@@ -271,7 +271,7 @@
   "claim": "Richiedi",
   "frequently_asked_questions": "Domande frequenti",
   "autopost": "Autopost",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Autopost può pubblicare automaticamente i nuovi elementi RSS sui social media",
+  "autopost_creates_drafts_from_your_rss_new_items": "L'autopost crea bozze dai nuovi elementi del tuo RSS; rivedili e programmali dal calendario per pubblicarli.",
   "title": "Titolo",
   "add_an_autopost": "Aggiungi un autopost",
   "post_content": "Contenuto del post",
@@ -605,6 +605,7 @@
   "billing_download_invoice": "Scarica fattura",
   "billing_view_invoice": "Visualizza fattura",
   "billing_no_matching_invoices": "Nessuna fattura corrisponde alla ricerca",
+  "billing_no_invoices": "Nessuna fattura al momento",
   "select_channels": "Seleziona canali",
   "start_a_new_chat": "Inizia una nuova chat",
   "your_assistant": "Il tuo assistente",
@@ -883,5 +884,15 @@
   "hubspot_installed_description": "Collega qui, in Postiz, i canali su cui vuoi pubblicare. Poi, in HubSpot, apri Agent Hub > Agent Builder, aggiungi uno strumento, scegli Postiz MCP in MCP Servers e fai clic su Connect and add.",
   "timezone": "Fuso orario",
   "automatic_timezone": "Automatico ({{timezone}})",
-  "could_not_save_timezone": "Impossibile salvare il fuso orario"
+  "could_not_save_timezone": "Impossibile salvare il fuso orario",
+  "finish_trial_failed": "Non siamo riusciti a completare la tua prova",
+  "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
+  "try_again": "Riprova",
+  "finish_trial": "Termina la prova",
+  "finish_trial_confirmation": "Terminando la prova il tuo piano verrà addebitato immediatamente, sei sicuro?",
+  "finish_trial_charge_me_now": "Termina la prova, addebitami ora",
+  "trial": "Prova",
+  "thumbnails_and_alt_text": "Miniature e testo alternativo",
+  "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il testo alternativo o la miniatura se si tratta di un video. Le miniature si applicano ai video nel post principale.",
+  "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
 }

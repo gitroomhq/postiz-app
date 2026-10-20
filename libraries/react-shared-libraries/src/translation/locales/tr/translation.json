@@ -271,7 +271,7 @@
   "claim": "Talep Et",
   "frequently_asked_questions": "Sıkça Sorulan Sorular",
   "autopost": "Otomatik Paylaşım",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "Otomatik paylaşım, RSS'inizdeki yeni öğeleri sosyal medyaya otomatik olarak gönderebilir",
+  "autopost_creates_drafts_from_your_rss_new_items": "Otomatik gönderi, RSS'inizdeki yeni öğelerden taslaklar oluşturur; bunları inceleyip yayımlamak için takvimden zamanlayabilirsiniz.",
   "title": "Başlık",
   "add_an_autopost": "Otomatik paylaşım ekle",
   "post_content": "Paylaşım içeriği",
@@ -605,6 +605,7 @@
   "billing_download_invoice": "Faturayı indir",
   "billing_view_invoice": "Faturayı görüntüle",
   "billing_no_matching_invoices": "Aramanızla eşleşen fatura yok",
+  "billing_no_invoices": "Henüz fatura yok",
   "select_channels": "Kanalları Seç",
   "start_a_new_chat": "Yeni bir sohbet başlat",
   "your_assistant": "Asistanınız",
@@ -883,5 +884,15 @@
   "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın.",
   "timezone": "Saat dilimi",
   "automatic_timezone": "Otomatik ({{timezone}})",
-  "could_not_save_timezone": "Saat dilimi kaydedilemedi"
+  "could_not_save_timezone": "Saat dilimi kaydedilemedi",
+  "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
+  "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
+  "try_again": "Tekrar deneyin",
+  "finish_trial": "Denemeyi bitir",
+  "finish_trial_confirmation": "Denemeyi bitirmek planınızı hemen ücretlendirecek, emin misiniz?",
+  "finish_trial_charge_me_now": "Denemeyi bitir, şimdi ücretlendir",
+  "trial": "Deneme",
+  "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
+  "media_settings_section_description": "Bir medya öğesinin alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın. Küçük resimler, ana gönderideki videolar için geçerlidir.",
+  "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."
 }

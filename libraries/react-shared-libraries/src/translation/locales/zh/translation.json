@@ -271,7 +271,7 @@
   "claim": "领取",
   "frequently_asked_questions": "常见问题",
   "autopost": "自动发布",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "自动发布可以将您的RSS新内容自动发布到社交媒体",
+  "autopost_creates_drafts_from_your_rss_new_items": "自动发布会根据你的RSS新内容创建草稿，你可以在日历中审核并安排它们进行发布",
   "title": "标题",
   "add_an_autopost": "添加自动发布",
   "post_content": "发布内容",
@@ -605,6 +605,7 @@
   "billing_download_invoice": "下载发票",
   "billing_view_invoice": "查看发票",
   "billing_no_matching_invoices": "没有与搜索匹配的发票",
+  "billing_no_invoices": "尚无发票",
   "select_channels": "选择频道",
   "start_a_new_chat": "开始新聊天",
   "your_assistant": "你的助手",
@@ -883,5 +884,15 @@
   "hubspot_installed_description": "请先在 Postiz 中连接您要发布内容的渠道。然后在 HubSpot 中打开 Agent Hub > Agent Builder，添加一个工具，在 MCP Servers 下选择 Postiz MCP，然后点击 Connect and add。",
   "timezone": "时区",
   "automatic_timezone": "自动 ({{timezone}})",
-  "could_not_save_timezone": "无法保存时区"
+  "could_not_save_timezone": "无法保存时区",
+  "finish_trial_failed": "我们未能完成您的试用",
+  "finish_trial_failed_description": "我们无法扣款，请重试。",
+  "try_again": "重试",
+  "finish_trial": "结束试用",
+  "finish_trial_confirmation": "结束试用将立即对您的套餐进行扣费，您确定要继续吗？",
+  "finish_trial_charge_me_now": "结束试用，立即扣费",
+  "trial": "试用",
+  "thumbnails_and_alt_text": "缩略图与替代文本",
+  "media_settings_section_description": "点击媒体项可设置其替代文本，若是视频还可以设置缩略图。缩略图适用于主帖子中的视频。",
+  "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。"
 }

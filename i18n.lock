@@ -275,7 +275,7 @@ checksums:
     claim: 5649a7cd8b85ad2a53c9ff27704b4dad
     frequently_asked_questions: 212c5c784d5580b2f8b9481cb102cb4c
     autopost: 516cc6b9321aa2b3da4d89bc6ded71ab
-    autopost_can_automatically_posts_your_rss_new_items_to_social_media: a088be5dc3884e6e548b6fdd3ad833a8
+    autopost_creates_drafts_from_your_rss_new_items: 653344b55572758e30fe600c4c7ae3fc
     title: 344e64395eaff6822a57d18623853e1a
     add_an_autopost: a3f7c9403df5038af2e46064153ce36a
     post_content: 8a21638d6bacafe3cb39a4dd5e780a26
@@ -609,6 +609,7 @@ checksums:
     billing_download_invoice: 8c50fd826a446b01ef4fcdb16abef365
     billing_view_invoice: 6362bd0415ff4803ab99c2b454e07940
     billing_no_matching_invoices: d40a4a30fb9ebe36ba7203b961d00de0
+    billing_no_invoices: c0562e30a8f8193663ed898d15f03122
     select_channels: 3aab82dc90ccafe55059c32c5a33c222
     start_a_new_chat: 65b9067206fa4e4929d48ce242d879a6
     your_assistant: bd6422d1c2a2ba461e1da169b082bf7b
@@ -888,3 +889,13 @@ checksums:
     timezone: 370780b854bdbef55320f977a4fb9ddb
     automatic_timezone: bb2d180231d5caccb2507ada3bb8329e
     could_not_save_timezone: d0e1af80e2c1de9a40f748fd5198d7a5
+    finish_trial_failed: 2e24d567f3cbb2b636087ab1d7001509
+    finish_trial_failed_description: f67cb5adf7e1f3dbf1412edbf62e4974
+    try_again: 33dd8820e743e35a66e6977f69e9d3b5
+    finish_trial: 1d20d4471820f251c64a436b63db678f
+    finish_trial_confirmation: 5e7b2ea52e07fffa3c401a43eb7c94d4
+    finish_trial_charge_me_now: 13a748bb479d826430c8d5102e0d7705
+    trial: 4fd32760caf3bd7169935b0a6d2b5b67
+    thumbnails_and_alt_text: 20fe8924ed0e3ebe39a0d1953dc24df1
+    media_settings_section_description: 973eb95a5c09765efaa3e6365f7b460c
+    youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81
