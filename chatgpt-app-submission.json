@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Postiz",
     "subtitle": "Schedule Social Media Posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts.",
+    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts\n- Delete posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -92,6 +92,18 @@
         "destructive_justification": "Overwrites existing provider settings on an unpublished draft or scheduled post, which changes how it will be published; it does not delete posts, change content or dates, or publish immediately."
       }
     },
+    "deletePostTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Deletes an existing post and its comments on one channel in Postiz.",
+        "open_world_justification": "Only deletes the post inside Postiz; a published post stays live on the social network and no third-party system is changed.",
+        "destructive_justification": "Permanently deletes the post (every repetition of a repeating post) and its comments from Postiz, so a scheduled post is no longer published; this cannot be undone."
+      }
+    },
     "generateVideoOptions": {
       "annotations": {
         "readOnlyHint": true,
@@ -159,9 +171,33 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Fetches a public media URL, uploads the file, and saves it to the media library.",
-        "open_world_justification": "Reads from a public URL and stores the resulting media through external storage.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+        "read_only_justification": "Fetches a public media URL, uploads the file, and saves it to the media library; with adjust set to true it also starts a background job that adjusts the file to the platforms' limits.",
+        "open_world_justification": "Reads from a public URL and stores the resulting media through external storage; with adjust set to true an external media processing service adjusts the file.",
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content; with adjust set to true the adjusted file replaces only the file uploaded by this call."
+      }
+    },
+    "mediaStatusTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads whether a media uploaded with adjust set to true finished adjusting, and returns its path.",
+        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "mediaListTool": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only lists the media already in the user's media library, optionally searched by filename.",
+        "open_world_justification": "Reads internal Postiz data for the user's workspace only.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
       }
     },
     "uploadWidgetTool": {
@@ -171,9 +207,9 @@
         "destructiveHint": false
       },
       "justifications": {
-        "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with.",
+        "read_only_justification": "Opens an upload session and shows a widget the user uploads media to their own media library with; the user can tick an option to adjust the uploaded files to the platforms' limits.",
         "open_world_justification": "Only creates an upload session inside the user's Postiz workspace; nothing is published or sent to a third party.",
-        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content."
+        "destructive_justification": "Does not delete or overwrite existing media, revoke access, or publish content; when the user ticks the adjust option, the adjusted file replaces only the file uploaded in that session."
       }
     },
     "uploadWidgetTicketTool": {
@@ -276,6 +312,30 @@
       "file_attachment_urls": null,
       "tools_triggered": "generateImageTool",
       "expected_output": "Calls generateImageTool with the prompt and returns the hosted image URL saved in the media library. If the account has no AI image credits, the tool returns a clear error message that is relayed to the user. No post is created.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Upload a remote video adjusted to the platforms' limits and wait until it is ready.",
+      "user_prompt": "Upload this video to my Postiz media library and adjust it to the platforms' limits: https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4. Tell me when it is ready to post. Don't create a post.",
+      "file_attachment_urls": null,
+      "tools_triggered": "uploadFromUrlTool, mediaStatusTool",
+      "expected_output": "Calls uploadFromUrlTool with adjust set to true, which returns the media id and path with the status \"processing\". Then calls mediaStatusTool with that id until the status is \"ready\" (usually within seconds) and confirms the adjusted video is in place at the same path. No post is created.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Find media already in the library instead of uploading it again.",
+      "user_prompt": "Find the Big Buck Bunny video in my Postiz media library and give me its path.",
+      "file_attachment_urls": null,
+      "tools_triggered": "mediaListTool",
+      "expected_output": "Calls mediaListTool with a filename search and returns the matching media with its path (uploaded by the previous test case). If nothing matches, it says so. Read-only, nothing is uploaded and no post is created.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Delete a draft post after confirming it with the user.",
+      "user_prompt": "Delete my Postiz LinkedIn draft with the text \"Testing the Postiz ChatGPT app\".",
+      "file_attachment_urls": null,
+      "tools_triggered": "postsListTool, deletePostTool",
+      "expected_output": "Calls postsListTool for the coming weeks, finds the matching LinkedIn draft (created by an earlier test case), shows its channel, date and text, and asks for confirmation. After the user confirms, calls deletePostTool with the post id and confirms it was deleted. Nothing is published or changed on LinkedIn. If no matching draft exists, it says so and deletes nothing.",
       "expected_output_url": null
     }
   ],
