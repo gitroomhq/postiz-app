@@ -27,18 +27,36 @@ const attachmentUrl = z
     message: validUrlExtension.defaultMessage({} as any),
   });
 
-// Attachments are either a plain URL string or { path, thumbnail? } where
-// thumbnail is an image URL (jpeg/png) used as the video's thumbnail / cover.
+// Attachments are either a plain URL string or { path, alt?, thumbnail?,
+// thumbnailTimestamp? }, the same per-media fields as the public API.
 const attachment = z.union([
   attachmentUrl,
   z.object({
     path: attachmentUrl,
+    alt: z.string().optional(),
     thumbnail: attachmentUrl.optional(),
+    thumbnailTimestamp: z.number().int().min(0).optional(),
   }),
 ]);
 
-const toMedia = (a: string | { path: string; thumbnail?: string }) =>
-  typeof a === 'string' ? { path: a } : { path: a.path, thumbnail: a.thumbnail };
+const toMedia = (
+  a:
+    | string
+    | {
+        path: string;
+        alt?: string;
+        thumbnail?: string;
+        thumbnailTimestamp?: number;
+      }
+) =>
+  typeof a === 'string'
+    ? { path: a }
+    : {
+        path: a.path,
+        alt: a.alt,
+        thumbnail: a.thumbnail,
+        thumbnailTimestamp: a.thumbnailTimestamp,
+      };
 
 @Injectable()
 export class IntegrationSchedulePostTool implements AgentToolInterface {
@@ -110,7 +128,7 @@ If validation fails, the result contains output.errors describing what to fix; t
                     attachments: z
                       .array(attachment)
                       .describe(
-                        'The media of the post: either an uploaded media URL string, or { path, thumbnail } where path is the uploaded video URL and thumbnail is the path of an uploaded jpeg/png (returned by uploadFromUrlTool) used as the video thumbnail / cover'
+                        'The media of the post: either an uploaded media URL string, or { path, alt?, thumbnail?, thumbnailTimestamp? } where path is the uploaded media URL, alt is its alt text, thumbnail is the path of an uploaded jpeg/png (returned by uploadFromUrlTool) used as the video thumbnail / cover, and thumbnailTimestamp is the video frame to use as the cover, in milliseconds'
                       ),
                   })
                 )
