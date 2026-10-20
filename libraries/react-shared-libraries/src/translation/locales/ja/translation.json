@@ -271,7 +271,7 @@
   "claim": "請求",
   "frequently_asked_questions": "よくある質問",
   "autopost": "自動投稿",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "自動投稿は、RSSの新しいアイテムを自動的にソーシャルメディアに投稿できます",
+  "autopost_creates_drafts_from_your_rss_new_items": "自動投稿機能は、あなたのRSSの新しいアイテムから下書きを作成します。カレンダーで内容を確認し、公開したい日時にスケジュールしてください。",
   "title": "タイトル",
   "add_an_autopost": "自動投稿を追加",
   "post_content": "投稿内容",

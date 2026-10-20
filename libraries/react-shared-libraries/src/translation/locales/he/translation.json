@@ -271,7 +271,7 @@
   "claim": "תבע",
   "frequently_asked_questions": "שאלות נפוצות",
   "autopost": "פרסום אוטומטי",
-  "autopost_can_automatically_posts_your_rss_new_items_to_social_media": "פרסום אוטומטי יכול לפרסם פריטים חדשים מה-RSS שלך לרשתות החברתיות באופן אוטומטי",
+  "autopost_creates_drafts_from_your_rss_new_items": "הפרסום האוטומטי יוצר טיוטות מהפריטים החדשים ב-RSS שלך. בדוק ולְתַזְמֵן אותם מלוח השנה כדי לפרסם אותם.",
   "title": "כותרת",
   "add_an_autopost": "הוסף פרסום אוטומטי",
   "post_content": "תוכן הפוסט",
