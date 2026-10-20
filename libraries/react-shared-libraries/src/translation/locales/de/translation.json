@@ -605,6 +605,7 @@
   "billing_download_invoice": "Rechnung herunterladen",
   "billing_view_invoice": "Rechnung ansehen",
   "billing_no_matching_invoices": "Keine Rechnungen entsprechen Ihrer Suche",
+  "billing_no_invoices": "Noch keine Rechnungen",
   "select_channels": "Kanäle auswählen",
   "start_a_new_chat": "Neuen Chat starten",
   "your_assistant": "Ihr Assistent",
