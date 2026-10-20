@@ -8,7 +8,7 @@ export class DeepgramService {
   // minute, and Deepgram gives up on its side after ten
   async transcribeUrl(url: string): Promise<ClippingTranscript> {
     const response = await fetch(
-      'https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&utterances=true&detect_language=true',
+      'https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&utterances=true&detect_language=true&mip_opt_out=true',
       {
         method: 'POST',
         headers: {
