@@ -483,9 +483,9 @@ export const MainBillingComponent: FC<{
       await deleteDialog(
         t(
           'finish_trial_confirmation',
-          'Finishing the trial will charge your plan immediately, are you sure?'
+          "Ending the trial charges your plan's first payment today instead of at the end of the trial. Nothing extra is added. Continue?"
         ),
-        t('finish_trial_charge_me_now', 'Finish the trial, charge me now'),
+        t('finish_trial_charge_me_now', 'End trial and pay now'),
         t('trial', 'Trial')
       )
     ) {
