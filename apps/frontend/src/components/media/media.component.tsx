@@ -644,7 +644,7 @@ export const MediaBox: FC<{
                     )}
                     <div
                       className={clsx(
-                        'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px]',
+                        'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px] rounded-[4px] px-[6px] bg-black/60 text-white',
                         !standalone && 'mobile:hidden'
                       )}
                     >
