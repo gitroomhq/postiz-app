@@ -894,6 +894,6 @@
   "trial": "Deneme",
   "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
   "media_settings_section_description": "Bir medya ögesine alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın.",
-  "media_settings_section_tooltip": "Küçük resimler, ana gönderideki videolar için geçerlidir. YouTube, Shorts olarak kabul ettiği (dikey, en fazla 3 dakika) videolarda özel küçük resimleri yayın başarısız olmadan göz ardı edebilir.",
+  "media_settings_section_tooltip": "Küçük resimler, ana gönderideki videolara uygulanır ve bunları destekleyen her kanala gönderilir. YouTube, Dikey ve 3 dakikaya kadar olan Shorts olarak kabul ettiği videolarda küçük resimleri dikkate almayabilir; yayın başarısız olmadan geçilebilir ve özel küçük resimler için telefonla doğrulanmış bir kanal gereklidir. YouTube küçük resmi reddederse video yine de yayınlanır ve Postiz önceden uygunluğu kontrol edemez.",
   "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."
 }

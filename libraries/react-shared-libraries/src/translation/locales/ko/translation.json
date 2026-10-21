@@ -894,6 +894,6 @@
   "trial": "체험",
   "thumbnails_and_alt_text": "썸네일 및 대체 텍스트",
   "media_settings_section_description": "미디어 항목을 클릭하여 대체 텍스트를 설정하거나, 동영상인 경우 썸네일을 설정하세요.",
-  "media_settings_section_tooltip": "썸네일은 본문에 삽입된 동영상에 적용됩니다. YouTube는 Shorts(세로, 최대 3분)로 간주하는 동영상에는 사용자 지정 썸네일을 무시할 수 있으며, 게시에 실패하지 않고 진행될 수 있습니다.",
+  "media_settings_section_tooltip": "썸네일은 메인 게시물의 동영상에 적용되며, 이를 지원하는 모든 채널에 전송됩니다. YouTube에서는 Shorts로 간주되는 동영상(세로, 최대 3분)에 대해서는 썸네일을 무시할 수 있으며, 맞춤 썸네일을 사용하려면 전화번호 인증이 완료된 채널이 필요합니다. YouTube에서 썸네일이 거부되더라도 동영상은 정상적으로 게시되며, Postiz에서는 사전 자격 조건을 확인할 수 없습니다.",
   "youtube_thumbnail_overrides_media": "이 게시물에는 유튜브 전용 썸네일이 설정되어 있어, 미디어 설정에서 지정한 썸네일을 덮어씁니다."
 }
