@@ -894,6 +894,6 @@
   "trial": "Prueba",
   "thumbnails_and_alt_text": "Miniaturas y texto alternativo",
   "media_settings_section_description": "Haz clic en un elemento multimedia para establecer su texto alternativo, o su miniatura si es un video.",
-  "media_settings_section_tooltip": "Las miniaturas se aplican a los videos en la publicación principal. YouTube puede ignorar las miniaturas personalizadas en videos que trata como Shorts (verticales, de hasta 3 minutos) sin que falle la publicación.",
+  "media_settings_section_tooltip": "Las miniaturas se aplican a los videos en la publicación principal y se envían a todos los canales que las admiten. YouTube puede ignorarlas en los videos que considera Shorts (verticales, de hasta 3 minutos) sin fallar la publicación, y requiere un canal verificado por teléfono para miniaturas personalizadas. Si YouTube rechaza la miniatura, el video igualmente se publica y Postiz no puede comprobar la elegibilidad con antelación.",
   "youtube_thumbnail_overrides_media": "Esta publicación tiene una miniatura específica de YouTube, que reemplaza la miniatura establecida en la configuración de medios."
 }

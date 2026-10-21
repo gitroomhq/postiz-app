@@ -894,6 +894,6 @@
   "trial": "Testphase",
   "thumbnails_and_alt_text": "Vorschaubilder & Alt-Text",
   "media_settings_section_description": "Klicken Sie auf ein Medienelement, um dessen Alternativtext oder, falls es sich um ein Video handelt, dessen Thumbnail festzulegen.",
-  "media_settings_section_tooltip": "Thumbnails werden auf Videos im Hauptbeitrag angewendet. YouTube kann benutzerdefinierte Thumbnails bei Videos, die als Shorts behandelt werden (vertikal, bis zu 3 Minuten), ignorieren, ohne dass die Veröffentlichung fehlschlägt.",
+  "media_settings_section_tooltip": "Vorschaubilder gelten für Videos im Hauptbeitrag und werden an jeden Kanal gesendet, der sie unterstützt. YouTube kann sie bei Videos ignorieren, die als Shorts behandelt werden (vertikal, bis zu 3 Minuten), ohne dass die Veröffentlichung fehlschlägt, und erfordert für benutzerdefinierte Vorschaubilder einen kanal, der per Telefon verifiziert ist. Wenn YouTube das Vorschaubild ablehnt, wird das Video trotzdem veröffentlicht, und Postiz kann die Eignung nicht im Voraus prüfen.",
   "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt."
 }
