@@ -895,6 +895,7 @@
   "finish_trial_charge_me_now": "Finalizar a avaliação, cobrar agora",
   "trial": "Avaliação",
   "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
-  "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, caso seja um vídeo. Miniaturas se aplicam a vídeos na publicação principal.",
+  "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, se for um vídeo.",
+  "media_settings_section_tooltip": "As miniaturas se aplicam a vídeos na publicação principal. O YouTube pode ignorar miniaturas personalizadas em vídeos que trata como Shorts (verticais, com até 3 minutos), sem impedir a publicação.",
   "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
 }

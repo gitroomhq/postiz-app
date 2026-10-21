@@ -895,6 +895,7 @@
   "finish_trial_charge_me_now": "Denemeyi bitir, şimdi ücretlendir",
   "trial": "Deneme",
   "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
-  "media_settings_section_description": "Bir medya öğesinin alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın. Küçük resimler, ana gönderideki videolar için geçerlidir.",
+  "media_settings_section_description": "Bir medya ögesine alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın.",
+  "media_settings_section_tooltip": "Küçük resimler, ana gönderideki videolar için geçerlidir. YouTube, Shorts olarak kabul ettiği (dikey, en fazla 3 dakika) videolarda özel küçük resimleri yayın başarısız olmadan göz ardı edebilir.",
   "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."
 }

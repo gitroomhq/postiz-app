@@ -895,6 +895,7 @@
   "finish_trial_charge_me_now": "结束试用，立即扣费",
   "trial": "试用",
   "thumbnails_and_alt_text": "缩略图与替代文本",
-  "media_settings_section_description": "点击媒体项可设置其替代文本，若是视频还可以设置缩略图。缩略图适用于主帖子中的视频。",
+  "media_settings_section_description": "点击媒体项为其设置替代文本，如果是视频，还可以设置其缩略图。",
+  "media_settings_section_tooltip": "缩略图适用于主帖中的视频。YouTube 可能会忽略对其视为 Shorts（竖屏、时长不超过 3 分钟）的视频设置的自定义缩略图，但不会导致发布失败。",
   "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。"
 }

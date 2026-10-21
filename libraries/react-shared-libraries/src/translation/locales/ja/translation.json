@@ -620,7 +620,6 @@
   "email_address": "メールアドレス",
   "email_already_exists": "メールアドレスは既に存在します",
   "google": "Google",
-  "apple": "アップル",
   "apple": "りんご",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "スマートフォンでQRコードをスキャンするか、リンクをスマートフォンで開き、FarcasterアプリでPostizを承認してください。",
@@ -896,6 +895,7 @@
   "finish_trial_charge_me_now": "トライアルを終了して、今すぐ請求する",
   "trial": "トライアル",
   "thumbnails_and_alt_text": "サムネイルと代替テキスト",
-  "media_settings_section_description": "メディアアイテムをクリックして代替テキスト、または動画の場合はサムネイルを設定できます。サムネイルはメイン投稿内の動画に適用されます。",
+  "media_settings_section_description": "メディアアイテムをクリックして、代替テキストや（動画の場合は）サムネイルを設定してください。",
+  "media_settings_section_tooltip": "サムネイルはメイン投稿内の動画に適用されます。YouTubeでは、Shorts（縦向き・3分以内の動画）として認識される場合、カスタムサムネイルが無視されることがあります（公開には失敗しません）。",
   "youtube_thumbnail_overrides_media": "この投稿にはYouTube専用のサムネイルが設定されており、メディア設定で設定したサムネイルは上書きされます。"
 }

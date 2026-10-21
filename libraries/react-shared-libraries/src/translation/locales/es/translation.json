@@ -620,7 +620,6 @@
   "email_address": "Dirección de correo electrónico",
   "email_already_exists": "El correo electrónico ya existe",
   "google": "Google",
-  "apple": "Manzana",
   "apple": "Apple",
   "farcaster": "Farcaster",
   "farcaster_approve_instructions": "Escanee el código QR con su teléfono o abra el enlace en su teléfono, luego apruebe Postiz en la app de Farcaster.",
@@ -896,6 +895,7 @@
   "finish_trial_charge_me_now": "Finalizar la prueba, cobrarme ahora",
   "trial": "Prueba",
   "thumbnails_and_alt_text": "Miniaturas y texto alternativo",
-  "media_settings_section_description": "Haz clic en un elemento multimedia para establecer su texto alternativo, o su miniatura si es un video. Las miniaturas se aplican a los videos de la publicación principal.",
+  "media_settings_section_description": "Haz clic en un elemento multimedia para establecer su texto alternativo, o su miniatura si es un video.",
+  "media_settings_section_tooltip": "Las miniaturas se aplican a los videos en la publicación principal. YouTube puede ignorar las miniaturas personalizadas en videos que trata como Shorts (verticales, de hasta 3 minutos) sin que falle la publicación.",
   "youtube_thumbnail_overrides_media": "Esta publicación tiene una miniatura específica de YouTube, que reemplaza la miniatura establecida en la configuración de medios."
 }
