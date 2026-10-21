@@ -891,11 +891,11 @@
   "finish_trial_failed_description": "我们无法扣款，请重试。",
   "try_again": "重试",
   "finish_trial": "结束试用",
-  "finish_trial_confirmation": "结束试用将立即对您的套餐进行扣费，您确定要继续吗？",
-  "finish_trial_charge_me_now": "结束试用，立即扣费",
+  "finish_trial_confirmation": "结束试用将使您的计划首付款今天扣费，而不是在试用期结束时扣费。不会额外收取费用。是否继续？",
+  "finish_trial_charge_me_now": "结束试用并立即付款",
   "trial": "试用",
   "thumbnails_and_alt_text": "缩略图与替代文本",
   "media_settings_section_description": "点击媒体项为其设置替代文本，如果是视频，还可以设置其缩略图。",
-  "media_settings_section_tooltip": "缩略图适用于主帖中的视频。YouTube 可能会忽略对其视为 Shorts（竖屏、时长不超过 3 分钟）的视频设置的自定义缩略图，但不会导致发布失败。",
+  "media_settings_section_tooltip": "缩略图适用于主帖中的视频，并会发送到每个支持缩略图的频道。YouTube 可能会对被视为 Shorts（竖屏、时长不超过 3 分钟）的视频忽略缩略图，但不会导致发布失败，并且自定义缩略图需要经过手机验证的频道。如果 YouTube 拒绝了缩略图，视频仍将发布，且 Postiz 无法提前检查其资格。",
   "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。"
 }

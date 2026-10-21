@@ -891,11 +891,11 @@
   "finish_trial_failed_description": "カードへの請求ができませんでした。もう一度お試しください。",
   "try_again": "再試行",
   "finish_trial": "トライアルを終了する",
-  "finish_trial_confirmation": "トライアルを終了すると、すぐにプランの料金が請求されます。本当によろしいですか？",
-  "finish_trial_charge_me_now": "トライアルを終了して、今すぐ請求する",
+  "finish_trial_confirmation": "トライアルを終了すると、本来トライアル期間終了後に請求されるはずだったプランの初回支払いが本日請求されます。追加料金は発生しません。続行しますか？",
+  "finish_trial_charge_me_now": "トライアルを終了して今すぐ支払う",
   "trial": "トライアル",
   "thumbnails_and_alt_text": "サムネイルと代替テキスト",
   "media_settings_section_description": "メディアアイテムをクリックして、代替テキストや（動画の場合は）サムネイルを設定してください。",
-  "media_settings_section_tooltip": "サムネイルはメイン投稿内の動画に適用されます。YouTubeでは、Shorts（縦向き・3分以内の動画）として認識される場合、カスタムサムネイルが無視されることがあります（公開には失敗しません）。",
+  "media_settings_section_tooltip": "サムネイルはメイン投稿の動画に適用され、対応しているすべてのチャンネルに送信されます。YouTubeでは、Shorts（縦型・最長3分）の動画として扱われる場合、サムネイルが無視されることがありますが、公開自体は失敗しません。カスタムサムネイルには、電話番号認証済みのチャンネルが必要です。YouTubeがサムネイルを却下した場合でも動画は公開されます。また、Postizでは事前にサムネイルの利用可否を確認することはできません。",
   "youtube_thumbnail_overrides_media": "この投稿にはYouTube専用のサムネイルが設定されており、メディア設定で設定したサムネイルは上書きされます。"
 }

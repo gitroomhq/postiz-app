@@ -891,11 +891,11 @@
   "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
   "try_again": "Riprova",
   "finish_trial": "Termina la prova",
-  "finish_trial_confirmation": "Terminando la prova il tuo piano verrà addebitato immediatamente, sei sicuro?",
-  "finish_trial_charge_me_now": "Termina la prova, addebitami ora",
+  "finish_trial_confirmation": "Terminare la prova addebiterà oggi il primo pagamento del tuo piano invece che alla fine della prova. Non verrà aggiunto alcun costo extra. Continuare?",
+  "finish_trial_charge_me_now": "Termina la prova e paga ora",
   "trial": "Prova",
   "thumbnails_and_alt_text": "Miniature e testo alternativo",
   "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il suo testo alternativo o la sua miniatura, se si tratta di un video.",
-  "media_settings_section_tooltip": "Le miniature si applicano ai video nel post principale. YouTube potrebbe ignorare le miniature personalizzate sui video che considera Shorts (verticali, fino a 3 minuti) senza però impedire la pubblicazione.",
+  "media_settings_section_tooltip": "Le miniature si applicano ai video nel post principale e vengono inviate a ogni canale che le supporta. YouTube potrebbe ignorarle sui video che considera Shorts (verticali, fino a 3 minuti) senza impedire la pubblicazione, e richiede un canale verificato tramite telefono per miniature personalizzate. Se YouTube rifiuta la miniatura, il video viene comunque pubblicato, e Postiz non può verificare l’idoneità in anticipo.",
   "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
 }

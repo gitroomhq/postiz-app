@@ -891,11 +891,11 @@
   "finish_trial_failed_description": "Não conseguimos cobrar no seu cartão. Por favor, tente novamente.",
   "try_again": "Tentar novamente",
   "finish_trial": "Finalizar avaliação",
-  "finish_trial_confirmation": "Finalizar a avaliação cobrará seu plano imediatamente. Tem certeza?",
-  "finish_trial_charge_me_now": "Finalizar a avaliação, cobrar agora",
+  "finish_trial_confirmation": "Encerrar o teste faz com que o primeiro pagamento do seu plano seja cobrado hoje, em vez de ao final do teste. Nenhum valor extra será adicionado. Deseja continuar?",
+  "finish_trial_charge_me_now": "Encerrar teste e pagar agora",
   "trial": "Avaliação",
   "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
   "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, se for um vídeo.",
-  "media_settings_section_tooltip": "As miniaturas se aplicam a vídeos na publicação principal. O YouTube pode ignorar miniaturas personalizadas em vídeos que trata como Shorts (verticais, com até 3 minutos), sem impedir a publicação.",
+  "media_settings_section_tooltip": "As miniaturas se aplicam aos vídeos na postagem principal e são enviadas para todos os canais que as suportam. O YouTube pode ignorá-las em vídeos que considera Shorts (verticais, de até 3 minutos) sem impedir a publicação, e exige um canal verificado por telefone para miniaturas personalizadas. Se o YouTube rejeitar a miniatura, o vídeo ainda será publicado e o Postiz não pode verificar a elegibilidade com antecedência.",
   "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
 }

@@ -895,10 +895,10 @@ checksums:
     finish_trial_failed_description: f67cb5adf7e1f3dbf1412edbf62e4974
     try_again: 33dd8820e743e35a66e6977f69e9d3b5
     finish_trial: 1d20d4471820f251c64a436b63db678f
-    finish_trial_confirmation: 5e7b2ea52e07fffa3c401a43eb7c94d4
-    finish_trial_charge_me_now: 13a748bb479d826430c8d5102e0d7705
+    finish_trial_confirmation: 908f84ab1b3fb4bee0d3a4699a1f1b25
+    finish_trial_charge_me_now: 7050d69051856a6676ad647cb846fb67
     trial: 4fd32760caf3bd7169935b0a6d2b5b67
     thumbnails_and_alt_text: 20fe8924ed0e3ebe39a0d1953dc24df1
     media_settings_section_description: 7a1088432c597eb418e0f42adef16b3e
-    media_settings_section_tooltip: 6d3619951d5db488b0d78d00111db9ec
+    media_settings_section_tooltip: 6028d539cd20cb33a6bdd124d821abfc
     youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81

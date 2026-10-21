@@ -891,11 +891,11 @@
   "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
   "try_again": "Réessayer",
   "finish_trial": "Terminer l'essai",
-  "finish_trial_confirmation": "Terminer l'essai facturera immédiatement votre abonnement, êtes-vous sûr ?",
-  "finish_trial_charge_me_now": "Terminer l'essai, facturez-moi maintenant",
+  "finish_trial_confirmation": "Mettre fin à l’essai entraîne le paiement immédiat de votre abonnement au lieu du paiement à la fin de la période d’essai. Aucun frais supplémentaire ne sera appliqué. Continuer ?",
+  "finish_trial_charge_me_now": "Mettre fin à l'essai et payer maintenant",
   "trial": "Essai",
   "thumbnails_and_alt_text": "Vignettes et texte alternatif",
   "media_settings_section_description": "Cliquez sur un élément média pour définir son texte alternatif, ou sa miniature s’il s’agit d’une vidéo.",
-  "media_settings_section_tooltip": "Les miniatures s’appliquent aux vidéos dans la publication principale. YouTube peut ignorer les miniatures personnalisées sur les vidéos qu’il considère comme des Shorts (verticales, jusqu’à 3 minutes) sans empêcher la publication.",
+  "media_settings_section_tooltip": "Les vignettes s’appliquent aux vidéos de la publication principale et sont envoyées à chaque canal qui les prend en charge. YouTube peut les ignorer pour les vidéos traitées comme Shorts (verticales, jusqu’à 3 minutes) sans empêcher la publication, et exige une chaîne vérifiée par téléphone pour les vignettes personnalisées. Si YouTube rejette la vignette, la vidéo est quand même publiée, et Postiz ne peut pas vérifier l’éligibilité à l’avance.",
   "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias."
 }
