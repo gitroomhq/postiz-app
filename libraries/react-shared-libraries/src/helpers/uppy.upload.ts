@@ -1,14 +1,12 @@
 import XHRUpload from '@uppy/xhr-upload';
 import AwsS3Multipart from '@uppy/aws-s3';
 import sha256 from 'sha256';
-import Transloadit from '@uppy/transloadit';
 import { BasePlugin } from '@uppy/core';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Keeps a file in the "processing" state after it reached the bucket until the
-// media normalization workflow marks the record ready, the same way
-// Transloadit's waitForEncoding holds the dashboard until the assembly is done.
+// media normalization workflow marks the record ready.
 // Files whose record is already ready (no normalizer, gif, ...) pass through.
 // The bytes are already stored, so giving up never fails the upload: the
 // original file is used instead.
@@ -131,24 +129,9 @@ const fetchUploadApiEndpoint = async (
 export const getUppyUploadPlugin = (
   provider: string,
   fetch: any,
-  backendUrl: string,
-  transloadit: string[] = []
+  backendUrl: string
 ) => {
   switch (provider) {
-    case 'transloadit':
-      return {
-        plugin: Transloadit,
-        options: {
-          waitForEncoding: true,
-          alwaysRunAssembly: true,
-          assemblyOptions: {
-            params: {
-              auth: { key: transloadit[0] },
-              template_id: transloadit[1],
-            },
-          },
-        },
-      };
     case 'cloudflare':
       return {
         plugin: AwsS3Multipart,

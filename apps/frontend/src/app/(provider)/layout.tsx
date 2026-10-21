@@ -55,14 +55,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             process.env.STORAGE_PROVIDER === 'cloudflare' &&
             !!process.env.RUNPOD_API_KEY && !!process.env.RUNPOD_ENDPOINT_ID
           }
-          transloadit={
-            process.env.TRANSLOADIT_AUTH && process.env.TRANSLOADIT_TEMPLATE
-              ? [
-                  process.env.TRANSLOADIT_AUTH!,
-                  process.env.TRANSLOADIT_TEMPLATE!,
-                ]
-              : []
-          }
         >
           <MantineWrapper>
             <LayoutContext>
