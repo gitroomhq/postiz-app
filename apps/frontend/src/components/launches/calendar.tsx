@@ -29,6 +29,7 @@ import 'dayjs/locale/ko';
 import 'dayjs/locale/ar';
 import 'dayjs/locale/tr';
 import 'dayjs/locale/vi';
+import 'dayjs/locale/th';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import clsx from 'clsx';
