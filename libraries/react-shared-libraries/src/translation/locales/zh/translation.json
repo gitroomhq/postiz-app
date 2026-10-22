@@ -605,6 +605,7 @@
   "billing_download_invoice": "下载发票",
   "billing_view_invoice": "查看发票",
   "billing_no_matching_invoices": "没有与搜索匹配的发票",
+  "billing_no_invoices": "尚无发票",
   "select_channels": "选择频道",
   "start_a_new_chat": "开始新聊天",
   "your_assistant": "你的助手",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "请先在 Postiz 中连接您要发布内容的渠道。然后在 HubSpot 中打开 Agent Hub > Agent Builder，添加一个工具，在 MCP Servers 下选择 Postiz MCP，然后点击 Connect and add。",
   "timezone": "时区",
   "automatic_timezone": "自动 ({{timezone}})",
-  "could_not_save_timezone": "无法保存时区"
+  "could_not_save_timezone": "无法保存时区",
+  "finish_trial_failed": "我们未能完成您的试用",
+  "finish_trial_failed_description": "我们无法扣款，请重试。",
+  "try_again": "重试",
+  "finish_trial": "结束试用",
+  "finish_trial_confirmation": "结束试用将使您的计划首付款今天扣费，而不是在试用期结束时扣费。不会额外收取费用。是否继续？",
+  "finish_trial_charge_me_now": "结束试用并立即付款",
+  "trial": "试用",
+  "thumbnails_and_alt_text": "缩略图与替代文本",
+  "media_settings_section_description": "点击媒体项为其设置替代文本，如果是视频，还可以设置其缩略图。",
+  "media_settings_section_tooltip": "缩略图适用于主帖中的视频，并会发送到每个支持缩略图的频道。YouTube 可能会对被视为 Shorts（竖屏、时长不超过 3 分钟）的视频忽略缩略图，但不会导致发布失败，并且自定义缩略图需要经过手机验证的频道。如果 YouTube 拒绝了缩略图，视频仍将发布，且 Postiz 无法提前检查其资格。",
+  "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。"
 }

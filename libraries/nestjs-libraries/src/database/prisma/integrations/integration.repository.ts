@@ -181,6 +181,20 @@ export class IntegrationRepository {
       },
     });
 
+    // The page was picked through a fresh login: the row that keeps living
+    // must also take that login's identity and refresh token, otherwise the
+    // next refresh runs as the old identity and cannot find the page.
+    const fresh = existing
+      ? await this._integration.model.integration.findUnique({
+          where: { id },
+          select: {
+            rootInternalId: true,
+            refreshToken: true,
+            tokenExpiration: true,
+          },
+        })
+      : null;
+
     if (existing) {
       await this._posts.model.post.updateMany({
         where: {
@@ -208,8 +222,16 @@ export class IntegrationRepository {
       },
       data: {
         ...params,
+        ...(fresh?.rootInternalId
+          ? { rootInternalId: fresh.rootInternalId }
+          : {}),
+        ...(fresh?.refreshToken ? { refreshToken: fresh.refreshToken } : {}),
+        ...(fresh?.tokenExpiration
+          ? { tokenExpiration: fresh.tokenExpiration }
+          : {}),
         disabled: false,
         deletedAt: null,
+        refreshNeeded: false,
       },
     });
   }

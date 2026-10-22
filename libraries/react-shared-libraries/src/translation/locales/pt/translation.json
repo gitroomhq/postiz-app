@@ -605,6 +605,7 @@
   "billing_download_invoice": "Baixar fatura",
   "billing_view_invoice": "Ver fatura",
   "billing_no_matching_invoices": "Nenhuma fatura corresponde à sua pesquisa",
+  "billing_no_invoices": "Ainda não há faturas",
   "select_channels": "Selecionar canais",
   "start_a_new_chat": "Iniciar um novo chat",
   "your_assistant": "Seu Assistente",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "Conecte aqui, no Postiz, os canais em que você deseja publicar. Depois, no HubSpot, abra Agent Hub > Agent Builder, adicione uma ferramenta, escolha Postiz MCP em MCP Servers e clique em Connect and add.",
   "timezone": "Fuso horário",
   "automatic_timezone": "Automático ({{timezone}})",
-  "could_not_save_timezone": "Não foi possível salvar o fuso horário"
+  "could_not_save_timezone": "Não foi possível salvar o fuso horário",
+  "finish_trial_failed": "Não foi possível finalizar sua avaliação",
+  "finish_trial_failed_description": "Não conseguimos cobrar no seu cartão. Por favor, tente novamente.",
+  "try_again": "Tentar novamente",
+  "finish_trial": "Finalizar avaliação",
+  "finish_trial_confirmation": "Encerrar o teste faz com que o primeiro pagamento do seu plano seja cobrado hoje, em vez de ao final do teste. Nenhum valor extra será adicionado. Deseja continuar?",
+  "finish_trial_charge_me_now": "Encerrar teste e pagar agora",
+  "trial": "Avaliação",
+  "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
+  "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, se for um vídeo.",
+  "media_settings_section_tooltip": "As miniaturas se aplicam aos vídeos na postagem principal e são enviadas para todos os canais que as suportam. O YouTube pode ignorá-las em vídeos que considera Shorts (verticais, de até 3 minutos) sem impedir a publicação, e exige um canal verificado por telefone para miniaturas personalizadas. Se o YouTube rejeitar a miniatura, o vídeo ainda será publicado e o Postiz não pode verificar a elegibilidade com antecedência.",
+  "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
 }

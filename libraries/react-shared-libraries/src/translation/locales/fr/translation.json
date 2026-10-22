@@ -605,6 +605,7 @@
   "billing_download_invoice": "Télécharger la facture",
   "billing_view_invoice": "Voir la facture",
   "billing_no_matching_invoices": "Aucune facture ne correspond à votre recherche",
+  "billing_no_invoices": "Pas encore de factures",
   "select_channels": "Sélectionner les canaux",
   "start_a_new_chat": "Démarrer une nouvelle conversation",
   "your_assistant": "Votre assistant",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "Connectez ici, dans Postiz, les canaux sur lesquels vous souhaitez publier. Ensuite, dans HubSpot, ouvrez Agent Hub > Agent Builder, ajoutez un outil, choisissez Postiz MCP sous MCP Servers et cliquez sur Connect and add.",
   "timezone": "Fuseau horaire",
   "automatic_timezone": "Automatique ({{timezone}})",
-  "could_not_save_timezone": "Impossible d'enregistrer le fuseau horaire"
+  "could_not_save_timezone": "Impossible d'enregistrer le fuseau horaire",
+  "finish_trial_failed": "Nous n'avons pas pu terminer votre essai",
+  "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
+  "try_again": "Réessayer",
+  "finish_trial": "Terminer l'essai",
+  "finish_trial_confirmation": "Mettre fin à l’essai entraîne le paiement immédiat de votre abonnement au lieu du paiement à la fin de la période d’essai. Aucun frais supplémentaire ne sera appliqué. Continuer ?",
+  "finish_trial_charge_me_now": "Mettre fin à l'essai et payer maintenant",
+  "trial": "Essai",
+  "thumbnails_and_alt_text": "Vignettes et texte alternatif",
+  "media_settings_section_description": "Cliquez sur un élément média pour définir son texte alternatif, ou sa miniature s’il s’agit d’une vidéo.",
+  "media_settings_section_tooltip": "Les vignettes s’appliquent aux vidéos de la publication principale et sont envoyées à chaque canal qui les prend en charge. YouTube peut les ignorer pour les vidéos traitées comme Shorts (verticales, jusqu’à 3 minutes) sans empêcher la publication, et exige une chaîne vérifiée par téléphone pour les vignettes personnalisées. Si YouTube rejette la vignette, la vidéo est quand même publiée, et Postiz ne peut pas vérifier l’éligibilité à l’avance.",
+  "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias."
 }

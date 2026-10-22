@@ -605,6 +605,7 @@
   "billing_download_invoice": "Faturayı indir",
   "billing_view_invoice": "Faturayı görüntüle",
   "billing_no_matching_invoices": "Aramanızla eşleşen fatura yok",
+  "billing_no_invoices": "Henüz fatura yok",
   "select_channels": "Kanalları Seç",
   "start_a_new_chat": "Yeni bir sohbet başlat",
   "your_assistant": "Asistanınız",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "Paylaşım yapmak istediğiniz kanalları burada, Postiz'de bağlayın. Ardından HubSpot'ta Agent Hub > Agent Builder'ı açın, bir araç ekleyin, MCP Servers altında Postiz MCP'yi seçin ve Connect and add'e tıklayın.",
   "timezone": "Saat dilimi",
   "automatic_timezone": "Otomatik ({{timezone}})",
-  "could_not_save_timezone": "Saat dilimi kaydedilemedi"
+  "could_not_save_timezone": "Saat dilimi kaydedilemedi",
+  "finish_trial_failed": "Deneme sürecinizi tamamlayamadık",
+  "finish_trial_failed_description": "Kartınızdan ödeme alınamadı. Lütfen tekrar deneyin.",
+  "try_again": "Tekrar deneyin",
+  "finish_trial": "Denemeyi bitir",
+  "finish_trial_confirmation": "Deneme süresini sonlandırmak, denemenin bitiş tarihinde değil, bugünden itibaren planınızın ilk ödemesini yapmanızı gerektirir. Ekstra bir ücret alınmaz. Devam edilsin mi?",
+  "finish_trial_charge_me_now": "Denemeyi bitir ve şimdi öde",
+  "trial": "Deneme",
+  "thumbnails_and_alt_text": "Küçük resimler ve alternatif metin",
+  "media_settings_section_description": "Bir medya ögesine alternatif metnini veya video ise küçük resmini ayarlamak için tıklayın.",
+  "media_settings_section_tooltip": "Küçük resimler, ana gönderideki videolara uygulanır ve bunları destekleyen her kanala gönderilir. YouTube, Dikey ve 3 dakikaya kadar olan Shorts olarak kabul ettiği videolarda küçük resimleri dikkate almayabilir; yayın başarısız olmadan geçilebilir ve özel küçük resimler için telefonla doğrulanmış bir kanal gereklidir. YouTube küçük resmi reddederse video yine de yayınlanır ve Postiz önceden uygunluğu kontrol edemez.",
+  "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var."
 }

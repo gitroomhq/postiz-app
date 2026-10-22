@@ -22,6 +22,7 @@ import { InternalChannels } from '@gitroom/frontend/components/launches/internal
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { useMediaSettingsValues } from '@gitroom/frontend/components/new-launch/media.settings.section';
 
 class Empty {
   @IsOptional()
@@ -148,6 +149,10 @@ export const withProvider = function <T extends object>(params: {
         );
       }
     }, [justCurrent, current, isGlobal, setTotalChars]);
+
+    const hasMediaSettings = useMediaSettingsValues().some(
+      (p) => p.media?.length
+    );
 
     const getInternalPlugs = useCallback(async () => {
       return (
@@ -345,6 +350,7 @@ export const withProvider = function <T extends object>(params: {
               )}
             {current &&
               !SettingsComponent &&
+              !hasMediaSettings &&
               createPortal(
                 <style>{`#wrapper-settings {display: none !important;} #social-empty {display: block !important;}`}</style>,
                 document.querySelector('#social-settings') ||

@@ -605,6 +605,7 @@
   "billing_download_invoice": "تنزيل الفاتورة",
   "billing_view_invoice": "عرض الفاتورة",
   "billing_no_matching_invoices": "لا توجد فواتير مطابقة لبحثك",
+  "billing_no_invoices": "لا توجد فواتير بعد",
   "select_channels": "اختر القنوات",
   "start_a_new_chat": "ابدأ محادثة جديدة",
   "your_assistant": "مساعدك",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "اربط هنا في Postiz القنوات التي تريد النشر عليها. بعد ذلك، افتح Agent Hub > Agent Builder في HubSpot، وأضف أداة، واختر Postiz MCP ضمن MCP Servers، ثم انقر على Connect and add.",
   "timezone": "المنطقة الزمنية",
   "automatic_timezone": "تلقائي ({{timezone}})",
-  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية"
+  "could_not_save_timezone": "تعذر حفظ المنطقة الزمنية",
+  "finish_trial_failed": "لم نتمكن من إنهاء الفترة التجريبية الخاصة بك",
+  "finish_trial_failed_description": "لم نتمكن من خصم المبلغ من بطاقتك. يرجى المحاولة مرة أخرى.",
+  "try_again": "حاول مرة أخرى",
+  "finish_trial": "إنهاء الفترة التجريبية",
+  "finish_trial_confirmation": "إنهاء الفترة التجريبية يؤدي إلى خصم الدفعة الأولى من خطتك اليوم بدلاً من نهاية الفترة التجريبية. لن يتم إضافة أي رسوم إضافية. هل ترغب في المتابعة؟",
+  "finish_trial_charge_me_now": "إنهاء الفترة التجريبية والدفع الآن",
+  "trial": "فترة تجريبية",
+  "thumbnails_and_alt_text": "الصور المصغرة ونصوص البدائل",
+  "media_settings_section_description": "انقر على عنصر وسائط لتعيين نص بديل له، أو لصورة مصغرة إذا كان فيديو.",
+  "media_settings_section_tooltip": "تنطبق الصور المصغّرة على الفيديوهات في المنشور الرئيسي ويتم إرسالها إلى كل قناة تدعمها. قد تتجاهل YouTube الصور المصغرة في الفيديوهات التي تُعامل كـ Shorts (عمودية، حتى 3 دقائق) دون أن تؤثر على عملية النشر، كما تتطلب قناة موثقة برقم هاتف للصور المصغرة المخصصة. إذا رفضت YouTube الصورة المصغرة، سيتم نشر الفيديو رغم ذلك، ولا يمكن لـ Postiz التحقق من الأهلية مسبقًا.",
+  "youtube_thumbnail_overrides_media": "يحتوي هذا المنشور على صورة مصغرة مخصصة لليوتيوب، والتي تتجاوز الصورة المصغرة المحددة في إعدادات الوسائط."
 }

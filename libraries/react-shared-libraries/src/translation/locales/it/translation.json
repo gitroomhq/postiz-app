@@ -605,6 +605,7 @@
   "billing_download_invoice": "Scarica fattura",
   "billing_view_invoice": "Visualizza fattura",
   "billing_no_matching_invoices": "Nessuna fattura corrisponde alla ricerca",
+  "billing_no_invoices": "Nessuna fattura al momento",
   "select_channels": "Seleziona canali",
   "start_a_new_chat": "Inizia una nuova chat",
   "your_assistant": "Il tuo assistente",
@@ -883,5 +884,16 @@
   "hubspot_installed_description": "Collega qui, in Postiz, i canali su cui vuoi pubblicare. Poi, in HubSpot, apri Agent Hub > Agent Builder, aggiungi uno strumento, scegli Postiz MCP in MCP Servers e fai clic su Connect and add.",
   "timezone": "Fuso orario",
   "automatic_timezone": "Automatico ({{timezone}})",
-  "could_not_save_timezone": "Impossibile salvare il fuso orario"
+  "could_not_save_timezone": "Impossibile salvare il fuso orario",
+  "finish_trial_failed": "Non siamo riusciti a completare la tua prova",
+  "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
+  "try_again": "Riprova",
+  "finish_trial": "Termina la prova",
+  "finish_trial_confirmation": "Terminare la prova addebiterà oggi il primo pagamento del tuo piano invece che alla fine della prova. Non verrà aggiunto alcun costo extra. Continuare?",
+  "finish_trial_charge_me_now": "Termina la prova e paga ora",
+  "trial": "Prova",
+  "thumbnails_and_alt_text": "Miniature e testo alternativo",
+  "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il suo testo alternativo o la sua miniatura, se si tratta di un video.",
+  "media_settings_section_tooltip": "Le miniature si applicano ai video nel post principale e vengono inviate a ogni canale che le supporta. YouTube potrebbe ignorarle sui video che considera Shorts (verticali, fino a 3 minuti) senza impedire la pubblicazione, e richiede un canale verificato tramite telefono per miniature personalizzate. Se YouTube rifiuta la miniatura, il video viene comunque pubblicato, e Postiz non può verificare l’idoneità in anticipo.",
+  "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
 }

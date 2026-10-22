@@ -31,6 +31,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
 import useCookie from 'react-use-cookie';
+import { usePaymentAction } from '@gitroom/frontend/components/billing/use.payment.action';
 
 type SubscriptionWithPlatform = Subscription & {
   platform?: 'web' | 'mobile';
@@ -462,6 +463,7 @@ export const MainBillingComponent: FC<{
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
   const toast = useToaster();
+  const paymentAction = usePaymentAction();
   const user = useUser();
   const dub = useDubClickId();
   const [fbc] = useCookie('_fbc', '');
@@ -475,6 +477,21 @@ export const MainBillingComponent: FC<{
   const [finishTrial, setFinishTrial] = useState(
     !!queryParams.get('finishTrial')
   );
+
+  const finishTrialNow = useCallback(async () => {
+    if (
+      await deleteDialog(
+        t(
+          'finish_trial_confirmation',
+          "Ending the trial charges your plan's first payment today instead of at the end of the trial. Nothing extra is added. Continue?"
+        ),
+        t('finish_trial_charge_me_now', 'End trial and pay now'),
+        t('trial', 'Trial')
+      )
+    ) {
+      setFinishTrial(true);
+    }
+  }, []);
 
   const [subscription, setSubscription] = useState<
     SubscriptionWithPlatform | undefined
@@ -679,7 +696,7 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal, blocked } = await (
+        const { url, portal, blocked, requiresAction, clientSecret } = await (
           await fetch('/billing/subscribe', {
             method: 'POST',
             body: JSON.stringify({
@@ -726,6 +743,14 @@ export const MainBillingComponent: FC<{
             window.open(portal);
           }
         } else {
+          if (requiresAction) {
+            const { error } = await paymentAction(clientSecret);
+            if (error) {
+              toast.show(error, 'warning');
+              setLoading(false);
+              return;
+            }
+          }
           setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
           setSubscription((subs) => ({
             ...subs!,
@@ -752,7 +777,7 @@ export const MainBillingComponent: FC<{
         }
         setLoading(false);
       },
-    [monthlyOrYearly, subscription, user, utm]
+    [monthlyOrYearly, subscription, user, utm, paymentAction]
   );
   if (user?.isLifetime) {
     router.replace('/');
@@ -834,7 +859,16 @@ export const MainBillingComponent: FC<{
 
   return (
     <div className="flex flex-col gap-[24px]">
-      {finishTrial && <FinishTrial close={() => setFinishTrial(false)} />}
+      {finishTrial && (
+        <FinishTrial
+          close={() => {
+            setFinishTrial(false);
+            mutate('/user/self');
+            mutate('/billing/invoices');
+            mutate('/billing/renewal');
+          }}
+        />
+      )}
       <div className="flex items-center gap-[16px] mobile:flex-col mobile:items-stretch">
         <div className="flex-1 flex flex-col gap-[4px]">
           <div className="text-[20px] font-[600]">
@@ -995,6 +1029,15 @@ export const MainBillingComponent: FC<{
             >
               {t('billing_update_payment_method', 'Update payment method')}
             </button>
+            {user?.isTrailing && (
+              <button
+                type="button"
+                onClick={finishTrialNow}
+                className="h-[44px] px-[16px] rounded-[8px] bg-btnSimple text-btnText text-[14px] font-[500] hover:opacity-80 transition-opacity"
+              >
+                {t('finish_trial', 'Finish trial')}
+              </button>
+            )}
           </div>
         </div>
       )}
