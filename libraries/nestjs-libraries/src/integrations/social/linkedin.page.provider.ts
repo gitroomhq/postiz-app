@@ -208,13 +208,16 @@ export class LinkedinPageProvider
         };
       });
 
-      return tagged
+      const grouped = tagged
         .filter((p) => !p.parent)
         .flatMap((p) => [
           p,
           ...tagged.filter((c) => c.parent && c.parentId === p.id),
-        ])
-        .map(({ parentId, ...p }) => p);
+        ]);
+
+      return [...grouped, ...tagged.filter((p) => !grouped.includes(p))].map(
+        ({ parentId, ...p }) => p
+      );
     } catch (err) {
       return pages;
     }
