@@ -149,7 +149,7 @@ export class LinkedinPageProvider
       )
     ).json();
 
-    return (elements || [])
+    const pages = (elements || [])
       .filter(
         (e: any) =>
           e['organizationalTarget~'] &&
@@ -164,6 +164,60 @@ export class LinkedinPageProvider
           e['organizationalTarget~'].logoV2?.['original~']?.elements?.[0]
             ?.identifiers?.[0]?.identifier,
       }));
+
+    return this.groupShowcasePages(accessToken, pages);
+  }
+
+  // Showcase Pages are organizations with primaryOrganizationType BRAND, so the
+  // ACL call above already returns them; this only labels them and lists each
+  // one after its parent. If the lookup fails the list is returned unchanged.
+  private async groupShowcasePages(accessToken: string, pages: any[]) {
+    if (!pages.length) {
+      return pages;
+    }
+
+    try {
+      const { results } = await (
+        await fetch(
+          `https://api.linkedin.com/rest/organizations?ids=List(${pages
+            .map((p) => p.id)
+            .join(',')})`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-Restli-Protocol-Version': '2.0.0',
+              'LinkedIn-Version': '202601',
+            },
+          }
+        )
+      ).json();
+
+      const tagged = pages.map((p) => {
+        if (results?.[p.id]?.primaryOrganizationType !== 'BRAND') {
+          return { ...p, type: 'company' };
+        }
+
+        const parentId = results[p.id].parentRelationship?.parent
+          ?.split(':')
+          .pop();
+        return {
+          ...p,
+          type: 'showcase',
+          parentId,
+          parent: pages.find((f) => f.id === parentId)?.name,
+        };
+      });
+
+      return tagged
+        .filter((p) => !p.parent)
+        .flatMap((p) => [
+          p,
+          ...tagged.filter((c) => c.parent && c.parentId === p.id),
+        ])
+        .map(({ parentId, ...p }) => p);
+    } catch (err) {
+      return pages;
+    }
   }
 
   async reConnect(
