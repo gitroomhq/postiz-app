@@ -74,6 +74,24 @@ export class StripeService extends PaymentProviderAbstract {
     }
   }
 
+  private async rejectCard(
+    paymentMethodId: string,
+    subscriptionId: string,
+    reason: string
+  ) {
+    console.error(reason);
+    try {
+      await stripe.subscriptions.cancel(subscriptionId);
+    } catch (err) {
+      console.error('rejectCard cancel failed', err);
+    }
+    try {
+      await stripe.paymentMethods.detach(paymentMethodId);
+    } catch (err) {
+      console.error('rejectCard detach failed', err);
+    }
+  }
+
   async checkValidCard(
     event:
       | Stripe.CustomerSubscriptionCreatedEvent
@@ -94,30 +112,120 @@ export class StripeService extends PaymentProviderAbstract {
 
     console.log('Checking card');
 
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: event.data.object.customer as string,
-    });
-
-    // find the last one created
-    const latestMethod = paymentMethods.data.reduce(
-      (prev, current) => {
-        if (prev.created < current.created) {
-          return current;
-        }
-        return prev;
-      },
-      { created: -100 } as Stripe.PaymentMethod
+    const subscription = await stripe.subscriptions.retrieve(
+      event.data.object.id,
+      {
+        expand: ['default_payment_method'],
+      }
     );
 
-    if (!latestMethod.id) {
+    // Try subscription default_payment_method first, then customer invoice_settings default
+    let defaultPaymentMethod =
+      typeof subscription.default_payment_method === 'object'
+        ? subscription.default_payment_method
+        : null;
+
+    if (!defaultPaymentMethod) {
+      const customer = await stripe.customers.retrieve(
+        event.data.object.customer as string
+      );
+      if (
+        'invoice_settings' in customer &&
+        customer.invoice_settings?.default_payment_method
+      ) {
+        const pmId =
+          typeof customer.invoice_settings.default_payment_method === 'string'
+            ? customer.invoice_settings.default_payment_method
+            : customer.invoice_settings.default_payment_method.id;
+        defaultPaymentMethod = await stripe.paymentMethods.retrieve(pmId);
+      }
+    }
+
+    if (!defaultPaymentMethod?.id) {
+      // No payment method found - cancel the trial subscription instead of orphaning it
+      console.error('No payment method found for trial subscription');
+      try {
+        await stripe.subscriptions.cancel(event.data.object.id as string);
+      } catch (err) {
+        // Subscription may already be canceled
+      }
       return false;
     }
 
+    const isIndiaCard = defaultPaymentMethod.card?.country === 'IN';
+
+    // For India-issued cards, RBI regulations require an e-mandate for off-session
+    // charges. Verify the Checkout SetupIntent instead of attempting an off-session
+    // $1 hold (which would be declined or enter a 26h processing period).
+    if (isIndiaCard) {
+      try {
+        // Find the succeeded SetupIntent that confirmed this payment method
+        const setupIntents = await stripe.setupIntents.list({
+          customer: event.data.object.customer as string,
+          payment_method: defaultPaymentMethod.id,
+          limit: 10,
+        });
+
+        const succeededSetupIntent = setupIntents.data.find(
+          (si) => si.status === 'succeeded'
+        );
+
+        if (!succeededSetupIntent) {
+          await this.rejectCard(
+            defaultPaymentMethod.id,
+            event.data.object.id,
+            'India card: no succeeded SetupIntent found'
+          );
+          return false;
+        }
+
+        // For India cards, require the e-mandate to exist and not be inactive.
+        // Accept both 'active' and 'pending' (pending mandates may still be registering).
+        if (!succeededSetupIntent.mandate) {
+          await this.rejectCard(
+            defaultPaymentMethod.id,
+            event.data.object.id,
+            'India card: no mandate on SetupIntent'
+          );
+          return false;
+        }
+
+        const mandate =
+          typeof succeededSetupIntent.mandate === 'string'
+            ? await stripe.mandates.retrieve(succeededSetupIntent.mandate)
+            : succeededSetupIntent.mandate;
+
+        if (mandate.status === 'inactive') {
+          await this.rejectCard(
+            defaultPaymentMethod.id,
+            event.data.object.id,
+            `India card: mandate is inactive (${mandate.status})`
+          );
+          return false;
+        }
+
+        console.log(
+          'India card validated via SetupIntent and mandate',
+          mandate.status
+        );
+        return true;
+      } catch (err) {
+        console.error('India card validation error:', err);
+        await this.rejectCard(
+          defaultPaymentMethod.id,
+          event.data.object.id,
+          'India card: validation exception'
+        );
+        return false;
+      }
+    }
+
+    // For non-India cards, use the existing $1 off-session hold validation
     try {
       const paymentIntent = await stripe.paymentIntents.create({
         amount: 100,
         currency: 'usd',
-        payment_method: latestMethod.id,
+        payment_method: defaultPaymentMethod.id,
         customer: event.data.object.customer as string,
         off_session: true,
         capture_method: 'manual', // Authorize without capturing
@@ -125,21 +233,22 @@ export class StripeService extends PaymentProviderAbstract {
       });
 
       if (paymentIntent.status !== 'requires_capture') {
-        console.error('Cant charge');
-        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
-        await stripe.subscriptions.cancel(event.data.object.id as string);
+        await this.rejectCard(
+          defaultPaymentMethod.id,
+          event.data.object.id,
+          'Cant charge'
+        );
         return false;
       }
 
       await stripe.paymentIntents.cancel(paymentIntent.id as string);
       return true;
     } catch (err) {
-      try {
-        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
-        await stripe.subscriptions.cancel(event.data.object.id as string);
-      } catch (err) {
-        /*dont do anything*/
-      }
+      await this.rejectCard(
+        defaultPaymentMethod.id,
+        event.data.object.id,
+        'Non-India card: payment intent failed'
+      );
       return false;
     }
   }
@@ -216,9 +325,26 @@ export class StripeService extends PaymentProviderAbstract {
       uniqueId: string;
     };
 
-    const check = await this.checkValidCard(event);
-    if (!check) {
-      return { ok: false };
+    // Only run checkValidCard if the payment method changed or if transitioning
+    // from incomplete to trialing (initial trial activation), to avoid re-validating
+    // (and potentially canceling) a valid subscription on routine updates.
+    // For payment method changes, only validate during trial to prevent a failed
+    // hold from canceling an active paid subscription.
+    const paymentMethodChanged =
+      event.data.previous_attributes &&
+      'default_payment_method' in event.data.previous_attributes &&
+      event.data.object.status === 'trialing';
+
+    const incompleteToTrialing =
+      event.data.previous_attributes &&
+      event.data.previous_attributes.status === 'incomplete' &&
+      event.data.object.status === 'trialing';
+
+    if (paymentMethodChanged || incompleteToTrialing) {
+      const check = await this.checkValidCard(event);
+      if (!check) {
+        return { ok: false };
+      }
     }
 
     return this._subscriptionService.createOrUpdateSubscription(
