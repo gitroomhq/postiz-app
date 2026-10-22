@@ -229,6 +229,7 @@
   "we_couldn_t_find_any_business_connected_to_your_linkedin_page": "あなたのLinkedInページに接続されているビジネスが見つかりませんでした。",
   "please_close_this_dialog_create_a_new_page_and_add_a_new_channel_again": "このダイアログを閉じて、新しいページを作成し、再度新しいチャンネルを追加してください。",
   "select_linkedin_page": "LinkedInページを選択：",
+  "select_linkedin_showcase_page": "ショーケースページ",
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "選択したページに接続されているビジネスが見つかりませんでした。",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "すべてのページとすべてのビジネスを接続することをおすすめします。",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "このダイアログを閉じて、連携を削除し、再度新しいチャンネルを追加してください。",

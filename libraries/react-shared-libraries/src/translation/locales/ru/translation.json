@@ -229,6 +229,7 @@
   "we_couldn_t_find_any_business_connected_to_your_linkedin_page": "Мы не смогли найти ни одного бизнеса, связанного с вашей страницей LinkedIn.",
   "please_close_this_dialog_create_a_new_page_and_add_a_new_channel_again": "Пожалуйста, закройте это окно, создайте новую страницу и снова добавьте новый канал.",
   "select_linkedin_page": "Выберите страницу LinkedIn:",
+  "select_linkedin_showcase_page": "Страница-витрина",
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Мы не смогли найти ни одного бизнеса, связанного с выбранными страницами.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Рекомендуем подключить все страницы и все бизнесы.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Пожалуйста, закройте это окно, удалите интеграцию и снова добавьте новый канал.",

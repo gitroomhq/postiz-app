@@ -229,6 +229,7 @@
   "we_couldn_t_find_any_business_connected_to_your_linkedin_page": "Wir konnten kein Unternehmen finden, das mit Ihrer LinkedIn-Seite verbunden ist.",
   "please_close_this_dialog_create_a_new_page_and_add_a_new_channel_again": "Bitte schließen Sie diesen Dialog, erstellen Sie eine neue Seite und fügen Sie erneut einen neuen Kanal hinzu.",
   "select_linkedin_page": "LinkedIn-Seite auswählen:",
+  "select_linkedin_showcase_page": "Fokusseite",
   "we_couldn_t_find_any_business_connected_to_the_selected_pages": "Wir konnten kein Unternehmen finden, das mit den ausgewählten Seiten verbunden ist.",
   "we_recommend_you_to_connect_all_the_pages_and_all_the_businesses": "Wir empfehlen Ihnen, alle Seiten und alle Unternehmen zu verbinden.",
   "please_close_this_dialog_delete_your_integration_and_add_a_new_channel_again": "Bitte schließen Sie diesen Dialog, löschen Sie Ihre Integration und fügen Sie erneut einen neuen Kanal \n        hinzu.",
