@@ -1,5 +1,7 @@
 'use client';
 
+import { FC } from 'react';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { withContinueProvider } from '../with-continue-provider';
 
 interface LinkedinItem {
@@ -8,12 +10,24 @@ interface LinkedinItem {
   username: string;
   name: string;
   picture: string;
+  type?: 'company' | 'showcase';
+  parent?: string;
 }
 
 interface LinkedinSelection {
   id: string;
   pageId: string;
 }
+
+const ShowcaseLabel: FC<{ parent?: string }> = ({ parent }) => {
+  const t = useT();
+  return (
+    <div className="text-xs text-textItemBlur">
+      {t('select_linkedin_showcase_page', 'Showcase Page')}
+      {parent && ` · ${parent}`}
+    </div>
+  );
+};
 
 export const LinkedinContinue = withContinueProvider<
   LinkedinItem,
@@ -43,6 +57,7 @@ export const LinkedinContinue = withContinueProvider<
         <img className="w-full" src={item.picture} alt="profile" />
       </div>
       <div>{item.name}</div>
+      {item.type === 'showcase' && <ShowcaseLabel parent={item.parent} />}
     </>
   ),
 });
