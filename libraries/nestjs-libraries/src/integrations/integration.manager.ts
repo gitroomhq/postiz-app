@@ -166,6 +166,28 @@ export class IntegrationManager {
     );
   }
 
+  // POST /integrations/function runs a provider method by name with the
+  // channel's token as its first argument, so only @Tool methods and the ones
+  // marked @DashboardFunction may be run that way.
+  isDashboardCallable(provider: SocialProvider, methodName: string) {
+    if (typeof (provider as any)[methodName] !== 'function') {
+      return false;
+    }
+
+    const isTool = this.getAllTools()[provider.identifier]?.some(
+      (p) => p.methodName === methodName
+    );
+
+    return (
+      isTool ||
+      !!Reflect.getMetadata(
+        'custom:dashboard_function',
+        provider.constructor.prototype,
+        methodName
+      )
+    );
+  }
+
   getAllRulesDescription(): {
     [key: string]: string;
   } {

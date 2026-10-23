@@ -309,7 +309,9 @@ export class IntegrationsController {
 
     let newList: any[] | { none: true } = [];
     try {
-      newList = (await this.functionIntegration(org, body)) || [];
+      newList =
+        (await this.functionIntegration(org, { ...body, name: 'mention' })) ||
+        [];
     } catch (err) {
       console.log(err);
     }
@@ -370,8 +372,12 @@ export class IntegrationsController {
       throw new Error('Invalid provider');
     }
 
-    // @ts-ignore
-    if (integrationProvider[body.name]) {
+    if (
+      this._integrationManager.isDashboardCallable(
+        integrationProvider,
+        body.name
+      )
+    ) {
       try {
         // @ts-ignore
         const load = await integrationProvider[body.name](

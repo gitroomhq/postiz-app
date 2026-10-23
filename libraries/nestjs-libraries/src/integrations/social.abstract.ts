@@ -14,6 +14,7 @@ import sharp from 'sharp';
 import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
 import { logger } from '@gitroom/nestjs-libraries/sentry/logger';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 const RATE_LIMIT_HEADERS = {
   rate_limit_remaining: [
@@ -539,6 +540,7 @@ export abstract class SocialAbstract {
     }
   }
 
+  @DashboardFunction()
   public async mention(
     token: string,
     d: { query: string },

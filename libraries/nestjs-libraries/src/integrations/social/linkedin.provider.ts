@@ -24,6 +24,7 @@ import imageToPDF from 'image-to-pdf';
 import { Readable } from 'stream';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media urns and the post content, never
@@ -258,6 +259,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @DashboardFunction()
   async company(token: string, data: { url: string }) {
     const { url } = data;
     const getCompanyVanity = url.match(

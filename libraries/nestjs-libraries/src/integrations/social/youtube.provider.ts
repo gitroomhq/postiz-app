@@ -25,6 +25,7 @@ import { createReadStream, statSync } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 const clientAndYoutube = () => {
   const client = new google.auth.OAuth2({
@@ -358,6 +359,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @DashboardFunction()
   async pages(accessToken: string) {
     const { client, youtube } = clientAndYoutube();
     client.setCredentials({ access_token: accessToken });

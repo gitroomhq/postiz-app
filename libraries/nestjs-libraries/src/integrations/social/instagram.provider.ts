@@ -20,6 +20,7 @@ import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
@@ -551,6 +552,7 @@ export class InstagramProvider
     };
   }
 
+  @DashboardFunction()
   async pages(token: string) {
     const [accessToken, userToken] = token.split('___');
     const seenPageIds = new Set<string>();
