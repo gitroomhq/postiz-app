@@ -13,6 +13,7 @@ import {
 import sharp from 'sharp';
 import { createReadStream, readFileSync, statSync } from 'fs';
 import { Readable } from 'stream';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 // Media reads answer headers in well under a second and the chunk sizes the
 // providers ask for finish in under two, with the slowest healthy read we
@@ -507,6 +508,7 @@ export abstract class SocialAbstract {
     }
   }
 
+  @DashboardFunction()
   public async mention(
     token: string,
     d: { query: string },

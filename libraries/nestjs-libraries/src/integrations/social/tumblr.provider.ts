@@ -15,6 +15,7 @@ import { Integration } from '@prisma/client';
 import FormDataUpload from 'form-data';
 import { lookup } from 'mime-types';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 const TUMBLR_API_URL = 'https://api.tumblr.com/v2';
 const TUMBLR_USER_AGENT = 'Postiz/1.0 (+https://postiz.com)';
@@ -309,6 +310,7 @@ export class TumblrProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @DashboardFunction()
   async pages(accessToken: string) {
     const userInfo = await this.getUserInfo(accessToken);
     const blogs = userInfo.response?.user?.blogs || [];

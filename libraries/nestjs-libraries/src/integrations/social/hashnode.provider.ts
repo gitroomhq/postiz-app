@@ -15,6 +15,7 @@ import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
 export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
@@ -107,6 +108,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  @DashboardFunction()
   async tags() {
     return tags.map((tag) => ({ value: tag.objectID, label: tag.name }));
   }
