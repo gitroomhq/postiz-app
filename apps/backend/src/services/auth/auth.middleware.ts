@@ -43,7 +43,7 @@ export class AuthMiddleware implements NestMiddleware {
       const payload = AuthService.verifyJWT(auth) as User | null;
       const orgHeader = req.cookies.showorg || req.headers.showorg;
 
-      if (!payload?.id) {
+      if (!payload?.id || typeof payload.id !== 'string') {
         throw new HttpForbiddenException();
       }
 
