@@ -318,6 +318,14 @@ export class InstagramProvider
       };
     }
 
+    if (body.indexOf('Requires instagram_content_publish permission') > -1) {
+      return {
+        type: 'bad-body' as const,
+        value:
+          'Instagram rejected the post because Postiz was not granted publishing permission for this account. Reconnect the channel and allow all requested permissions, including content publishing, for this Instagram account.',
+      };
+    }
+
     if (body.indexOf('(#200)') > -1) {
       return {
         type: 'bad-body' as const,
@@ -1204,7 +1212,7 @@ export class InstagramProvider
     analytics.push(
       ...(data?.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: d.values.map((v: any) => ({
           total: v.value,
           date: dayjs(v.end_time).format('YYYY-MM-DD'),
@@ -1215,7 +1223,7 @@ export class InstagramProvider
     analytics.push(
       ...data2.map((d: any) => ({
         label: this.setTitle(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: [
           {
             total: d.total_value.value,

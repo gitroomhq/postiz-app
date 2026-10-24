@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 @Injectable()
 export class AuthService {
@@ -133,6 +134,11 @@ export class AuthService {
         id: string;
       };
     } catch (err) {
+      logger.warn('auth_rejected', {
+        rejected_scope: 'jwt_verify',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return false;
     }
   }
@@ -176,7 +182,13 @@ export class AuthService {
     );
 
     this._track('register', providerUser.email, body.datafast_visitor_id).catch(
-      (err) => {}
+      (err) => {
+        logger.warn('tracking_call_failed', {
+          tracking_event: 'register',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     );
 
     await NewsletterService.register(providerUser.email);
@@ -186,7 +198,11 @@ export class AuthService {
         await providerInstance.postRegistration(body.providerToken, create.id);
       }
     } catch (err) {
-      // Don't fail registration if postRegistration fails
+      logger.error('post_registration_failed', {
+        user_id: create.id,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
     }
 
     return create.users[0].user;
@@ -213,7 +229,13 @@ export class AuthService {
             },
           }),
         });
-      } catch (err) {}
+      } catch (err) {
+        logger.warn('tracking_call_failed', {
+          tracking_event: name,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
   }
 
@@ -260,7 +282,13 @@ export class AuthService {
       }
       await this._userService.activateUser(user.id);
       user.activated = true;
-      this._track('register', user.email, tracking).catch((err) => {});
+      this._track('register', user.email, tracking).catch((err) => {
+        logger.warn('tracking_call_failed', {
+          tracking_event: 'register',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      });
       await NewsletterService.register(user.email);
       return this.jwt(user as any);
     }
