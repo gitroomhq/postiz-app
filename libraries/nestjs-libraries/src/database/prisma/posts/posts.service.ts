@@ -31,7 +31,7 @@ import {
   minifyPostsList,
   minifyPosts,
 } from '@gitroom/helpers/utils/posts.list.minify';
-import axios from 'axios';
+import { getSsrfSafeAxios } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
@@ -556,7 +556,9 @@ export class PostsService {
 
             if (hasExtension(m.path, 'png')) {
               imageUpdateNeeded = true;
-              const response = await axios.get(m.url, {
+              // the media url is user-influenced, so it goes through the same
+              // SSRF-safe client as the providers' media reads
+              const response = await getSsrfSafeAxios().get(m.url, {
                 responseType: 'arraybuffer',
               });
 
@@ -797,15 +799,24 @@ export class PostsService {
       e.replace('(post:', '').replace(')', '')
     );
     const urls = await this._postRepository.getPostUrls(orgId, ids);
-    const newPlainText = ids.reduce((acc, value) => {
-      const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
-      return acc.replace(
-        new RegExp(`\\(post:${value}\\)`, 'g'),
-        findUrl.split(',')[0]
-      );
-    }, plainText);
+    const replaceTags = (text: string, escape = (url: string) => url) =>
+      ids.reduce((acc, value) => {
+        const findUrl = urls?.find?.((u) => u.id === value)?.releaseURL || '';
+        return acc.replace(new RegExp(`\\(post:${value}\\)`, 'g'), () =>
+          escape(findUrl.split(',')[0])
+        );
+      }, text);
 
-    return this.updateTags(orgId, JSON.parse(newPlainText) as Post[]);
+    // the release url is whatever the platform answered, so it only goes where
+    // a tag is written, the content and the settings (escaped for their json),
+    // and never into the media list, which was validated before this runs
+    return post.map((p) => ({
+      ...p,
+      content: p.content && replaceTags(p.content),
+      settings:
+        p.settings &&
+        replaceTags(p.settings, (url) => JSON.stringify(url).slice(1, -1)),
+    }));
   }
 
   public async checkInternalPlug(

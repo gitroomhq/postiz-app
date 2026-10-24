@@ -760,7 +760,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return response.body;
     }
 
-    return createReadStream(path, { start, end });
+    return createReadStream(this.localMediaPath(path, 'tiktok-error-upload'), {
+      start,
+      end,
+    });
   }
 
   // Streams the video bytes to the upload_url returned by the init call.
