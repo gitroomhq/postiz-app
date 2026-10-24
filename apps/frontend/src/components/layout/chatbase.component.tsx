@@ -89,8 +89,7 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
 
     window.chatbase('identify', { token });
 
-    window.chatbase('registerTools', {
-      stripe_refund: async () => {
+    window.chatbase('registerTools', [['stripe_refund', async () => {
         try {
           const previewResponse = await fetch('/billing/chatbase-refund/preview');
 
@@ -151,8 +150,7 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
             error: 'Could not process the refund request',
           };
         }
-      },
-    });
+      }]]);
   }, []);
   return null;
 };
