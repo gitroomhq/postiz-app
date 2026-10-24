@@ -1,5 +1,6 @@
 import { IUploadProvider, UploadedStream } from './upload.interface';
 import { createWriteStream, mkdirSync, unlink, writeFileSync } from 'fs';
+import { resolve, sep } from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
@@ -137,12 +138,20 @@ export class LocalStorage implements IUploadProvider {
     }
   }
 
-  // Accepts either the public URL or the filesystem path
+  // Accepts either the public URL or the filesystem path. Callers can pass a
+  // stored media name or path, so only a file inside the upload directory is
+  // ever deleted: resolve() collapses any `..` segments before the comparison
   async removeFile(filePath: string): Promise<void> {
     const publicPrefix = process.env.FRONTEND_URL + '/uploads';
-    const localPath = filePath.startsWith(publicPrefix)
-      ? this.uploadDirectory + filePath.slice(publicPrefix.length)
-      : filePath;
+    const base = resolve(String(this.uploadDirectory));
+    const localPath = resolve(
+      filePath.startsWith(publicPrefix)
+        ? this.uploadDirectory + filePath.slice(publicPrefix.length)
+        : filePath
+    );
+    if (!localPath.startsWith(base + sep)) {
+      throw new Error('Unsafe file path');
+    }
     // Logic to remove the file from the filesystem goes here
     return new Promise((resolve, reject) => {
       unlink(localPath, (err) => {

@@ -491,7 +491,7 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       return Number(length);
     }
 
-    return statSync(path).size;
+    return statSync(this.localMediaPath(path, this.identifier)).size;
   }
 
   // Returns a streaming body for the [start, end] byte range of the media so we
@@ -527,7 +527,10 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       return response.body;
     }
 
-    return createReadStream(path, { start, end });
+    return createReadStream(this.localMediaPath(path, this.identifier), {
+      start,
+      end,
+    });
   }
 
   // Asks the upload session for the truth: the created video when the upload
