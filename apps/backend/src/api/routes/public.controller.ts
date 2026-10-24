@@ -123,7 +123,16 @@ export class PublicController {
         billing: 'FREE' | 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE';
       };
 
-      if (!load || !load.orgId || !load.billing || !pricing[load.billing]) {
+      if (
+        !load ||
+        !load.orgId ||
+        typeof load.orgId !== 'string' ||
+        !load.billing ||
+        !pricing[load.billing] ||
+        'timeLimit' in load || // team invite token
+        'providerName' in load || // login token (full User row)
+        'expires' in load // password reset token
+      ) {
         return { success: false };
       }
 

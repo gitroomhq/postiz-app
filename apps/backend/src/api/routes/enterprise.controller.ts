@@ -71,7 +71,13 @@ export class EnterpriseController {
         webhookUrl: string;
       }>(params);
 
-      if (!load || !load.redirectUrl || !load.apiKey || !load.provider) {
+      if (
+        !load ||
+        !load.redirectUrl ||
+        !load.apiKey ||
+        typeof load.apiKey !== 'string' ||
+        !load.provider
+      ) {
         return;
       }
 
@@ -117,7 +123,13 @@ export class EnterpriseController {
         id: string;
       }>(params);
 
-      if (!load || !load.apiKey || !load.id) {
+      if (
+        !load ||
+        !load.apiKey ||
+        !load.id ||
+        typeof load.apiKey !== 'string' ||
+        typeof load.id !== 'string'
+      ) {
         return { success: false };
       }
 
