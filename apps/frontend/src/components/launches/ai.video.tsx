@@ -65,7 +65,7 @@ export const Modal: FC<{
       }
     } catch (e) {
       toaster.show(
-        'Video generation failed or timed out — if it completes, it will appear in your media library',
+        'Video generation failed or timed out. If it completes, it will appear in your media library',
         'warning'
       );
     }
@@ -75,7 +75,7 @@ export const Modal: FC<{
   }, [type, position]);
 
   return (
-    // Start with an empty prompt — we no longer copy the post's text field.
+    // Start with an empty prompt: we no longer copy the post's text field.
     <VideoContextWrapper.Provider value={{ value: '' }}>
       <form
         onSubmit={form.handleSubmit(generate)}
