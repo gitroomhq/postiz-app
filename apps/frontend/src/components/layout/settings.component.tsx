@@ -34,6 +34,7 @@ import { GlobalSettings } from '@gitroom/frontend/components/settings/global.set
 import { AppsComponent } from '@gitroom/frontend/components/settings/apps.component';
 import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
 import { Plugs } from '@gitroom/frontend/components/plugs/plugs';
+import { AutoReplies } from '@gitroom/frontend/components/auto-replies/auto-replies';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -108,6 +109,7 @@ export const SettingsPopup: FC<{
     }
     arr.push({ tab: 'integrations', label: t('integrations', 'Integrations') });
     arr.push({ tab: 'plugs', label: t('plugs', 'Plugs') });
+    arr.push({ tab: 'auto_replies', label: t('auto_replies', 'Auto Replies') });
     arr.push({ tab: 'apps', label: t('apps', 'Apps') });
 
     return arr;
@@ -216,6 +218,12 @@ export const SettingsPopup: FC<{
               {tab === 'plugs' && (
                 <div>
                   <Plugs />
+                </div>
+              )}
+
+              {tab === 'auto_replies' && (
+                <div>
+                  <AutoReplies />
                 </div>
               )}
 

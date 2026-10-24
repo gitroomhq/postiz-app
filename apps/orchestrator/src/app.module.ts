@@ -3,6 +3,7 @@ import { PostActivity } from '@gitroom/orchestrator/activities/post.activity';
 import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { AutopostActivity } from '@gitroom/orchestrator/activities/autopost.activity';
+import { AutoReplyActivity } from '@gitroom/orchestrator/activities/auto.reply.activity';
 import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
 import { IntegrationsActivity } from '@gitroom/orchestrator/activities/integrations.activity';
 import { VideoActivity } from '@gitroom/orchestrator/activities/video.activity';
@@ -14,6 +15,7 @@ import { HealthController } from '@gitroom/orchestrator/health.controller';
 const activities = [
   PostActivity,
   AutopostActivity,
+  AutoReplyActivity,
   EmailActivity,
   IntegrationsActivity,
   VideoActivity,

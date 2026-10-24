@@ -22,6 +22,8 @@ model Organization {
   isTrailing          Boolean              @default(false)
   shortlink           ShortLinkPreference  @default(ASK)
   autoPost            AutoPost[]
+  autoReplies         AutoReply[]
+  autoReplyLogs       AutoReplyLog[]
   Comments            Comments[]
   credits             Credits[]
   clippings           Clipping[]
@@ -396,6 +398,7 @@ model Integration {
   orderItems            OrderItems[]
   plugs                 Plugs[]
   posts                 Post[]
+  autoReplies           AutoReply[]
 
   @@unique([organizationId, internalId])
   @@index([rootInternalId])
@@ -693,6 +696,78 @@ model AutoPost {
   organization    Organization @relation(fields: [organizationId], references: [id])
 
   @@index([deletedAt])
+}
+
+// Comment / DM auto replies, ported from OpenReply (MIT, https://github.com/diwenne/openreply)
+model AutoReply {
+  id                      String         @id @default(uuid())
+  organizationId          String
+  integrationId           String
+  name                    String
+  postId                  String?
+  postUrl                 String?
+  postThumbnail           String?
+  matchAnyPost            Boolean        @default(false)
+  keywords                String         @default("[]")
+  matchAnyWord            Boolean        @default(false)
+  wholeWordMatch          Boolean        @default(true)
+  dmTriggerEnabled        Boolean        @default(false)
+  dmMessage               String
+  linkUrl                 String?
+  linkButtonLabel         String?
+  openingDmEnabled        Boolean        @default(false)
+  openingDmMessage        String?
+  openingDmButtonLabel    String?
+  requireFollow           Boolean        @default(false)
+  followPromptMessage     String?
+  followPromptButtonLabel String?
+  followUpEnabled         Boolean        @default(false)
+  followUpMessage         String?
+  followUpDelayMinutes    Int            @default(0)
+  publicReplyEnabled      Boolean        @default(false)
+  publicReplyMessages     String         @default("[]")
+  active                  Boolean        @default(true)
+  deletedAt               DateTime?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  organization            Organization   @relation(fields: [organizationId], references: [id])
+  integration             Integration    @relation(fields: [integrationId], references: [id])
+  logs                    AutoReplyLog[]
+
+  @@index([organizationId])
+  @@index([integrationId])
+  @@index([postId])
+  @@index([deletedAt])
+}
+
+model AutoReplyLog {
+  id                             String          @id @default(uuid())
+  organizationId                 String
+  autoReplyId                    String
+  integrationId                  String
+  eventId                        String
+  userId                         String
+  userName                       String?
+  text                           String
+  matchedKeyword                 String?
+  status                         AutoReplyStatus @default(PENDING)
+  attempts                       Int             @default(0)
+  dmSentAt                       DateTime?
+  errorMessage                   String?
+  dmDeliveryUnconfirmed          Boolean         @default(false)
+  publicReplySentAt              DateTime?
+  publicReplyError               String?
+  publicReplyDeliveryUnconfirmed Boolean         @default(false)
+  createdAt                      DateTime        @default(now())
+  updatedAt                      DateTime        @updatedAt
+  organization                   Organization    @relation(fields: [organizationId], references: [id])
+  autoReply                      AutoReply       @relation(fields: [autoReplyId], references: [id])
+
+  @@unique([autoReplyId, eventId])
+  @@index([organizationId])
+  @@index([integrationId])
+  @@index([userId])
+  @@index([status])
 }
 
 model Sets {
@@ -1838,4 +1913,12 @@ model Announcement {
   description String
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
+}
+
+enum AutoReplyStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED_DEDUP
+  SKIPPED_RATE_LIMIT
 }

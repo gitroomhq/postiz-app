@@ -139,6 +139,23 @@ export class NotEnoughScopes {
   ) {}
 }
 
+// Thrown by autoReplySend / autoReplyPublicReply.
+// rejected: the platform refused the send, nothing was delivered and it is safe to retry.
+// When false the outcome is unknown, so it must never be re-sent automatically.
+// retryable: a rate limit, worth trying again later.
+// templateRejected: the button template was refused, a plain text send may still work.
+export class AutoReplySendError extends Error {
+  constructor(
+    message: string,
+    public readonly rejected: boolean,
+    public readonly retryable = false,
+    public readonly templateRejected = false
+  ) {
+    super(message);
+    this.name = 'AutoReplySendError';
+  }
+}
+
 function safeStringify(obj: any) {
   const seen = new WeakSet();
 

@@ -82,6 +82,27 @@ export const useMenuItem = () => {
       path: '/analytics',
     },
     {
+      name: t('auto_replies', 'Auto Replies'),
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+        >
+          <path
+            d="M6.5 8.5H13.5M6.5 11.5H11M10 18C14.4183 18 18 14.6421 18 10.5C18 6.35786 14.4183 3 10 3C5.58172 3 2 6.35786 2 10.5C2 12.0545 2.50421 13.4985 3.36745 14.6957L2.5 18L6.04167 16.9293C7.20785 17.6108 8.55934 18 10 18Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
+      path: '/auto-replies',
+    },
+    {
       name: t('media', 'Media'),
       icon: (
         <svg

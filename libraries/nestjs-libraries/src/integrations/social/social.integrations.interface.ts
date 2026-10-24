@@ -243,4 +243,116 @@ export interface SocialProvider
     accessToken: string,
     data: any
   ): Promise<FetchPageInformationResult>;
+  // Auto replies (comment / DM automations), implemented by providers that support them
+  autoReplyVerifyWebhook?(
+    rawBody: string,
+    headers: Record<string, string | string[] | undefined>
+  ): boolean;
+  autoReplyParseWebhook?(payload: any): AutoReplyEvent[];
+  autoReplySubscribe?(accessToken: string, integration: Integration): Promise<void>;
+  autoReplyRecentPosts?(
+    accessToken: string,
+    integration: Integration
+  ): Promise<AutoReplyPost[]>;
+  autoReplyPublicReply?(
+    accessToken: string,
+    integration: Integration,
+    commentId: string,
+    message: string
+  ): Promise<void>;
+  autoReplySend?(
+    accessToken: string,
+    integration: Integration,
+    recipient: AutoReplyRecipient,
+    message: AutoReplyMessage
+  ): Promise<void>; // Throws AutoReplySendError
+  autoReplyFollowStatus?(
+    accessToken: string,
+    integration: Integration,
+    userId: string
+  ): Promise<boolean | null>; // null when the platform can't tell
+  autoReplyConversations?(
+    accessToken: string,
+    integration: Integration
+  ): Promise<AutoReplyConversation[]>;
+  autoReplyConversationMessages?(
+    accessToken: string,
+    integration: Integration,
+    conversationId: string
+  ): Promise<AutoReplyConversationMessage[]>;
 }
+
+export type AutoReplyEvent =
+  | {
+      type: 'comment';
+      accountId: string;
+      eventId: string;
+      commentId: string;
+      text: string;
+      userId: string;
+      userName?: string;
+      postId: string;
+      originalPostId?: string;
+      requeueAttempt?: number;
+    }
+  | {
+      type: 'message';
+      accountId: string;
+      eventId: string;
+      text: string;
+      userId: string;
+    }
+  | {
+      type: 'postback';
+      accountId: string;
+      eventId: string;
+      userId: string;
+      payload: string;
+      fallback?: boolean;
+      recheckAttempt?: number;
+    }
+  | {
+      type: 'read';
+      accountId: string;
+      eventId: string;
+      userId: string;
+    }
+  | {
+      type: 'followup';
+      accountId: string;
+      eventId: string;
+      userId: string;
+      userName?: string;
+      autoReplyId: string;
+    };
+
+export type AutoReplyRecipient = { commentId: string } | { userId: string };
+
+export type AutoReplyMessage = {
+  text: string;
+  button?: { title: string; payload: string };
+  link?: { title: string; url: string };
+};
+
+export type AutoReplyPost = {
+  id: string;
+  caption: string;
+  thumbnail: string;
+  url: string;
+  date: string;
+};
+
+export type AutoReplyConversation = {
+  id: string;
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  updatedAt: string;
+};
+
+export type AutoReplyConversationMessage = {
+  id: string;
+  fromMe: boolean;
+  text: string;
+  createdAt: string;
+};
