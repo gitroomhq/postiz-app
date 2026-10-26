@@ -17,6 +17,9 @@ import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
+import { ItalicText } from '@gitroom/frontend/components/new-launch/italic.text';
+import { StrikeText } from '@gitroom/frontend/components/new-launch/strike.text';
+import { CodeText } from '@gitroom/frontend/components/new-launch/code.text';
 import { SpoilerText } from '@gitroom/frontend/components/new-launch/spoiler.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -47,6 +50,9 @@ import Bold from '@tiptap/extension-bold';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
+import Italic from '@tiptap/extension-italic';
+import Strike from '@tiptap/extension-strike';
+import Code from '@tiptap/extension-code';
 import { Spoiler } from '@gitroom/frontend/components/new-launch/spoiler.mark';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
@@ -1068,10 +1074,28 @@ export const Editor: FC<{
                             </>
                           )}
                         {identifier === 'telegram' && (
-                          <SpoilerText
-                            editor={editorRef?.current?.editor}
-                            currentValue={props.value!}
-                          />
+                          <>
+                            <ItalicText
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <StrikeText
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <CodeText
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <SpoilerText
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                            <AComponent
+                              editor={editorRef?.current?.editor}
+                              currentValue={props.value!}
+                            />
+                          </>
                         )}
                         <div
                           data-tooltip-id="tooltip"
@@ -1224,8 +1248,8 @@ export const OnlyEditor = forwardRef<
       Bold,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
-      // a Telegram spoiler, no other channel renders it
-      ...(identifier === 'telegram' ? [Spoiler] : []),
+      // the marks Telegram renders, no other channel does
+      ...(identifier === 'telegram' ? [Italic, Strike, Code, Spoiler] : []),
       BulletList,
       ListItem,
       Placeholder.configure({

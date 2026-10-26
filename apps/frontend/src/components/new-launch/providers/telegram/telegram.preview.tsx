@@ -6,12 +6,12 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { VideoOrImage } from '@gitroom/react/helpers/video.or.image';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
+import { telegramHtml } from '@gitroom/nestjs-libraries/integrations/social/telegram.html';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 
 // What the subscribers get: the media first unless the settings put the text
-// first, the media blurred behind a spoiler. The general preview always puts
-// the media under the text.
+// first, the formatting as Telegram shows it, the media blurred behind a
+// spoiler. telegramHtml escapes the text, so the HTML is safe to inject.
 export const TelegramPreview: FC<{
   maximumCharacters?: number;
 }> = () => {
@@ -26,15 +26,14 @@ export const TelegramPreview: FC<{
   return (
     <div className="telegram-preview w-full p-[15px] flex flex-col gap-[12px]">
       {value.map((p, index) => {
-        const text = stripHtmlValidation('normal', p.content || '', true);
+        const text = telegramHtml(p.content || '');
         const media = p.image || [];
         const textBlock = !!text && (
           <div
             dir="auto"
             className="text-[15px] whitespace-pre-wrap break-words"
-          >
-            {text}
-          </div>
+            dangerouslySetInnerHTML={{ __html: text }}
+          />
         );
         const mediaBlock = !!media.length && (
           <div
