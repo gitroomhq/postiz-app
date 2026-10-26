@@ -14,6 +14,7 @@ import {
 import mime from 'mime';
 import TelegramBot from 'node-telegram-bot-api';
 import { Integration } from '@prisma/client';
+import { TelegramDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/telegram.dto';
 import striptags from 'striptags';
 
 const telegramBot = new TelegramBot(process.env.TELEGRAM_TOKEN!);
@@ -29,6 +30,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   isWeb3 = true;
   scopes = [] as string[];
   editor = 'html' as const;
+  dto = TelegramDto;
   maxLength() {
     return 4096;
   }
@@ -221,6 +223,14 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       .replace(/<strong>/g, '<b>')
       .replace(/<\/strong>/g, '</b>')
       .replace(/<p>(.*?)<\/p>/g, '$1\n');
+    const settings: TelegramDto = message.settings || {};
+
+    // the text goes above a photo or a video when the settings say so, a
+    // document has no such option
+    const visual: { show_caption_above_media?: boolean } =
+      settings.media_position === 'bottom'
+        ? { show_caption_above_media: true }
+        : {};
 
     const processedMedia = this.processMedia(mediaFiles);
 
@@ -245,14 +255,14 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
           ? await telegramBot.sendVideo(
               accessToken,
               media.media,
-              options,
+              { ...options, ...visual },
               media.fileOptions
             )
           : media.type === 'photo'
           ? await telegramBot.sendPhoto(
               accessToken,
               media.media,
-              options,
+              { ...options, ...visual },
               media.fileOptions
             )
           : await telegramBot.sendDocument(
@@ -272,6 +282,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
           media: m.media,
           caption: i === 0 && index === 0 ? text : undefined,
           parse_mode: 'HTML',
+          ...(m.type === 'document' ? {} : visual),
         }));
 
         const response = await telegramBot.sendMediaGroup(
