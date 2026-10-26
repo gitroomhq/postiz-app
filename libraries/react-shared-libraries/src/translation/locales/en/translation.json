@@ -900,5 +900,8 @@
   "label_telegram_media_position": "Media position",
   "label_telegram_media_top": "Media first, text under it (Telegram default)",
   "label_telegram_media_bottom": "Text first, media under it",
+  "label_telegram_has_spoiler": "Hide the media behind a spoiler",
+  "label_telegram_protect_content": "Protect content: no forwarding and saving",
+  "telegram_preview_protected": "Protected content",
   "youtube_thumbnail_overrides_media": "This post has a YouTube-specific thumbnail, which overrides the thumbnail set in the media settings."
 }

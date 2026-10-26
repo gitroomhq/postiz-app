@@ -219,18 +219,33 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   ): Promise<number | null> {
     let messageId: number | null = null;
     const mediaFiles = message.media || [];
-    const text = striptags(message.message || '', ['u', 'strong', 'p'])
+    const text = striptags(message.message || '', [
+      'u',
+      'strong',
+      'p',
+      'tg-spoiler',
+    ])
       .replace(/<strong>/g, '<b>')
       .replace(/<\/strong>/g, '</b>')
       .replace(/<p>(.*?)<\/p>/g, '$1\n');
     const settings: TelegramDto = message.settings || {};
 
-    // the text goes above a photo or a video when the settings say so, a
-    // document has no such option
-    const visual: { show_caption_above_media?: boolean } =
-      settings.media_position === 'bottom'
+    // the options every send method takes
+    const common = {
+      ...(settings.protect_content ? { protect_content: true } : {}),
+      ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
+    };
+
+    // the options of a photo or a video, a document has neither
+    const visual: {
+      has_spoiler?: boolean;
+      show_caption_above_media?: boolean;
+    } = {
+      ...(settings.has_spoiler ? { has_spoiler: true } : {}),
+      ...(settings.media_position === 'bottom'
         ? { show_caption_above_media: true }
-        : {};
+        : {}),
+    };
 
     const processedMedia = this.processMedia(mediaFiles);
 
@@ -238,7 +253,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
     if (processedMedia.length === 0) {
       const response = await telegramBot.sendMessage(accessToken, text, {
         parse_mode: 'HTML',
-        ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
+        ...common,
       });
       messageId = response.message_id;
     }
@@ -248,7 +263,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       const options = {
         caption: text,
         parse_mode: 'HTML' as const,
-        ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
+        ...common,
       };
       const response =
         media.type === 'video'
@@ -289,6 +304,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
           accessToken,
           mediaGroup as any[],
           {
+            ...(settings.protect_content ? { protect_content: true } : {}),
             ...(replyToMessageId && i === 0
               ? { reply_to_message_id: replyToMessageId }
               : {}),

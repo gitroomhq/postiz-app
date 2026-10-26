@@ -159,7 +159,7 @@ export const stripHtmlValidation = (
   if (type === 'html') {
     return striptags(
       convertMention(
-        inlineImages ? convertImages(value) : value,
+        convertSpoilers(inlineImages ? convertImages(value) : value),
         convertMentionFunction
       ),
       [
@@ -172,6 +172,7 @@ export const stripHtmlValidation = (
       'strong',
       'u',
       'a',
+      'tg-spoiler',
       ...(inlineImages ? ['img'] : []),
       ]
     )
@@ -290,6 +291,29 @@ export const convertImages = (value: string) => {
       alt && !alt.includes('&quot;') ? ` alt="${alt}"` : ''
     }>`;
   });
+};
+
+// the editor keeps a Telegram spoiler as <span class="tg-spoiler">, the
+// provider gets Telegram's own <tg-spoiler> tag
+export const convertSpoilers = (value: string) => {
+  if (!value.includes('tg-spoiler')) {
+    return value;
+  }
+
+  const fragment = parseFragment(value);
+  const rename = (node: any) => {
+    const className =
+      (node.attrs || []).find((a: any) => a.name === 'class')?.value || '';
+    if (node.tagName === 'span' && /\btg-spoiler\b/.test(className)) {
+      node.tagName = 'tg-spoiler';
+      node.nodeName = 'tg-spoiler';
+      node.attrs = [];
+    }
+    (node.childNodes || []).forEach(rename);
+  };
+  rename(fragment);
+
+  return serialize(fragment);
 };
 
 export const convertMention = (

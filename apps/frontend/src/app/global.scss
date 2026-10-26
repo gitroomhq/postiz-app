@@ -620,6 +620,15 @@ html[dir='rtl'] [dir='ltr'] {
   color: #ae8afc;
 }
 
+// a Telegram spoiler, in the editor and in the Telegram preview
+.ProseMirror .tg-spoiler,
+.telegram-preview .tg-spoiler,
+.telegram-preview tg-spoiler {
+  background-color: rgba(174, 138, 252, 0.25);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
 .ProseMirror img:not(.ProseMirror-separator) {
   max-height: 300px;
   margin: 16px 0;

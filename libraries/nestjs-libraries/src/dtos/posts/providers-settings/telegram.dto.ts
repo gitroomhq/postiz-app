@@ -1,4 +1,4 @@
-import { IsIn, IsOptional } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
 
 export class TelegramDto {
@@ -9,4 +9,19 @@ export class TelegramDto {
       'Where the media goes in a post with photos or videos: top = the media first and the text under it (the Telegram default), bottom = the text first and the media under it. A file sent as a document always comes first',
   })
   media_position?: 'top' | 'bottom';
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Blur the photos and videos until the reader taps them (a spoiler)',
+  })
+  has_spoiler?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description: 'Forbid the forwarding and saving of the message',
+  })
+  protect_content?: boolean;
 }

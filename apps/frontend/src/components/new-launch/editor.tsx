@@ -17,6 +17,7 @@ import EmojiPicker from 'emoji-picker-react';
 import { Theme } from 'emoji-picker-react';
 import { BoldText } from '@gitroom/frontend/components/new-launch/bold.text';
 import { UText } from '@gitroom/frontend/components/new-launch/u.text';
+import { SpoilerText } from '@gitroom/frontend/components/new-launch/spoiler.text';
 import { SignatureBox } from '@gitroom/frontend/components/signature';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import {
@@ -46,6 +47,7 @@ import Bold from '@tiptap/extension-bold';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
 import Underline from '@tiptap/extension-underline';
+import { Spoiler } from '@gitroom/frontend/components/new-launch/spoiler.mark';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
 import { BulletList, ListItem } from '@tiptap/extension-list';
@@ -855,7 +857,7 @@ export const Editor: FC<{
   );
 
   // the extensions are fixed once the editor is created, rebuild it when they change
-  const editorKey = `${editorType}-${inlineImages}`;
+  const editorKey = `${editorType}-${inlineImages}-${identifier}`;
   const [loadedEditor, setLoadedEditor] = useState(editorKey);
   const [showEditor, setShowEditor] = useState(true);
   useEffect(() => {
@@ -962,6 +964,7 @@ export const Editor: FC<{
                 onChange={props.onChange}
                 paste={paste}
                 autoFocus={autoFocus}
+                identifier={identifier}
                 ref={editorRef}
               />
             </div>
@@ -1064,6 +1067,12 @@ export const Editor: FC<{
                               />
                             </>
                           )}
+                        {identifier === 'telegram' && (
+                          <SpoilerText
+                            editor={editorRef?.current?.editor}
+                            currentValue={props.value!}
+                          />
+                        )}
                         <div
                           data-tooltip-id="tooltip"
                           data-tooltip-content={t(
@@ -1156,8 +1165,13 @@ export const OnlyEditor = forwardRef<
     onChange: (value: string) => void;
     paste?: (event: ClipboardEvent | File[], slice?: Slice) => boolean;
     autoFocus?: boolean;
+    identifier?: string;
   }
->(({ editorType, inlineImages, value, onChange, paste, autoFocus }, ref) => {
+>(
+  (
+    { editorType, inlineImages, value, onChange, paste, autoFocus, identifier },
+    ref
+  ) => {
   const t = useT();
   const fetch = useFetch();
 
@@ -1210,6 +1224,8 @@ export const OnlyEditor = forwardRef<
       Bold,
       InterceptBoldShortcut,
       InterceptUnderlineShortcut,
+      // a Telegram spoiler, no other channel renders it
+      ...(identifier === 'telegram' ? [Spoiler] : []),
       BulletList,
       ListItem,
       Placeholder.configure({
