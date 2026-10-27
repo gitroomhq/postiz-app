@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { privateMediaEnabled } from '@gitroom/nestjs-libraries/upload/private.media';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
@@ -32,8 +33,20 @@ export class MediaController {
   private storage = UploadFactory.createStorage();
   constructor(
     private _mediaService: MediaService,
-    private _subscriptionService: SubscriptionService
+    private _subscriptionService: SubscriptionService,
   ) {}
+
+  @Get('/private/:key')
+  async privateDownload(
+    @GetOrgFromRequest() org: Organization,
+    @Param('key') key: string,
+    @Res() res: Response,
+  ) {
+    const url = await this._mediaService.privateMedia.download(org.id, key);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.redirect(302, url);
+  }
 
   @Delete('/:id')
   deleteMedia(@GetOrgFromRequest() org: Organization, @Param('id') id: string) {
@@ -106,8 +119,13 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Body('name') name: string,
-    @Body('originalName') originalName: string
+    @Body('originalName') originalName: string,
   ) {
+    if (privateMediaEnabled()) {
+      throw new BadRequestException(
+        'Private storage requires an authenticated upload; Transloadit imports are not supported',
+      );
+    }
     if (!name) {
       return false;
     }
@@ -145,13 +163,13 @@ export class MediaController {
   async uploadSimple(
     @GetOrgFromRequest() org: Organization,
     @UploadedFile('file') file: Express.Multer.File,
-    @Body('preventSave') preventSave: string = 'false'
+    @Body('preventSave') preventSave: string = 'false',
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
-    if (preventSave === 'true') {
+    if (preventSave === 'true' && !privateMediaEnabled()) {
       return { path: file.path };
     }
 
@@ -185,16 +203,23 @@ export class MediaController {
       name,
       // @ts-ignore
       upload.Location,
-      originalName || undefined
+      originalName || undefined,
     );
 
-    res.status(200).json({ ...upload, saved: saveFile });
+    res
+      .status(200)
+      .json(
+        await this._mediaService.privateMedia.response(org.id, {
+          ...upload,
+          saved: saveFile,
+        }),
+      );
   }
 
   @Get('/:id/status')
   getMediaStatus(
     @GetOrgFromRequest() org: Organization,
-    @Param('id') id: string
+    @Param('id') id: string,
   ) {
     return this._mediaService.getMediaStatus(org.id, id);
   }

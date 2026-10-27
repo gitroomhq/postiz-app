@@ -196,3 +196,28 @@ This repository's source code is available under the [AGPL-3.0 license](LICENSE)
 <p align="center">
   <img src="https://github.com/snyk-labs/secure-developer-sample-repo/raw/main/badge_full.svg" alt="Secure Developer Badge Full" width="150">
 </p>
+
+### Private cloud media
+
+Self-hosted S3/R2 installations can set `STORAGE_PRIVATE=true` with
+`STORAGE_PROVIDER=cloudflare`. Keep the bucket private and configure
+`CLOUDFLARE_BUCKET_URL` as the stable base URL used by existing media records.
+`NEXT_PUBLIC_BACKEND_URL` must point to the browser-accessible backend.
+
+Media previews use an authenticated `/media/private/:key` endpoint that checks
+organization ownership before redirecting to a 15-minute signed GET. The backend
+and frontend must share authentication cookies for image/video requests. Responses
+are marked `private, no-store`. Signed links are bearer capabilities until expiry;
+do not share them. Existing bucket URLs do not need a database migration.
+
+Post attachments retain canonical URLs in storage. The publishing activity issues
+fresh three-hour signed URLs immediately before handing media to a social provider.
+API-key/OAuth API responses use 15-minute signed URLs. Public reads are not
+required. New uploads omit public ACLs; this option does not revoke ACLs or bucket
+policies previously granted outside Postiz.
+
+Private mode supports server uploads and the built-in multipart uploader. It binds
+multipart sessions to their organization. Transloadit imports (`/media/save-media`)
+are rejected because that legacy route cannot prove ownership of a supplied key.
+Thumbnails uploaded with `preventSave` are registered as media so their ownership
+can be checked. Local storage and public cloud mode retain their existing behavior.

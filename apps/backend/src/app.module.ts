@@ -1,7 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
 import { ApiModule } from '@gitroom/backend/api/api.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { PrivateMediaInterceptor } from './services/media/private.media.interceptor';
 import { PoliciesGuard } from '@gitroom/backend/services/auth/permissions/permissions.guard';
 import { PublicApiModule } from '@gitroom/backend/public-api/public.api.module';
 import { ThrottlerBehindProxyGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
@@ -45,6 +46,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
   controllers: [],
   providers: [
     FILTER,
+    { provide: APP_INTERCEPTOR, useClass: PrivateMediaInterceptor },
     {
       provide: APP_GUARD,
       useClass: ThrottlerBehindProxyGuard,

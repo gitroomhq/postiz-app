@@ -36,6 +36,7 @@ import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { resolve, sep } from 'path';
+import { privateMediaEnabled } from '../../../upload/private.media';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
@@ -499,12 +500,22 @@ export class PostsService {
 
   async getPostsList(orgId: string, query: GetPostsListDto) {
     return minifyPostsList(
-      await this._postRepository.getPostsList(orgId, query)
+      await this._postRepository.getPostsList(orgId, query),
     );
   }
 
-  async updateMedia(id: string, imagesList: any[], convertToJPEG = false) {
+  async updateMedia(
+    id: string,
+    imagesList: any[],
+    convertToJPEG = false,
+    forPublishing = false,
+  ) {
     try {
+      const privatePost = privateMediaEnabled()
+        ? await this._postRepository.getPostById(id)
+        : null;
+      if (privateMediaEnabled() && !privatePost)
+        throw new NotFoundException('Post not found');
       let imageUpdateNeeded = false;
       const getImageList = await Promise.all(
         (
@@ -556,9 +567,13 @@ export class PostsService {
 
             if (hasExtension(m.path, 'png')) {
               imageUpdateNeeded = true;
-              // the media url is user-influenced, so it goes through the same
-              // SSRF-safe client as the providers' media reads
-              const response = await getSsrfSafeAxios().get(m.url, {
+              const downloadUrl = privatePost
+                ? await this._mediaService.privateMedia.forPublishing(
+                    privatePost.organizationId,
+                    m.url,
+                  )
+                : m.url;
+              const response = await getSsrfSafeAxios().get(downloadUrl, {
                 responseType: 'arraybuffer',
               });
 
@@ -582,6 +597,13 @@ export class PostsService {
                 encoding: '',
               });
 
+              if (privatePost) {
+                await this._mediaService.saveFile(
+                  privatePost.organizationId,
+                  originalname,
+                  path,
+                );
+              }
               return {
                 ...m,
                 name: originalname,
@@ -601,21 +623,25 @@ export class PostsService {
             }
 
             return m;
-          })
+          }),
       );
 
       if (imageUpdateNeeded) {
         await this._postRepository.updateImages(
           id,
-          JSON.stringify(getImageList)
+          JSON.stringify(getImageList),
         );
       }
 
-      return getImageList;
+      return privatePost && forPublishing
+        ? await this._mediaService.privateMedia.forPublishing(
+            privatePost.organizationId,
+            getImageList,
+          )
+        : getImageList;
     } catch (err: any) {
-      return (imagesList || []).filter((m) =>
-        this.isAllowedMediaPath(m?.path)
-      );
+      if (privateMediaEnabled()) throw err;
+      return (imagesList || []).filter((m) => this.isAllowedMediaPath(m?.path));
     }
   }
 

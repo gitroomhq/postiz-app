@@ -19,6 +19,7 @@ import { organizationId } from '@gitroom/nestjs-libraries/temporal/temporal.sear
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { MediaProcessorJob } from '@gitroom/nestjs-libraries/upload/media.processor.interface';
 import { extname } from 'path';
+import { PrivateMediaAccess } from '../../../upload/private.media.access';
 import { randomBytes } from 'crypto';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -85,13 +86,17 @@ const USABLE_AS_IS = new Set([
 export class MediaService {
   private storage = UploadFactory.createStorage();
   private processor = UploadFactory.createProcessor();
+  readonly privateMedia = new PrivateMediaAccess(
+    this._mediaRepository,
+    this.storage,
+  );
 
   constructor(
     private _mediaRepository: MediaRepository,
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
   ) {}
 
   async deleteMedia(org: string, id: string) {
