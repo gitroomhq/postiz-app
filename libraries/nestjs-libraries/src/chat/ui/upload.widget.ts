@@ -72,6 +72,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   var nextId = 1;
   var pending = {};
   var sessionId = null;
+  var ticketTool = 'uploadWidgetTicketTool';
   var uploaded = [];
   var busy = false;
 
@@ -119,7 +120,7 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
   });
 
   function getTicket() {
-    return request('tools/call', { name: 'uploadWidgetTicketTool', arguments: { sessionId: sessionId } }).then(function (result) {
+    return request('tools/call', { name: ticketTool, arguments: { sessionId: sessionId } }).then(function (result) {
       var content = (result && result.structuredContent) || {};
       if (!content.ticket) throw new Error(content.error || 'Could not get an upload ticket');
       return content.ticket;
@@ -322,7 +323,15 @@ export const uploadWidgetHtml = (backendUrl: string) => `<!DOCTYPE html>
     appCapabilities: {},
     protocolVersion: '2026-01-26',
   }).then(
-    function () { notify('ui/notifications/initialized', {}); resize(); },
+    function (result) {
+      var info = result && result.hostContext && result.hostContext.toolInfo;
+      var name = info && info.tool && info.tool.name;
+      if (typeof name === 'string' && /uploadWidgetTool$/.test(name)) {
+        ticketTool = name.slice(0, -'uploadWidgetTool'.length) + 'uploadWidgetTicketTool';
+      }
+      notify('ui/notifications/initialized', {});
+      resize();
+    },
     function () { fail('This app cannot display the upload widget.'); }
   );
 })();
