@@ -48,6 +48,24 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
   ):
     | { type: 'refresh-token' | 'bad-body' | 'retry'; value: string }
     | undefined {
+    // A 5xx from the instance is transient (e.g. 503 "Remote data could not be
+    // fetched" while the instance resolves a remote ActivityPub object), so
+    // retry it like the generic 500 path and surface the instance's own error
+    // instead of "Unknown Error". Non-JSON error pages fall back to a
+    // status-based message.
+    if (status >= 500) {
+      let value = `Mastodon error (HTTP ${status})`;
+      try {
+        const parsed = JSON.parse(body || '{}');
+        if (parsed?.error) {
+          value = String(parsed.error);
+        }
+      } catch {
+        // not a JSON error body; keep the status-based message
+      }
+      return { type: 'retry', value };
+    }
+
     if (body.includes('Your login is currently disabled')) {
       return {
         type: 'refresh-token',
