@@ -122,6 +122,8 @@ export class TiktokBusinessProvider
       body.indexOf('access_token_invalid') > -1 ||
       body.indexOf('Access token is incorrect') > -1 ||
       body.indexOf('Access token has expired') > -1 ||
+      // code 40000 wording seen on /business/video/publish/
+      body.indexOf('The access token is invalid') > -1 ||
       body.indexOf('auth_removed') > -1
     ) {
       return {
