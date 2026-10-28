@@ -122,6 +122,8 @@ export class TiktokBusinessProvider
       body.indexOf('access_token_invalid') > -1 ||
       body.indexOf('Access token is incorrect') > -1 ||
       body.indexOf('Access token has expired') > -1 ||
+      // code 40000 wording seen on /business/video/publish/
+      body.indexOf('The access token is invalid') > -1 ||
       body.indexOf('auth_removed') > -1
     ) {
       return {
@@ -382,6 +384,18 @@ export class TiktokBusinessProvider
     codeVerifier: string;
     refresh?: string;
   }) {
+    // A redirect without an auth_code (consent declined or TikTok-side error)
+    // otherwise reaches the token endpoint and fails as 40002 "Please provide
+    // the auth_code", which hides the real cause in the logs.
+    if (!params.code) {
+      throw new BadBody(
+        'tiktok-business',
+        JSON.stringify({ reason: 'no auth_code in the redirect' }),
+        Buffer.from('{}'),
+        'TikTok did not return an authorization code, the authorization was not completed'
+      );
+    }
+
     const response = await (
       await fetch(`${this.baseUrl}/tt_user/oauth2/token/`, {
         method: 'POST',
