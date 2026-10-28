@@ -1,0 +1,72 @@
+services:
+  mixpost:
+    image: inovector/mixpost:latest
+    container_name: mixpost
+    restart: always
+    ports:
+      - '127.0.0.1:4008:80'
+    environment:
+      APP_NAME: 'Mixpost'
+      APP_KEY: 'base64:4+yWoJZs4WpAbhJb3F8/I4oK5aUiqva6C6f9ae4UIu0='
+      APP_DEBUG: 'false'
+      APP_URL: 'http://localhost:4008'
+      DB_HOST: 'mixpost-mysql'
+      DB_PORT: 3306
+      DB_DATABASE: 'mixpost_db'
+      DB_USERNAME: 'mixpost_user'
+      DB_PASSWORD: 'mixpost_password'
+      REDIS_HOST: 'mixpost-redis'
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 'null'
+      MIXPOST_DISK: 'public'
+    volumes:
+      - mixpost-storage:/var/www/html/storage
+    depends_on:
+      mixpost-mysql:
+        condition: service_healthy
+      mixpost-redis:
+        condition: service_healthy
+    networks:
+      - mixpost-network
+
+  mixpost-mysql:
+    image: mysql:8.0
+    container_name: mixpost-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root_password'
+      MYSQL_DATABASE: 'mixpost_db'
+      MYSQL_USER: 'mixpost_user'
+      MYSQL_PASSWORD: 'mixpost_password'
+    volumes:
+      - mixpost-db-data:/var/lib/mysql
+    networks:
+      - mixpost-network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-proot_password']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mixpost-redis:
+    image: redis:7-alpine
+    container_name: mixpost-redis
+    restart: always
+    volumes:
+      - mixpost-redis-data:/data
+    networks:
+      - mixpost-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mixpost-storage:
+  mixpost-db-data:
+  mixpost-redis-data:
+
+networks:
+  mixpost-network:
+    driver: bridge

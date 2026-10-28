@@ -12,6 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { Button } from '@gitroom/react/form/button';
+import copy from 'copy-to-clipboard';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
@@ -244,6 +245,79 @@ export const MediaBox: FC<{
   const mediaDirectory = useMediaDirectory();
   const [loading, setLoading] = useState(false);
 
+  const [viewMode, setViewMode] = useState<'grid' | 'large' | 'list' | 'compact'>('grid');
+  const [filterType, setFilterType] = useState<'all' | 'image' | 'video'>('all');
+  const [sortBy, setSortBy] = useState<
+    'newest' | 'oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc'
+  >('newest');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('media-view-mode') as any;
+      if (saved && ['grid', 'large', 'list', 'compact'].includes(saved)) {
+        setViewMode(saved);
+      }
+    } catch (e) {}
+  }, []);
+
+  const changeViewMode = useCallback(
+    (mode: 'grid' | 'large' | 'list' | 'compact') => {
+      setViewMode(mode);
+      try {
+        localStorage.setItem('media-view-mode', mode);
+      } catch (e) {}
+    },
+    []
+  );
+
+  const formatBytes = useCallback((bytes?: number) => {
+    if (!bytes || bytes <= 0) return '—';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }, []);
+
+  const formatDate = useCallback((dateStr?: string | Date) => {
+    if (!dateStr) return '—';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (e) {
+      return '—';
+    }
+  }, []);
+
+  const handleCopyLink = useCallback(
+    (media: any) => (e: any) => {
+      e.stopPropagation();
+      const fullUrl = mediaDirectory.set(media.path);
+      copy(fullUrl);
+      toaster.show(t('link_copied', 'Link copied to clipboard!'), 'success');
+    },
+    [mediaDirectory, toaster, t]
+  );
+
+  const handleDownload = useCallback(
+    (media: any) => (e: any) => {
+      e.stopPropagation();
+      const url = mediaDirectory.set(media.path);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = media.originalName || media.name || 'download';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
+    [mediaDirectory]
+  );
+
   const uppy = useUppyUploader({
     allowedFileTypes:
       type == 'image'
@@ -471,56 +545,264 @@ export const MediaBox: FC<{
     );
   }, [t, loading]);
 
+  const processedMedia = useMemo(() => {
+    if (!data?.results?.length) return [];
+    let list = [...data.results];
+
+    // Filter by type prop (modal constraint)
+    if (type === 'video') {
+      list = list.filter((f: any) => hasExtension(f.path, 'mp4') || f.type === 'video');
+    } else if (type === 'image') {
+      list = list.filter((f: any) => !hasExtension(f.path, 'mp4') && f.type !== 'video');
+    } else if (type === 'image-static') {
+      list = list.filter((f: any) => ['jpg', 'jpeg', 'png'].some((ext) => hasExtension(f.path, ext)));
+    }
+
+    // Filter by interactive filterType tab (if not constrained by type prop)
+    if (!type) {
+      if (filterType === 'video') {
+        list = list.filter((f: any) => hasExtension(f.path, 'mp4') || f.type === 'video');
+      } else if (filterType === 'image') {
+        list = list.filter((f: any) => !hasExtension(f.path, 'mp4') && f.type !== 'video');
+      }
+    }
+
+    // Sort
+    list.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+        case 'name-asc':
+          return (a.originalName || a.name || '').localeCompare(b.originalName || b.name || '');
+        case 'name-desc':
+          return (b.originalName || b.name || '').localeCompare(a.originalName || a.name || '');
+        case 'size-desc':
+          return (b.fileSize || 0) - (a.fileSize || 0);
+        case 'size-asc':
+          return (a.fileSize || 0) - (b.fileSize || 0);
+        case 'newest':
+        default:
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      }
+    });
+
+    return list;
+  }, [data?.results, type, filterType, sortBy]);
+
   return (
     <DropFiles disabled={loading} className="flex flex-col flex-1" onDrop={dragAndDrop}>
       <div className="flex flex-col flex-1">
         <div
           className={clsx(
-            'flex items-center gap-[12px] mobile:flex-wrap',
+            'flex flex-col gap-[10px] mb-[12px]',
             !isLoading &&
               !data?.results?.length &&
               !debouncedSearch &&
               'hidden'
           )}
         >
-          <div className="flex-1 mobile:basis-full">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('search_media_by_name', 'Search by file name')}
-              className="w-full h-[44px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
-            />
-          </div>
-          <input
-            type="file"
-            ref={uploaderRef}
-            onChange={addToUpload}
-            className="hidden"
-            multiple={true}
-          />
-          <div className={clsx('flex gap-[8px]', !standalone && 'mobile:hidden')}>
-            {btn}
-            <ThirdPartyMediaLibrary onImported={() => mutate()} />
-          </div>
-          {!standalone && !!data?.results?.length && (
-            <div className="hidden mobile:block basis-full text-[14px] font-[600]">
-              {t(
-                'select_or_upload_pictures_max_1gb',
-                'Select or upload pictures (maximum 1 GB per upload).'
+          {/* Top row: Search, Upload, Third Party */}
+          <div className="flex items-center gap-[12px] mobile:flex-wrap">
+            <div className="flex-1 mobile:basis-full relative">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('search_media_by_name', 'Search by file name')}
+                className="w-full h-[42px] px-[14px] rounded-[8px] bg-newBgColorInner border border-newColColor text-[14px] outline-none focus:border-[#612BD3]"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-[12px] top-[50%] -translate-y-[50%] text-textColor/50 hover:text-textColor text-[13px]"
+                >
+                  ✕
+                </button>
               )}
             </div>
-          )}
-          {!!selected.length && (
-            <div
-              onClick={deleteSelected}
-              className="hidden mobile:flex basis-full justify-center items-center gap-[8px] h-[24px] text-[15px] font-[600] text-[#FF3F3F] cursor-pointer select-none"
-            >
-              <TrashIcon size={18} />
-              {t('delete_selected', 'Delete Selected')} ({selected.length})
+            <input
+              type="file"
+              ref={uploaderRef}
+              onChange={addToUpload}
+              className="hidden"
+              multiple={true}
+            />
+            <div className={clsx('flex gap-[8px]', !standalone && 'mobile:hidden')}>
+              {btn}
+              <ThirdPartyMediaLibrary onImported={() => mutate()} />
             </div>
-          )}
+          </div>
+
+          {/* Sub row: Filters, Sort, View Modes */}
+          <div className="flex items-center justify-between gap-[8px] flex-wrap text-[13px]">
+            <div className="flex items-center gap-[8px] flex-wrap">
+              {/* Type filter tabs (All / Images / Videos) */}
+              {!type && (
+                <div className="flex items-center bg-newBgColorInner border border-newColColor rounded-[8px] p-[2px]">
+                  <button
+                    type="button"
+                    onClick={() => setFilterType('all')}
+                    className={clsx(
+                      'px-[10px] py-[5px] rounded-[6px] font-[500] text-[12px] transition-colors',
+                      filterType === 'all'
+                        ? 'bg-[#612BD3] text-white shadow-sm'
+                        : 'text-textColor/70 hover:text-textColor'
+                    )}
+                  >
+                    {t('filter_all', 'All')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterType('image')}
+                    className={clsx(
+                      'px-[10px] py-[5px] rounded-[6px] font-[500] text-[12px] transition-colors',
+                      filterType === 'image'
+                        ? 'bg-[#612BD3] text-white shadow-sm'
+                        : 'text-textColor/70 hover:text-textColor'
+                    )}
+                  >
+                    {t('filter_images', 'Images')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterType('video')}
+                    className={clsx(
+                      'px-[10px] py-[5px] rounded-[6px] font-[500] text-[12px] transition-colors',
+                      filterType === 'video'
+                        ? 'bg-[#612BD3] text-white shadow-sm'
+                        : 'text-textColor/70 hover:text-textColor'
+                    )}
+                  >
+                    {t('filter_videos', 'Videos')}
+                  </button>
+                </div>
+              )}
+
+              {/* Sort dropdown */}
+              <div className="flex items-center gap-[6px]">
+                <span className="text-textColor/60 text-[12px] hidden sm:inline">
+                  {t('sort_by', 'Sort by')}:
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="h-[34px] px-[10px] rounded-[8px] bg-newBgColorInner border border-newColColor text-textColor text-[12px] outline-none cursor-pointer focus:border-[#612BD3]"
+                >
+                  <option value="newest">{t('sort_newest', 'Newest')}</option>
+                  <option value="oldest">{t('sort_oldest', 'Oldest')}</option>
+                  <option value="name-asc">{t('sort_name_asc', 'Name (A-Z)')}</option>
+                  <option value="name-desc">{t('sort_name_desc', 'Name (Z-A)')}</option>
+                  <option value="size-desc">{t('sort_size_desc', 'Size (Largest)')}</option>
+                  <option value="size-asc">{t('sort_size_asc', 'Size (Smallest)')}</option>
+                </select>
+              </div>
+
+              {/* Counter */}
+              {processedMedia.length > 0 && (
+                <span className="text-textColor/50 text-[12px] hidden md:inline">
+                  {t('media_count', `${processedMedia.length} media files`, { count: processedMedia.length })}
+                </span>
+              )}
+            </div>
+
+            {/* Right side: View Mode switcher & Selection indicator */}
+            <div className="flex items-center gap-[8px]">
+              {/* View Switcher button group */}
+              <div className="flex items-center bg-newBgColorInner border border-newColColor rounded-[8px] p-[2px]">
+                <button
+                  type="button"
+                  title={t('view_grid', 'Grid')}
+                  onClick={() => changeViewMode('grid')}
+                  className={clsx(
+                    'p-[6px] rounded-[6px] transition-colors',
+                    viewMode === 'grid'
+                      ? 'bg-[#612BD3] text-white shadow-sm'
+                      : 'text-textColor/60 hover:text-textColor hover:bg-newTextColor/5'
+                  )}
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="1" width="6" height="6" rx="1.5" />
+                    <rect x="9" y="1" width="6" height="6" rx="1.5" />
+                    <rect x="1" y="9" width="6" height="6" rx="1.5" />
+                    <rect x="9" y="9" width="6" height="6" rx="1.5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  title={t('view_large', 'Large Cards')}
+                  onClick={() => changeViewMode('large')}
+                  className={clsx(
+                    'p-[6px] rounded-[6px] transition-colors',
+                    viewMode === 'large'
+                      ? 'bg-[#612BD3] text-white shadow-sm'
+                      : 'text-textColor/60 hover:text-textColor hover:bg-newTextColor/5'
+                  )}
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="2" width="14" height="5" rx="1.5" />
+                    <rect x="1" y="9" width="14" height="5" rx="1.5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  title={t('view_list', 'Detailed List')}
+                  onClick={() => changeViewMode('list')}
+                  className={clsx(
+                    'p-[6px] rounded-[6px] transition-colors',
+                    viewMode === 'list'
+                      ? 'bg-[#612BD3] text-white shadow-sm'
+                      : 'text-textColor/60 hover:text-textColor hover:bg-newTextColor/5'
+                  )}
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="2" width="3" height="3" rx="0.8" />
+                    <rect x="6" y="2.5" width="9" height="2" rx="1" />
+                    <rect x="1" y="7" width="3" height="3" rx="0.8" />
+                    <rect x="6" y="7.5" width="9" height="2" rx="1" />
+                    <rect x="1" y="12" width="3" height="3" rx="0.8" />
+                    <rect x="6" y="12.5" width="9" height="2" rx="1" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  title={t('view_compact', 'Compact Grid')}
+                  onClick={() => changeViewMode('compact')}
+                  className={clsx(
+                    'p-[6px] rounded-[6px] transition-colors',
+                    viewMode === 'compact'
+                      ? 'bg-[#612BD3] text-white shadow-sm'
+                      : 'text-textColor/60 hover:text-textColor hover:bg-newTextColor/5'
+                  )}
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="1" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="6.25" y="1" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="11.5" y="1" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="1" y="6.25" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="1" y="11.5" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.8" />
+                    <rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.8" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Delete selected */}
+              {!!selected.length && (
+                <div
+                  onClick={deleteSelected}
+                  className="flex items-center gap-[6px] text-[13px] font-[600] text-[#FF3F3F] cursor-pointer select-none px-[8px] py-[4px] rounded-[6px] hover:bg-red-500/10"
+                >
+                  <TrashIcon size={16} />
+                  {t('delete_selected', 'Delete Selected')} ({selected.length})
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
         <div
           className={clsx(
             'w-full pointer-events-none relative mt-[5px] mb-[5px]',
@@ -543,6 +825,7 @@ export const MediaBox: FC<{
           </div>
           <div className="w-full h-[46px] uppyChange" />
         </div>
+
         <div
           className={clsx(
             'flex-1 relative',
@@ -553,12 +836,13 @@ export const MediaBox: FC<{
         >
           <div
             className={clsx(
-              'absolute -left-[3px] -top-[3px] withp3 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner mobile:-left-[6px] mobile:-top-[6px] mobile:!w-[calc(100%+12px)] mobile:!h-[calc(100%+12px)]',
+              'absolute inset-0 h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-newColColor scrollbar-track-newBgColorInner',
               !isLoading &&
                 !data?.results?.length &&
                 'flex justify-center items-center gap-[20px] flex-col'
             )}
           >
+            {/* Empty state: No media at all */}
             {!isLoading && !data?.results?.length && (
               <>
                 <NoMediaIcon />
@@ -590,110 +874,590 @@ export const MediaBox: FC<{
                 </div>
               </>
             )}
-            {isLoading && (
-              <>
-                {[...new Array(16)].map((_, i) => (
-                  <div
-                    className={clsx(
-                      'px-[3px] py-[3px] mobile:p-[6px] float-left rounded-[6px] cursor-pointer w8-max mobile:!w-1/2 mobile:!max-w-[50%] aspect-square'
-                    )}
-                    key={i}
-                  >
-                    <div className="w-full h-full bg-newSep rounded-[6px] animate-pulse" />
-                  </div>
-                ))}
-              </>
-            )}
-            {data?.results
-              ?.filter((f: any) => {
-                if (type === 'video') {
-                  return hasExtension(f.path, 'mp4');
-                } else if (type === 'image') {
-                  return !hasExtension(f.path, 'mp4');
-                } else if (type === 'image-static') {
-                  return ['jpg', 'jpeg', 'png'].some((ext) =>
-                    hasExtension(f.path, ext)
-                  );
-                }
-                return true;
-              })
-              .map((media: any) => (
-                <div
-                  className={clsx(
-                    'group px-[3px] py-[3px] mobile:p-[6px] float-left rounded-[6px] w8-max mobile:!w-1/2 mobile:!max-w-[50%] aspect-square',
-                    !standalone && 'cursor-pointer'
-                  )}
-                  key={media.id}
+
+            {/* Empty state: filter produced 0 results */}
+            {!isLoading && !!data?.results?.length && !processedMedia.length && (
+              <div className="flex justify-center items-center gap-[12px] flex-col py-[60px] h-full">
+                <NoMediaIcon />
+                <div className="text-[17px] font-[600] text-textColor">
+                  {t('no_media_match_filter', 'No media matches your current filter')}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('all')}
+                  className="px-[14px] py-[6px] rounded-[6px] bg-[#612BD3] text-white text-[13px] font-[500]"
                 >
-                  <div
-                    className={clsx(
-                      'w-full h-full rounded-[6px] border-[4px] relative',
-                      !!selected.find((p) => p.id === media.id)
-                        ? 'border-[#612BD3]'
-                        : 'border-transparent'
-                    )}
-                    onClick={addRemoveSelected(media)}
-                  >
-                    {!!selected.find((p: any) => p.id === media.id) ? (
-                      <div className="text-white flex z-[101] justify-center items-center text-[14px] font-[500] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute -bottom-[10px] -end-[10px]">
-                        {selected.findIndex((z: any) => z.id === media.id) + 1}
-                      </div>
-                    ) : (
-                      <DeleteCircleIcon
-                        className={clsx(
-                          'cursor-pointer hidden z-[100] group-hover:block absolute -top-[5px] -end-[5px]',
-                          // the picker deletes the selected media on phones
-                          !standalone && 'mobile:!hidden'
-                        )}
-                        onClick={deleteImage(media)}
-                      />
-                    )}
+                  {t('filter_all', 'All')}
+                </button>
+              </div>
+            )}
+
+            {/* Loading Skeleton */}
+            {isLoading && (
+              <div
+                className={clsx(
+                  'p-[4px] w-full',
+                  viewMode === 'large'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]'
+                    : viewMode === 'list'
+                    ? 'flex flex-col gap-[8px]'
+                    : viewMode === 'compact'
+                    ? 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-10 gap-[6px]'
+                    : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[10px]'
+                )}
+              >
+                {[...new Array(viewMode === 'large' ? 6 : viewMode === 'list' ? 8 : 12)].map(
+                  (_, i) => (
                     <div
                       className={clsx(
-                        'absolute bottom-[10px] start-[10px] end-[10px] z-[100] truncate text-end mobile:text-[12px] rounded-[4px] px-[6px] bg-black/60 text-white',
-                        !standalone && 'mobile:hidden'
+                        'rounded-[8px] bg-newSep animate-pulse',
+                        viewMode === 'large'
+                          ? 'aspect-[16/11]'
+                          : viewMode === 'list'
+                          ? 'h-[56px] w-full'
+                          : 'aspect-square'
+                      )}
+                      key={i}
+                    />
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Mode 1: Standard Balanced Grid */}
+            {!isLoading && viewMode === 'grid' && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-[10px] p-[2px]">
+                {processedMedia.map((media: any) => {
+                  const isSelected = !!selected.find((p: any) => p.id === media.id);
+                  const selectIdx = selected.findIndex((z: any) => z.id === media.id);
+                  const isVideo = hasExtension(media.path, 'mp4') || media.type === 'video';
+                  const ext =
+                    media.path.split('.').pop()?.toUpperCase() || (isVideo ? 'MP4' : 'IMG');
+                  return (
+                    <div
+                      key={media.id}
+                      onClick={addRemoveSelected(media)}
+                      className={clsx(
+                        'group relative aspect-square rounded-[8px] overflow-hidden border-2 transition-all bg-newBgColorInner select-none',
+                        isSelected
+                          ? 'border-[#612BD3] ring-2 ring-[#612BD3]/30'
+                          : 'border-newTableBorder hover:border-textColor/30',
+                        !standalone && 'cursor-pointer'
                       )}
                     >
-                      {media.originalName}
-                    </div>
-                    <div className="w-full h-full rounded-[6px] overflow-hidden relative">
-                      <div className="absolute z-[20] left-[50%] top-[50%] -translate-x-[50%] -translate-y-[50%]">
-                        <div
-                          onClick={maximize(media)}
-                          className={clsx(
-                            'cursor-pointer p-[4px] bg-black/40 hidden group-hover:block hover:scale-150 transition-all',
-                            !standalone && 'mobile:!hidden'
-                          )}
-                        >
-                          <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 14 14"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                      {/* Selection badge */}
+                      {isSelected ? (
+                        <div className="text-white flex z-[101] justify-center items-center text-[12px] font-[600] w-[24px] h-[24px] rounded-full bg-[#612BD3] absolute top-[8px] right-[8px] shadow">
+                          {selectIdx + 1}
+                        </div>
+                      ) : (
+                        /* Hover Action Overlay */
+                        <div className="absolute top-[6px] right-[6px] z-[100] hidden group-hover:flex items-center gap-[4px] bg-black/75 backdrop-blur-sm rounded-[6px] p-[3px]">
+                          <button
+                            type="button"
+                            title={t('zoom', 'Zoom')}
+                            onClick={maximize(media)}
+                            className="p-[4px] text-white/80 hover:text-white rounded hover:bg-white/20 transition-all"
                           >
-                            <path
-                              d="M2 9H0V14H5V12H2V9ZM0 5H2V2H5V0H0V5ZM12 12H9V14H14V9H12V12ZM9 0V2H12V5H14V0H9Z"
-                              fill="#F1F5F9"
-                            />
-                          </svg>
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="11" cy="11" r="8" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                              <line x1="11" y1="8" x2="11" y2="14" />
+                              <line x1="8" y1="11" x2="14" y2="11" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            title={t('copy_link', 'Copy link')}
+                            onClick={handleCopyLink(media)}
+                            className="p-[4px] text-white/80 hover:text-white rounded hover:bg-white/20 transition-all"
+                          >
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            title={t('download', 'Download')}
+                            onClick={handleDownload(media)}
+                            className="p-[4px] text-white/80 hover:text-white rounded hover:bg-white/20 transition-all"
+                          >
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="7 10 12 15 17 10" />
+                              <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            title={t('delete', 'Delete')}
+                            onClick={deleteImage(media)}
+                            className="p-[4px] text-red-400 hover:text-red-300 rounded hover:bg-red-500/20 transition-all"
+                          >
+                            <TrashIcon size={13} />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Media Preview */}
+                      <div className="w-full h-full relative">
+                        {isVideo ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            width="100%"
+                            height="100%"
+                            className="w-full h-full object-cover"
+                            src={mediaDirectory.set(media.path)}
+                            alt={media.originalName || 'media'}
+                          />
+                        )}
+                      </div>
+
+                      {/* Bottom Filename & Info Strip */}
+                      <div className="absolute bottom-0 inset-x-0 z-[90] p-[6px] bg-gradient-to-t from-black/85 via-black/50 to-transparent flex flex-col gap-[2px]">
+                        <div className="text-white text-[11px] font-[500] truncate leading-tight">
+                          {media.originalName || media.name}
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-white/70">
+                          <span className="font-mono bg-white/20 px-[4px] py-[1px] rounded text-[9px] uppercase">
+                            {ext}
+                          </span>
+                          <span>{formatBytes(media.fileSize)}</span>
                         </div>
                       </div>
-                      {hasExtension(media.path, 'mp4') ? (
-                        <VideoFrame url={mediaDirectory.set(media.path)} />
-                      ) : (
-                        <img
-                          width="100%"
-                          height="100%"
-                          className="w-full h-full object-cover"
-                          src={mediaDirectory.set(media.path)}
-                          alt="media"
-                        />
-                      )}
                     </div>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Mode 2: Large Cards with Full Metadata */}
+            {!isLoading && viewMode === 'large' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px] p-[2px]">
+                {processedMedia.map((media: any) => {
+                  const isSelected = !!selected.find((p: any) => p.id === media.id);
+                  const selectIdx = selected.findIndex((z: any) => z.id === media.id);
+                  const isVideo = hasExtension(media.path, 'mp4') || media.type === 'video';
+                  const ext =
+                    media.path.split('.').pop()?.toUpperCase() || (isVideo ? 'MP4' : 'IMG');
+                  return (
+                    <div
+                      key={media.id}
+                      onClick={addRemoveSelected(media)}
+                      className={clsx(
+                        'group flex flex-col rounded-[10px] overflow-hidden border transition-all bg-newBgColorInner select-none',
+                        isSelected
+                          ? 'border-[#612BD3] ring-2 ring-[#612BD3]/30'
+                          : 'border-newTableBorder hover:border-textColor/30',
+                        !standalone && 'cursor-pointer'
+                      )}
+                    >
+                      {/* Large Preview */}
+                      <div className="w-full aspect-[16/10] relative overflow-hidden bg-black/10">
+                        {isVideo ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            width="100%"
+                            height="100%"
+                            className="w-full h-full object-cover"
+                            src={mediaDirectory.set(media.path)}
+                            alt={media.originalName || 'media'}
+                          />
+                        )}
+
+                        {/* Top badges */}
+                        <div className="absolute top-[8px] left-[8px] z-[90] flex items-center gap-[6px]">
+                          <span className="font-mono bg-black/75 backdrop-blur-sm text-white px-[6px] py-[2px] rounded text-[10px] uppercase font-semibold">
+                            {ext}
+                          </span>
+                          {media.fileSize && (
+                            <span className="bg-black/65 backdrop-blur-sm text-white/90 px-[6px] py-[2px] rounded text-[10px]">
+                              {formatBytes(media.fileSize)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Selection indicator */}
+                        {isSelected && (
+                          <div className="text-white flex z-[101] justify-center items-center text-[12px] font-[600] w-[26px] h-[26px] rounded-full bg-[#612BD3] absolute top-[8px] right-[8px] shadow">
+                            {selectIdx + 1}
+                          </div>
+                        )}
+
+                        {/* Center Zoom Icon on hover */}
+                        <div
+                          onClick={maximize(media)}
+                          className="absolute inset-0 z-[80] bg-black/25 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                        >
+                          <div className="p-[10px] bg-black/70 text-white rounded-full hover:scale-110 transition-transform">
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="11" cy="11" r="8" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                              <line x1="11" y1="8" x2="11" y2="14" />
+                              <line x1="8" y1="11" x2="14" y2="11" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer: Metadata & Actions */}
+                      <div className="p-[12px] flex flex-col gap-[8px]">
+                        <div className="flex items-start justify-between gap-[8px]">
+                          <div
+                            className="text-[13px] font-[600] text-textColor truncate flex-1"
+                            title={media.originalName || media.name}
+                          >
+                            {media.originalName || media.name}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-textColor/60">
+                          <span>
+                            {t('uploaded_at', 'Uploaded')}: {formatDate(media.createdAt)}
+                          </span>
+                          <span>{formatBytes(media.fileSize)}</span>
+                        </div>
+                        <div className="flex items-center justify-between pt-[8px] border-t border-newTableBorder gap-[6px]">
+                          <div className="flex items-center gap-[6px]">
+                            <button
+                              type="button"
+                              onClick={handleCopyLink(media)}
+                              className="px-[8px] py-[4px] text-[11px] rounded-[6px] bg-newTextColor/[0.05] hover:bg-newTextColor/[0.1] text-textColor flex items-center gap-[4px] transition-colors"
+                            >
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                              </svg>
+                              {t('copy_link', 'Copy link')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleDownload(media)}
+                              className="px-[8px] py-[4px] text-[11px] rounded-[6px] bg-newTextColor/[0.05] hover:bg-newTextColor/[0.1] text-textColor flex items-center gap-[4px] transition-colors"
+                            >
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                              </svg>
+                              {t('download', 'Download')}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={deleteImage(media)}
+                            className="p-[5px] text-red-500 hover:bg-red-500/10 rounded-[6px] transition-colors"
+                            title={t('delete', 'Delete')}
+                          >
+                            <TrashIcon size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Mode 3: Detailed List / Table View */}
+            {!isLoading && viewMode === 'list' && (
+              <div className="flex flex-col gap-[6px] p-[2px]">
+                {/* Table Header */}
+                <div className="flex items-center px-[12px] py-[8px] text-[11px] font-[600] text-textColor/60 uppercase tracking-wider border-b border-newTableBorder">
+                  <div className="w-[50px]">{t('preview', 'Preview')}</div>
+                  <div className="flex-1 min-w-0 px-[12px]">{t('file_name', 'File Name')}</div>
+                  <div className="w-[80px] text-center">{t('file_format', 'Format')}</div>
+                  <div className="w-[90px] text-right">{t('file_size', 'Size')}</div>
+                  <div className="w-[120px] text-right mobile:hidden">{t('uploaded_at', 'Uploaded')}</div>
+                  <div className="w-[120px] text-right">{t('actions', 'Actions')}</div>
                 </div>
-              ))}
+
+                {/* Table Rows */}
+                {processedMedia.map((media: any) => {
+                  const isSelected = !!selected.find((p: any) => p.id === media.id);
+                  const selectIdx = selected.findIndex((z: any) => z.id === media.id);
+                  const isVideo = hasExtension(media.path, 'mp4') || media.type === 'video';
+                  const ext =
+                    media.path.split('.').pop()?.toUpperCase() || (isVideo ? 'MP4' : 'IMG');
+                  return (
+                    <div
+                      key={media.id}
+                      onClick={addRemoveSelected(media)}
+                      className={clsx(
+                        'group flex items-center px-[12px] py-[8px] rounded-[8px] border transition-all bg-newBgColorInner select-none',
+                        isSelected
+                          ? 'border-[#612BD3] ring-1 ring-[#612BD3]/30 bg-[#612BD3]/5'
+                          : 'border-newTableBorder hover:bg-newTextColor/[0.03]',
+                        !standalone && 'cursor-pointer'
+                      )}
+                    >
+                      {/* Thumbnail */}
+                      <div className="w-[44px] h-[44px] rounded-[6px] overflow-hidden flex-shrink-0 relative bg-black/10">
+                        {isVideo ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            width="100%"
+                            height="100%"
+                            className="w-full h-full object-cover"
+                            src={mediaDirectory.set(media.path)}
+                            alt="media"
+                          />
+                        )}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-[#612BD3]/80 flex items-center justify-center text-white text-[12px] font-bold">
+                            {selectIdx + 1}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* File name */}
+                      <div className="flex-1 min-w-0 px-[12px]">
+                        <div
+                          className="text-[13px] font-[500] text-textColor truncate"
+                          title={media.originalName || media.name}
+                        >
+                          {media.originalName || media.name}
+                        </div>
+                        <div className="text-[11px] text-textColor/50 truncate">
+                          {media.name}
+                        </div>
+                      </div>
+
+                      {/* Format badge */}
+                      <div className="w-[80px] text-center">
+                        <span className="px-[6px] py-[2px] rounded font-mono text-[10px] uppercase font-semibold bg-newTextColor/[0.06] text-textColor/80">
+                          {ext}
+                        </span>
+                      </div>
+
+                      {/* File size */}
+                      <div className="w-[90px] text-right text-[12px] text-textColor/70 font-mono">
+                        {formatBytes(media.fileSize)}
+                      </div>
+
+                      {/* Upload date */}
+                      <div className="w-[120px] text-right text-[12px] text-textColor/60 mobile:hidden">
+                        {formatDate(media.createdAt)}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="w-[120px] flex items-center justify-end gap-[4px]">
+                        <button
+                          type="button"
+                          title={t('zoom', 'Zoom')}
+                          onClick={maximize(media)}
+                          className="p-[6px] text-textColor/60 hover:text-textColor hover:bg-newTextColor/[0.08] rounded-[6px] transition-colors"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            <line x1="11" y1="8" x2="11" y2="14" />
+                            <line x1="8" y1="11" x2="14" y2="11" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          title={t('copy_link', 'Copy link')}
+                          onClick={handleCopyLink(media)}
+                          className="p-[6px] text-textColor/60 hover:text-textColor hover:bg-newTextColor/[0.08] rounded-[6px] transition-colors"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          title={t('download', 'Download')}
+                          onClick={handleDownload(media)}
+                          className="p-[6px] text-textColor/60 hover:text-textColor hover:bg-newTextColor/[0.08] rounded-[6px] transition-colors"
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          title={t('delete', 'Delete')}
+                          onClick={deleteImage(media)}
+                          className="p-[6px] text-red-500 hover:bg-red-500/10 rounded-[6px] transition-colors"
+                        >
+                          <TrashIcon size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Mode 4: High-Density Compact Grid */}
+            {!isLoading && viewMode === 'compact' && (
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-10 gap-[6px] p-[2px]">
+                {processedMedia.map((media: any) => {
+                  const isSelected = !!selected.find((p: any) => p.id === media.id);
+                  const selectIdx = selected.findIndex((z: any) => z.id === media.id);
+                  const isVideo = hasExtension(media.path, 'mp4') || media.type === 'video';
+                  return (
+                    <div
+                      key={media.id}
+                      onClick={addRemoveSelected(media)}
+                      title={`${media.originalName || media.name} (${formatBytes(media.fileSize)})`}
+                      className={clsx(
+                        'group relative aspect-square rounded-[6px] overflow-hidden border transition-all bg-newBgColorInner select-none',
+                        isSelected
+                          ? 'border-[#612BD3] ring-2 ring-[#612BD3]/40'
+                          : 'border-newTableBorder hover:border-textColor/40',
+                        !standalone && 'cursor-pointer'
+                      )}
+                    >
+                      {/* Selection badge */}
+                      {isSelected ? (
+                        <div className="text-white flex z-[101] justify-center items-center text-[11px] font-[600] w-[20px] h-[20px] rounded-full bg-[#612BD3] absolute top-[4px] right-[4px] shadow">
+                          {selectIdx + 1}
+                        </div>
+                      ) : (
+                        <div className="absolute top-[4px] right-[4px] z-[100] hidden group-hover:flex items-center gap-[2px] bg-black/75 backdrop-blur-sm rounded-[4px] p-[2px]">
+                          <button
+                            type="button"
+                            title={t('zoom', 'Zoom')}
+                            onClick={maximize(media)}
+                            className="p-[3px] text-white/80 hover:text-white"
+                          >
+                            <svg
+                              width="11"
+                              height="11"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="11" cy="11" r="8" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            title={t('delete', 'Delete')}
+                            onClick={deleteImage(media)}
+                            className="p-[3px] text-red-400 hover:text-red-300"
+                          >
+                            <TrashIcon size={11} />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="w-full h-full relative">
+                        {isVideo ? (
+                          <VideoFrame url={mediaDirectory.set(media.path)} />
+                        ) : (
+                          <img
+                            width="100%"
+                            height="100%"
+                            className="w-full h-full object-cover"
+                            src={mediaDirectory.set(media.path)}
+                            alt="media"
+                          />
+                        )}
+                      </div>
+
+                      {/* Small bottom name preview */}
+                      <div className="absolute bottom-0 inset-x-0 bg-black/65 text-white text-[9px] px-[4px] py-[1px] truncate">
+                        {media.originalName || media.name}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
         {(data?.pages || 0) > 1 && (

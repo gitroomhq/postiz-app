@@ -5,8 +5,9 @@ services:
     restart: always
     environment:
       # === Required Settings
-      MAIN_URL: 'http://localhost:4007'
+      MAIN_URL: 'http://127.0.0.1:4007'
       FRONTEND_URL: 'http://localhost:4007'
+      CANVA_APP_ORIGIN: 'http://127.0.0.1:4007'
       NEXT_PUBLIC_BACKEND_URL: 'http://localhost:4007/api'
       JWT_SECRET: 'random string that is unique to every install - just type random characters here!'
       DATABASE_URL: 'postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local'
@@ -123,7 +124,7 @@ services:
       - postiz-config:/config/
       - postiz-uploads:/uploads/
     ports:
-      - '4007:5000'
+      - '127.0.0.1:4007:5000'
     networks:
       - postiz-network
       - temporal-network
@@ -164,15 +165,18 @@ services:
     networks:
       - postiz-network
 
-  # For Application Monitoring / Debugging
-  spotlight:
-    pull_policy: always
-    container_name: spotlight
-    ports:
-      - 8969:8969/tcp
-    image: ghcr.io/getsentry/spotlight:latest
-    networks:
-      - postiz-network
+  # ----------------------------------------------------
+  # [TẮT ĐỂ TIẾT KIỆM TÀI NGUYÊN & TRÁNH XUNG ĐỘT PORT]
+  # ----------------------------------------------------
+  # Spotlight (Debug nội bộ cho Sentry - không cần cho cá nhân)
+  # spotlight:
+  #   pull_policy: always
+  #   container_name: spotlight
+  #   ports:
+  #     - 8969:8969/tcp
+  #   image: ghcr.io/getsentry/spotlight:latest
+  #   networks:
+  #     - postiz-network
 
   # -----------------------
   # Temporal Stack
@@ -210,8 +214,9 @@ services:
 
   temporal:
     container_name: temporal
+    # Chỉ mở cổng nội bộ 127.0.0.1 nếu cần, hoặc bỏ qua vì postiz đã giao tiếp qua temporal-network
     ports:
-      - '7233:7233'
+      - '127.0.0.1:7233:7233'
     image: temporalio/auto-setup:1.28.1
     depends_on:
       - temporal-postgresql
@@ -234,29 +239,32 @@ services:
     labels:
       kompose.volume.type: configMap
 
-  temporal-admin-tools:
-    container_name: temporal-admin-tools
-    image: temporalio/admin-tools:1.28.1-tctl-1.18.4-cli-1.4.1
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
-    networks:
-      - temporal-network
-    stdin_open: true
-    depends_on:
-      - temporal
-    tty: true
+  # [TẮT] Temporal Admin CLI Tools (không cần cho sử dụng bình thường)
+  # temporal-admin-tools:
+  #   container_name: temporal-admin-tools
+  #   image: temporalio/admin-tools:1.28.1-tctl-1.18.4-cli-1.4.1
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #     - TEMPORAL_CLI_ADDRESS=temporal:7233
+  #   networks:
+  #     - temporal-network
+  #   stdin_open: true
+  #   depends_on:
+  #     - temporal
+  #   tty: true
 
-  temporal-ui:
-    container_name: temporal-ui
-    image: temporalio/ui:2.34.0
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://127.0.0.1:3000
-    networks:
-      - temporal-network
-    ports:
-      - '8080:8080'
+  # [TẮT] Temporal Web UI (Xung đột với cổng 8080 đang dùng trên server).
+  # Nếu muốn bật lại để xem log workflow, hãy mở comment và đổi cổng sang 8088 như bên dưới:
+  # temporal-ui:
+  #   container_name: temporal-ui
+  #   image: temporalio/ui:2.34.0
+  #   environment:
+  #     - TEMPORAL_ADDRESS=temporal:7233
+  #     - TEMPORAL_CORS_ORIGINS=http://127.0.0.1:3000
+  #   networks:
+  #     - temporal-network
+  #   ports:
+  #     - '127.0.0.1:8088:8080'
 
 volumes:
   postgres-volume:

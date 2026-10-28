@@ -1839,3 +1839,18 @@ model Announcement {
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
 }
+
+model PlatformConfig {
+  id          String   @id @default(cuid())
+  platform    String   // 'x', 'linkedin', 'facebook', 'youtube', 'tiktok', etc.
+  key         String   @unique // 'X_API_KEY', 'LINKEDIN_CLIENT_ID', etc.
+  value       String   // Plaintext or AES-encrypted value
+  isSecret    Boolean  @default(false)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([platform])
+  @@index([key])
+}
+

@@ -1,0 +1,178 @@
+services:
+  postiz:
+    image: postiz:slim-custom
+    container_name: postiz
+    restart: always
+    environment:
+      # === Cấu hình cơ bản
+      MAIN_URL: 'http://127.0.0.1:4007'
+      FRONTEND_URL: 'http://localhost:4007'
+      CANVA_APP_ORIGIN: 'http://127.0.0.1:4007'
+      NEXT_PUBLIC_BACKEND_URL: 'http://localhost:4007/api'
+      JWT_SECRET: 'random string that is unique to every install - just type random characters here!'
+      DATABASE_URL: 'postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local'
+      REDIS_URL: 'redis://postiz-redis:6379'
+      BACKEND_INTERNAL_URL: 'http://localhost:3000'
+      TEMPORAL_ADDRESS: 'temporal:7233'
+      IS_GENERAL: 'true'
+      DISABLE_REGISTRATION: 'false'
+
+      # === Tối ưu bộ nhớ Node.js V8 (Ép Garbage Collector dọn dẹp thường xuyên)
+      NODE_OPTIONS: '--max-old-space-size=384'
+
+      # === Cấu hình lưu trữ
+      STORAGE_PROVIDER: 'local'
+      UPLOAD_DIRECTORY: '/uploads'
+      NEXT_PUBLIC_UPLOAD_DIRECTORY: '/uploads'
+
+      # === Social Media API Settings
+      X_URL: ''
+      X_API_KEY: ''
+      X_API_SECRET: ''
+      LINKEDIN_CLIENT_ID: ''
+      LINKEDIN_CLIENT_SECRET: ''
+      REDDIT_CLIENT_ID: ''
+      REDDIT_CLIENT_SECRET: ''
+      GITHUB_CLIENT_ID: ''
+      GITHUB_CLIENT_SECRET: ''
+      APPLE_CLIENT_ID: ''
+      APPLE_TEAM_ID: ''
+      APPLE_KEY_ID: ''
+      APPLE_PRIVATE_KEY: ''
+      BEEHIIVE_API_KEY: ''
+      BEEHIIVE_PUBLICATION_ID: ''
+      THREADS_APP_ID: ''
+      THREADS_APP_SECRET: ''
+      FACEBOOK_APP_ID: ''
+      FACEBOOK_APP_SECRET: ''
+      YOUTUBE_CLIENT_ID: ''
+      YOUTUBE_CLIENT_SECRET: ''
+      TIKTOK_CLIENT_ID: ''
+      TIKTOK_CLIENT_SECRET: ''
+      TIKTOK_BUSINESS_CLIENT_ID: ''
+      TIKTOK_BUSINESS_CLIENT_SECRET: ''
+      PINTEREST_CLIENT_ID: ''
+      PINTEREST_CLIENT_SECRET: ''
+      DRIBBBLE_CLIENT_ID: ''
+      DRIBBBLE_CLIENT_SECRET: ''
+      TUMBLR_CLIENT_ID: ''
+      TUMBLR_CLIENT_SECRET: ''
+      DISCORD_CLIENT_ID: ''
+      DISCORD_CLIENT_SECRET: ''
+      DISCORD_BOT_TOKEN_ID: ''
+      SLACK_ID: ''
+      SLACK_SECRET: ''
+      SLACK_SIGNING_SECRET: ''
+      MASTODON_URL: 'https://mastodon.social'
+      MASTODON_CLIENT_ID: ''
+      MASTODON_CLIENT_SECRET: ''
+
+      # === Cài đặt AI & Giới hạn
+      OPENAI_API_KEY: ''
+      API_LIMIT: 30
+
+    volumes:
+      - postiz-config:/config/
+      - postiz-uploads:/uploads/
+    ports:
+      # Lắng nghe 127.0.0.1 để bảo mật và sẵn sàng kết nối Cloudflare Tunnel
+      - '127.0.0.1:4007:5000'
+    networks:
+      - postiz-network
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 850M
+
+  # Database PostgreSQL 17 Alpine DUY NHẤT (Chứa cả postiz_db và temporal_db)
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: postiz-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postiz-password
+      POSTGRES_USER: postiz-user
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
+    networks:
+      - postiz-network
+    healthcheck:
+      test: pg_isready -U postiz-user -d postiz-db-local
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  # Redis siêu nhẹ
+  postiz-redis:
+    image: redis:7-alpine
+    container_name: postiz-redis
+    restart: always
+    healthcheck:
+      test: redis-cli ping
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - postiz-redis-data:/data
+    networks:
+      - postiz-network
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+
+  # Temporal Server điều phối workflow (Chế độ PostgreSQL SQL Visibility, KHÔNG dùng Elasticsearch)
+  temporal:
+    container_name: temporal
+    image: temporalio/auto-setup:1.28.1
+    restart: always
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=postiz-user
+      - POSTGRES_PWD=postiz-password
+      - POSTGRES_SEEDS=postiz-postgres
+      - DBNAME=temporal
+      - VISIBILITY_DBNAME=temporal_visibility
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=false
+      - SKIP_ADD_CUSTOM_SEARCH_ATTRIBUTES=true
+      - TEMPORAL_NAMESPACE=default
+    networks:
+      - postiz-network
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+volumes:
+  postgres-volume:
+    external: false
+  postiz-redis-data:
+    external: false
+  postiz-config:
+    external: false
+  postiz-uploads:
+    external: false
+
+networks:
+  postiz-network:
+    driver: bridge
+    name: postiz-network
