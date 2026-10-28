@@ -201,17 +201,23 @@ export const startMcp = async (app: INestApplication) => {
   // HubSpot agents follow the 2025-03-26 MCP authorization spec: they read the
   // metadata from the domain root of the MCP url (no path issuer), connect with
   // a pre-registered client instead of DCR and require the refresh_token
-  // grant, so the root is answered only when that client is configured
-  const authorizationServers: Record<string, { issuer: string; registration: boolean; refresh: boolean }> = {
+  // grant, so the root is answered only when that client is configured.
+  // RFC 9207 issuer identification is advertised only on the DCR issuer: Codex
+  // needs it (its authorization endpoint origin check), while ChatGPT picks a
+  // different callback once it sees the flag and HubSpot is untested with it,
+  // so the pre-registered issuers keep today's behavior (iss is still sent)
+  const authorizationServers: Record<string, { issuer: string; registration: boolean; refresh: boolean; issuerIdentification: boolean }> = {
     '/mcp-oauth-chatgpt': {
       issuer: new URL('/mcp-oauth-chatgpt', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
       registration: false,
       refresh: false,
+      issuerIdentification: false,
     },
     '/mcp-oauth-dynamic': {
       issuer: new URL('/mcp-oauth-dynamic', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
       registration: true,
       refresh: false,
+      issuerIdentification: true,
     },
     ...(hubspotOAuthClientId
       ? {
@@ -219,12 +225,13 @@ export const startMcp = async (app: INestApplication) => {
             issuer: new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).origin,
             registration: false,
             refresh: true,
+            issuerIdentification: false,
           },
         }
       : {}),
   };
 
-  const authorizationServerMetadata = (server: { issuer: string; registration: boolean; refresh: boolean }) => ({
+  const authorizationServerMetadata = (server: { issuer: string; registration: boolean; refresh: boolean; issuerIdentification: boolean }) => ({
     // RFC 8414: metadata served at /.well-known/oauth-authorization-server/<path>
     // belongs to the path-based issuer <backend>/<path>
     issuer: server.issuer,
@@ -242,7 +249,9 @@ export const startMcp = async (app: INestApplication) => {
       : ['authorization_code'],
     token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post', 'none'],
     code_challenge_methods_supported: ['S256'],
-    authorization_response_iss_parameter_supported: true,
+    ...(server.issuerIdentification && {
+      authorization_response_iss_parameter_supported: true,
+    }),
     scopes_supported: oauthScopes,
   });
 
