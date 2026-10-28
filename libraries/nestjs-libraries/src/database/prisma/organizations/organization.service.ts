@@ -55,12 +55,21 @@ export class OrganizationService {
     return this._organizationRepository.getOrgByIdWithSubscription(id);
   }
 
+  getAccountOverview(orgId: string) {
+    return this._organizationRepository.getAccountOverview(orgId);
+  }
+
   getOrgByApiKey(api: string) {
     return this._organizationRepository.getOrgByApiKey(api);
   }
 
-  async hasSuperAdminUser(orgId: string) {
-    return !!(await this._organizationRepository.getSuperAdminUser(orgId));
+  async canUseSuperAdminApi(orgId: string) {
+    const [superAdmin, privilegedOther] = await Promise.all([
+      this._organizationRepository.getSuperAdminUser(orgId),
+      this._organizationRepository.getPrivilegedNonSuperAdminUser(orgId),
+    ]);
+
+    return !!superAdmin && !privilegedOther;
   }
 
   getUserOrg(id: string) {
@@ -83,6 +92,10 @@ export class OrganizationService {
     return this._organizationRepository.setStreak(organizationId, type);
   }
 
+  async getLastPublishDate(organizationId: string) {
+    return this._organizationRepository.getLastPublishDate(organizationId);
+  }
+
   getOrgByCustomerId(customerId: string) {
     return this._organizationRepository.getOrgByCustomerId(customerId);
   }
@@ -90,9 +103,16 @@ export class OrganizationService {
   async inviteTeamMember(org: Organization, user: User, body: AddTeamMemberDto) {
     const timeLimit = dayjs().add(2, 'day').format('YYYY-MM-DD HH:mm:ss');
     const id = makeId(5);
+    // only the invite fields, the body can carry undeclared properties
     const url =
       process.env.FRONTEND_URL +
-      `/?org=${AuthService.signJWT({ ...body, orgId: org.id, timeLimit, id })}`;
+      `/?org=${AuthService.signJWT({
+        email: body.email,
+        role: body.role,
+        orgId: org.id,
+        timeLimit,
+        id,
+      })}`;
     if (body.sendEmail) {
       const inviter = user.name
         ? `${user.name} (${user.email})`

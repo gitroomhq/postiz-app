@@ -119,6 +119,18 @@ export class SubscriptionRepository {
     });
   }
 
+  updateCancelAt(organizationId: string, cancelAt: number | null) {
+    return this._subscription.model.subscription.updateMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+      },
+      data: {
+        cancelAt: cancelAt ? new Date(cancelAt * 1000) : null,
+      },
+    });
+  }
+
   async getSubscriptionByOrgId(orgId: string) {
     return this._subscription.model.subscription.findFirst({
       where: {
@@ -284,6 +296,51 @@ export class SubscriptionRepository {
       });
       throw err;
     }
+  }
+
+  // The caller picks the id, so charging the same work twice is one row
+  chargeCredits(
+    id: string,
+    organizationId: string,
+    type: string,
+    credits: number
+  ) {
+    return this._credits.model.credits.upsert({
+      where: {
+        id,
+      },
+      create: {
+        id,
+        organizationId,
+        credits,
+        type,
+      },
+      update: {},
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  refundCredits(organizationId: string, id: string) {
+    return this._credits.model.credits.deleteMany({
+      where: {
+        id,
+        organizationId,
+      },
+    });
+  }
+
+  deleteCreditsFrom(organizationId: string, from: dayjs.Dayjs, type: string) {
+    return this._credits.model.credits.deleteMany({
+      where: {
+        organizationId,
+        type,
+        createdAt: {
+          gte: from.toDate(),
+        },
+      },
+    });
   }
 
   setCustomerId(orgId: string, customerId: string) {

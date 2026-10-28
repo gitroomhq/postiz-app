@@ -84,6 +84,13 @@ export class SubscriptionService {
     );
   }
 
+  updateCancelAt(organizationId: string, cancelAt: number | null) {
+    return this._subscriptionRepository.updateCancelAt(
+      organizationId,
+      cancelAt
+    );
+  }
+
   async checkSubscription(organizationId: string, subscriptionId: string) {
     return await this._subscriptionRepository.checkSubscription(
       organizationId,
@@ -108,15 +115,36 @@ export class SubscriptionService {
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
-    const currentTotalChannels = (
-      await this._integrationService.getIntegrationsList(organizationId)
-    ).filter((f) => !f.disabled);
+    const allChannels = await this._integrationService.getIntegrationsList(
+      organizationId
+    );
+    const currentTotalChannels = allChannels.filter((f) => !f.disabled);
 
     if (currentTotalChannels.length > totalChannels) {
       await this._integrationService.disableIntegrations(
         organizationId,
         currentTotalChannels.length - totalChannels
       );
+    }
+
+    // channels are auto-disabled when a subscription lapses; once the new plan
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
+    if (
+      billing !== 'FREE' &&
+      currentTotalChannels.length < allChannels.length &&
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
+    ) {
+      try {
+        await this._integrationService.enableAllIntegrations(organizationId);
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -169,17 +197,38 @@ export class SubscriptionService {
     const from = pricing[getCurrentSubscription?.subscriptionTier || 'FREE'];
     const to = pricing[billing];
 
-    const currentTotalChannels = (
-      await this._integrationService.getIntegrationsList(
-        getOrgByCustomerId?.id!
-      )
-    ).filter((f) => !f.disabled);
+    const allChannels = await this._integrationService.getIntegrationsList(
+      getOrgByCustomerId?.id!
+    );
+    const currentTotalChannels = allChannels.filter((f) => !f.disabled);
 
     if (currentTotalChannels.length > totalChannels) {
       await this._integrationService.disableIntegrations(
         getOrgByCustomerId?.id!,
         currentTotalChannels.length - totalChannels
       );
+    }
+
+    // channels are auto-disabled when a subscription lapses; once the new plan
+    // can hold all of them and the limit grew, enable everything back (partial
+    // enabling or same-plan updates would risk enabling channels the user
+    // disabled on purpose)
+    if (
+      billing !== 'FREE' &&
+      currentTotalChannels.length < allChannels.length &&
+      allChannels.length <= totalChannels &&
+      totalChannels > (getCurrentSubscription?.totalChannels || 0)
+    ) {
+      try {
+        await this._integrationService.enableAllIntegrations(
+          getOrgByCustomerId?.id!
+        );
+      } catch (err) {
+        console.error(
+          'Error enabling channels after subscription change:',
+          err
+        );
+      }
     }
 
     if (from.team_members && !to.team_members) {
@@ -229,6 +278,7 @@ export class SubscriptionService {
           return {};
         }
       } catch (e) {
+        console.error('Error modifying subscription:', e);
         return {};
       }
     }
@@ -273,6 +323,7 @@ export class SubscriptionService {
         return {};
       }
     } catch (e) {
+      console.error('Error modifying subscription:', e);
       return {};
     }
 
@@ -294,8 +345,56 @@ export class SubscriptionService {
     return this._subscriptionRepository.getSubscriptionByIdentifier(identifier);
   }
 
+  // For work that is metered (minutes) and outlives a single call, so it can't
+  // be wrapped in useCredit: the caller picks the id, charging twice is one
+  // row, and the same id refunds it on failure
+  chargeCredits(
+    id: string,
+    organizationId: string,
+    type: string,
+    credits: number
+  ) {
+    return this._subscriptionRepository.chargeCredits(
+      id,
+      organizationId,
+      type,
+      credits
+    );
+  }
+
+  refundCredits(organizationId: string, id: string) {
+    return this._subscriptionRepository.refundCredits(organizationId, id);
+  }
+
   async getSubscription(organizationId: string) {
     return this._subscriptionRepository.getSubscription(organizationId);
+  }
+
+  private currentPeriodStart(subscriptionCreatedAt: Date) {
+    let date = dayjs(subscriptionCreatedAt);
+    while (date.isBefore(dayjs())) {
+      date = date.add(1, 'month');
+    }
+
+    return date.subtract(1, 'month');
+  }
+
+  async resetCredits(organizationId: string, type: string) {
+    const subscription = await this._subscriptionRepository.getSubscription(
+      organizationId
+    );
+
+    if (!subscription) {
+      return null;
+    }
+
+    const { count } = await this._subscriptionRepository.deleteCreditsFrom(
+      organizationId,
+      this.currentPeriodStart(subscription.createdAt),
+      type
+    );
+
+    return { deleted: count };
   }
 
   async checkCredits(organization: Organization, checkType = 'ai_images') {
@@ -306,16 +405,15 @@ export class SubscriptionService {
       return { credits: 0 };
     }
 
-    // @ts-ignore
-    let date = dayjs(organization.subscription.createdAt);
-    while (date.isBefore(dayjs())) {
-      date = date.add(1, 'month');
-    }
-
-    const checkFromMonth = date.subtract(1, 'month');
+    const checkFromMonth = this.currentPeriodStart(
+      // @ts-ignore
+      organization.subscription.createdAt
+    );
     const imageGenerationCount =
       checkType === 'ai_images'
         ? pricing[type].image_generation_count
+        : checkType === 'clipping_minutes'
+        ? pricing[type].clipping_minutes
         : pricing[type].generate_videos;
 
     const totalUse = await this._subscriptionRepository.getCreditsFrom(

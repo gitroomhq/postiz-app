@@ -198,9 +198,9 @@ export const PlugItem: FC<{
     <div
       onClick={() => addPlug(data)}
       key={plug.title}
-      className="w-full h-[300px] rounded-[8px] bg-newTableHeader hover:bg-newTableBorder"
+      className="w-full h-[300px] mobile:h-auto rounded-[8px] bg-newTableHeader hover:bg-newTableBorder"
     >
-      <div key={plug.title} className="p-[16px] h-full flex flex-col flex-1">
+      <div key={plug.title} className="p-[16px] h-full flex flex-col flex-1 mobile:gap-[16px]">
         <div className="flex">
           <div className="text-[20px] mb-[8px] flex-1">{plug.title}</div>
           {!!data && (
@@ -263,7 +263,7 @@ export const Plug = () => {
     return null;
   }
   return (
-    <div className="grid grid-cols-3 gap-[30px]">
+    <div className="grid grid-cols-3 tablet:grid-cols-2 mobile:!grid-cols-1 gap-[30px] mobile:gap-[16px]">
       {plug.plugs.map((p) => (
         <PlugItem
           key={p.title + '-' + plug.providerId}

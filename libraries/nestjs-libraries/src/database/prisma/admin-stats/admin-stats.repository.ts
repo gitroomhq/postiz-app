@@ -6,6 +6,15 @@ export interface StatsParams {
   from: Date;
   to: Date;
   unknownOnly?: boolean;
+  organizationId?: string;
+  includeDeleted?: boolean;
+}
+
+export interface OrgActivityParams {
+  from: Date;
+  to: Date;
+  organizationId: string;
+  includeDeleted?: boolean;
 }
 
 // Unknown errors are stored as the serialized error payload, e.g.
@@ -15,6 +24,24 @@ const UNKNOWN_ERROR_TOKEN = '"message":"Unknown Error"';
 interface PerSocial {
   provider: string;
   count: number;
+}
+
+interface PerState {
+  state: string;
+  count: number;
+}
+
+export interface OrgActivityResponse {
+  from: string;
+  to: string;
+  organizationId: string;
+  errors: { total: number; perSocial: PerSocial[] };
+  posts: { total: number; perSocial: PerSocial[] };
+  connectedInRange: { total: number; perSocial: PerSocial[] };
+  channels: { total: number; perSocial: PerSocial[] };
+  postsByState: PerState[];
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
 }
 
 export interface StatsResponse {
@@ -28,6 +55,7 @@ export interface StatsResponse {
   publishingChannels: { total: number; perSocial: PerSocial[] };
   scheduledChannels: { total: number; perSocial: PerSocial[] };
   activeOrgsBySource: { total: number; perSocial: PerSocial[] };
+  connectedClients: { total: number; perSocial: PerSocial[] };
 }
 
 const sortDesc = (list: PerSocial[]) =>
@@ -38,7 +66,9 @@ export class AdminStatsRepository {
   constructor(
     private _post: PrismaRepository<'post'>,
     private _integration: PrismaRepository<'integration'>,
-    private _errors: PrismaRepository<'errors'>
+    private _errors: PrismaRepository<'errors'>,
+    private _oauthApp: PrismaRepository<'oAuthApp'>,
+    private _oauthAuth: PrismaRepository<'oAuthAuthorization'>
   ) {}
 
   private async errorStats(params: StatsParams) {
@@ -46,6 +76,9 @@ export class AdminStatsRepository {
       createdAt: { gte: params.from, lte: params.to },
       ...(params.unknownOnly
         ? { message: { contains: UNKNOWN_ERROR_TOKEN } }
+        : {}),
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
         : {}),
     };
 
@@ -75,8 +108,11 @@ export class AdminStatsRepository {
     const where: Prisma.PostWhereInput = {
       state: 'PUBLISHED',
       parentPostId: null,
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       publishDate: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -252,8 +288,11 @@ export class AdminStatsRepository {
 
   private async connectedStats(params: StatsParams) {
     const where: Prisma.IntegrationWhereInput = {
-      deletedAt: null,
+      ...(params.includeDeleted ? {} : { deletedAt: null }),
       createdAt: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
     };
 
     const [total, grouped] = await Promise.all([
@@ -276,15 +315,163 @@ export class AdminStatsRepository {
     };
   }
 
+  // Active OAuth authorizations first created in the range (MCP clients like
+  // Claude, Cursor or ChatGPT connecting to Postiz), per client name. A
+  // re-authorization upserts the same row, so it keeps its original createdAt
+  // and is not counted again. Dynamic registration creates a new OAuthApp row
+  // for every client install, so the counts are folded by the registered
+  // client_name rather than by app id.
+  private async clientStats(params: StatsParams) {
+    const where: Prisma.OAuthAuthorizationWhereInput = {
+      accessToken: { not: null },
+      ...(params.includeDeleted ? {} : { revokedAt: null }),
+      createdAt: { gte: params.from, lte: params.to },
+      ...(params.organizationId
+        ? { organizationId: params.organizationId }
+        : {}),
+    };
+
+    const [total, grouped] = await Promise.all([
+      this._oauthAuth.model.oAuthAuthorization.count({ where }),
+      this._oauthAuth.model.oAuthAuthorization.groupBy({
+        by: ['oauthAppId'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    // groupBy can't reach into the oauthApp relation, so resolve the client
+    // name for the apps we saw and fold the counts.
+    const appIds = grouped.map((g) => g.oauthAppId);
+    const apps = appIds.length
+      ? await this._oauthApp.model.oAuthApp.findMany({
+          where: { id: { in: appIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const nameById = new Map(
+      apps.map((a) => [a.id, a.name.trim().toLowerCase()])
+    );
+
+    const byName = new Map<string, number>();
+    for (const g of grouped) {
+      const name = nameById.get(g.oauthAppId) || 'unknown';
+      byName.set(name, (byName.get(name) || 0) + g._count._all);
+    }
+
+    return {
+      total,
+      perSocial: sortDesc(
+        [...byName.entries()].map(([provider, count]) => ({
+          provider,
+          count,
+        }))
+      ),
+    };
+  }
+
+  private async postStateStats(params: OrgActivityParams) {
+    const grouped = await this._post.model.post.groupBy({
+      by: ['state'],
+      where: {
+        organizationId: params.organizationId,
+        parentPostId: null,
+        ...(params.includeDeleted ? {} : { deletedAt: null }),
+        publishDate: { gte: params.from, lte: params.to },
+      },
+      _count: { _all: true },
+    });
+
+    return grouped
+      .map((g) => ({ state: g.state as string, count: g._count._all }))
+      .sort((a, b) => b.count - a.count || a.state.localeCompare(b.state));
+  }
+
+  private async currentChannelStats(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
+    const where: Prisma.IntegrationWhereInput = {
+      organizationId,
+      ...(includeDeleted ? {} : { deletedAt: null }),
+    };
+
+    const [total, grouped] = await Promise.all([
+      this._integration.model.integration.count({ where }),
+      this._integration.model.integration.groupBy({
+        by: ['providerIdentifier'],
+        where,
+        _count: { _all: true },
+      }),
+    ]);
+
+    return {
+      total,
+      perSocial: sortDesc(
+        grouped.map((g) => ({
+          provider: g.providerIdentifier,
+          count: g._count._all,
+        }))
+      ),
+    };
+  }
+
+  private async activityRange(
+    organizationId: string,
+    includeDeleted?: boolean
+  ) {
+    const { _min, _max } = await this._post.model.post.aggregate({
+      where: {
+        organizationId,
+        state: 'PUBLISHED',
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
+      _min: { publishDate: true },
+      _max: { publishDate: true },
+    });
+
+    return {
+      firstActivityAt: _min.publishDate?.toISOString() || null,
+      lastActivityAt: _max.publishDate?.toISOString() || null,
+    };
+  }
+
+  async getOrgActivity(
+    params: OrgActivityParams
+  ): Promise<OrgActivityResponse> {
+    const errors = await this.errorStats(params);
+    const posts = await this.postStats(params);
+    const connectedInRange = await this.connectedStats(params);
+    const channels = await this.currentChannelStats(
+      params.organizationId,
+      params.includeDeleted
+    );
+    const postsByState = await this.postStateStats(params);
+    const activity = await this.activityRange(
+      params.organizationId,
+      params.includeDeleted
+    );
+
+    return {
+      from: params.from.toISOString(),
+      to: params.to.toISOString(),
+      organizationId: params.organizationId,
+      errors,
+      posts,
+      connectedInRange,
+      channels,
+      postsByState,
+      ...activity,
+    };
+  }
+
   async getStats(params: StatsParams): Promise<StatsResponse> {
-    const [errors, posts, accounts, connected, activeOrgsBySource] =
-      await Promise.all([
-        this.errorStats(params),
-        this.postStats(params),
-        this.accountStats(params),
-        this.connectedStats(params),
-        this.sourceStats(params),
-      ]);
+    const errors = await this.errorStats(params);
+    const posts = await this.postStats(params);
+    const accounts = await this.accountStats(params);
+    const connected = await this.connectedStats(params);
+    const activeOrgsBySource = await this.sourceStats(params);
+    const connectedClients = await this.clientStats(params);
 
     return {
       from: params.from.toISOString(),
@@ -297,6 +484,7 @@ export class AdminStatsRepository {
       publishingChannels: accounts.publishingChannels,
       scheduledChannels: accounts.scheduledChannels,
       activeOrgsBySource,
+      connectedClients,
     };
   }
 }

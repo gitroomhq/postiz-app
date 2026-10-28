@@ -9,35 +9,46 @@ import { URL } from 'node:url';
 import dns from 'node:dns/promises';
 import net from 'node:net';
 
+const blockedIPv4Ranges: [string, number][] = [
+  ['0.0.0.0', 8],
+  ['10.0.0.0', 8],
+  ['127.0.0.0', 8],
+  ['169.254.0.0', 16],
+  ['172.16.0.0', 12],
+  ['192.168.0.0', 16],
+  ['100.64.0.0', 10],
+  ['198.18.0.0', 15],
+  ['224.0.0.0', 3], // multicast/reserved
+];
+
+// BlockList matches an IPv4 rule against the address in any notation,
+// including IPv4-mapped IPv6 like ::ffff:7f00:1 (what the URL parser turns
+// [::ffff:127.0.0.1] into), so the addresses are never compared as strings.
+const blockedIps = new net.BlockList();
+
+for (const [address, prefix] of blockedIPv4Ranges) {
+  blockedIps.addSubnet(address, prefix, 'ipv4');
+
+  // the same IPv4 range embedded in NAT64 (64:ff9b::/96) and 6to4 (2002::/16)
+  const [a, b, c, d] = address.split('.').map(Number);
+  const high = ((a << 8) | b).toString(16);
+  const low = ((c << 8) | d).toString(16);
+  blockedIps.addSubnet(`64:ff9b::${high}:${low}`, 96 + prefix, 'ipv6');
+  blockedIps.addSubnet(`2002:${high}:${low}::`, 16 + prefix, 'ipv6');
+}
+
+blockedIps.addSubnet('::', 96, 'ipv6'); // unspecified, loopback, IPv4-compatible
+blockedIps.addSubnet('fe80::', 10, 'ipv6'); // link-local
+blockedIps.addSubnet('fec0::', 10, 'ipv6'); // site-local (deprecated)
+blockedIps.addSubnet('fc00::', 7, 'ipv6'); // unique local
+blockedIps.addSubnet('ff00::', 8, 'ipv6'); // multicast
+
 export function isBlockedIPv4(ip: string): boolean {
-  const [a, b] = ip.split('.').map(Number);
-
-  if ([a, b].some((n) => Number.isNaN(n))) return true;
-
-  return (
-    a === 0 ||                       // 0.0.0.0/8
-    a === 10 ||                      // 10.0.0.0/8
-    a === 127 ||                     // 127.0.0.0/8
-    (a === 169 && b === 254) ||      // 169.254.0.0/16
-    (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
-    (a === 192 && b === 168) ||      // 192.168.0.0/16
-    (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10
-    (a === 198 && (b === 18 || b === 19)) || // 198.18.0.0/15
-    a >= 224                         // multicast/reserved
-  );
+  return net.isIPv4(ip) ? blockedIps.check(ip, 'ipv4') : true;
 }
 
 export function isBlockedIPv6(ip: string): boolean {
-  const normalized = ip.toLowerCase();
-
-  return (
-    normalized === '::1' ||          // loopback
-    normalized === '::' ||           // unspecified
-    normalized.startsWith('fe80:') || // link-local
-    normalized.startsWith('fc') ||   // unique local fc00::/7
-    normalized.startsWith('fd') ||   // unique local fd00::/7
-    normalized.startsWith('ff')      // multicast
-  );
+  return net.isIPv6(ip) ? blockedIps.check(ip, 'ipv6') : true;
 }
 
 export function isBlockedIp(ip: string): boolean {
@@ -46,11 +57,6 @@ export function isBlockedIp(ip: string): boolean {
     return isBlockedIPv4(ip);
   }
   if (version === 6) {
-    // IPv4-mapped IPv6 (::ffff:a.b.c.d) — extract and check as IPv4
-    const mapped = ip.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-    if (mapped) {
-      return isBlockedIPv4(mapped[1]);
-    }
     return isBlockedIPv6(ip);
   }
   return true;

@@ -43,7 +43,7 @@ export class AuthMiddleware implements NestMiddleware {
       const payload = AuthService.verifyJWT(auth) as User | null;
       const orgHeader = req.cookies.showorg || req.headers.showorg;
 
-      if (!payload?.id) {
+      if (!payload?.id || typeof payload.id !== 'string') {
         throw new HttpForbiddenException();
       }
 
@@ -97,7 +97,9 @@ export class AuthMiddleware implements NestMiddleware {
         await this._organizationService.getOrgsByUserId(user.id)
       ).filter((f) => !f.users[0].disabled);
       const setOrg =
-        organization.find((org) => org.id === orgHeader) || organization[0];
+        organization.find((org) => org.id === orgHeader) ||
+        organization.find((org) => org.subscription) ||
+        organization[0];
 
       if (!organization) {
         throw new HttpForbiddenException();

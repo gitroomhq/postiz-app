@@ -57,13 +57,16 @@ export interface MediaProcessorResult {
   } | null;
 }
 
-export type MediaProcessorStatus =
+export type MediaProcessorStatus<Result = MediaProcessorResult> =
   | { status: 'pending' }
-  | { status: 'completed'; result: MediaProcessorResult }
+  | { status: 'completed'; result: Result }
   // the queue itself failed (crash, expired job); retryable by the caller
   | { status: 'failed'; error: string };
 
-export interface IMediaProcessor {
-  submit(job: MediaProcessorJob): Promise<string>;
-  status(jobId: string): Promise<MediaProcessorStatus>;
+export interface IMediaProcessor<
+  Job = MediaProcessorJob,
+  Result = MediaProcessorResult
+> {
+  submit(job: Job): Promise<string>;
+  status(jobId: string): Promise<MediaProcessorStatus<Result>>;
 }

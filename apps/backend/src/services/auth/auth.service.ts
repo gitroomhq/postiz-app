@@ -7,7 +7,6 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import dayjs from 'dayjs';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
@@ -17,7 +16,6 @@ export class AuthService {
   constructor(
     private _userService: UsersService,
     private _organizationService: OrganizationService,
-    private _notificationService: NotificationService,
     private _emailService: EmailService,
     private _providerManager: AuthProviderManager
   ) {}
@@ -73,11 +71,10 @@ export class AuthService {
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
-        await this._emailService.sendEmail(
+        await this._emailService.sendEmailSync(
           body.email,
           'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
-          'top'
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
         );
         return obj;
       }
@@ -119,7 +116,13 @@ export class AuthService {
 
     try {
       const getOrg: any = AuthChecker.verifyJWT(cookie);
-      if (dayjs(getOrg.timeLimit).isBefore(dayjs())) {
+      if (
+        typeof getOrg.orgId !== 'string' ||
+        typeof getOrg.id !== 'string' ||
+        !['USER', 'ADMIN'].includes(getOrg.role) ||
+        !getOrg.timeLimit ||
+        dayjs(getOrg.timeLimit).isBefore(dayjs())
+      ) {
         return false;
       }
 
@@ -225,10 +228,10 @@ export class AuthService {
       expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
     });
 
-    await this._notificationService.sendEmail(
+    await this._emailService.sendEmailSync(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your password. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
     );
   }
 
@@ -237,7 +240,7 @@ export class AuthService {
       id: string;
       expires: string;
     };
-    if (dayjs(user.expires).isBefore(dayjs())) {
+    if (typeof user.id !== 'string' || dayjs(user.expires).isBefore(dayjs())) {
       return false;
     }
 
@@ -278,11 +281,10 @@ export class AuthService {
 
     const jwt = await this.jwt(user);
 
-    await this._emailService.sendEmail(
+    await this._emailService.sendEmailSync(
       user.email,
       'Activate your account',
-      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
-      'top'
+      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`
     );
 
     return true;

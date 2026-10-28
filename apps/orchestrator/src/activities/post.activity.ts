@@ -31,6 +31,7 @@ import {
 import {
   BadBody,
   Disconnect,
+  PublishedWithError,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
@@ -301,6 +302,28 @@ export class PostActivity {
         );
       }
 
+      // The post is live but a follow-up mutation failed: keep its platform
+      // id / URL on the post, then fail it as BadBody like any other error.
+      if (err instanceof PublishedWithError) {
+        try {
+          await this._postService.updateResolvedRelease(
+            err.postDbId,
+            integration.organizationId,
+            err.releaseId,
+            err.releaseURL
+          );
+        } catch (e) {
+          /**empty**/
+        }
+
+        throw new BadBody(
+          integration.providerIdentifier,
+          JSON.stringify({}),
+          Buffer.from('{}'),
+          err.message
+        );
+      }
+
       throw err;
     }
   }
@@ -361,7 +384,8 @@ export class PostActivity {
           true,
           false,
           !/<\/?[a-z][\s\S]*>/i.test(p.content),
-          getIntegration.mentionFormat
+          getIntegration.mentionFormat,
+          !!getIntegration.inlineImages?.(JSON.parse(p.settings || '{}'))
         ),
         settings: JSON.parse(p.settings || '{}'),
         media: await this._postService.updateMedia(
@@ -394,11 +418,12 @@ export class PostActivity {
     try {
       await this._temporalService.client
         .getRawClient()
-        .workflow.start('streakWorkflow', {
+        .workflow.start('streakWorkflowV2', {
           args: [{ organizationId: integration.organizationId }],
           workflowId: `streak_${integration.organizationId}`,
           taskQueue: 'main',
-          workflowIdConflictPolicy: 'TERMINATE_EXISTING',
+          // Keep a running streak, it checks for newer posts before it ends
+          workflowIdConflictPolicy: 'USE_EXISTING',
           typedSearchAttributes: new TypedSearchAttributes([
             {
               key: organizationId,
@@ -572,7 +597,10 @@ export class PostActivity {
 
       return refresh;
     } catch (err) {
-      await this._refreshIntegrationService.setBetweenSteps(integration);
+      await this._refreshIntegrationService.setBetweenSteps(
+        integration,
+        (err as Error)?.message || ''
+      );
       return false;
     }
   }
@@ -601,7 +629,10 @@ export class PostActivity {
 
       return refresh;
     } catch (err) {
-      await this._refreshIntegrationService.setBetweenSteps(integration, cause);
+      await this._refreshIntegrationService.setBetweenSteps(
+        integration,
+        cause || (err as Error)?.message || ''
+      );
       return false;
     }
   }

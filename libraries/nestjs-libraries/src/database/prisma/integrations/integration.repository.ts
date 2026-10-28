@@ -2,7 +2,7 @@ import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/pris
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import dayjs from 'dayjs';
-import { Integration } from '@prisma/client';
+import { Integration, Prisma } from '@prisma/client';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { IntegrationTimeDto } from '@gitroom/nestjs-libraries/dtos/integrations/integration.time.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -104,6 +104,21 @@ export class IntegrationRepository {
     });
   }
 
+  updateCustomName(org: string, id: string, name: string) {
+    return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
+      where: {
+        id,
+        organizationId: org,
+      },
+      data: {
+        customName: name.trim() || null,
+      },
+    });
+  }
+
   async setTimes(org: string, id: string, times: IntegrationTimeDto) {
     return this._integration.model.integration.update({
       select: {
@@ -166,6 +181,20 @@ export class IntegrationRepository {
       },
     });
 
+    // The page was picked through a fresh login: the row that keeps living
+    // must also take that login's identity and refresh token, otherwise the
+    // next refresh runs as the old identity and cannot find the page.
+    const fresh = existing
+      ? await this._integration.model.integration.findUnique({
+          where: { id },
+          select: {
+            rootInternalId: true,
+            refreshToken: true,
+            tokenExpiration: true,
+          },
+        })
+      : null;
+
     if (existing) {
       await this._posts.model.post.updateMany({
         where: {
@@ -193,8 +222,16 @@ export class IntegrationRepository {
       },
       data: {
         ...params,
+        ...(fresh?.rootInternalId
+          ? { rootInternalId: fresh.rootInternalId }
+          : {}),
+        ...(fresh?.refreshToken ? { refreshToken: fresh.refreshToken } : {}),
+        ...(fresh?.tokenExpiration
+          ? { tokenExpiration: fresh.tokenExpiration }
+          : {}),
         disabled: false,
         deletedAt: null,
+        refreshNeeded: false,
       },
     });
   }
@@ -349,7 +386,8 @@ export class IntegrationRepository {
         profile: username,
         providerIdentifier: provider,
         token,
-        refreshToken,
+        // never wipe a stored refresh token with an empty one
+        ...(refreshToken ? { refreshToken } : {}),
         ...(expiresIn
           ? { tokenExpiration: new Date(Date.now() + expiresIn * 1000) }
           : {}),
@@ -429,6 +467,9 @@ export class IntegrationRepository {
 
   updateNameAndUrl(id: string, name: string, url: string) {
     return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
       where: {
         id,
       },
@@ -501,6 +542,9 @@ export class IntegrationRepository {
         }));
 
     return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
       where: {
         id,
         organizationId: org,
@@ -519,6 +563,9 @@ export class IntegrationRepository {
 
   updateIntegrationGroup(org: string, id: string, group: string) {
     return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
       where: {
         id,
         organizationId: org,
@@ -536,6 +583,28 @@ export class IntegrationRepository {
               },
             },
           },
+    });
+  }
+
+  getCustomerByName(orgId: string, name: string) {
+    return this._customers.model.customer.findFirst({
+      where: {
+        orgId,
+        name,
+        deletedAt: null,
+      },
+    });
+  }
+
+  updateCustomerName(orgId: string, id: string, name: string) {
+    return this._customers.model.customer.update({
+      where: {
+        id,
+        orgId,
+      },
+      data: {
+        name,
+      },
     });
   }
 
@@ -557,6 +626,152 @@ export class IntegrationRepository {
       include: {
         customer: true,
       },
+    });
+  }
+
+  private async latestPostsFor(
+    org: string,
+    state: 'PUBLISHED' | 'ERROR',
+    field: 'publishDate' | 'updatedAt',
+    options: { topLevelOnly: boolean; includeDeleted: boolean },
+    groups: { integrationId: string; date: Date | null }[]
+  ) {
+    const matches = groups.filter((group) => group.date);
+
+    if (!matches.length) {
+      return [];
+    }
+
+    return this._posts.model.post.findMany({
+      where: {
+        organizationId: org,
+        state,
+        ...(options.includeDeleted ? {} : { deletedAt: null }),
+        ...(options.topLevelOnly ? { parentPostId: null } : {}),
+        OR: matches.map(
+          (group) =>
+            ({
+              integrationId: group.integrationId,
+              [field]: group.date,
+            } as Prisma.PostWhereInput)
+        ),
+      },
+      orderBy: {
+        id: 'asc',
+      },
+      select: {
+        id: true,
+        integrationId: true,
+        publishDate: true,
+        updatedAt: true,
+        releaseURL: true,
+        error: true,
+      },
+    });
+  }
+
+  private firstPerIntegration<T extends { integrationId: string }>(posts: T[]) {
+    const byIntegration = new Map<string, T>();
+
+    for (const post of posts) {
+      if (!byIntegration.has(post.integrationId)) {
+        byIntegration.set(post.integrationId, post);
+      }
+    }
+
+    return byIntegration;
+  }
+
+  async getChannelHealth(org: string, includeDeleted = false) {
+    const [integrations, lastPublished, lastErrored] = await Promise.all([
+      this._integration.model.integration.findMany({
+        where: {
+          organizationId: org,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          id: true,
+          internalId: true,
+          name: true,
+          providerIdentifier: true,
+          type: true,
+          disabled: true,
+          refreshNeeded: true,
+          inBetweenSteps: true,
+          tokenExpiration: true,
+          deletedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'PUBLISHED',
+          ...(includeDeleted ? {} : { deletedAt: null }),
+          parentPostId: null,
+        },
+        _max: { publishDate: true },
+      }),
+      this._posts.model.post.groupBy({
+        by: ['integrationId'],
+        where: {
+          organizationId: org,
+          state: 'ERROR',
+          ...(includeDeleted ? {} : { deletedAt: null }),
+        },
+        _max: { updatedAt: true },
+      }),
+    ]);
+
+    const [publishedPosts, erroredPosts] = await Promise.all([
+      this.latestPostsFor(
+        org,
+        'PUBLISHED',
+        'publishDate',
+        { topLevelOnly: true, includeDeleted },
+        lastPublished.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.publishDate,
+        }))
+      ),
+      this.latestPostsFor(
+        org,
+        'ERROR',
+        'updatedAt',
+        { topLevelOnly: false, includeDeleted },
+        lastErrored.map((group) => ({
+          integrationId: group.integrationId,
+          date: group._max.updatedAt,
+        }))
+      ),
+    ]);
+
+    const publishedByIntegration = this.firstPerIntegration(publishedPosts);
+    const erroredByIntegration = this.firstPerIntegration(erroredPosts);
+
+    return integrations.map((integration) => {
+      const published = publishedByIntegration.get(integration.id);
+      const errored = erroredByIntegration.get(integration.id);
+
+      return {
+        ...integration,
+        lastPublishedAt: published?.publishDate || null,
+        lastPublishedPostId: published?.id || null,
+        lastPublishedUrl: published?.releaseURL || null,
+        lastErrorAt: errored?.updatedAt || null,
+        lastErrorPostId: errored?.id || null,
+        lastError: errored?.error || null,
+      };
     });
   }
 
@@ -597,6 +812,9 @@ export class IntegrationRepository {
 
   deleteChannel(org: string, id: string) {
     return this._integration.model.integration.update({
+      select: {
+        id: true,
+      },
       where: {
         id,
         organizationId: org,
@@ -694,6 +912,19 @@ export class IntegrationRepository {
         },
       });
     }
+  }
+
+  enableAllIntegrations(org: string) {
+    return this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        disabled: true,
+        deletedAt: null,
+      },
+      data: {
+        disabled: false,
+      },
+    });
   }
 
   getPlugsByIntegrationId(org: string, id: string) {

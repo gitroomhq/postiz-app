@@ -18,3 +18,4 @@ export * from './refresh.token.workflow';
 export * from './streak.workflow';
 export * from './generate.video.workflow';
 export * from './process.media.workflow';
+export * from './clipping.workflow';

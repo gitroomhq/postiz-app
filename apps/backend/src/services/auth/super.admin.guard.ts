@@ -16,11 +16,19 @@ export class SuperAdminGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-expect-error
-    const { org }: { org: Organization } = request;
+    const {
+      org,
+      isOAuthApp,
+      authOrgId,
+    }: { org: Organization; isOAuthApp?: boolean; authOrgId?: string } =
+      request;
+
+    const orgId = authOrgId || org?.id;
 
     if (
-      !org ||
-      !(await this._organizationService.hasSuperAdminUser(org.id))
+      !orgId ||
+      isOAuthApp ||
+      !(await this._organizationService.canUseSuperAdminApi(orgId))
     ) {
       throw new HttpException({ msg: 'Unauthorized' }, 403);
     }

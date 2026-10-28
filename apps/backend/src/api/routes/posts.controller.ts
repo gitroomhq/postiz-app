@@ -29,6 +29,11 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import {
+  CreatePublicCommentDto,
+  ResolveCommentDto,
+} from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
+import { RealIP } from 'nestjs-real-ip';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -55,6 +60,14 @@ export class PostsController {
     return this._postsService.getMissingContent(org.id, id);
   }
 
+  @Get('/:id/release-url')
+  async getReleaseURL(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.getReleaseURL(org.id, id);
+  }
+
   @Put('/:id/release-id')
   async updateReleaseId(
     @GetOrgFromRequest() org: Organization,
@@ -71,12 +84,21 @@ export class PostsController {
 
   @Post('/:id/comments')
   async createComment(
-    @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Param('id') id: string,
-    @Body() body: { comment: string }
+    @Body() body: CreatePublicCommentDto,
+    @RealIP() ip: string
   ) {
-    return this._postsService.createComment(org.id, user.id, id, body.comment);
+    return this._postsService.createPublicComment(id, body, user.id, ip);
+  }
+
+  @Put('/comments/:commentId/resolve')
+  async resolveComment(
+    @GetOrgFromRequest() org: Organization,
+    @Param('commentId') commentId: string,
+    @Body() body: ResolveCommentDto
+  ) {
+    return this._postsService.resolveComment(org.id, commentId, body.resolved);
   }
 
   @Get('/tags')
@@ -159,7 +181,10 @@ export class PostsController {
   }
 
   @Get('/group/:group')
-  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+  getPostsByGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('group') group: string
+  ) {
     return this._postsService.getPostsByGroup(org.id, group);
   }
 
