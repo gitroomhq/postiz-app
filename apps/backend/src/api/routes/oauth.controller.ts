@@ -117,6 +117,7 @@ export class OAuthController {
       app.dynamic ? body.redirect_uri! : app.redirectUrl
     );
     redirectUrl.searchParams.set('code', code);
+    redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }

@@ -76,10 +76,14 @@ const browserSchemes = [
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
-  // RFC 8414 path-based issuer the client discovered, the same values
-  // start.mcp.ts advertises: dynamically registered clients come through the
-  // DCR issuer, pre-defined clients (the ChatGPT app) through the ChatGPT one
-  issuer(app: Pick<OAuthApp, 'dynamic'>) {
+  // RFC 8414 issuer the client discovered, the same values start.mcp.ts
+  // advertises: dynamically registered clients come through the DCR issuer,
+  // HubSpot reads the metadata from the domain root, the other pre-defined
+  // client (the ChatGPT app) through the ChatGPT one
+  issuer(app: Pick<OAuthApp, 'dynamic' | 'clientId'>) {
+    if (app.clientId === hubspotOAuthClientId()) {
+      return new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).origin;
+    }
     return new URL(
       app.dynamic ? '/mcp-oauth-dynamic' : '/mcp-oauth-chatgpt',
       process.env.NEXT_PUBLIC_BACKEND_URL!
