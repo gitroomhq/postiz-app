@@ -529,29 +529,70 @@ export class OrganizationRepository {
   }
 
   async getLastPublishDate(organizationId: string) {
-    const org = await this._organization.model.organization.findUnique({
-      where: {
-        id: organizationId,
-      },
-      select: {
-        post: {
-          where: {
-            state: 'PUBLISHED',
-          },
-          orderBy: {
-            publishDate: 'desc',
-          },
-          take: 1,
-          select: {
-            publishDate: true,
+    // Still publishing, or about to: a post scheduled exactly a day after the
+    // previous one must not end the streak
+    const lookahead = Date.now() + 5 * 60 * 1000;
+    const [org, recurring] = await Promise.all([
+      this._organization.model.organization.findUnique({
+        where: {
+          id: organizationId,
+        },
+        select: {
+          post: {
+            where: {
+              deletedAt: null,
+              parentPostId: null,
+              intervalInDays: null,
+              OR: [
+                { state: 'PUBLISHED' },
+                { state: 'QUEUE', publishDate: { lte: new Date(lookahead) } },
+              ],
+            },
+            orderBy: {
+              publishDate: 'desc',
+            },
+            take: 1,
+            select: {
+              publishDate: true,
+            },
           },
         },
-      },
-    });
+      }),
+      // Recurring posts keep their first publishDate and are republished on
+      // the interval grid, count their latest occurrence instead
+      this._organization.model.organization.findUnique({
+        where: {
+          id: organizationId,
+        },
+        select: {
+          post: {
+            where: {
+              deletedAt: null,
+              parentPostId: null,
+              intervalInDays: { not: null },
+              state: { in: ['PUBLISHED', 'QUEUE'] },
+              publishDate: { lte: new Date(lookahead) },
+            },
+            select: {
+              publishDate: true,
+              intervalInDays: true,
+            },
+          },
+        },
+      }),
+    ]);
 
-    const publishDate = org?.post?.[0]?.publishDate;
+    const dates = [
+      ...(org?.post || []).map((p) => p.publishDate.getTime()),
+      ...(recurring?.post || []).map((p) => {
+        const first = p.publishDate.getTime();
+        const interval = p.intervalInDays * 24 * 60 * 60 * 1000;
+        return first + Math.floor((lookahead - first) / interval) * interval;
+      }),
+    ];
+
     // Never in the future, the streak workflow sleeps until a day after it
-    return publishDate ? Math.min(publishDate.getTime(), Date.now()) : null;
+    return dates.length ? Math.min(Math.max(...dates), Date.now()) : null;
   }
 
   async getTeam(orgId: string) {
