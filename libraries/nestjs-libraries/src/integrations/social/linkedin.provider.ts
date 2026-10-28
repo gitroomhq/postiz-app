@@ -499,24 +499,11 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     const pattern = /@\[.+?]\(urn:li:organization.+?\)/g;
     const matches = text.match(pattern) || [];
     const splitAll = text.split(pattern);
-    const splitTextReformat = splitAll.map((p) => {
-      return p
-        .replace(/\\/g, '\\\\')
-        .replace(/</g, '\\<')
-        .replace(/>/g, '\\>')
-        .replace(/#/g, '\\#')
-        .replace(/~/g, '\\~')
-        .replace(/_/g, '\\_')
-        .replace(/\|/g, '\\|')
-        .replace(/\[/g, '\\[')
-        .replace(/]/g, '\\]')
-        .replace(/\*/g, '\\*')
-        .replace(/\(/g, '\\(')
-        .replace(/\)/g, '\\)')
-        .replace(/\{/g, '\\{')
-        .replace(/}/g, '\\}')
-        .replace(/@/g, '\\@');
-    });
+    // LinkedIn post and comment text is plain text, not Markdown: the Comments
+    // API takes mentions via a separate attributes array, and the UGC Post API
+    // rejects escaped characters, so no escaping is applied (it used to break
+    // URLs containing underscores, e.g. every utm_source/utm_campaign link).
+    const splitTextReformat = splitAll;
 
     const connectAll = splitTextReformat.reduce((all, current) => {
       const match = matches.shift();
