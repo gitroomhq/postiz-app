@@ -1,6 +1,6 @@
 import { timer } from '@gitroom/helpers/utils/timer';
-import { Integration } from '@prisma/client';
-import {
+import type { Integration } from '@prisma/client';
+import type {
   AuthTokenDetails,
   PendingCheckResponse,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
@@ -11,7 +11,7 @@ import {
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
-import { createReadStream, readFileSync, statSync } from 'fs';
+import { createReadStream, readFileSync, realpathSync, statSync } from 'fs';
 import { resolve, sep } from 'path';
 import { Readable } from 'stream';
 import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
@@ -276,6 +276,7 @@ export abstract class SocialAbstract {
   // hand straight to sharp. Lives here rather than in a helper so it can
   // classify a stall like the ranged reads below do.
   protected async readOrFetch(path: string, retried = false): Promise<Buffer> {
+    path = this.resolveLocalUpload(path);
     if (path.indexOf('http') !== 0) {
       return readFileSync(this.localMediaPath(path));
     }
@@ -317,6 +318,7 @@ export abstract class SocialAbstract {
   // Resolves the total byte size of the media without loading it into memory:
   // a HEAD request for remote URLs, statSync for local files.
   protected async mediaSize(path: string, identifier = ''): Promise<number> {
+    path = this.resolveLocalUpload(path);
     if (path.indexOf('http') === 0) {
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
       // this.fetch applies to every other outbound request. identity encoding
@@ -343,6 +345,50 @@ export abstract class SocialAbstract {
     }
 
     return statSync(this.localMediaPath(path, identifier)).size;
+  }
+
+  // LocalStorage exposes files as FRONTEND_URL/uploads, but fetching that URL
+  // fails the SSRF guard when split DNS resolves our frontend to a private IP.
+  // Only our own local uploads may bypass HTTP; other URLs keep the IP guard.
+  protected resolveLocalUpload(path: string): string {
+    if (
+      (process.env.STORAGE_PROVIDER || 'local') !== 'local' ||
+      !process.env.FRONTEND_URL ||
+      !process.env.UPLOAD_DIRECTORY ||
+      !path.startsWith('http')
+    ) {
+      return path;
+    }
+
+    const prefix = new URL(process.env.FRONTEND_URL + '/uploads/');
+    const url = new URL(path);
+    if (
+      url.origin !== prefix.origin ||
+      url.username ||
+      url.password ||
+      !url.pathname.startsWith(prefix.pathname)
+    ) {
+      return path;
+    }
+
+    const relativePath = decodeURIComponent(
+      url.pathname.slice(prefix.pathname.length)
+    );
+    const filePath = this.localMediaPath(
+      resolve(process.env.UPLOAD_DIRECTORY, relativePath)
+    );
+    // Resolve symlinks too: a public URL must never expose a file outside uploads.
+    const base = realpathSync(process.env.UPLOAD_DIRECTORY);
+    const realPath = realpathSync(filePath);
+    if (!realPath.startsWith(base + sep)) {
+      throw new BadBody(
+        '',
+        '{}',
+        Buffer.from('{}'),
+        'The media is outside the upload directory'
+      );
+    }
+    return filePath;
   }
 
   // Media that isn't a remote url is read from the worker's disk. The stored
@@ -376,6 +422,7 @@ export abstract class SocialAbstract {
     identifier = '',
     retried = false
   ): Promise<Buffer> {
+    path = this.resolveLocalUpload(path);
     if (path.indexOf('http') === 0) {
       setHeartbeatDetails(
         `media chunk ${start}-${end} ${stripQuery(path)}`
@@ -448,6 +495,7 @@ export abstract class SocialAbstract {
     path: string,
     identifier = ''
   ): Promise<Readable> {
+    path = this.resolveLocalUpload(path);
     if (path.indexOf('http') !== 0) {
       return createReadStream(this.localMediaPath(path, identifier));
     }
@@ -664,12 +712,7 @@ export abstract class SocialAbstract {
     }
 
     if (handleError?.type === 'disconnect') {
-      throw new Disconnect(
-        identifier,
-        json,
-        options.body!,
-        handleError?.value
-      );
+      throw new Disconnect(identifier, json, options.body!, handleError?.value);
     }
 
     if (
