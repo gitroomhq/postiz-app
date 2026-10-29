@@ -14,6 +14,41 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
+const linkedinAnalyticsHeaders = (accessToken: string) => ({
+  Authorization: `Bearer ${accessToken}`,
+  'Linkedin-Version': '202601',
+  'X-Restli-Protocol-Version': '2.0.0',
+});
+
+const fetchLinkedinAnalyticsElements = async (
+  metric: string,
+  url: string,
+  accessToken: string
+): Promise<Root[]> => {
+  try {
+    const response = await fetch(url, {
+      headers: linkedinAnalyticsHeaders(accessToken),
+    });
+
+    if (!response.ok) {
+      console.warn('[linkedin-page] analytics request failed', {
+        metric,
+        status: response.status,
+      });
+      return [];
+    }
+
+    const body = await response.json();
+    return Array.isArray(body?.elements) ? body.elements : [];
+  } catch (error) {
+    console.warn('[linkedin-page] analytics request errored', {
+      metric,
+      message: error instanceof Error ? error.message : 'unknown error',
+    });
+    return [];
+  }
+};
+
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
 )
@@ -95,7 +130,7 @@ export class LinkedinPageProvider
     integration: Integration,
     originalIntegration: Integration,
     postId: string,
-    information: any,
+    information: any
   ) {
     return super.addComment(
       integration,
@@ -327,50 +362,23 @@ export class LinkedinPageProvider
     const endDate = dayjs().unix() * 1000;
     const startDate = dayjs().subtract(date, 'days').unix() * 1000;
 
-    const { elements }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
-
-    const { elements: elements2 }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
-
-    const { elements: elements3 }: { elements: Root[]; paging: any } = await (
-      await fetch(
-        `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(
-          `urn:li:organization:${id}`
-        )}&timeIntervals=(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Linkedin-Version': '202601',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-        }
-      )
-    ).json();
+    const organization = encodeURIComponent(`urn:li:organization:${id}`);
+    const timeIntervals = `(timeRange:(start:${startDate},end:${endDate}),timeGranularityType:DAY)`;
+    const elements = await fetchLinkedinAnalyticsElements(
+      'page-statistics',
+      `https://api.linkedin.com/v2/organizationPageStatistics?q=organization&organization=${organization}&timeIntervals=${timeIntervals}`,
+      accessToken
+    );
+    const elements2 = await fetchLinkedinAnalyticsElements(
+      'follower-statistics',
+      `https://api.linkedin.com/v2/organizationalEntityFollowerStatistics?q=organizationalEntity&organizationalEntity=${organization}&timeIntervals=${timeIntervals}`,
+      accessToken
+    );
+    const elements3 = await fetchLinkedinAnalyticsElements(
+      'share-statistics',
+      `https://api.linkedin.com/v2/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${organization}&timeIntervals=${timeIntervals}`,
+      accessToken
+    );
 
     const analytics = [...elements2, ...elements, ...elements3].reduce(
       (all, current) => {
@@ -439,13 +447,15 @@ export class LinkedinPageProvider
       }
     );
 
-    return Object.keys(analytics).map((key) => ({
-      label: key,
-      data: analytics[
-        key as 'Page Views' | 'Organic Followers' | 'Paid Followers'
-      ],
-      percentageChange: 0,
-    }));
+    return Object.keys(analytics)
+      .filter((key) => analytics[key as keyof typeof analytics].length > 0)
+      .map((key) => ({
+        label: key,
+        data: analytics[
+          key as 'Page Views' | 'Organic Followers' | 'Paid Followers'
+        ],
+        percentageChange: 0,
+      }));
   }
 
   async postAnalytics(
