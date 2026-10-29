@@ -497,9 +497,7 @@ export class InstagramProvider
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
           `?client_id=${process.env.FACEBOOK_APP_ID}` +
           `&redirect_uri=${encodeURIComponent(
-            `${process.env.FRONTEND_URL}/integrations/social/instagram${
-              params.refresh ? `?refresh=${params.refresh}` : ''
-            }`
+            `${process.env.FRONTEND_URL}/integrations/social/instagram`
           )}` +
           `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
           `&code=${params.code}`
