@@ -1,5 +1,6 @@
 // @ts-ignore
 import twitter from 'twitter-text';
+import { blueskyLength } from '@gitroom/helpers/utils/bluesky.short.url';
 
 export const textSlicer = (
   integrationType: string,
@@ -41,6 +42,10 @@ export const weightedLength = (text: string): number => {
 export const countLength = (integrationType: string, text: string): number => {
   if (integrationType === 'x') {
     return weightedLength(text);
+  }
+
+  if (integrationType === 'bluesky') {
+    return blueskyLength(text);
   }
 
   if (integrationType === 'threads') {

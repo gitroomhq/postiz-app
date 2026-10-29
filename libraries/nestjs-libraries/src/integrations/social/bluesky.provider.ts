@@ -35,6 +35,11 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import {
+  fetchLinkCardMeta,
+  firstLinkUri,
+  shortenLinks,
+} from '@gitroom/nestjs-libraries/integrations/social/bluesky.card';
 
 async function reduceImageBySize(url: string, maxSizeKB = 976) {
   try {
@@ -444,6 +449,62 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     return { embed, images };
   }
 
+  // The post's text with links shortened, and a link card for its first link
+  // when it has no media (Bluesky takes one embed, and media wins). The card is
+  // best effort: a page that can't be read just means a post without a card.
+  private async prepareText(
+    agent: BskyAgent,
+    message: string,
+    embed: any
+  ): Promise<{ rt: RichText; embed: any }> {
+    const rt = new RichText({
+      text: message,
+    });
+
+    await rt.detectFacets(agent);
+
+    const uri = Object.keys(embed).length === 0 ? firstLinkUri(rt) : undefined;
+    if (uri) {
+      embed = await this.linkCard(agent, uri);
+    }
+
+    return { rt: shortenLinks(rt), embed };
+  }
+
+  private async linkCard(agent: BskyAgent, uri: string): Promise<any> {
+    try {
+      setHeartbeatDetails('bluesky: link card');
+      const meta = await fetchLinkCardMeta(uri);
+      if (!meta) {
+        return {};
+      }
+
+      let thumb: BlobRef | undefined;
+      if (meta.image) {
+        try {
+          const { buffer } = await reduceImageBySize(meta.image);
+          setHeartbeatDetails('bluesky: upload blob');
+          thumb = (await agent.uploadBlob(new Blob([buffer]))).data.blob;
+        } catch (err) {
+          thumb = undefined;
+        }
+      }
+
+      return {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri,
+          title: meta.title,
+          description: meta.description,
+          ...(thumb ? { thumb } : {}),
+        },
+      };
+    } catch (err) {
+      console.log('Bluesky link card skipped:', (err as any)?.message || err);
+      return {};
+    }
+  }
+
   async postPending(
     id: string,
     accessToken: string,
@@ -609,11 +670,11 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         embed = built.embed;
       }
 
-      rt = new RichText({
-        text: pendingData.message,
-      });
-
-      await rt.detectFacets(agent);
+      ({ rt, embed } = await this.prepareText(
+        agent,
+        pendingData.message,
+        embed
+      ));
     } catch (err) {
       // Explicit verdicts keep their meaning: a failed video job fails the
       // post, an invalid login goes through the refresh-token flow.
@@ -777,13 +838,13 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     const agent = await this.getAgent(integration);
     const [commentPost] = postDetails;
 
-    const { embed } = await this.uploadMediaForPost(agent, commentPost);
+    const media = await this.uploadMediaForPost(agent, commentPost);
 
-    const rt = new RichText({
-      text: commentPost.message,
-    });
-
-    await rt.detectFacets(agent);
+    const { rt, embed } = await this.prepareText(
+      agent,
+      commentPost.message,
+      media.embed
+    );
 
     // Get the parent post info to get its CID
     const parentUri = lastCommentId || postId;
