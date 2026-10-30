@@ -44,8 +44,18 @@ const CalendarBackend: typeof HTML5Backend = (manager, context, options) => {
   return backend;
 };
 
+// without a context react-dnd keeps the manager in a global it clears from an
+// effect cleanup, a remount of the calendar in the same tick then builds a
+// second manager while the first still owns the window listeners and the
+// backend throws "Cannot have two HTML5 backends at the same time" (CLOUD-252)
+const dndContext = typeof window === 'undefined' ? undefined : window;
+
 export const DNDProvider: FC<{
   children: ReactNode;
 }> = ({ children }) => {
-  return <DndProvider backend={CalendarBackend}>{children}</DndProvider>;
+  return (
+    <DndProvider backend={CalendarBackend} context={dndContext}>
+      {children}
+    </DndProvider>
+  );
 };
