@@ -354,7 +354,7 @@ export class IntegrationService {
           integration.organizationId,
           integration.id
         );
-        return;
+        continue;
       }
 
       const { refreshToken, accessToken, expiresIn } = data;
