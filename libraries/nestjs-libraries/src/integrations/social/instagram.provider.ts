@@ -71,6 +71,9 @@ export class InstagramProvider
         return 'Trial Reels must be a video';
       }
     }
+    if (firstPost?.some((f) => (f?.alt?.length ?? 0) > 1000)) {
+      return 'Instagram alt text can be up to 1000 characters';
+    }
     if (settings?.audio?.id) {
       if (settings?.post_type === 'story') {
         return 'Audio can only be added to Reels, not to Stories';
@@ -780,6 +783,13 @@ export class InstagramProvider
           ? `image_url=${m.path}&media_type=STORIES`
           : `image_url=${m.path}`;
 
+        // alt_text is only supported on images (single or carousel item),
+        // not on videos or stories
+        const altText =
+          m.alt && !isStory && !hasExtension(m.path, 'mp4')
+            ? `&alt_text=${encodeURIComponent(m.alt)}`
+            : ``;
+
         const trialParams = isTrialReel
           ? `&trial_params=${encodeURIComponent(
               JSON.stringify({
@@ -819,7 +829,7 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${altText}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }

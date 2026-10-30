@@ -90,27 +90,33 @@ export class RefreshIntegrationService {
       });
 
     if (!refresh || !refresh.accessToken) {
-      if (refreshError) {
-        console.error(
-          `Could not refresh ${integration.providerIdentifier} integration ${integration.id}`,
-          refreshError?.response?.data || refreshError?.message || refreshError
-        );
-      }
+      console.error(
+        `Could not refresh ${integration.providerIdentifier} integration ${integration.id}`,
+        refreshError?.response?.data ||
+          refreshError?.message ||
+          refreshError ||
+          'no access token returned'
+      );
 
       // informAboutRefreshError (with the failure cause) already notifies
       // the user, and refreshNeeded sets the same flag disconnectChannel
       // would — calling disconnectChannel here sent a second, cause-less
       // copy of the same email for every failed refresh.
-      await this._integrationService.refreshNeeded(
+      // A channel that is already flagged keeps failing on every later
+      // refresh attempt (e.g. hourly analytics polling of an expired token),
+      // so only the attempt that flagged it notifies.
+      const flagged = await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
       );
 
-      await this._integrationService.informAboutRefreshError(
-        integration.organizationId,
-        integration,
-        socialProvider.refreshErrorMessage?.(refreshError) || cause
-      );
+      if (flagged) {
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration,
+          socialProvider.refreshErrorMessage?.(refreshError) || cause
+        );
+      }
 
       return false;
     }

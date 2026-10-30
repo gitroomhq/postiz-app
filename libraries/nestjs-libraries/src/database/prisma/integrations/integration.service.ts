@@ -346,15 +346,17 @@ export class IntegrationService {
       const data = await this.refreshToken(provider, integration.refreshToken!);
 
       if (!data) {
-        await this.informAboutRefreshError(
-          integration.organizationId,
-          integration
-        );
-        await this._integrationRepository.refreshNeeded(
+        const flagged = await this._integrationRepository.refreshNeeded(
           integration.organizationId,
           integration.id
         );
-        return;
+        if (flagged) {
+          await this.informAboutRefreshError(
+            integration.organizationId,
+            integration
+          );
+        }
+        continue;
       }
 
       const { refreshToken, accessToken, expiresIn } = data;
