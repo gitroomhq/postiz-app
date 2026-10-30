@@ -17,6 +17,7 @@ import dayjs from 'dayjs';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import {
+  Disconnect,
   NotEnoughScopes,
   RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
@@ -370,7 +371,9 @@ export class IntegrationService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        undefined,
+        integration.inBetweenSteps
       );
     }
   }
@@ -529,6 +532,11 @@ export class IntegrationService {
         );
         return loadAnalytics;
       } catch (e) {
+        if (e instanceof Disconnect) {
+          await this.disconnectChannel(org.id, getIntegration, e.message);
+          return [];
+        }
+
         if (e instanceof RefreshToken) {
           return this.checkAnalytics(org, integration, date, true);
         }
