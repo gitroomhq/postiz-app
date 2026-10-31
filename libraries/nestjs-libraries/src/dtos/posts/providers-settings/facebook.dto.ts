@@ -94,6 +94,10 @@ export const FACEBOOK_PRESETS: FacebookPreset[] = [
 ];
 
 export class FacebookDto {
+  @JSONSchema({
+    description:
+      'Link to attach as a preview card (image, title, domain), used only for text posts without media. A URL inside the content alone shows as plain text with no card',
+  })
   @IsOptional()
   @ValidateIf(p => p.url)
   @IsUrl()
