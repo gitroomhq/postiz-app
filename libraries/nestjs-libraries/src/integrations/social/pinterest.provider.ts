@@ -439,6 +439,16 @@ export class PinterestProvider
     // after checkPostStatus witnessed the intent, so a run that dies
     // mid-create is detectable and the pin is never published twice.
     if (!pendingData.attempting || !pendingData.confirmed) {
+      // Image pins make no API call before the create, so an expired token
+      // would 401 there and the refresh retry would hit the armed state as a
+      // false duplicate: probe the token read-only before arming instead.
+      await this.fetch('https://api.pinterest.com/v5/user_account', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
       return {
         status: 'pending',
         pendingData: { ...pendingData, attempting: true, confirmed: false },
