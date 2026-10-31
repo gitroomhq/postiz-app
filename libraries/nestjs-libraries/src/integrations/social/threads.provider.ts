@@ -114,7 +114,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     const state = makeSecureId(6);
     return {
       url:
-        'https://www.threads.net/oauth/authorize' +
+        'https://www.threads.com/oauth/authorize' +
         `?client_id=${process.env.THREADS_APP_ID}` +
         `&redirect_uri=${encodeURIComponent(
           `${
@@ -741,7 +741,7 @@ export class ThreadsProvider extends SocialAbstract implements SocialProvider {
     return (
       data?.map((d: any) => ({
         label: capitalize(d.name),
-        percentageChange: 5,
+        percentageChange: 0,
         data: d.total_value
           ? [{ total: d.total_value.value, date: dayjs().format('YYYY-MM-DD') }]
           : d.values.map((v: any) => ({
