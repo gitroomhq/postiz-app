@@ -31,6 +31,11 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { isAllowedUploadPath } from '@gitroom/helpers/utils/valid.url.path';
 
+// X's tweet_image limits: PNG, JPEG or WEBP up to 5 MB, shown at up to 4096px
+const X_STILL_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const X_IMAGE_MAX_SIDE = 4096;
+const X_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
 // Travels through the workflow history between postPending, checkPostStatus
 // and finalizePost - keep it small JSON (media ids and the tweet content).
 type XPendingData = {
@@ -715,6 +720,59 @@ export class XProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
+  // Still images X accepts go up as uploaded, since any re-encode here stacks
+  // on the one X does. Only an image over X's limits is scaled down to JPEG.
+  private async uploadTweetImage(client: TwitterApi, path: string) {
+    const source = await this.readOrFetch(path);
+    const mime = lookup(path) || '';
+
+    if (mime === 'image/gif') {
+      return client.v2.uploadMedia(
+        await sharp(source, { animated: true })
+          .resize({ width: 1000, withoutEnlargement: true })
+          .gif()
+          .toBuffer(),
+        { media_type: mime as any }
+      );
+    }
+
+    const { width = 0, height = 0 } = await sharp(source).metadata();
+    if (
+      X_STILL_IMAGE_TYPES.has(mime) &&
+      Math.max(width, height) <= X_IMAGE_MAX_SIDE &&
+      source.length <= X_IMAGE_MAX_BYTES
+    ) {
+      return client.v2.uploadMedia(source, { media_type: mime as any });
+    }
+
+    return client.v2.uploadMedia(await this.fitTweetImage(source), {
+      media_type: 'image/jpeg' as any,
+    });
+  }
+
+  // Largest JPEG under X's 5 MB cap: 4096px first, 2048px when a detailed
+  // photo is still too heavy at full size.
+  private async fitTweetImage(source: Buffer) {
+    let jpeg = source;
+    for (const side of [X_IMAGE_MAX_SIDE, X_IMAGE_MAX_SIDE / 2]) {
+      jpeg = await sharp(source)
+        .rotate()
+        .resize({
+          width: side,
+          height: side,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: 90 })
+        .toBuffer();
+      if (jpeg.length <= X_IMAGE_MAX_BYTES) {
+        break;
+      }
+    }
+
+    return jpeg;
+  }
+
   private async uploadMediaEntries(
     client: TwitterApi,
     postDetails: PostDetails<any>[],
@@ -735,7 +793,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                 )
               : {
                   // Articles reject GIF media, so the tweet pipeline (which
-                  // converts every image to GIF) can't be reused for them -
+                  // keeps GIFs as GIF) can't be reused for them -
                   // article images are uploaded as JPEG with the tweet_image
                   // category the article references them by.
                   mediaId: await this.uploadWithRateLimitRetry(async () =>
@@ -752,19 +810,7 @@ export class XProvider extends SocialAbstract implements SocialProvider {
                             media_category: 'tweet_image' as any,
                           }
                         )
-                      : client.v2.uploadMedia(
-                          await sharp(await this.readOrFetch(m.path), {
-                            animated: lookup(m.path) === 'image/gif',
-                          })
-                            .resize({
-                              width: 1000,
-                            })
-                            .gif()
-                            .toBuffer(),
-                          {
-                            media_type: (lookup(m.path) || '') as any,
-                          }
-                        )
+                      : this.uploadTweetImage(client, m.path)
                   ),
                   processing: false,
                 },
