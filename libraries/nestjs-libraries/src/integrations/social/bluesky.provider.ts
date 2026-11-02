@@ -335,7 +335,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       const {
         data: { accessJwt, refreshJwt, handle, did },
       } = await agent.login({
-        identifier: body.identifier,
+        identifier: String(body.identifier || '').trim().replace(/^@/, ''),
         password: body.password,
       });
 
@@ -352,9 +352,16 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
         picture: profile?.data?.avatar || '',
         username: profile.data.handle!,
       };
-    } catch (e) {
+    } catch (e: any) {
       console.log(e);
-      return 'Invalid credentials';
+      switch (e?.error) {
+        case 'RateLimitExceeded':
+          return 'Bluesky is temporarily refusing logins for this account, please try again later';
+        case 'XRPCNotSupported':
+          return 'Could not reach a Bluesky server at the Service URL';
+        default:
+          return 'Invalid credentials';
+      }
     }
   }
 
