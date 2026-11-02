@@ -14,14 +14,15 @@ export class ThirdPartyManager {
   ) {}
 
   getAllThirdParties(): any[] {
-    return (Reflect.getMetadata('third:party', ThirdPartyAbstract) || []).map(
-      (p: any) => ({
+    return (Reflect.getMetadata('third:party', ThirdPartyAbstract) || [])
+      .filter((p: any) => !p.installUrl || p.installUrl())
+      .map((p: any) => ({
         identifier: p.identifier,
         title: p.title,
         description: p.description,
         fields: p.fields || [],
-      })
-    );
+        installUrl: p.installUrl?.(),
+      }));
   }
 
   getThirdPartyByName(

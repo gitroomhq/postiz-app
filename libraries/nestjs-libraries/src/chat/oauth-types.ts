@@ -92,6 +92,36 @@ export function generateProtectedResourceMetadata(config: MCPServerOAuthConfig):
   };
 }
 
+// RFC 6749 §2.3.1 client_secret_basic: "Basic base64(urlencode(id):urlencode(secret))"
+export function extractBasicCredentials(
+  authHeader: string | null | undefined,
+): { clientId: string; clientSecret: string } | undefined {
+  if (!authHeader) return undefined;
+
+  const prefix = 'basic ';
+  if (authHeader.length <= prefix.length) return undefined;
+  if (authHeader.slice(0, prefix.length).toLowerCase() !== prefix) return undefined;
+
+  let decoded: string;
+  try {
+    decoded = Buffer.from(authHeader.slice(prefix.length).trim(), 'base64').toString('utf8');
+  } catch {
+    return undefined;
+  }
+
+  const separator = decoded.indexOf(':');
+  if (separator <= 0) return undefined;
+
+  try {
+    return {
+      clientId: decodeURIComponent(decoded.slice(0, separator)),
+      clientSecret: decodeURIComponent(decoded.slice(separator + 1)),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export function extractBearerToken(authHeader: string | null | undefined): string | undefined {
   if (!authHeader) return undefined;
 

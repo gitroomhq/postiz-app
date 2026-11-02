@@ -466,6 +466,7 @@
     "are_you_sure": "დარწმუნებული ხართ?",
     "yes_delete_it": "კი, წაშალე!",
     "no_cancel": "არა, გაუქმება!",
+    "no_original_urls": "არა, ორიგინალი URL-ები",
     "are_you_sure_you_want_to_delete": "ნამდვილად გსურთ წაშალოთ {{name}}?",
     "are_you_sure_you_want_to_delete_the_image": "ნამდვილად გსურთ სურათის წაშლა?",
     "are_you_sure_you_want_to_logout": "ნამდვილად გსურთ გასვლა?",

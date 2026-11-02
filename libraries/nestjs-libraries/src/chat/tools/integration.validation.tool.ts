@@ -21,6 +21,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
          This tool helps us get the schema of the integration.
          Sometimes we might get a schema back the requires some id, for that, you can get information from 'tools'
          And use the triggerTool function.
+         'tools' can also include a mention lookup, use it to tag people or pages in the post content.
         `,
       mcp: {
         annotations: {

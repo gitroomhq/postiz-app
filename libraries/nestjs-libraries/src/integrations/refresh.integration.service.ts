@@ -73,26 +73,42 @@ export class RefreshIntegrationService {
     socialProvider: SocialProvider,
     cause = ''
   ): Promise<AuthTokenDetails | false> {
+    let refreshError: any = undefined;
     const refresh: false | AuthTokenDetails = await socialProvider
       .refreshToken(integration.refreshToken)
-      .catch((err) => false);
+      .catch((err) => {
+        refreshError = err;
+        return false as const;
+      });
 
     if (!refresh || !refresh.accessToken) {
-      await this._integrationService.refreshNeeded(
+      console.error(
+        `Could not refresh ${integration.providerIdentifier} integration ${integration.id}`,
+        refreshError?.response?.data ||
+          refreshError?.message ||
+          refreshError ||
+          'no access token returned'
+      );
+
+      // informAboutRefreshError (with the failure cause) already notifies
+      // the user, and refreshNeeded sets the same flag disconnectChannel
+      // would — calling disconnectChannel here sent a second, cause-less
+      // copy of the same email for every failed refresh.
+      // A channel that is already flagged keeps failing on every later
+      // refresh attempt (e.g. hourly analytics polling of an expired token),
+      // so only the attempt that flagged it notifies.
+      const flagged = await this._integrationService.refreshNeeded(
         integration.organizationId,
         integration.id
       );
 
-      await this._integrationService.informAboutRefreshError(
-        integration.organizationId,
-        integration,
-        cause
-      );
-
-      await this._integrationService.disconnectChannel(
-        integration.organizationId,
-        integration
-      );
+      if (flagged) {
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration,
+          socialProvider.refreshErrorMessage?.(refreshError) || cause
+        );
+      }
 
       return false;
     }
@@ -104,11 +120,20 @@ export class RefreshIntegrationService {
       return refresh;
     }
 
-    const reConnect = await socialProvider.reConnect(
-      integration.rootInternalId,
-      integration.internalId,
-      refresh.accessToken
-    );
+    let reConnect;
+    try {
+      reConnect = await socialProvider.reConnect(
+        integration.rootInternalId,
+        integration.internalId,
+        refresh.accessToken
+      );
+    } catch (err: any) {
+      console.error(
+        `Could not reconnect ${integration.providerIdentifier} integration ${integration.id} after a successful token refresh`,
+        err?.response?.data || err?.message || err
+      );
+      throw err;
+    }
 
     return {
       ...refresh,

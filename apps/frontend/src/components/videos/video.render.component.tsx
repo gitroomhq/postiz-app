@@ -1,6 +1,6 @@
 import { createContext, FC, useCallback, useContext, useEffect } from 'react';
 import './providers/image-text-slides.provider';
-import './providers/veo3.provider';
+import './providers/seedance.provider';
 import { videosList } from '@gitroom/frontend/components/videos/video.wrapper';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';

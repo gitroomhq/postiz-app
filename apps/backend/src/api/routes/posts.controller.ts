@@ -29,6 +29,11 @@ import {
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { PostValidationException } from '@gitroom/backend/api/routes/posts.validation.exception';
+import {
+  CreatePublicCommentDto,
+  ResolveCommentDto,
+} from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
+import { RealIP } from 'nestjs-real-ip';
 
 @ApiTags('Posts')
 @Controller('/posts')
@@ -55,6 +60,14 @@ export class PostsController {
     return this._postsService.getMissingContent(org.id, id);
   }
 
+  @Get('/:id/release-url')
+  async getReleaseURL(
+    @GetOrgFromRequest() org: Organization,
+    @Param('id') id: string
+  ) {
+    return this._postsService.getReleaseURL(org.id, id);
+  }
+
   @Put('/:id/release-id')
   async updateReleaseId(
     @GetOrgFromRequest() org: Organization,
@@ -71,12 +84,21 @@ export class PostsController {
 
   @Post('/:id/comments')
   async createComment(
-    @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
     @Param('id') id: string,
-    @Body() body: { comment: string }
+    @Body() body: CreatePublicCommentDto,
+    @RealIP() ip: string
   ) {
-    return this._postsService.createComment(org.id, user.id, id, body.comment);
+    return this._postsService.createPublicComment(id, body, user.id, ip);
+  }
+
+  @Put('/comments/:commentId/resolve')
+  async resolveComment(
+    @GetOrgFromRequest() org: Organization,
+    @Param('commentId') commentId: string,
+    @Body() body: ResolveCommentDto
+  ) {
+    return this._postsService.resolveComment(org.id, commentId, body.resolved);
   }
 
   @Get('/tags')
@@ -159,7 +181,10 @@ export class PostsController {
   }
 
   @Get('/group/:group')
-  getPostsByGroup(@GetOrgFromRequest() org: Organization, @Param('group') group: string) {
+  getPostsByGroup(
+    @GetOrgFromRequest() org: Organization,
+    @Param('group') group: string
+  ) {
     return this._postsService.getPostsByGroup(org.id, group);
   }
 
@@ -240,8 +265,21 @@ export class PostsController {
     @Res({ passthrough: false }) res: Response
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    for await (const event of this._agentGraphService.start(org.id, body)) {
-      res.write(JSON.stringify(event) + '\n');
+    try {
+      for await (const event of this._agentGraphService.start(org.id, body)) {
+        res.write(JSON.stringify(event) + '\n');
+      }
+    } catch (err) {
+      // The stream has already started, so we cannot surface a normal HTTP
+      // error here. Emit a final error event on the open stream instead, so the
+      // client can stop and show the message rather than hang on a truncated
+      // stream. HttpExceptions carry a curated, user-facing message (e.g. the
+      // AI safety rejection); anything else gets a generic message.
+      const message =
+        err instanceof HttpException
+          ? err.message
+          : 'Something went wrong while generating your posts, please try again.';
+      res.write(JSON.stringify({ name: 'error', error: true, message }) + '\n');
     }
 
     res.end();
@@ -260,9 +298,12 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') id: string,
     @Body('date') date: string,
-    @Body('action') action: 'schedule' | 'update' = 'schedule'
+    // 'update' is the safe default: clients that don't send an action must
+    // never requeue (and thereby republish) a post by accident
+    @Body('action') action: 'schedule' | 'update' = 'update',
+    @Body('republish') republish = false
   ) {
-    return this._postsService.changeDate(org.id, id, date, action);
+    return this._postsService.changeDate(org.id, id, date, action, republish);
   }
 
   @Post('/separate-posts')

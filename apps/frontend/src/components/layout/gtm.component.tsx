@@ -20,7 +20,7 @@ export const TrialTracker: FC = () => {
     )
       return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('onboarding') !== 'true') return;
+    if (params.get('trialStart') !== 'true') return;
     const key = `gtm_start_trial_${user?.id}`;
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, '1');

@@ -4,11 +4,11 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { MoltbookDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/moltbook.dto';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import axios from 'axios';
 
 const MOLTBOOK_API_BASE = 'https://www.moltbook.com/api/v1';
 
@@ -16,6 +16,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
   name = 'Moltbook';
+  dto = MoltbookDto;
   isBetweenSteps = false;
   scopes = [] as string[];
   isWeb3 = true;
@@ -38,16 +39,16 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: state,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
 
   async registerAgent(name: string, description: string) {
-    const response = await axios.post(
+    const response = await this.getSsrfSafeAxios().post(
       `${MOLTBOOK_API_BASE}/agents/register`,
       { name, description },
       { headers: { 'Content-Type': 'application/json' } }
@@ -61,17 +62,23 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   }
 
   async checkAgentStatus(apiKey: string) {
-    const response = await axios.get(`${MOLTBOOK_API_BASE}/agents/status`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const response = await this.getSsrfSafeAxios().get(
+      `${MOLTBOOK_API_BASE}/agents/status`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }
+    );
 
     return response.data;
   }
 
   async getAgentProfile(apiKey: string) {
-    const response = await axios.get(`${MOLTBOOK_API_BASE}/agents/me`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const response = await this.getSsrfSafeAxios().get(
+      `${MOLTBOOK_API_BASE}/agents/me`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      }
+    );
 
     if (!response.data.success) {
       throw new Error(response.data.error || 'Failed to get profile');
@@ -120,7 +127,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         content: post.message,
       };
 
-      const response = await axios.post(
+      const response = await this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts`,
         postData,
         {
@@ -166,7 +173,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
         commentData.parent_id = lastCommentId;
       }
 
-      const response = await axios.post(
+      const response = await this.getSsrfSafeAxios().post(
         `${MOLTBOOK_API_BASE}/posts/${postId}/comments`,
         commentData,
         {

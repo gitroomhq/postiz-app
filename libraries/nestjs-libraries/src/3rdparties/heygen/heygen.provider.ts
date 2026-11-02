@@ -167,7 +167,13 @@ export class HeygenProvider extends ThirdPartyAbstract<{
       })
     ).json();
 
+    let attempts = 0;
+    const maxAttempts = 180; // ~9 minutes at 3s interval
     while (true) {
+      if (attempts++ >= maxAttempts) {
+        throw new Error('Video generation timed out');
+      }
+
       const {
         data: { status, video_url },
       } = await (

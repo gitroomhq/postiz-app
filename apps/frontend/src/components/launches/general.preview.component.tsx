@@ -111,6 +111,7 @@ export const GeneralPreviewComponent: FC<{
                 </div>
               </div>
               <div
+                dir="auto"
                 className={clsx('text-wrap whitespace-pre', 'preview')}
                 dangerouslySetInnerHTML={{
                   __html: value.text,

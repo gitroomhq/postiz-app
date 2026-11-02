@@ -7,14 +7,20 @@ import {
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { WordpressDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/wordpress.dto';
 import slugify from 'slugify';
 // import FormData from 'form-data';
-import axios from 'axios';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
+import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { string } from 'yup';
 
+const WORDPRESS_USER_AGENT = 'Postiz/1.0 (+https://postiz.com)';
+
+@Rules(
+  'WordPress publishes the content as an article: pictures go inside the content as <img src="..."> where they should appear, the src must be a picture from the media library (upload it with uploadFromUrlTool first), attachments are not published, the cover picture is the main_image setting'
+)
 export class WordpressProvider
   extends SocialAbstract
   implements SocialProvider
@@ -24,17 +30,21 @@ export class WordpressProvider
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];
-  override maxConcurrentJob = 5; // WordPress self-hosted typically has generous limits
+  override maxConcurrentJob = 8; // WordPress sites are the customer's own servers
   dto = WordpressDto;
   maxLength() {
     return 100000;
   }
 
+  inlineImages() {
+    return true;
+  }
+
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
     return {
       url: state,
-      codeVerifier: makeId(10),
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
@@ -114,7 +124,10 @@ export class WordpressProvider
       response = await fetch(`${domain}/wp-json/wp/v2/users/me`, {
         headers: {
           Authorization: `Basic ${auth}`,
+          'User-Agent': WORDPRESS_USER_AGENT,
         },
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
       });
     } catch (err) {
       // DNS failure, connection refused, TLS error, site unreachable, etc.
@@ -191,11 +204,12 @@ export class WordpressProvider
     };
   }
 
-  @Tool({
-    description: 'Get list of post types',
-    dataSchema: [],
-  })
-  async postTypes(token: string) {
+  // Custom provider functions below are invoked from the backend HTTP endpoint
+  // (`/integrations/function`) - which is NOT a Temporal activity - so they must
+  // use a plain `fetch` (with the SSRF guard) rather than `this.fetch`, which
+  // calls `Context.current()` and throws outside an activity. This mirrors how
+  // `authenticate` issues its request.
+  private async wpGet(token: string, path: string) {
     const body = JSON.parse(Buffer.from(token, 'base64').toString()) as {
       domain: string;
       username: string;
@@ -206,13 +220,24 @@ export class WordpressProvider
       'base64'
     );
 
-    const postTypes = await (
-      await this.fetch(`${body.domain}/wp-json/wp/v2/types`, {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-      })
-    ).json();
+    const response = await fetch(`${body.domain}${path}`, {
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'User-Agent': WORDPRESS_USER_AGENT,
+      },
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
+    });
+
+    return response.json();
+  }
+
+  @Tool({
+    description: 'Get list of post types',
+    dataSchema: [],
+  })
+  async postTypes(token: string) {
+    const postTypes = await this.wpGet(token, '/wp-json/wp/v2/types');
 
     return Object.entries<any>(postTypes).reduce((all, [key, value]) => {
       if (
@@ -230,6 +255,37 @@ export class WordpressProvider
 
       return all;
     }, []);
+  }
+
+  @Tool({
+    description: 'Get list of categories',
+    dataSchema: [],
+  })
+  async categoriesList(token: string) {
+    const categories = await this.wpGet(
+      token,
+      '/wp-json/wp/v2/categories?per_page=100'
+    );
+
+    return (Array.isArray(categories) ? categories : []).map(
+      (category: any) => ({
+        id: category.id,
+        name: category.name,
+      })
+    );
+  }
+
+  @Tool({
+    description: 'Get list of tags',
+    dataSchema: [],
+  })
+  async tagsList(token: string) {
+    const tags = await this.wpGet(token, '/wp-json/wp/v2/tags?per_page=100');
+
+    return (Array.isArray(tags) ? tags : []).map((tag: any) => ({
+      id: tag.id,
+      name: tag.name,
+    }));
   }
 
   async post(
@@ -268,6 +324,7 @@ export class WordpressProvider
               .split('/')
               .pop()}"`,
             'Content-Type': blob.type,
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           body: blob,
         })
@@ -276,6 +333,13 @@ export class WordpressProvider
       mediaId = mediaResponse.id;
     }
 
+    const categories = (postDetails?.[0]?.settings?.categories || [])
+      .map((category) => Number(category))
+      .filter((category) => !isNaN(category));
+    const tags = (postDetails?.[0]?.settings?.tags || [])
+      .map((tag) => Number(tag))
+      .filter((tag) => !isNaN(tag));
+
     const submit = await (
       await this.fetch(
         `${body.domain}/wp-json/wp/v2/${postDetails?.[0]?.settings?.type}`,
@@ -283,6 +347,7 @@ export class WordpressProvider
           headers: {
             Authorization: `Basic ${auth}`,
             'Content-Type': 'application/json',
+            'User-Agent': WORDPRESS_USER_AGENT,
           },
           method: 'POST',
           body: JSON.stringify({
@@ -293,7 +358,9 @@ export class WordpressProvider
               strict: true,
               trim: true,
             }),
-            status: 'publish',
+            status: postDetails?.[0]?.settings?.status || 'publish',
+            ...(categories.length ? { categories } : {}),
+            ...(tags.length ? { tags } : {}),
             ...(mediaId ? { featured_media: mediaId } : {}),
           }),
         }

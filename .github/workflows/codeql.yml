@@ -9,7 +9,6 @@ on:
       - apps/**
       - '!apps/docs/**'
       - libraries/**
-  merge_group:
 
 
 jobs:

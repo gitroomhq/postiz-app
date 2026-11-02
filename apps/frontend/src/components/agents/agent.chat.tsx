@@ -6,13 +6,15 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { CopilotChat, CopilotKitCSSProperties } from '@copilotkit/react-ui';
 import {
+  CopilotChat,
+  CopilotKitCSSProperties,
   InputProps,
   UserMessageProps,
-} from '@copilotkit/react-ui/dist/components/chat/props';
+} from '@copilotkit/react-ui';
 import { Input } from '@gitroom/frontend/components/agents/agent.input';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import {
@@ -27,9 +29,13 @@ import {
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { TextMessage } from '@copilotkit/runtime-client-gql';
+import {
+  Message as CopilotMessage,
+  TextMessage,
+} from '@copilotkit/runtime-client-gql';
 import { AddEditModal } from '@gitroom/frontend/components/new-launch/add.edit.modal';
 import dayjs from 'dayjs';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { ExistingDataContextProvider } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -46,6 +52,7 @@ export const AgentChat: FC = () => {
       {...(params.id === 'new' ? {} : { threadId: params.id })}
       credentials="include"
       runtimeUrl={backendUrl + '/copilot/agent'}
+      useSingleEndpoint={true}
       showDevConsole={false}
       agent="postiz"
       properties={{
@@ -76,7 +83,7 @@ You can select the channels you want to use from the left menu.
 
 You can see your previous conversations from the right menu.
 
-You can also use me as an MCP Server, check Settings >> Public API
+You can also use me as an MCP Server, check Settings >> Agents / Dev
 `),
             }}
             UserMessage={Message}
@@ -89,36 +96,74 @@ You can also use me as an MCP Server, check Settings >> Public API
 };
 
 const LoadMessages: FC<{ id: string }> = ({ id }) => {
-  const { setMessages } = useCopilotMessagesContext();
+  const { messages, setMessages } = useCopilotMessagesContext();
   const fetch = useFetch();
+  const currentId = useRef<string | null>(null);
+  const loaded = useRef<{ id: string; messages: CopilotMessage[] } | null>(
+    null
+  );
 
   const loadMessages = useCallback(async (idToSet: string) => {
     const data = await (await fetch(`/copilot/${idToSet}/list`)).json();
-    console.log(data);
-    setMessages(
-      data.messages.map((p: any) => {
-        return new TextMessage({
-          content: p.content.content,
-          role: p.role,
-        });
-      })
-    );
+    const list = data.messages.map((p: any) => {
+      return new TextMessage({
+        content:
+          p.content.content ||
+          (p.content.parts || [])
+            .map((part: any) => (part.type === 'text' ? part.text : ''))
+            .join(''),
+        role: p.role,
+      });
+    });
+
+    if (currentId.current !== idToSet) {
+      return;
+    }
+
+    loaded.current = { id: idToSet, messages: list };
+    setMessages(list);
   }, []);
 
   useEffect(() => {
+    currentId.current = id;
     if (id === 'new') {
+      loaded.current = { id, messages: [] };
       setMessages([]);
       return;
     }
+    loaded.current = null;
     loadMessages(id);
   }, [id]);
+
+  // CopilotKit resolves loadAgentState to an empty list for Mastra local agents
+  // and can clobber the messages we hold, depending on which request resolves last
+  useEffect(() => {
+    if (loaded.current?.id !== id) {
+      return;
+    }
+
+    if (messages.length) {
+      loaded.current.messages = messages;
+      return;
+    }
+
+    if (loaded.current.messages.length) {
+      setMessages(loaded.current.messages);
+    }
+  }, [messages, id]);
 
   return null;
 };
 
 const Message: FC<UserMessageProps> = (props) => {
   const convertContentToImagesAndVideo = useMemo(() => {
-    return (props.message?.content || '')
+    const content = props.message?.content || '';
+    const text =
+      typeof content === 'string'
+        ? content
+        : content.map((p) => (p.type === 'text' ? p.text : '')).join('');
+
+    return text
       .replace(/Video: (http.*mp4\n)/g, (match, p1) => {
         return `<video controls class="h-[150px] w-[150px] rounded-[8px] mb-[10px]"><source src="${p1.trim()}" type="video/mp4">Your browser does not support the video tag.</video>`;
       })
@@ -303,7 +348,7 @@ const OpenModal: FC<{
                 integration: integration.integrationId,
                 integrationPicture:
                   properties.find((p) => p.id === integration.integrationId)
-                    .picture || '',
+                    ?.picture || '',
                 settings: integration.settings || {},
                 posts: integration.posts.map((p) => ({
                   approvedSubmitForOrder: 'NO',
@@ -326,7 +371,7 @@ const OpenModal: FC<{
               }}
             >
               <AddEditModal
-                date={dayjs.utc(integration.date)}
+                date={fromUtc(integration.date)}
                 allIntegrations={properties}
                 integrations={properties.filter(
                   (p) => p.id === integration.integrationId

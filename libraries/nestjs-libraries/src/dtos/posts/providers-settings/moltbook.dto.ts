@@ -1,8 +1,7 @@
-import { IsDefined, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class MoltbookDto {
-  @MinLength(1)
-  @IsDefined()
+  @IsOptional()
   @IsString()
-  submolt: string;
+  submolt?: string;
 }

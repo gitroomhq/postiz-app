@@ -1,9 +1,11 @@
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Loading from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
+import { useT } from '@gitroom/react/translation/get.transation.service.client';
 export const CheckPayment: FC<{
   check: string;
   mutate: () => void;
@@ -75,4 +77,50 @@ export const CheckPaymentInner: FC<{
     );
   }
   return props.children;
+};
+
+export const ChannelsAfterPayment: FC<{
+  integrations: { disabled: boolean }[];
+}> = ({ integrations }) => {
+  const check = useSearchParams().get('check');
+  const fetch = useFetch();
+  const modal = useDecisionModal();
+  const t = useT();
+  const shown = useRef(false);
+
+  useEffect(() => {
+    if (!check || shown.current || !integrations?.length) {
+      return;
+    }
+    shown.current = true;
+    (async () => {
+      const { status } = await (await fetch('/billing/check/' + check)).json();
+      if (status !== 2) {
+        return;
+      }
+      if (integrations.some((p) => p.disabled)) {
+        modal.open({
+          title: t('channels_still_disabled', 'Your channels are disabled'),
+          onlyApprove: true,
+          approveLabel: t('ok', 'OK'),
+          description: t(
+            'channels_still_disabled_description',
+            "Your plan doesn't cover all of your connected channels, so they stay disabled. Enable the ones you want from each channel's menu, up to your plan's limit, or upgrade your plan to enable all of them."
+          ),
+        });
+        return;
+      }
+      modal.open({
+        title: t('channels_enabled_again', 'Your channels are enabled'),
+        onlyApprove: true,
+        approveLabel: t('ok', 'OK'),
+        description: t(
+          'channels_enabled_again_description',
+          'All of your connected channels were enabled again and are ready to publish.'
+        ),
+      });
+    })();
+  }, [check, integrations]);
+
+  return null;
 };

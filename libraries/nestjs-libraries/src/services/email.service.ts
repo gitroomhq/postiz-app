@@ -3,8 +3,10 @@ import { EmailInterface } from '@gitroom/nestjs-libraries/emails/email.interface
 import { ResendProvider } from '@gitroom/nestjs-libraries/emails/resend.provider';
 import { EmptyProvider } from '@gitroom/nestjs-libraries/emails/empty.provider';
 import { NodeMailerProvider } from '@gitroom/nestjs-libraries/emails/node.mailer.provider';
+import { SesProvider } from '@gitroom/nestjs-libraries/emails/ses.provider';
 import { TemporalService } from 'nestjs-temporal-core';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class EmailService {
@@ -29,6 +31,8 @@ export class EmailService {
         return new ResendProvider();
       case 'nodemailer':
         return new NodeMailerProvider();
+      case 'ses':
+        return new SesProvider();
       default:
         return new EmptyProvider();
     }
@@ -41,15 +45,16 @@ export class EmailService {
     addTo: 'top' | 'bottom',
     replyTo?: string
   ) {
+    if (!to || !subject) {
+      return;
+    }
+
     return this._temporalService.client
       .getRawClient()
-      ?.workflow.signalWithStart('sendEmailWorkflow', {
+      ?.workflow.start('sendSingleEmailWorkflow', {
         taskQueue: 'main',
-        workflowId: 'send_email',
-        signal: 'sendEmail',
-        args: [{ queue: [] }],
-        signalArgs: [{ to, subject, html, replyTo, addTo }],
-        workflowIdConflictPolicy: 'USE_EXISTING',
+        workflowId: `send_email_${randomUUID()}`,
+        args: [{ to, subject, html, replyTo, addTo }],
       });
   }
 
