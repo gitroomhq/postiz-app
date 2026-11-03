@@ -154,6 +154,16 @@ export class InstagramStandaloneProvider
       })
     ).json();
 
+    if (!getAccessToken.access_token) {
+      console.error(
+        'Instagram standalone token exchange failed:',
+        JSON.stringify(getAccessToken)
+      );
+      throw new Error(
+        getAccessToken.error_message || 'Instagram token exchange failed'
+      );
+    }
+
     const { access_token, expires_in, ...all } = await (
       await fetch(
         'https://graph.instagram.com/access_token' +
