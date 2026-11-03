@@ -787,8 +787,10 @@ export class InstagramProvider
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
+        // Stories publish each media as a separate story, so the caption must
+        // be attached to every item, not only when there is a single media.
         const caption =
-          firstPost.media?.length === 1
+          isStory || firstPost.media?.length === 1
             ? `&caption=${encodeURIComponent(firstPost.message)}`
             : ``;
         const isCarousel =
