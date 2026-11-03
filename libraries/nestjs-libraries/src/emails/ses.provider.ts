@@ -27,7 +27,8 @@ export class SesProvider implements EmailInterface {
     html: string,
     emailFromName: string,
     emailFromAddress: string,
-    replyTo?: string
+    replyTo?: string,
+    headers?: Record<string, string>
   ) {
     // SES only accepts 7-bit ASCII in the From address, so a non-ASCII
     // sender name has to be a MIME encoded-word (RFC 2047)
@@ -45,6 +46,12 @@ export class SesProvider implements EmailInterface {
           Simple: {
             Subject: { Data: subject, Charset: 'UTF-8' },
             Body: { Html: { Data: html, Charset: 'UTF-8' } },
+            ...(headers && {
+              Headers: Object.entries(headers).map(([Name, Value]) => ({
+                Name,
+                Value,
+              })),
+            }),
           },
         },
       })
