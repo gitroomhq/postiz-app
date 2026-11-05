@@ -18,6 +18,7 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
+import { setHeartbeatDetails } from '@gitroom/nestjs-libraries/temporal/temporal.heartbeat';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
@@ -734,9 +735,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
-  // read stream for local files.
+  // read stream for local files. `release` drops the source when the upload
+  // ends without reading it to the end, so its connection is not held open.
   private async tiktokChunkStream(path: string, start: number, end: number) {
     if (path.indexOf('http') === 0) {
+      const controller = new AbortController();
       // identity encoding so the store keeps content-length and can answer
       // with the requested range, matching every other media read
       const response = await fetch(path, {
@@ -745,6 +748,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           'accept-encoding': 'identity',
         },
         dispatcher: getSsrfSafeDispatcher(),
+        signal: controller.signal,
       } as any);
 
       // A store that ignores Range (200 with the full file) or answers with an
@@ -759,13 +763,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         );
       }
 
-      return response.body;
+      return { body: response.body, release: () => controller.abort() };
     }
 
-    return createReadStream(this.localMediaPath(path, 'tiktok-error-upload'), {
-      start,
-      end,
-    });
+    const stream = createReadStream(
+      this.localMediaPath(path, 'tiktok-error-upload'),
+      { start, end }
+    );
+    return { body: stream, release: () => stream.destroy() };
   }
 
   // Streams the video bytes to the upload_url returned by the init call.
@@ -783,37 +788,84 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       const start = i * chunkSize;
       const end =
         i === totalChunkCount - 1 ? videoSize - 1 : start + chunkSize - 1;
-      const contentLength = end - start + 1;
 
-      const body = await this.tiktokChunkStream(path, start, end);
-
-      const upload = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': String(contentLength),
-          'Content-Range': `bytes ${start}-${end}/${videoSize}`,
-        },
-        body,
-        // Required by undici when streaming a request body.
-        duplex: 'half',
-      } as any);
-
-      if (
-        upload.status !== 200 &&
-        upload.status !== 201 &&
-        upload.status !== 206
-      ) {
-        const text = await upload.text().catch(() => '{}');
-        const handleError = this.handleErrors(text);
-        throw new BadBody(
-          'tiktok-error-upload',
-          text,
-          Buffer.from(text),
-          handleError?.value || 'Failed to upload the video to TikTok'
-        );
-      }
+      await this.uploadTikTokChunk(
+        uploadUrl,
+        path,
+        start,
+        end,
+        videoSize,
+        contentType
+      );
     }
+  }
+
+  // TikTok documents a 5xx on a chunk as a gateway or internal error and asks
+  // to submit the chunk again, so the source stream is re-opened per attempt.
+  // 429 is retried the same way this.fetch does.
+  private async uploadTikTokChunk(
+    uploadUrl: string,
+    path: string,
+    start: number,
+    end: number,
+    videoSize: number,
+    contentType: string,
+    totalRetries = 0
+  ): Promise<void> {
+    const { body, release } = await this.tiktokChunkStream(path, start, end);
+
+    setHeartbeatDetails(`tiktok: upload chunk ${start}-${end}`);
+
+    const upload = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': String(end - start + 1),
+        'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+      },
+      body,
+      // Required by undici when streaming a request body.
+      duplex: 'half',
+    } as any).catch((err) => {
+      release();
+      throw err;
+    });
+
+    if (
+      upload.status === 200 ||
+      upload.status === 201 ||
+      upload.status === 206
+    ) {
+      return;
+    }
+
+    // TikTok can answer before reading the whole chunk
+    release();
+    const text = await upload.text().catch(() => '{}');
+
+    if (
+      (upload.status >= 500 || upload.status === 429) &&
+      totalRetries <= 2
+    ) {
+      await timer(5000);
+      return this.uploadTikTokChunk(
+        uploadUrl,
+        path,
+        start,
+        end,
+        videoSize,
+        contentType,
+        totalRetries + 1
+      );
+    }
+
+    const handleError = this.handleErrors(text);
+    throw new BadBody(
+      'tiktok-error-upload',
+      text,
+      Buffer.from(text),
+      handleError?.value || 'Failed to upload the video to TikTok'
+    );
   }
 
   private buildTikokSourceInfoBody(
