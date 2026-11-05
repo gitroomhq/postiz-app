@@ -735,9 +735,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
   // Returns a streaming body for the [start, end] byte range of the media so we
   // never hold the whole file in memory: a ranged GET for remote URLs, a ranged
-  // read stream for local files.
+  // read stream for local files. `release` drops the source when the upload
+  // ends without reading it to the end, so its connection is not held open.
   private async tiktokChunkStream(path: string, start: number, end: number) {
     if (path.indexOf('http') === 0) {
+      const controller = new AbortController();
       // identity encoding so the store keeps content-length and can answer
       // with the requested range, matching every other media read
       const response = await fetch(path, {
@@ -746,6 +748,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
           'accept-encoding': 'identity',
         },
         dispatcher: getSsrfSafeDispatcher(),
+        signal: controller.signal,
       } as any);
 
       // A store that ignores Range (200 with the full file) or answers with an
@@ -760,13 +763,14 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
         );
       }
 
-      return response.body;
+      return { body: response.body, release: () => controller.abort() };
     }
 
-    return createReadStream(this.localMediaPath(path, 'tiktok-error-upload'), {
-      start,
-      end,
-    });
+    const stream = createReadStream(
+      this.localMediaPath(path, 'tiktok-error-upload'),
+      { start, end }
+    );
+    return { body: stream, release: () => stream.destroy() };
   }
 
   // Streams the video bytes to the upload_url returned by the init call.
@@ -808,7 +812,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     contentType: string,
     totalRetries = 0
   ): Promise<void> {
-    const body = await this.tiktokChunkStream(path, start, end);
+    const { body, release } = await this.tiktokChunkStream(path, start, end);
 
     setHeartbeatDetails(`tiktok: upload chunk ${start}-${end}`);
 
@@ -822,7 +826,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       body,
       // Required by undici when streaming a request body.
       duplex: 'half',
-    } as any);
+    } as any).catch((err) => {
+      release();
+      throw err;
+    });
 
     if (
       upload.status === 200 ||
@@ -832,6 +839,8 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return;
     }
 
+    // TikTok can answer before reading the whole chunk
+    release();
     const text = await upload.text().catch(() => '{}');
 
     if (
