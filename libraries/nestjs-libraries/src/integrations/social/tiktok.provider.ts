@@ -14,6 +14,7 @@ import {
   RefreshToken,
   SocialAbstract,
   ValidityMedia,
+  rangeReadFailure,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { TikTokDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/tiktok.dto';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -749,9 +750,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       // A store that ignores Range (200 with the full file) or answers with an
       // error page would corrupt the upload at this offset.
       if (response.status !== 206) {
+        await response.body?.cancel().catch(() => {});
         throw new BadBody(
           'tiktok-error-upload',
-          '{}',
+          rangeReadFailure(response),
           '{}',
           'The media storage did not return the requested byte range, please try again'
         );

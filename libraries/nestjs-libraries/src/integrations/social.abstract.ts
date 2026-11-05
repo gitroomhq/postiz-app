@@ -123,6 +123,18 @@ export class PublishedWithError extends ApplicationFailure {
   }
 }
 
+export function rangeReadFailure(response: {
+  status: number;
+  statusText: string;
+  ok: boolean;
+}) {
+  return JSON.stringify({
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok,
+  });
+}
+
 export class BadBody extends ApplicationFailure {
   constructor(identifier: string, json: string, body: BodyInit, message = '') {
     super(truncateForTemporal(message, MAX_FAILURE_MESSAGE), 'bad_body', true, [
@@ -400,9 +412,10 @@ export abstract class SocialAbstract {
         // response.body here would silently load the whole file into memory and
         // upload corrupted chunks.
         if (response.status !== 206) {
+          await response.body?.cancel().catch(() => {});
           throw new BadBody(
             identifier,
-            '{}',
+            rangeReadFailure(response),
             Buffer.from('{}'),
             `Media server did not honor the range request (status ${response.status})`
           );
