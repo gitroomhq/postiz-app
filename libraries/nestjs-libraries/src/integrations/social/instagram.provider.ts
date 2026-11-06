@@ -785,92 +785,92 @@ export class InstagramProvider
           )}`
         : ``;
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
-    const medias = await Promise.all(
-      firstPost?.media?.map(async (m) => {
-        const caption =
-          firstPost.media?.length === 1
-            ? `&caption=${encodeURIComponent(firstPost.message)}`
-            : ``;
-        const isCarousel =
-          (firstPost?.media?.length || 0) > 1 && !isStory
-            ? `&is_carousel_item=true`
-            : ``;
-        const mediaType = hasExtension(m.path, 'mp4')
-          ? firstPost?.media?.length === 1
-            ? isStory
-              ? `video_url=${m.path}&media_type=STORIES`
-              : m?.thumbnail
-              ? `video_url=${m.path}&media_type=REELS&cover_url=${encodeURIComponent(
-                  m.thumbnail
-                )}`
-              : `video_url=${m.path}&media_type=REELS&thumb_offset=${
-                  m?.thumbnailTimestamp || 0
-                }`
-            : isStory
+    const medias: string[] = [];
+    const childQueries: string[] = [];
+    for (const m of firstPost?.media || []) {
+      const caption =
+        firstPost.media?.length === 1
+          ? `&caption=${encodeURIComponent(firstPost.message)}`
+          : ``;
+      const isCarousel =
+        (firstPost?.media?.length || 0) > 1 && !isStory
+          ? `&is_carousel_item=true`
+          : ``;
+      const mediaType = hasExtension(m.path, 'mp4')
+        ? firstPost?.media?.length === 1
+          ? isStory
             ? `video_url=${m.path}&media_type=STORIES`
-            : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+            : m?.thumbnail
+            ? `video_url=${m.path}&media_type=REELS&cover_url=${encodeURIComponent(
+                m.thumbnail
+              )}`
+            : `video_url=${m.path}&media_type=REELS&thumb_offset=${
                 m?.thumbnailTimestamp || 0
               }`
           : isStory
-          ? `image_url=${m.path}&media_type=STORIES`
-          : `image_url=${m.path}`;
+          ? `video_url=${m.path}&media_type=STORIES`
+          : `video_url=${m.path}&media_type=VIDEO&thumb_offset=${
+              m?.thumbnailTimestamp || 0
+            }`
+        : isStory
+        ? `image_url=${m.path}&media_type=STORIES`
+        : `image_url=${m.path}`;
 
-        // alt_text is only supported on images (single or carousel item),
-        // not on videos or stories
-        const altText =
-          m.alt && !isStory && !hasExtension(m.path, 'mp4')
-            ? `&alt_text=${encodeURIComponent(m.alt)}`
-            : ``;
+      // alt_text is only supported on images (single or carousel item),
+      // not on videos or stories
+      const altText =
+        m.alt && !isStory && !hasExtension(m.path, 'mp4')
+          ? `&alt_text=${encodeURIComponent(m.alt)}`
+          : ``;
 
-        const trialParams = isTrialReel
-          ? `&trial_params=${encodeURIComponent(
+      const trialParams = isTrialReel
+        ? `&trial_params=${encodeURIComponent(
+            JSON.stringify({
+              graduation_strategy:
+                firstPost.settings.graduation_strategy || 'MANUAL',
+            })
+          )}`
+        : ``;
+
+      // collaborators are not allowed on carousel child items,
+      // they go on the carousel container instead
+      const itemCollaborators =
+        firstPost?.media?.length === 1 ? collaborators : ``;
+
+      // audio_configuration is only supported for Reels (single video, not a story)
+      // and only with Facebook Login (not Instagram Login / graph.instagram.com)
+      const audioConfiguration =
+        firstPost?.settings?.audio?.id &&
+        type === 'graph.facebook.com' &&
+        !isStory &&
+        firstPost?.media?.length === 1 &&
+        hasExtension(m.path, 'mp4')
+          ? `&audio_configuration=${encodeURIComponent(
               JSON.stringify({
-                graduation_strategy:
-                  firstPost.settings.graduation_strategy || 'MANUAL',
+                audio_id: firstPost.settings.audio.id,
+                ...(typeof firstPost.settings.audio.audio_volume !== 'undefined'
+                  ? { audio_volume: +firstPost.settings.audio.audio_volume }
+                  : {}),
+                ...(typeof firstPost.settings.audio.video_volume !== 'undefined'
+                  ? { video_volume: +firstPost.settings.audio.video_volume }
+                  : {}),
               })
             )}`
           : ``;
 
-        // collaborators are not allowed on carousel child items,
-        // they go on the carousel container instead
-        const itemCollaborators =
-          firstPost?.media?.length === 1 ? collaborators : ``;
+      const query = `${mediaType}${altText}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}${caption}`;
+      const { id: photoId } = await (
+        await this.fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${query}&access_token=${accessToken}`,
+          {
+            method: 'POST',
+          }
+        )
+      ).json();
 
-        // audio_configuration is only supported for Reels (single video, not a story)
-        // and only with Facebook Login (not Instagram Login / graph.instagram.com)
-        const audioConfiguration =
-          firstPost?.settings?.audio?.id &&
-          type === 'graph.facebook.com' &&
-          !isStory &&
-          firstPost?.media?.length === 1 &&
-          hasExtension(m.path, 'mp4')
-            ? `&audio_configuration=${encodeURIComponent(
-                JSON.stringify({
-                  audio_id: firstPost.settings.audio.id,
-                  ...(typeof firstPost.settings.audio.audio_volume !==
-                  'undefined'
-                    ? { audio_volume: +firstPost.settings.audio.audio_volume }
-                    : {}),
-                  ...(typeof firstPost.settings.audio.video_volume !==
-                  'undefined'
-                    ? { video_volume: +firstPost.settings.audio.video_volume }
-                    : {}),
-                })
-              )}`
-            : ``;
-
-        const { id: photoId } = await (
-          await this.fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${altText}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
-            {
-              method: 'POST',
-            }
-          )
-        ).json();
-
-        return photoId;
-      }) || []
-    );
+      childQueries.push(query);
+      medias.push(photoId);
+    }
 
     // Containers are invisible until media_publish runs: the processing wait
     // and the publish itself move to checkPostStatus / finalizePost so a
@@ -891,6 +891,7 @@ export class InstagramProvider
               : 'carousel',
           containers: medias,
           message: firstPost?.message || '',
+          ...(medias.length > 1 && !isStory ? { childQueries } : {}),
           ...(collaborators
             ? {
                 collaborators: firstPost.settings.collaborators!.map((p) =>
@@ -903,6 +904,27 @@ export class InstagramProvider
     ];
   }
 
+  private async recreateCarouselChildren(
+    igId: string,
+    accessToken: string,
+    type: string,
+    childQueries: string[]
+  ): Promise<string[]> {
+    const containers: string[] = [];
+    for (const query of childQueries) {
+      const { id: photoId } = await (
+        await this.fetch(
+          `https://${type}/${META_GRAPH_API_VERSION}/${igId}/media?${query}&access_token=${accessToken}`,
+          {
+            method: 'POST',
+          }
+        )
+      ).json();
+      containers.push(photoId);
+    }
+    return containers;
+  }
+
   override async checkPostStatus(
     token: string,
     pendingData: {
@@ -912,6 +934,9 @@ export class InstagramProvider
       message?: string;
       carouselId?: string;
       collaborators?: string[];
+      childQueries?: string[];
+      readyChecks?: number;
+      recreateCount?: number;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -920,11 +945,38 @@ export class InstagramProvider
 
     // the carousel container was already created: wait for it
     if (pendingData.carouselId) {
-      const status = await this.igContainerStatus(
-        pendingData.carouselId,
-        checkToken,
-        pendingData.type
-      );
+      let status: string;
+      try {
+        status = await this.igContainerStatus(
+          pendingData.carouselId,
+          checkToken,
+          pendingData.type
+        );
+      } catch (err) {
+        if (
+          err instanceof BadBody &&
+          err.message.includes('Failed to create media') &&
+          pendingData.childQueries?.length &&
+          (pendingData.recreateCount || 0) < 2
+        ) {
+          const freshContainers = await this.recreateCarouselChildren(
+            integration.internalId,
+            accessToken,
+            pendingData.type,
+            pendingData.childQueries
+          );
+          const { carouselId: _c, readyChecks: _r, ...rest } = pendingData;
+          return {
+            status: 'pending',
+            pendingData: {
+              ...rest,
+              containers: freshContainers,
+              recreateCount: (pendingData.recreateCount || 0) + 1,
+            },
+          };
+        }
+        throw err;
+      }
 
       if (status === 'IN_PROGRESS') {
         return { status: 'pending', pendingData };
@@ -967,6 +1019,26 @@ export class InstagramProvider
       }
     }
 
+    // Meta answers {"id":"0"} and poisons the child containers (causing 2207032
+    // on the next attempt) when media_type=CAROUSEL is called before the child
+    // containers have settled on Meta's backend. Note that resolvePending runs
+    // the first checkPostStatus at t=0s before the first 20s sleep, and larger
+    // carousels need ~60-80s after the last child is created before the parent
+    // container can be safely created.
+    if (pendingData.postType === 'carousel') {
+      const readyChecks = (pendingData.readyChecks || 0) + 1;
+      const requiredChecks = Math.max(
+        3,
+        Math.ceil((pendingData.containers.length * 10) / 20) + 1
+      );
+      if (readyChecks < requiredChecks) {
+        return {
+          status: 'pending',
+          pendingData: { ...pendingData, readyChecks },
+        };
+      }
+    }
+
     return { status: 'ready', pendingData };
   }
 
@@ -979,6 +1051,9 @@ export class InstagramProvider
       message?: string;
       carouselId?: string;
       collaborators?: string[];
+      childQueries?: string[];
+      readyChecks?: number;
+      recreateCount?: number;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -1047,6 +1122,35 @@ export class InstagramProvider
           }
         )
       ).json();
+
+      // Meta answers {"id":"0"} when the carousel is created before its
+      // children have settled, and that failed call poisons the child
+      // containers on Meta's backend (reusing them produces 2207032).
+      // Recreate fresh child containers when childQueries are available.
+      if (!containerId || containerId === '0') {
+        if (
+          pendingData.childQueries?.length &&
+          (pendingData.recreateCount || 0) < 2
+        ) {
+          const freshContainers = await this.recreateCarouselChildren(
+            igId,
+            accessToken,
+            pendingData.type,
+            pendingData.childQueries
+          );
+          const { readyChecks: _r, ...rest } = pendingData;
+          return {
+            status: 'pending',
+            pendingData: {
+              ...rest,
+              containers: freshContainers,
+              recreateCount: (pendingData.recreateCount || 0) + 1,
+            },
+          };
+        }
+        const { readyChecks: _r, ...rest } = pendingData;
+        return { status: 'pending', pendingData: rest };
+      }
 
       return {
         status: 'pending',
