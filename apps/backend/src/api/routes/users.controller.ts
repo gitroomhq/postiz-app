@@ -206,8 +206,7 @@ export class UsersController {
   private getRequestUserId(req: Request): string | null {
     try {
       const auth = (req.headers.auth as string) || req.cookies?.auth;
-      const payload = AuthChecker.verifyJWT(auth) as { id?: string } | null;
-      return payload?.id || null;
+      return AuthChecker.verifyUserToken(auth, 'session').sub;
     } catch {
       return null;
     }
@@ -363,11 +362,16 @@ export class UsersController {
 
     await this._userService.deleteAccount(user.id);
 
-    return this.logout(response);
+    return this.logout(response, req);
   }
 
   @Post('/logout')
-  logout(@Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Res({ passthrough: true }) response: Response,
+    @Req() req: Request
+  ) {
+    const token = (req.headers.auth as string) || req.cookies?.auth;
+    await this._userService.revokeSession(token);
     response.header('logout', 'true');
     response.cookie('auth', '', {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),

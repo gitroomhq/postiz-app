@@ -70,12 +70,24 @@ export class AuthService {
               )
             : false;
 
-        const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
-        await this._emailService.sendEmailSync(
-          body.email,
-          'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
-        );
+        const registeredUser = create.users[0].user;
+        const obj = {
+          addedOrg,
+          jwt: registeredUser.activated
+            ? await this.jwt(registeredUser)
+            : undefined,
+        };
+        if (!registeredUser.activated) {
+          const activationToken = await this._userService.issueAuthToken(
+            registeredUser,
+            'activation'
+          );
+          await this._emailService.sendEmailSync(
+            body.email,
+            'Activate your account',
+            `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${activationToken}">here</a> to activate your account`
+          );
+        }
         return obj;
       }
 
@@ -223,10 +235,10 @@ export class AuthService {
       return false;
     }
 
-    const resetValues = AuthChecker.signJWT({
-      id: user.id,
-      expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
-    });
+    const resetValues = await this._userService.issueAuthToken(
+      user,
+      'password-reset'
+    );
 
     await this._emailService.sendEmailSync(
       user.email,
@@ -236,33 +248,15 @@ export class AuthService {
   }
 
   forgotReturn(body: ForgotReturnPasswordDto) {
-    const user = AuthChecker.verifyJWT(body.token) as {
-      id: string;
-      expires: string;
-    };
-    if (typeof user.id !== 'string' || dayjs(user.expires).isBefore(dayjs())) {
-      return false;
-    }
-
-    return this._userService.updatePassword(user.id, body.password);
+    return this._userService.resetPasswordWithToken(body.token, body.password);
   }
 
   async activate(code: string, tracking: string) {
-    const user = AuthChecker.verifyJWT(code) as {
-      id: string;
-      activated: boolean;
-      email: string;
-    };
-    if (user.id && !user.activated) {
-      const getUserAgain = await this._userService.getUserByEmail(user.email);
-      if (getUserAgain.activated) {
-        return false;
-      }
-      await this._userService.activateUser(user.id);
-      user.activated = true;
+    const user = await this._userService.activateWithToken(code);
+    if (user) {
       this._track('register', user.email, tracking).catch((err) => {});
       await NewsletterService.register(user.email);
-      return this.jwt(user as any);
+      return this.jwt(user);
     }
 
     return false;
@@ -279,7 +273,7 @@ export class AuthService {
       throw new Error('Account is already activated');
     }
 
-    const jwt = await this.jwt(user);
+    const jwt = await this._userService.issueAuthToken(user, 'activation');
 
     await this._emailService.sendEmailSync(
       user.email,
@@ -330,9 +324,8 @@ export class AuthService {
   }
 
   private async jwt(user: User) {
-    if (user.password) {
-      delete user.password;
-    }
-    return AuthChecker.signJWT(user);
+    if (!user.activated || user.deletedAt)
+      throw new Error('User is not activated');
+    return this._userService.issueAuthToken(user, 'session');
   }
 }

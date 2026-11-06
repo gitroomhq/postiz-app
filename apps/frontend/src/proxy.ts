@@ -63,7 +63,36 @@ export async function proxy(request: NextRequest) {
   }
 
   // If the URL is logout, delete the cookie and redirect to login
-  if (nextUrl.href.indexOf('/auth/logout') > -1) {
+  if (
+    nextUrl.pathname === '/auth/logout' ||
+    nextUrl.pathname === '/auth/logout/'
+  ) {
+    const token =
+      typeof authCookie === 'string' ? authCookie : authCookie?.value;
+    if (token) {
+      try {
+        const revoked = await fetch(
+          `${process.env.BACKEND_INTERNAL_URL}/user/logout`,
+          {
+            method: 'POST',
+            headers: { auth: token },
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10_000),
+          }
+        );
+        if (!revoked.ok && revoked.status !== 401) {
+          return NextResponse.json(
+            { error: 'Could not log out. Please retry.' },
+            { status: 503 }
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { error: 'Could not log out. Please retry.' },
+          { status: 503 }
+        );
+      }
+    }
     const response = NextResponse.redirect(
       new URL('/auth/login', nextUrl.href)
     );

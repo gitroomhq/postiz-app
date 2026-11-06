@@ -4,8 +4,9 @@ import {
 } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { Provider, Role } from '@prisma/client';
+import { Provider, Role, User } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import type { UserTokenPurpose } from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { TimezoneDto } from '@gitroom/nestjs-libraries/dtos/users/timezone.dto';
@@ -17,6 +18,103 @@ export class UsersRepository {
     private _user: PrismaRepository<'user'>,
     private _transaction: PrismaTransaction
   ) {}
+
+  async createAuthToken(
+    userId: string,
+    purpose: UserTokenPurpose,
+    tokenHash: string,
+    expiresAt: Date
+  ) {
+    await this._transaction.model.$transaction(async (tx) => {
+      await tx.userAuthToken.deleteMany({
+        where: { userId, expiresAt: { lte: new Date() } },
+      });
+      await tx.userAuthToken.create({
+        data: { userId, purpose, tokenHash, expiresAt },
+        select: { tokenHash: true },
+      });
+    });
+  }
+
+  getAuthTokenUser(
+    userId: string,
+    purpose: UserTokenPurpose,
+    tokenHash: string
+  ) {
+    return this._user.model.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+        authTokens: {
+          some: { tokenHash, purpose, expiresAt: { gt: new Date() } },
+        },
+      },
+    });
+  }
+
+  async revokeSession(tokenHash: string) {
+    await this._transaction.model.$transaction(async (tx) => {
+      await tx.userAuthToken.deleteMany({
+        where: { tokenHash, purpose: 'session' },
+      });
+    });
+  }
+
+  async consumePasswordReset(user: User, tokenHash: string, password: string) {
+    const passwordHash = AuthService.hashPassword(password);
+    return this._transaction.model.$transaction(async (tx) => {
+      // Lock/update the user before deleting grants. The old password predicate
+      // serializes concurrent resets, including two different emailed links.
+      const updated = await tx.user.updateMany({
+        where: {
+          id: user.id,
+          password: user.password,
+          email: user.email,
+          providerName: Provider.LOCAL,
+          deletedAt: null,
+          authTokens: {
+            some: {
+              tokenHash,
+              purpose: 'password-reset',
+              expiresAt: { gt: new Date() },
+            },
+          },
+        },
+        data: { password: passwordHash },
+      });
+      if (updated.count !== 1) return false;
+      await tx.userAuthToken.deleteMany({ where: { userId: user.id } });
+      return true;
+    });
+  }
+
+  async consumeActivation(user: User, tokenHash: string) {
+    return this._transaction.model.$transaction(async (tx) => {
+      const updated = await tx.user.updateMany({
+        where: {
+          id: user.id,
+          email: user.email,
+          password: user.password,
+          activated: false,
+          deletedAt: null,
+          providerName: Provider.LOCAL,
+          authTokens: {
+            some: {
+              tokenHash,
+              purpose: 'activation',
+              expiresAt: { gt: new Date() },
+            },
+          },
+        },
+        data: { activated: true },
+      });
+      if (updated.count !== 1) return false;
+      await tx.userAuthToken.deleteMany({
+        where: { userId: user.id, purpose: 'activation' },
+      });
+      return true;
+    });
+  }
 
   async switchUserCredentials(currentUserId: string, targetUserId: string) {
     const current = await this._user.model.user.findUnique({

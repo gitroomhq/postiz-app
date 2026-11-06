@@ -118,6 +118,7 @@ model User {
   sendFailureEmails     Boolean              @default(true)
   sendStreakEmails      Boolean              @default(true)
   oauthAuthorizations   OAuthAuthorization[]
+  authTokens            UserAuthToken[]
 
   @@unique([email, providerName])
   @@index([lastReadNotifications])
@@ -126,6 +127,19 @@ model User {
   @@index([lastOnline])
   @@index([pictureId])
   @@index([deletedAt])
+}
+
+// Only digests are persisted; bearer tokens remain with the client/email.
+model UserAuthToken {
+  tokenHash String   @id
+  userId    String
+  purpose   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
 }
 
 model UsedCodes {

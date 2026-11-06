@@ -19,8 +19,10 @@ import { PostValidationExceptionFilter } from '@gitroom/backend/api/routes/posts
 import { HttpExceptionFilter } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { ConfigurationChecker } from '@gitroom/helpers/configuration/configuration.checker';
 import { startMcp } from '@gitroom/nestjs-libraries/chat/start.mcp';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
 
 async function start() {
+  AuthService.validateUserTokenConfiguration();
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
     cors: {

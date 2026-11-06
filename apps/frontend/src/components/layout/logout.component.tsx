@@ -21,13 +21,10 @@ export const LogoutComponent: FC<{ isIcon?: boolean }> = ({ isIcon }) => {
         t('yes_logout', 'Yes logout')
       )
     ) {
-      if (!isSecured) {
-        setCookie('auth', '', -10);
-      } else {
-        await fetch('/user/logout', {
-          method: 'POST',
-        });
-      }
+      const response = await fetch('/user/logout', { method: 'POST' });
+      // A failed revocation must not look like a successful server logout.
+      if (!response.ok && response.status !== 401) return;
+      if (!isSecured) setCookie('auth', '', -10);
       window.location.href = '/';
     }
   }, []);

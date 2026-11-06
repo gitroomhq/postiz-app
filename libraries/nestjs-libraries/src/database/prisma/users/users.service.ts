@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersRepository } from '@gitroom/nestjs-libraries/database/prisma/users/users.repository';
-import { Provider, Role } from '@prisma/client';
+import { Provider, Role, User } from '@prisma/client';
+import {
+  AuthService,
+  UserTokenClaims,
+  UserTokenPurpose,
+} from '@gitroom/helpers/auth/auth.service';
 import { UserDetailDto } from '@gitroom/nestjs-libraries/dtos/users/user.details.dto';
 import { EmailNotificationsDto } from '@gitroom/nestjs-libraries/dtos/users/email-notifications.dto';
 import { TimezoneDto } from '@gitroom/nestjs-libraries/dtos/users/timezone.dto';
@@ -18,6 +23,68 @@ export class UsersService {
   ) {}
 
   private readonly _logger = new Logger(UsersService.name);
+
+  async issueAuthToken(user: User, purpose: UserTokenPurpose) {
+    const { token, tokenHash, expiresAt } = AuthService.issueUserToken(
+      user,
+      purpose
+    );
+    await this._usersRepository.createAuthToken(
+      user.id,
+      purpose,
+      tokenHash,
+      expiresAt
+    );
+    return token;
+  }
+
+  async getUserForAuthToken(token: string, purpose: UserTokenPurpose) {
+    let claims: UserTokenClaims;
+    try {
+      claims = AuthService.verifyUserToken(token, purpose);
+    } catch {
+      return null;
+    }
+    const user = await this._usersRepository.getAuthTokenUser(
+      claims.sub,
+      purpose,
+      AuthService.userTokenHash(token)
+    );
+    if (!user || claims.credentialTag !== AuthService.userCredentialTag(user))
+      return null;
+    return user;
+  }
+
+  async resetPasswordWithToken(token: string, password: string) {
+    const user = await this.getUserForAuthToken(token, 'password-reset');
+    if (!user || user.providerName !== Provider.LOCAL) return false;
+    return this._usersRepository.consumePasswordReset(
+      user,
+      AuthService.userTokenHash(token),
+      password
+    );
+  }
+
+  async activateWithToken(token: string) {
+    const user = await this.getUserForAuthToken(token, 'activation');
+    if (!user || user.activated || user.providerName !== Provider.LOCAL)
+      return null;
+    if (
+      !(await this._usersRepository.consumeActivation(
+        user,
+        AuthService.userTokenHash(token)
+      ))
+    )
+      return null;
+    return this.getUserById(user.id);
+  }
+
+  revokeSession(token: string) {
+    AuthService.verifyUserToken(token, 'session');
+    return this._usersRepository.revokeSession(
+      AuthService.userTokenHash(token)
+    );
+  }
 
   getUserByEmail(email: string) {
     return this._usersRepository.getUserByEmail(email);

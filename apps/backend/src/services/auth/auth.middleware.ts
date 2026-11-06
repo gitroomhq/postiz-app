@@ -1,6 +1,5 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { User } from '@prisma/client';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -37,23 +36,12 @@ export class AuthMiddleware implements NestMiddleware {
       throw new HttpForbiddenException();
     }
     try {
-      // Verify the JWT signature only. Never trust authorization-relevant
-      // claims (id, isSuperAdmin, activated) from the token body — always
-      // re-resolve the user from the database using the id.
-      const payload = AuthService.verifyJWT(auth) as User | null;
+      // Purpose, expiry, stored grant and current credentials must all match.
+      // Authorization still comes from the current database user, not claims.
+      let user = await this._userService.getUserForAuthToken(auth, 'session');
       const orgHeader = req.cookies.showorg || req.headers.showorg;
-
-      if (!payload?.id || typeof payload.id !== 'string') {
-        throw new HttpForbiddenException();
-      }
-
-      let user = (await this._userService.getUserById(payload.id)) as User | null;
-
-      if (!user) {
-        throw new HttpForbiddenException();
-      }
-
-      if (!user.activated) {
+      if (!user || !user.activated) {
+        removeAuth(res);
         throw new HttpForbiddenException();
       }
 
