@@ -75,6 +75,13 @@ export class EmailService {
       return;
     }
 
+    const settingsUrl = `${process.env.FRONTEND_URL}/settings`;
+    // Mail clients show an unsubscribe link next to the sender, it opens the
+    // settings where the email notifications can be turned off
+    const headers = process.env.FRONTEND_URL
+      ? { 'List-Unsubscribe': `<${settingsUrl}>` }
+      : undefined;
+
     const modifiedHtml = `
     <div style="
         background: linear-gradient(to bottom right, #e6f2ff, #f0e6ff);
@@ -121,7 +128,7 @@ export class EmailService {
                         margin: 0;
                     ">${process.env.EMAIL_FROM_NAME}</h2>
                     <div style="font-size: 12px">
-                      You can change your notification preferences in your <a href="${process.env.FRONTEND_URL}/settings">account settings.</a>
+                      You can change your notification preferences in your <a href="${settingsUrl}">account settings.</a>
                      </div>
                 </div>
             </div>
@@ -138,7 +145,8 @@ export class EmailService {
           modifiedHtml,
           process.env.EMAIL_FROM_NAME,
           process.env.EMAIL_FROM_ADDRESS,
-          replyTo
+          replyTo,
+          headers
         );
         console.log(sends);
         return;

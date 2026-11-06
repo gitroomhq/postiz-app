@@ -18,7 +18,9 @@ export class RunPodMediaProcessor<
   private _baseUrl: string;
 
   constructor(private _apiKey: string, endpointId: string) {
-    this._baseUrl = `https://api.runpod.ai/v2/${endpointId}`;
+    this._baseUrl = `${
+      process.env.RUNPOD_API_URL || 'https://api.runpod.ai/v2'
+    }/${endpointId}`;
   }
 
   private async request(path: string, init?: RequestInit) {

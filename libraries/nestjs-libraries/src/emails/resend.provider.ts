@@ -12,7 +12,8 @@ export class ResendProvider implements EmailInterface {
     html: string,
     emailFromName: string,
     emailFromAddress: string,
-    replyTo?: string
+    replyTo?: string,
+    headers?: Record<string, string>
   ) {
     const sends = await resend.emails.send({
       from: `${emailFromName} <${emailFromAddress}>`,
@@ -20,6 +21,7 @@ export class ResendProvider implements EmailInterface {
       subject,
       html,
       ...(replyTo && { reply_to: replyTo }),
+      ...(headers && { headers }),
     });
 
     // The SDK returns API errors (like 429 rate limits) instead of throwing,

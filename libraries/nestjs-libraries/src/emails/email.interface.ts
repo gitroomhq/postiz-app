@@ -7,6 +7,7 @@ export interface EmailInterface {
     html: string,
     emailFromName: string,
     emailFromAddress: string,
-    replyTo?: string
+    replyTo?: string,
+    headers?: Record<string, string>
   ): Promise<any>;
 }
