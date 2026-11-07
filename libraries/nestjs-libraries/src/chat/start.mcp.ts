@@ -293,6 +293,21 @@ export const startMcp = async (app: INestApplication) => {
     });
   }
 
+  // Muse connector verification: the challenge token is both the last path
+  // segment and the value of the plain-text file
+  const museChallenge = process.env.MUSE_CHALLENGE?.trim();
+  if (museChallenge) {
+    app.use('/.well-known/muse-challenge', (req: Request, res: Response, next: () => void) => {
+      if (req.path !== `/${museChallenge}`) {
+        next();
+        return;
+      }
+
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(`muse-challenge=${museChallenge}`);
+    });
+  }
+
   app.use('/.well-known/oauth-protected-resource', async (req: Request, res: Response, next: () => void) => {
     // Only the paths in oauthResources are OAuth-protected.
     // Answering discovery on any other path (including the root, which clients
