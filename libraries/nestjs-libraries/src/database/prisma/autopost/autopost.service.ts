@@ -19,6 +19,7 @@ import { TypedSearchAttributes } from '@temporalio/common';
 import {
   organizationId,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 const parser = new Parser();
 
 interface WorkflowChannelsState {
@@ -119,6 +120,13 @@ export class AutopostService {
             ]),
           });
       } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'autoPostWorkflow',
+          workflow_id: `autopost-${id}`,
+          org_id: orgId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
         // Don't fall through and terminate an active autopost
         return false;
       }
