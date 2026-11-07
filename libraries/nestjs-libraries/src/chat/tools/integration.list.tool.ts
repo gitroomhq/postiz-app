@@ -15,7 +15,7 @@ export class IntegrationListTool implements AgentToolInterface {
   run() {
     return createTool({
       id: 'integrationList',
-      description: `This tool list available integrations to schedule posts to. Optionally pass a group id (from the groupList tool) to only list integrations belonging to that group`,
+      description: `This tool list available integrations to schedule posts to. Optionally pass a group id (from the groupList tool) to only list integrations belonging to that group. Integrations with disabled: true cannot be used to schedule posts`,
       inputSchema: z.object({
         group: z
           .string()
@@ -40,6 +40,7 @@ export class IntegrationListTool implements AgentToolInterface {
             name: z.string(),
             picture: z.string(),
             platform: z.string(),
+            disabled: z.boolean(),
           })
         ),
       }),
