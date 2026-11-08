@@ -37,4 +37,8 @@ export class CreateOrgUserDto {
   company: string;
 
   datafast_visitor_id: string;
+
+  // Click ids of attribution tools (LeadJourney, ...) by the URL parameter
+  // the app kept them from, checked by AttributionService
+  attribution?: Record<string, string>;
 }

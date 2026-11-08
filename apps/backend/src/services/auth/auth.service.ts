@@ -11,6 +11,7 @@ import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/for
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import { AttributionService } from '@gitroom/nestjs-libraries/services/attribution/attribution.service';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,8 @@ export class AuthService {
     private _userService: UsersService,
     private _organizationService: OrganizationService,
     private _emailService: EmailService,
-    private _providerManager: AuthProviderManager
+    private _providerManager: AuthProviderManager,
+    private _attributionService: AttributionService
   ) {}
   async canRegister(provider: string) {
     if (
@@ -60,6 +62,10 @@ export class AuthService {
           ip,
           userAgent
         );
+
+        this._attributionService
+          .lead(create.users[0].user, body.attribution)
+          .catch((err) => {});
 
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
@@ -207,6 +213,10 @@ export class AuthService {
         });
       }
     );
+
+    this._attributionService
+      .lead(create.users[0].user, body.attribution)
+      .catch((err) => {});
 
     await NewsletterService.register(providerUser.email);
 
