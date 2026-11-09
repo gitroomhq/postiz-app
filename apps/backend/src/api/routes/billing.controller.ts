@@ -25,6 +25,7 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import dayjs from 'dayjs';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -186,18 +187,27 @@ export class BillingController {
   @Post('/cancel')
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User,
-    @Body() body: { feedback: string }
+    @GetUserFromRequest() user: User
   ) {
     const result = await (await this.provider(org)).setToCancel(org.id);
 
     if (result.cancel_at) {
-      await this._notificationService.sendEmail(
-        process.env.EMAIL_FROM_ADDRESS,
-        'Subscription Cancelled',
-        `Organization ${org.name} has cancelled their subscription because: ${body.feedback}`,
-        user.email
-      );
+      const isFutureCancel = dayjs(result.cancel_at).isAfter(dayjs(), 'day');
+      try {
+        await this._notificationService.sendEmail(
+          user.email,
+          'Your subscription has been cancelled',
+          `${
+            isFutureCancel
+              ? `Your subscription has been cancelled. You will keep access to all features until ${dayjs(
+                  result.cancel_at
+                ).format('MMMM D, YYYY')}.`
+              : 'Your subscription has been cancelled and access to paid features has ended.'
+          }<br /><br />Changed your mind? You can resubscribe anytime from your <a href="${
+            process.env.FRONTEND_URL
+          }/billing">billing page</a>.`
+        );
+      } catch (err) {}
     }
 
     return result;
