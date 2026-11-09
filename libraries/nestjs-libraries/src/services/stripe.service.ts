@@ -234,6 +234,7 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async deleteSubscription(event: Stripe.CustomerSubscriptionDeletedEvent) {
+    await this.keepCardOfUnpaidInvoices(event.data.object.id);
     const customer = event.data.object.customer as string;
     const [survivor] = await this.getLiveSubscriptions(customer);
     if (!survivor) {
@@ -270,6 +271,49 @@ export class StripeService extends PaymentProviderAbstract {
       period,
       survivor.cancel_at
     );
+  }
+
+  private async getInvoicePaymentIntents(invoiceId: string) {
+    const invoice = await stripe.invoices.retrieve(invoiceId, {
+      expand: ['payments.data.payment.payment_intent'],
+    });
+    return (invoice.payments?.data || [])
+      .map((p) => p.payment.payment_intent)
+      .filter(
+        (p): p is Stripe.PaymentIntent => typeof p === 'object' && !!p
+      );
+  }
+
+  // Stripe's hosted invoice page keeps the paying card only when the customer
+  // has no default card, the flag makes it keep the card in every case.
+  private async keepCardOfUnpaidInvoices(subscriptionId: string) {
+    try {
+      for (const status of ['open', 'uncollectible'] as const) {
+        const invoices = await stripe.invoices.list({
+          subscription: subscriptionId,
+          status,
+          limit: 100,
+        });
+        for (const invoice of invoices.data) {
+          const paymentIntents = await this.getInvoicePaymentIntents(
+            invoice.id
+          );
+          for (const paymentIntent of paymentIntents) {
+            if (paymentIntent.status === 'requires_payment_method') {
+              await stripe.paymentIntents.update(paymentIntent.id, {
+                setup_future_usage: 'off_session',
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(
+        'stripe_keep_card_of_unpaid_invoices_failed',
+        { stripe_subscription_id: subscriptionId },
+        err
+      );
+    }
   }
 
   // After a login swap, move each Stripe customer's email to the login that
