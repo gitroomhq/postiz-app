@@ -237,6 +237,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     const allLocations: Array<{
       id: string;
       name: string;
+      address: string;
       picture: { data: { url: string } };
       accountName: string;
       locationName: string;
@@ -306,6 +307,14 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
                 // id is the full resource path for the v4 API: accounts/{accountId}/locations/{locationId}
                 id: fullResourceName,
                 name: location.title || 'Unnamed Location',
+                address: [
+                  ...(location.storefrontAddress?.addressLines || []),
+                  location.storefrontAddress?.locality,
+                  location.storefrontAddress?.administrativeArea,
+                  location.storefrontAddress?.postalCode,
+                ]
+                  .filter((f) => f)
+                  .join(', '),
                 picture: { data: { url: photoUrl } },
                 accountName: accountName,
                 locationName: location.name,
