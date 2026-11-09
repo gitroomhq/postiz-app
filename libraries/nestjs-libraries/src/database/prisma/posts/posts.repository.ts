@@ -67,6 +67,7 @@ export class PostsRepository {
     return this._post.model.post.findUnique({
       where: {
         id,
+        deletedAt: null,
       },
       select: {
         state: true,
