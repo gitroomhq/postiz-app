@@ -426,6 +426,7 @@ export const MainBillingComponent: FC<{
   const events = useFireEvents();
   const [fbc] = useCookie('_fbc', '');
   const [fbp] = useCookie('_fbp', '');
+  const events = useFireEvents();
   const modal = useModals();
   const router = useRouter();
   const utm = useUtmUrl();

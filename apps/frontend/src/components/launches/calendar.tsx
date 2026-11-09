@@ -436,9 +436,9 @@ export const DayView = () => {
       .map((post) => {
         const date = postDates.get(post);
         return {
-          integration: [
-            integrations.find((i) => i.id === post.integration.id)!,
-          ],
+          integration: integrations.filter(
+            (i) => i.id === post.integration.id
+          ),
           image: post?.integration?.picture || '',
           identifier: post?.integration?.providerIdentifier || '',
           id: post?.integration?.id || '',
@@ -1159,7 +1159,7 @@ export const CalendarColumn: FC<{
                   {integrations.map((selectedIntegrations) => (
                     <div
                       className="relative"
-                      key={selectedIntegrations.identifier}
+                      key={selectedIntegrations.id}
                     >
                       <div
                         className={clsx(
