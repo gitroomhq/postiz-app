@@ -174,7 +174,18 @@ export class InstagramStandaloneProvider
       )
     ).json();
 
-    this.checkScopes(this.scopes, getAccessToken.permissions);
+    try {
+      this.checkScopes(this.scopes, getAccessToken.permissions);
+    } catch (err) {
+      console.error(
+        'Instagram standalone scope check failed:',
+        JSON.stringify({
+          user_id: getAccessToken.user_id,
+          permissions: getAccessToken.permissions,
+        })
+      );
+      throw err;
+    }
 
     const { user_id, name, username, profile_picture_url } = await (
       await fetch(
