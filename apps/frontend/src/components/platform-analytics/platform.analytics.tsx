@@ -217,7 +217,7 @@ export const PlatformAnalytics = () => {
                 onClick={() => {
                   if (integration.refreshNeeded) {
                     toaster.show(
-                      'Please refresh the integration from the calendar',
+                      'Please reconnect the channel from the calendar',
                       'warning'
                     );
                     return;
