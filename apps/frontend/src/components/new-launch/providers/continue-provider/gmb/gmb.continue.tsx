@@ -5,6 +5,7 @@ import { withContinueProvider } from '../with-continue-provider';
 interface GmbItem {
   id: string;
   name: string;
+  address?: string;
   accountName: string;
   locationName: string;
   picture?: {
@@ -76,6 +77,9 @@ export const GmbContinue = withContinueProvider<GmbItem, GmbSelection>({
         )}
       </div>
       <div className="text-sm font-medium">{item.name}</div>
+      {item.address && (
+        <div className="text-xs text-gray-500">{item.address}</div>
+      )}
     </>
   ),
 });
