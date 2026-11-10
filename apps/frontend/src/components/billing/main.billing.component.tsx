@@ -385,6 +385,7 @@ const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
   const [loading, setLoading] = useState(false);
   const fetch = useFetch();
   const toaster = useToaster();
+  const t = useT();
 
   const apply = useCallback(async () => {
     setLoading(true);
@@ -400,6 +401,12 @@ const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
     <div>
       <div className="mb-[20px]">
         Would you accept 50% discount for 3 months instead? 🙏🏻
+      </div>
+      <div className="mb-[20px] text-[14px] text-textItemBlur">
+        {t(
+          'billing_discount_modal_still_active',
+          'Your subscription is still active. Choose one of the options below to continue.'
+        )}
       </div>
       <div className="flex gap-[10px]">
         <Button loading={loading} onClick={apply}>
@@ -580,44 +587,66 @@ export const MainBillingComponent: FC<{
               'No, keep it'
             ))
           ) {
-            const checkDiscount = await (
-              await fetch('/billing/check-discount')
-            ).json();
-            if (checkDiscount.offerCoupon) {
-              const info = await new Promise((res) => {
-                modal.openModal({
-                  title: 'Before you cancel',
-                  withCloseButton: true,
-                  classNames: {
-                    modal: 'bg-transparent text-textColor',
-                  },
-                  children: <Accept resolve={res} />,
+            try {
+              const checkDiscount = await (
+                await fetch('/billing/check-discount')
+              ).json();
+              if (checkDiscount.offerCoupon) {
+                const info = await new Promise((res) => {
+                  modal.openModal({
+                    title: 'Before you cancel',
+                    withCloseButton: true,
+                    onClose: () => {
+                      toast.show(
+                        t(
+                          'billing_subscription_not_cancelled',
+                          'Your subscription was not cancelled'
+                        ),
+                        'warning'
+                      );
+                      res(true);
+                    },
+                    classNames: {
+                      modal: 'bg-transparent text-textColor',
+                    },
+                    children: <Accept resolve={res} />,
+                  });
                 });
-              });
 
-              modal.closeAll();
+                modal.closeAll();
 
-              if (info) {
-                return;
+                if (info) {
+                  return;
+                }
               }
-            }
 
-            events('cancel_subscription');
-            setLoading(true);
-            const { cancel_at } = await (
-              await fetch('/billing/cancel', {
+              events('cancel_subscription');
+              setLoading(true);
+              const response = await fetch('/billing/cancel', {
                 method: 'POST',
-              })
-            ).json();
-            setSubscription((subs) => ({
-              ...subs!,
-              cancelAt: cancel_at,
-            }));
-            toast.show(
-              cancel_at
-                ? 'Subscription set to canceled successfully'
-                : 'Your subscription was already set to cancel, so it has been reactivated. Click Cancel subscription again to cancel it.'
-            );
+              });
+              if (!response.ok) {
+                throw new Error(`status ${response.status}`);
+              }
+              const { cancel_at } = await response.json();
+              setSubscription((subs) => ({
+                ...subs!,
+                cancelAt: cancel_at,
+              }));
+              toast.show(
+                cancel_at
+                  ? 'Subscription set to canceled successfully'
+                  : 'Your subscription was already set to cancel, so it has been reactivated. Click Cancel subscription again to cancel it.'
+              );
+            } catch (err) {
+              toast.show(
+                t(
+                  'billing_cancel_failed',
+                  'We could not cancel your subscription. Please try again or contact support.'
+                ),
+                'warning'
+              );
+            }
             setLoading(false);
           }
           return;
