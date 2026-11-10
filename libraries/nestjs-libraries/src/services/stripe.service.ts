@@ -124,24 +124,54 @@ export class StripeService extends PaymentProviderAbstract {
         confirm: true, // Confirm the PaymentIntent
       });
 
-      if (paymentIntent.status !== 'requires_capture') {
-        console.error('Cant charge');
-        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
-        await stripe.subscriptions.cancel(event.data.object.id as string);
-        return false;
+      if (paymentIntent.status === 'requires_capture') {
+        await stripe.paymentIntents.cancel(paymentIntent.id as string);
+        return true;
       }
 
-      await stripe.paymentIntents.cancel(paymentIntent.id as string);
-      return true;
+      console.error('Cant charge', {
+        stripe_event_id: event.id,
+        stripe_subscription_id: event.data.object.id,
+        stripe_payment_intent_status: paymentIntent.status,
+      });
     } catch (err) {
-      try {
-        await stripe.paymentMethods.detach(paymentMethods.data[0].id);
-        await stripe.subscriptions.cancel(event.data.object.id as string);
-      } catch (err) {
-        /*dont do anything*/
-      }
-      return false;
+      console.error(
+        'stripe_card_check_failed',
+        {
+          stripe_event_id: event.id,
+          stripe_subscription_id: event.data.object.id,
+        },
+        err
+      );
     }
+
+    try {
+      await stripe.subscriptions.cancel(event.data.object.id as string);
+    } catch (err) {
+      console.error(
+        'stripe_card_check_cancel_failed',
+        {
+          stripe_event_id: event.id,
+          stripe_subscription_id: event.data.object.id,
+        },
+        err
+      );
+    }
+
+    try {
+      await stripe.paymentMethods.detach(paymentMethods.data[0].id);
+    } catch (err) {
+      console.error(
+        'stripe_card_check_detach_failed',
+        {
+          stripe_event_id: event.id,
+          stripe_subscription_id: event.data.object.id,
+        },
+        err
+      );
+    }
+
+    return false;
   }
 
   async createSubscription(event: Stripe.CustomerSubscriptionCreatedEvent) {
