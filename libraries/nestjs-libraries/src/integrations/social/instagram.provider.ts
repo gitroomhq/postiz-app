@@ -46,8 +46,38 @@ export class InstagramProvider
   override maxConcurrentJob = 400;
   editor = 'normal' as const;
   dto = InstagramDto;
+  // Newer Meta apps only offer "Instagram API with Unified Login" (Facebook
+  // Login for Business + config_id), see #2350. These are the scopes the
+  // resulting Business Integration System User token must carry to publish.
+  private readonly unifiedLoginScopes = [
+    'instagram_basic',
+    'instagram_content_publish',
+  ];
   maxLength() {
     return 2200;
+  }
+
+  private get unifiedLoginConfigId() {
+    return process.env.INSTAGRAM_CONFIG_ID;
+  }
+
+  private get unifiedLoginRedirectUri() {
+    return `${
+      process?.env.FRONTEND_URL?.indexOf('https') == -1
+        ? `https://redirectmeto.com/${process?.env.FRONTEND_URL}`
+        : `${process?.env.FRONTEND_URL}`
+    }/integrations/social/instagram`;
+  }
+
+  private async graphRequest(url: string) {
+    const response = await fetch(url);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || body?.error) {
+      throw new Error(
+        body?.error?.message || `Meta Graph API error (${response.status})`
+      );
+    }
+    return body;
   }
 
   override async checkValidity(
@@ -476,6 +506,22 @@ export class InstagramProvider
 
   async generateAuthUrl() {
     const state = makeSecureId(6);
+    if (this.unifiedLoginConfigId) {
+      // config_id replaces scope for system-user configurations
+      return {
+        url:
+          `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
+          `?client_id=${process.env.FACEBOOK_APP_ID}` +
+          `&redirect_uri=${encodeURIComponent(this.unifiedLoginRedirectUri)}` +
+          `&response_type=code` +
+          `&config_id=${this.unifiedLoginConfigId}` +
+          `&override_default_response_type=true` +
+          `&state=${state}`,
+        codeVerifier: makeSecureId(10),
+        state,
+      };
+    }
+
     return {
       url:
         `https://www.facebook.com/${META_GRAPH_API_VERSION}/dialog/oauth` +
@@ -495,6 +541,10 @@ export class InstagramProvider
     codeVerifier: string;
     refresh: string;
   }) {
+    if (this.unifiedLoginConfigId) {
+      return this.authenticateUnifiedLogin(params);
+    }
+
     const getAccessToken = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
@@ -547,9 +597,139 @@ export class InstagramProvider
     };
   }
 
+  private async authenticateUnifiedLogin(params: { code: string }) {
+    // The redirect_uri must be identical to the dialog one, so the
+    // ?refresh= suffix used by the legacy flow is not appended here.
+    let accessToken: string;
+    try {
+      ({ access_token: accessToken } = await this.graphRequest(
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/oauth/access_token` +
+          `?client_id=${process.env.FACEBOOK_APP_ID}` +
+          `&redirect_uri=${encodeURIComponent(this.unifiedLoginRedirectUri)}` +
+          `&client_secret=${process.env.FACEBOOK_APP_SECRET}` +
+          `&code=${params.code}`
+      ));
+    } catch (err) {
+      return (err as Error).message;
+    }
+
+    if (!accessToken) {
+      return 'Meta did not return an access token';
+    }
+
+    // System-user tokens: scopes and expiry come from debug_token,
+    // expires_at = 0 means the token never expires.
+    let data: any;
+    try {
+      ({ data } = await this.graphRequest(
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/debug_token` +
+          `?input_token=${accessToken}` +
+          `&access_token=${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`
+      ));
+    } catch (err) {
+      return (err as Error).message;
+    }
+
+    this.checkScopes(this.unifiedLoginScopes, data?.scopes || []);
+
+    const { id, name } = await (
+      await fetch(
+        `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me?fields=id,name&access_token=${accessToken}`
+      )
+    ).json();
+
+    if (!id && !data?.user_id) {
+      return 'Could not read the Meta system user for this token';
+    }
+
+    return {
+      id: id || data.user_id,
+      name: name || 'Instagram',
+      accessToken,
+      refreshToken: accessToken,
+      expiresIn: data?.expires_at
+        ? data.expires_at - dayjs().unix()
+        : dayjs().add(10, 'years').unix() - dayjs().unix(),
+      picture: '',
+      username: '',
+    };
+  }
+
+  private async unifiedLoginPages(accessToken: string) {
+    const accounts: { id: string; username?: string }[] = [];
+    const seen = new Set<string>();
+
+    let nextUrl: string | undefined =
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/me/assigned_instagram_accounts` +
+      `?fields=id,username&limit=100&access_token=${accessToken}`;
+    while (nextUrl) {
+      const response: any = await this.graphRequest(nextUrl);
+      for (const account of response.data || []) {
+        if (account?.id && !seen.has(account.id)) {
+          seen.add(account.id);
+          accounts.push(account);
+        }
+      }
+      nextUrl = response.paging?.next;
+    }
+
+    // When the Meta app and the Instagram account belong to the same business
+    // portfolio, Meta grants access to the account but leaves
+    // assigned_instagram_accounts empty. Probe the configured ids and keep
+    // only the ones this token can read.
+    if (!accounts.length) {
+      const fallbackIds = (process.env.INSTAGRAM_FALLBACK_ACCOUNT_IDS || '')
+        .split(',')
+        .map((p) => p.trim())
+        .filter((p) => /^\d+$/.test(p));
+
+      for (const fallbackId of fallbackIds) {
+        try {
+          const account = await this.graphRequest(
+            `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${fallbackId}?fields=id,username&access_token=${accessToken}`
+          );
+          if (account?.id && !seen.has(String(account.id))) {
+            seen.add(String(account.id));
+            accounts.push({
+              id: String(account.id),
+              username: account.username,
+            });
+          }
+        } catch {
+          // The token has no access to this account
+        }
+      }
+    }
+
+    return Promise.all(
+      accounts.map(async (account) => {
+        const info = await this.graphRequest(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${account.id}?fields=username,name,profile_picture_url&access_token=${accessToken}`
+        ).catch(() => ({} as any));
+
+        return {
+          // There is no Facebook page in this flow, the Instagram id is used
+          // so the page selection payload keeps the same shape
+          pageId: String(account.id),
+          id: String(account.id),
+          name:
+            info.name ||
+            info.username ||
+            account.username ||
+            String(account.id),
+          picture: { data: { url: info.profile_picture_url || undefined } },
+        };
+      })
+    );
+  }
+
   @DashboardFunction()
   async pages(token: string) {
     const [accessToken, userToken] = token.split('___');
+    if (this.unifiedLoginConfigId) {
+      return this.unifiedLoginPages(accessToken);
+    }
+
     const seenPageIds = new Set<string>();
     const allFacebookPages: any[] = [];
 
@@ -637,6 +817,23 @@ export class InstagramProvider
     data: { pageId: string; id: string }
   ) {
     const [accessToken, userToken] = token.split('___');
+    if (this.unifiedLoginConfigId) {
+      // There is no page token in this flow, the system-user token is used
+      // for both parts to keep the stored "pageToken___userToken" format
+      const { id, name, profile_picture_url, username } =
+        await this.graphRequest(
+          `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${data.id}?fields=id,username,name,profile_picture_url&access_token=${accessToken}`
+        );
+
+      return {
+        id,
+        name: name || username,
+        picture: profile_picture_url || '',
+        access_token: accessToken + '___' + accessToken,
+        username,
+      };
+    }
+
     const { access_token, ...all } = await (
       await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${data.pageId}?fields=access_token,name,picture.type(large)&access_token=${accessToken}`
