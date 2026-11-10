@@ -441,7 +441,7 @@ export const MainBillingComponent: FC<{
       await deleteDialog(
         t(
           'finish_trial_confirmation',
-          "Ending the trial charges your plan's first payment today instead of at the end of the trial. Nothing extra is added. Continue?"
+          "Ending the trial charges your plan's first payment today instead of at the end of the trial. Continue?"
         ),
         t('finish_trial_charge_me_now', 'End trial and pay now'),
         t('trial', 'Trial')
@@ -962,13 +962,13 @@ export const MainBillingComponent: FC<{
             >
               {t('billing_update_payment_method', 'Update payment method')}
             </button>
-            {user?.isTrailing && (
+            {user?.isTrailing && !subscription?.cancelAt && (
               <button
                 type="button"
                 onClick={finishTrialNow}
                 className="h-[44px] px-[16px] rounded-[8px] bg-btnSimple text-btnText text-[14px] font-[500] hover:opacity-80 transition-opacity"
               >
-                {t('finish_trial', 'Finish trial')}
+                {t('finish_trial_charge_me_now', 'End trial and pay now')}
               </button>
             )}
           </div>

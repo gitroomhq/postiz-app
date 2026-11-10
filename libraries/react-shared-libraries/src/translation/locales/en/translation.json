@@ -891,7 +891,7 @@
   "finish_trial_failed_description": "We could not charge your card. Please try again.",
   "try_again": "Try again",
   "finish_trial": "Finish trial",
-  "finish_trial_confirmation": "Ending the trial charges your plan's first payment today instead of at the end of the trial. Nothing extra is added. Continue?",
+  "finish_trial_confirmation": "Ending the trial charges your plan's first payment today instead of at the end of the trial. Continue?",
   "finish_trial_charge_me_now": "End trial and pay now",
   "trial": "Trial",
   "thumbnails_and_alt_text": "Thumbnails & alt text",
