@@ -5,7 +5,7 @@ import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/s
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
-import { groupBy } from 'lodash';
+import { groupBy, omit } from 'lodash';
 import dayjs from 'dayjs';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -1274,6 +1274,11 @@ export class StripeService extends PaymentProviderAbstract {
     // only feeds the Facebook pixel, it runs in the background so it can
     // never fail or slow down the webhook
     this.trackConversion(event.data.object).catch((err) => {});
+    // the first payment of a new subscription makes the unpaid invoices of
+    // the cancelled ones obsolete
+    if (event.data.object.billing_reason === 'subscription_create') {
+      await this.voidUnpaidInvoices(event.data.object.customer as string);
+    }
     await this.resubscribeOnLatePayment(event.data.object);
     return { ok: true };
   }
@@ -1283,41 +1288,49 @@ export class StripeService extends PaymentProviderAbstract {
   // Never throws, it runs inside the invoice.payment_succeeded webhook.
   private async resubscribeOnLatePayment(invoice: Stripe.Invoice) {
     try {
+      // only a renewal (or a trial's first charge) bills one full period at
+      // the plan's price, a proration invoice from an upgrade does not
+      const paidAt = invoice.status_transitions?.paid_at;
       const subscriptionId =
         invoice.parent?.subscription_details?.subscription ||
         (invoice as any).subscription;
-      if (!subscriptionId) {
+      if (
+        invoice.billing_reason !== 'subscription_cycle' ||
+        !(invoice.amount_paid > 0) ||
+        invoice.amount_remaining > 0 ||
+        !paidAt ||
+        !subscriptionId
+      ) {
         return;
       }
 
       const subscription = await stripe.subscriptions.retrieve(
-        typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
+        typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id,
+        { expand: ['discounts.source.coupon'] }
       );
-      if (subscription.metadata?.service !== 'gitroom') {
+      if (
+        subscription.metadata?.service !== 'gitroom' ||
+        subscription.status !== 'canceled'
+      ) {
+        return;
+      }
+
+      // only a payment made after the subscription ended is a late payment:
+      // Stripe redelivers the event of an earlier payment when the webhook
+      // was down, and canceled_at is the request time of a period-end cancel
+      const endedAt = subscription.ended_at || subscription.canceled_at;
+      if (!endedAt || paidAt <= endedAt) {
         return;
       }
 
       const customer = subscription.customer as string;
-      if (subscription.status !== 'canceled') {
-        // the first payment of a new subscription makes the unpaid invoices
-        // of the cancelled ones obsolete
-        if (invoice.billing_reason === 'subscription_create') {
-          await this.voidUnpaidInvoices(customer);
-        }
-        return;
-      }
-
-      // only a payment made after the cancellation is a late payment, Stripe
-      // redelivers the event of an earlier payment when the webhook was down
-      const paidAt = invoice.status_transitions?.paid_at;
-      if (
-        !(invoice.amount_paid > 0) ||
-        !paidAt ||
-        !subscription.canceled_at ||
-        paidAt <= subscription.canceled_at
-      ) {
-        return;
-      }
+      const skipped = (reason: string) =>
+        console.log('stripe_late_payment_resubscribe_skipped', {
+          stripe_invoice_id: invoice.id,
+          stripe_subscription_id: subscription.id,
+          stripe_customer_id: customer,
+          reason,
+        });
 
       // runs once: not when a subscription is live, and not when one was
       // already created for this payment (the event may be redelivered later)
@@ -1336,22 +1349,84 @@ export class StripeService extends PaymentProviderAbstract {
               ))
         )
       ) {
-        return;
+        return skipped('other_subscription');
       }
 
       const org = await this._organizationService.getOrgByCustomerId(customer);
       if (!org || org.deletedAt) {
-        return;
+        return skipped('organization_missing');
+      }
+      // a lifetime deal, a store subscription or a row the webhooks have not
+      // removed: the organization is not locked out, nothing to restore
+      if (
+        await this._subscriptionService.getSubscriptionByOrganizationId(org.id)
+      ) {
+        return skipped('organization_has_subscription');
+      }
+      // the rule every checkout applies: one subscription per email
+      const team = await this._organizationService.getTeam(org.id);
+      for (const { user } of (team?.users || []).filter(
+        (u) => u.role === 'SUPERADMIN'
+      )) {
+        if (
+          await this._userService.getUserWithActiveSubscriptionByEmail(
+            user.email,
+            user.id
+          )
+        ) {
+          return skipped('other_account_subscribed');
+        }
       }
 
+      const { billing, period } = subscription.metadata as {
+        billing: 'STANDARD' | 'PRO';
+        period: 'MONTHLY' | 'YEARLY';
+      };
+      if (!pricing[billing] || !period) {
+        return skipped('metadata_missing');
+      }
+
+      // the invoice must bill one period of the subscription's own price, an
+      // upgrade after the invoice was issued swaps the item for a dearer one.
+      // Webhook payloads follow the API version of the endpoint: pricing is
+      // the 2025-03-31+ shape of a line, price the older one
       const item = subscription.items.data[0];
+      const [line, ...moreLines] = invoice.lines?.data || [];
+      const linePrice =
+        line?.pricing?.price_details?.price || (line as any)?.price;
+      if (
+        !item ||
+        !line ||
+        moreLines.length ||
+        (typeof linePrice === 'string' ? linePrice : linePrice?.id) !==
+          item.price.id ||
+        line.quantity !== item.quantity
+      ) {
+        return skipped('invoice_does_not_match_plan');
+      }
+
+      // the discounts the customer had keep applying, except a one-off coupon
+      // (used up by the paid invoice) and a discount that has already ended
+      const discounts = subscription.discounts
+        .map((d) => (typeof d === 'string' ? null : d))
+        .filter((d): d is Stripe.Discount => !!d && (!d.end || d.end > paidAt))
+        .map((d) => d.source?.coupon)
+        .filter(
+          (c): c is Stripe.Coupon =>
+            typeof c === 'object' && !!c && c.valid && c.duration !== 'once'
+        )
+        .map((c) => ({ coupon: c.id }));
+
       const card = await this.getCardKeptByInvoice(invoice.id, customer);
       const created = await stripe.subscriptions.create(
         {
           customer,
           ...(card ? { default_payment_method: card } : {}),
           items: [{ price: item.price.id, quantity: item.quantity }],
-          metadata: subscription.metadata,
+          ...(discounts.length ? { discounts } : {}),
+          // the pixel keys attribute the checkout conversion, this is a
+          // continuation of it, not a new one
+          metadata: omit(subscription.metadata, ['userId', 'fbc', 'fbp']),
           // Stripe rejects an anchor later than one period from its own
           // clock, so the period is counted from Stripe's payment time
           billing_cycle_anchor: dayjs(paidAt * 1000)
@@ -1368,13 +1443,19 @@ export class StripeService extends PaymentProviderAbstract {
         stripe_invoice_id: invoice.id,
         stripe_subscription_id: subscription.id,
         stripe_new_subscription_id: created.id,
+        stripe_payment_method_id: card || null,
+        stripe_coupon_ids: discounts.map((d) => d.coupon),
       });
 
       await this.voidUnpaidInvoices(customer);
     } catch (err) {
       console.error(
         'stripe_late_payment_resubscribe_failed',
-        { stripe_invoice_id: invoice.id },
+        {
+          stripe_invoice_id: invoice.id,
+          stripe_customer_id:
+            typeof invoice.customer === 'string' ? invoice.customer : null,
+        },
         err
       );
     }
@@ -1399,6 +1480,11 @@ export class StripeService extends PaymentProviderAbstract {
         ? card
         : undefined;
     } catch (err) {
+      console.error(
+        'stripe_card_kept_by_invoice_failed',
+        { stripe_invoice_id: invoiceId, stripe_customer_id: customer },
+        err
+      );
       return undefined;
     }
   }
