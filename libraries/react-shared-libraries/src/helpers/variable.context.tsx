@@ -35,6 +35,7 @@ interface VariableContextInterface {
   googleAdsId?: string;
   googleAdsTrialTracking?: string;
   recaptchaSiteKey?: string;
+  datafastWebsiteId?: string;
 }
 const VariableContext = createContext({
   stripeClient: '',

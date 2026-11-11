@@ -9,13 +9,14 @@ import { MantineWrapper } from '@gitroom/react/helpers/mantine.wrapper';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { CopilotKit } from '@copilotkit/react-core';
 import { ToolTip } from '@gitroom/frontend/components/layout/top.tip';
+import { ThirdPartyScripts } from '@gitroom/frontend/components/layout/third.party.scripts';
 export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
   const fetch = useFetch();
   const { backendUrl } = useVariables();
   const load = useCallback(async (path: string) => {
     return await (await fetch(path)).json();
   }, []);
-  const { data: user } = useSWR('/user/self', load, {
+  const { data: user, isLoading } = useSWR('/user/self', load, {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     revalidateIfStale: false,
@@ -33,6 +34,7 @@ export const PreviewWrapper = ({ children }: { children: ReactNode }) => {
         <MantineWrapper>
           <Toaster />
           <ToolTip />
+          {!isLoading && <ThirdPartyScripts />}
           {children}
         </MantineWrapper>
       </CopilotKit>

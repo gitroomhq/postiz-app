@@ -1,8 +1,10 @@
 'use client';
 
 import Script from 'next/script';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 export const FacebookComponent = () => {
-  if (!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL) {
+  const allowed = useDpaAllows('meta');
+  if (!process.env.NEXT_PUBLIC_FACEBOOK_PIXEL || !allowed) {
     return null;
   }
   return (

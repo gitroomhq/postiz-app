@@ -2,7 +2,10 @@
 
 import Script from 'next/script';
 import { FC, useEffect } from 'react';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import {
+  useDpaAllows,
+  useUser,
+} from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const TrialTracker: FC = () => {
@@ -37,7 +40,8 @@ export const TrialTracker: FC = () => {
 export const GoogleTagManagerComponent: FC<{ gtmId?: string }> = ({
   gtmId,
 }) => {
-  if (!gtmId) {
+  const allowed = useDpaAllows('google');
+  if (!gtmId || !allowed) {
     return null;
   }
   return (

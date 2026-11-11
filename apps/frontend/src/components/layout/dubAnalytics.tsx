@@ -3,10 +3,12 @@
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { Analytics as DubAnalyticsIn } from '@dub/analytics/react';
 import { getCookie } from 'react-use-cookie';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 
 export const DubAnalytics = () => {
   const { dub } = useVariables();
-  if (!dub) return null;
+  const allowed = useDpaAllows('dub');
+  if (!dub || !allowed) return null;
   return (
     <DubAnalyticsIn
       domainsConfig={{

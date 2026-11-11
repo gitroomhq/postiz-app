@@ -43,6 +43,7 @@ import { PreConditionComponent } from '@gitroom/frontend/components/layout/pre-c
 import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/sentry.feedback.component';
 import { FirstBillingComponent } from '@gitroom/frontend/components/billing/first.billing.component';
 import { TrialTracker } from '@gitroom/frontend/components/layout/gtm.component';
+import { ThirdPartyScripts } from '@gitroom/frontend/components/layout/third.party.scripts';
 import { setSentryUser } from '@gitroom/react/sentry/initialize.sentry.client';
 import { setUserTimezone } from '@gitroom/frontend/components/layout/set.timezone';
 
@@ -90,6 +91,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
         <MantineWrapper>
           <ToolTip />
           <Toaster />
+          <ThirdPartyScripts />
           <TrialTracker />
           <CheckPayment check={searchParams.get('check') || ''} mutate={mutate}>
             <ShowMediaBoxModal />
