@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { orderBy } from 'lodash';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { PlatformIcon } from '@gitroom/frontend/components/ui/platform.icon.component';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -194,12 +195,13 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
                     width={28}
                     height={28}
                   />
-                  <SafeImage
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="rounded-full absolute -bottom-[3px] -end-[3px] border border-fifth"
-                    alt={integration.identifier}
-                    width={14}
-                    height={14}
+                  <PlatformIcon
+                    identifier={integration.identifier}
+                    size={14}
+                    channel={integration.internalId}
+                    className="absolute -bottom-[3px] -end-[3px]"
+                    iconClassName="rounded-full border border-fifth"
+                    markClassName="bg-newBgColorInner"
                   />
                 </div>
                 <span className="text-[13px]">{integration.name}</span>

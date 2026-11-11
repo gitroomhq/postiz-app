@@ -895,5 +895,8 @@
   "thumbnails_and_alt_text": "Miniature e testo alternativo",
   "media_settings_section_description": "Fai clic su un elemento multimediale per impostare il suo testo alternativo o la sua miniatura, se si tratta di un video.",
   "media_settings_section_tooltip": "Le miniature si applicano ai video nel post principale e vengono inviate a ogni canale che le supporta. YouTube potrebbe ignorarle sui video che considera Shorts (verticali, fino a 3 minuti) senza impedire la pubblicazione, e richiede un canale verificato tramite telefono per miniature personalizzate. Se YouTube rifiuta la miniatura, il video viene comunque pubblicato, e Postiz non può verificare l’idoneità in anticipo.",
-  "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali."
+  "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali.",
+  "label_privacy_status": "Stato della privacy",
+  "label_description": "Descrizione",
+  "youtube_description_is_post_text": "Il testo del tuo post è la descrizione del video. Modificalo nell'editor."
 }

@@ -900,3 +900,6 @@ checksums:
     media_settings_section_description: 7a1088432c597eb418e0f42adef16b3e
     media_settings_section_tooltip: 6028d539cd20cb33a6bdd124d821abfc
     youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81
+    label_privacy_status: e25598b40325620e4a727d17a8747d0b
+    label_description: e17686a22ffad04cc7bb70524ed4478b
+    youtube_description_is_post_text: 0948f6da11be24f138ed3f3d8c97e16d
