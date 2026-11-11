@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 import { uniq } from 'lodash';
 import { AttributionProviderManager } from '@gitroom/nestjs-libraries/services/attribution/attribution.provider.manager';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 
 @Injectable()
 export class AttributionService {
   constructor(
-    private _attributionProviderManager: AttributionProviderManager
+    private _attributionProviderManager: AttributionProviderManager,
+    private _organizationService: OrganizationService
   ) {}
 
   // URL parameters the app keeps from the landing page until sign-up
@@ -23,12 +25,16 @@ export class AttributionService {
   // outage must not break the sign-up, so callers fire it in the background.
   async lead(
     user: Pick<User, 'id' | 'email' | 'name' | 'lastName'>,
-    attribution?: Record<string, string>
+    attribution?: Record<string, string>,
+    org: Organization | null = null
   ) {
     try {
       await Promise.all(
         this._attributionProviderManager
           .getProviders()
+          .filter(({ name }) =>
+            this._organizationService.dpaAllows(org, [name])
+          )
           .map(async ({ name, provider }) => {
             // comes from the request body as is
             const clickId = attribution?.[provider.queryParam];

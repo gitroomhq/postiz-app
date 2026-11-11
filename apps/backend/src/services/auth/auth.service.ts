@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Provider, User } from '@prisma/client';
+import { Organization, Provider, User } from '@prisma/client';
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
 import { LoginUserDto } from '@gitroom/nestjs-libraries/dtos/auth/login.user.dto';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
@@ -63,7 +63,11 @@ export class AuthService {
         );
 
         this._attributionService
-          .lead(create.users[0].user, body.attribution)
+          .lead(
+            create.users[0].user,
+            body.attribution,
+            await this.invitedOrg(addToOrg)
+          )
           .catch((err) => {});
 
         const addedOrg =
@@ -117,7 +121,8 @@ export class AuthService {
       provider,
       body as CreateOrgUserDto,
       ip,
-      userAgent
+      userAgent,
+      await this.invitedOrg(addToOrg)
     );
 
     const addedOrg =
@@ -130,6 +135,14 @@ export class AuthService {
           )
         : false;
     return { addedOrg, jwt: await this.jwt(user) };
+  }
+
+  private invitedOrg(
+    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+  ) {
+    return addToOrg && typeof addToOrg !== 'boolean'
+      ? this._organizationService.getOrgById(addToOrg.orgId)
+      : null;
   }
 
   public getOrgFromCookie(cookie?: string) {
@@ -164,7 +177,8 @@ export class AuthService {
     provider: Provider,
     body: CreateOrgUserDto,
     ip: string,
-    userAgent: string
+    userAgent: string,
+    invited: Organization | null
   ) {
     const providerInstance = this._providerManager.getProvider(provider);
     const providerUser = await providerInstance.getUser(body.providerToken);
@@ -198,15 +212,25 @@ export class AuthService {
       userAgent
     );
 
-    this._track('register', providerUser.email, body.datafast_visitor_id).catch(
-      (err) => {}
-    );
+    if (this._organizationService.dpaAllows(invited, ['datafast'])) {
+      this._track(
+        'register',
+        providerUser.email,
+        body.datafast_visitor_id
+      ).catch((err) => {});
+    }
 
     this._attributionService
-      .lead(create.users[0].user, body.attribution)
+      .lead(create.users[0].user, body.attribution, invited)
       .catch((err) => {});
 
-    await NewsletterService.register(providerUser.email);
+    if (
+      this._organizationService.dpaAllows(invited, [
+        NewsletterService.getProvider().name,
+      ])
+    ) {
+      await NewsletterService.register(providerUser.email);
+    }
 
     try {
       if (providerInstance?.postRegistration) {
@@ -287,8 +311,23 @@ export class AuthService {
       }
       await this._userService.activateUser(user.id);
       user.activated = true;
-      this._track('register', user.email, tracking).catch((err) => {});
-      await NewsletterService.register(user.email);
+      const orgs = await this._organizationService.getOrgsByUserId(user.id);
+      if (
+        orgs.every((org) =>
+          this._organizationService.dpaAllows(org, ['datafast'])
+        )
+      ) {
+        this._track('register', user.email, tracking).catch((err) => {});
+      }
+      if (
+        orgs.every((org) =>
+          this._organizationService.dpaAllows(org, [
+            NewsletterService.getProvider().name,
+          ])
+        )
+      ) {
+        await NewsletterService.register(user.email);
+      }
       return this.jwt(user as any);
     }
 
