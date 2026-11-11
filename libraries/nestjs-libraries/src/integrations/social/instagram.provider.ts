@@ -427,8 +427,8 @@ export class InstagramProvider
 
     if (body.indexOf('2207027') > -1) {
       return {
-        type: 'bad-body' as const,
-        value: 'Unknown error, please try again later or contact support',
+        type: 'retry' as const,
+        value: 'Instagram media was not ready for publishing, please try again',
       };
     }
 
