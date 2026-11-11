@@ -42,7 +42,7 @@ import { timer } from '@gitroom/helpers/utils/timer';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { groupBy, sortBy } from 'lodash';
+import { groupBy, sortBy, uniqBy } from 'lodash';
 import SafeImage from '@gitroom/react/helpers/safe.image';
 import {
   isBrandMark,
@@ -412,7 +412,10 @@ const DaySlotColumn: FC<{ option: any[]; startDate: string }> = memo(
       <CalendarContext.Provider
         value={{
           ...calendar,
-          integrations: option.flatMap((p) => p.integration),
+          integrations: uniqBy(
+            option.flatMap((p) => p.integration),
+            (p) => p.id
+          ),
         }}
       >
         <CalendarColumn getDate={slotDate(startDate, option[0].time)} />

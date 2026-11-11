@@ -13,6 +13,7 @@ import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
 import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
+import { BadBody } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 
 @Rules(
   'LinkedIn can have maximum one attachment when selecting video, when choosing a carousel on LinkedIn minimum amount of attachment must be two, and only pictures, if uploading a video, LinkedIn can have only one attachment'
@@ -274,12 +275,26 @@ export class LinkedinPageProvider
     };
   }
 
+  // A channel that never finished the page step still carries the member id
+  // (or its placeholder) from authenticate(), not an organization id.
+  private checkPageId(id: string, integration: Integration) {
+    if (integration?.inBetweenSteps || id.startsWith(`${this.identifier}_`)) {
+      throw new BadBody(
+        this.identifier,
+        '{}',
+        JSON.stringify({ id }),
+        'This channel is not linked to a LinkedIn page. Please finish connecting it and select a page.'
+      );
+    }
+  }
+
   override async post(
     id: string,
     accessToken: string,
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]> {
+    this.checkPageId(id, integration);
     return super.post(id, accessToken, postDetails, integration, 'company');
   }
 
@@ -291,6 +306,7 @@ export class LinkedinPageProvider
     postDetails: PostDetails[],
     integration: Integration
   ): Promise<PostResponse[]> {
+    this.checkPageId(id, integration);
     return super.postPending(
       id,
       accessToken,

@@ -57,8 +57,8 @@ export class InstagramProvider
     if (!firstPost?.length) {
       return 'Should have at least one media';
     }
-    if (firstPost.length > 10) {
-      return 'Instagram carousel only supports up to 10 media attachments';
+    if (firstPost.length > 20) {
+      return 'Instagram carousel only supports up to 20 media attachments';
     }
     if (this.assetBoolean(settings?.is_trial_reel)) {
       if ((firstPost?.length ?? 0) > 1) {
@@ -421,14 +421,14 @@ export class InstagramProvider
     if (body.indexOf('too little or too many attachments') > -1) {
       return {
         type: 'bad-body' as const,
-        value: 'Instagram carousel should have between 2 and 10 media attachments',
+        value: 'Instagram carousel should have between 2 and 20 media attachments',
       }
     }
 
     if (body.indexOf('2207027') > -1) {
       return {
-        type: 'bad-body' as const,
-        value: 'Unknown error, please try again later or contact support',
+        type: 'retry' as const,
+        value: 'Instagram media was not ready for publishing, please try again',
       };
     }
 
