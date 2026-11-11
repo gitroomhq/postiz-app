@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
   Integration,
+  Organization,
   Post,
   Media,
   From,
@@ -37,6 +38,7 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
 import { resolve, sep } from 'path';
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
 import { TemporalService } from 'nestjs-temporal-core';
@@ -75,7 +77,8 @@ export class PostsService {
     private _shortLinkService: ShortLinkService,
     private _openaiService: OpenaiService,
     private _temporalService: TemporalService,
-    private _refreshIntegrationService: RefreshIntegrationService
+    private _refreshIntegrationService: RefreshIntegrationService,
+    private _organizationService: OrganizationService
   ) {}
 
   searchForMissingThreeHoursPosts() {
@@ -402,6 +405,7 @@ export class PostsService {
     const getPost = await this.getPostsRecursively(id, true, orgId, true);
     const content = getPost.map((p) => p.content);
     const shortLinksTracking = await this._shortLinkService.getStatistics(
+      orgId,
       content
     );
 
@@ -1377,7 +1381,8 @@ export class PostsService {
     };
   }
 
-  async separatePosts(content: string, len: number) {
+  async separatePosts(org: Organization, content: string, len: number) {
+    this._organizationService.checkDpa(org, ['openai']);
     return this._openaiService.separatePosts(content, len);
   }
 

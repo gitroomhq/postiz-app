@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { AutopostDto } from '@gitroom/nestjs-libraries/dtos/autopost/autopost.dto';
 import dayjs from 'dayjs';
 import { END, START, StateGraph } from '@langchain/langgraph';
@@ -28,6 +29,7 @@ interface WorkflowChannelsState {
   description: string;
   image: string;
   id: string;
+  ai: boolean;
   load: {
     date: string;
     url: string;
@@ -64,7 +66,8 @@ export class AutopostService {
     private _autopostsRepository: AutopostRepository,
     private _temporalService: TemporalService,
     private _integrationService: IntegrationService,
-    private _postsService: PostsService
+    private _postsService: PostsService,
+    private _organizationService: OrganizationService
   ) {}
 
   async stopAll(org: string) {
@@ -184,6 +187,7 @@ export class AutopostService {
         image: null,
         integrations: null,
         id: null,
+        ai: null,
       },
     });
 
@@ -208,6 +212,13 @@ export class AutopostService {
       return {
         ...state,
         description: state.body.content,
+      };
+    }
+
+    if (!state.ai) {
+      return {
+        ...state,
+        description: '',
       };
     }
 
@@ -354,7 +365,7 @@ export class AutopostService {
           if (!state.description) {
             return 'schedule-post';
           }
-          if (state.body.addPicture) {
+          if (state.body.addPicture && state.ai) {
             return 'generate-picture';
           }
           return 'schedule-post';
@@ -371,6 +382,10 @@ export class AutopostService {
       body: getPost,
       load,
       integrations: integrationsToSend,
+      ai: await this._organizationService.dpaAllowsById(
+        getPost.organizationId,
+        ['openai']
+      ),
     });
   }
 }

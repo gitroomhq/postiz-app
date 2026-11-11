@@ -12,6 +12,7 @@ const getOptions = () => ({
 
 export class Dub implements ShortLinking {
   shortLinkDomain = DUB_SHORT_LINK_DOMAIN;
+  vendor = 'dub';
 
   async linksStatistics(links: string[]) {
     return Promise.all(

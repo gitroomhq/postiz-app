@@ -2,6 +2,7 @@ import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-link
 
 export class Empty implements ShortLinking {
   shortLinkDomain = 'empty';
+  vendor = 'empty';
 
   async linksStatistics(links: string[]) {
     return [];

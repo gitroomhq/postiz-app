@@ -2,6 +2,8 @@ import { Dub } from '@gitroom/nestjs-libraries/short-linking/providers/dub';
 import { Empty } from '@gitroom/nestjs-libraries/short-linking/providers/empty';
 import { ShortLinking } from '@gitroom/nestjs-libraries/short-linking/short-linking.interface';
 import { Injectable } from '@nestjs/common';
+import { Organization } from '@prisma/client';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { ShortIo } from './providers/short.io';
 import { Kutt } from './providers/kutt';
 import { LinkDrip } from './providers/linkdrip';
@@ -32,8 +34,15 @@ const getProvider = (): ShortLinking => {
 export class ShortLinkService {
   static provider = getProvider();
 
-  askShortLinkedin(messages: string[]): boolean {
-    if (ShortLinkService.provider.shortLinkDomain === 'empty') {
+  constructor(private _organizationService: OrganizationService) {}
+
+  askShortLinkedin(org: Organization, messages: string[]): boolean {
+    if (
+      ShortLinkService.provider.shortLinkDomain === 'empty' ||
+      !this._organizationService.dpaAllows(org, [
+        ShortLinkService.provider.vendor,
+      ])
+    ) {
       return false;
     }
 
@@ -52,7 +61,12 @@ export class ShortLinkService {
   }
 
   async convertTextToShortLinks(id: string, messagesList: string[]) {
-    if (ShortLinkService.provider.shortLinkDomain === 'empty') {
+    if (
+      ShortLinkService.provider.shortLinkDomain === 'empty' ||
+      !(await this._organizationService.dpaAllowsById(id, [
+        ShortLinkService.provider.vendor,
+      ]))
+    ) {
       return messagesList;
     }
 
@@ -127,8 +141,13 @@ export class ShortLinkService {
     );
   }
 
-  async getStatistics(messages: string[]) {
-    if (ShortLinkService.provider.shortLinkDomain === 'empty') {
+  async getStatistics(id: string, messages: string[]) {
+    if (
+      ShortLinkService.provider.shortLinkDomain === 'empty' ||
+      !(await this._organizationService.dpaAllowsById(id, [
+        ShortLinkService.provider.vendor,
+      ]))
+    ) {
       return [];
     }
 

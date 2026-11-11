@@ -12,6 +12,7 @@ const getOptions = () => ({
 
 export class Kutt implements ShortLinking {
   shortLinkDomain = KUTT_SHORT_LINK_DOMAIN;
+  vendor = 'kutt';
 
   async linksStatistics(links: string[]) {
     return Promise.all(

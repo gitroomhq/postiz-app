@@ -16,6 +16,8 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { generationError } from '@gitroom/nestjs-libraries/openai/generation.error';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { Organization } from '@prisma/client';
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
@@ -51,6 +53,7 @@ interface WorkflowChannelsState {
     image?: string;
   }[];
   isPicture?: boolean;
+  isResearch?: boolean;
   popularPosts?: { content: string; hook: string }[];
 }
 
@@ -107,7 +110,8 @@ export class AgentGraphService {
   private storage = UploadFactory.createStorage();
   constructor(
     private _postsService: PostsService,
-    private _mediaService: MediaService
+    private _mediaService: MediaService,
+    private _organizationService: OrganizationService
   ) {}
   static state = () =>
     new StateGraph<WorkflowChannelsState>({
@@ -129,11 +133,12 @@ export class AgentGraphService {
         popularPosts: null,
         topic: null,
         isPicture: null,
+        isResearch: null,
       },
     });
 
   async startCall(state: WorkflowChannelsState) {
-    const runTools = model.bindTools(tools);
+    const runTools = model.bindTools(state.isResearch ? tools : []);
     const response = await ChatPromptTemplate.fromTemplate(
       `
     Today is ${dayjs().format()}, You are an assistant that gets a social media post or requests for a social media post.
@@ -375,7 +380,8 @@ export class AgentGraphService {
     return { date: await this._postsService.findFreeDateTime(state.orgId) };
   }
 
-  start(orgId: string, body: GeneratorDto) {
+  start(org: Organization, body: GeneratorDto) {
+    this._organizationService.checkDpa(org, ['openai']);
     const state = AgentGraphService.state();
     const workflow = state
       .addNode('agent', this.startCall.bind(this))
@@ -415,7 +421,8 @@ export class AgentGraphService {
         isPicture: body.isPicture,
         format: body.format,
         tone: body.tone,
-        orgId,
+        orgId: org.id,
+        isResearch: this._organizationService.dpaAllows(org, ['tavily']),
       },
       {
         streamMode: 'values',

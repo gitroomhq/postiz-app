@@ -14,6 +14,7 @@ const getOptions = () => ({
 
 export class LinkDrip implements ShortLinking {
   shortLinkDomain = LINK_DRIP_SHORT_LINK_DOMAIN;
+  vendor = 'linkdrip';
 
   async linksStatistics(links: string[]) {
     return Promise.resolve([]);

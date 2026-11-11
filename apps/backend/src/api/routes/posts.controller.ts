@@ -78,8 +78,13 @@ export class PostsController {
   }
 
   @Post('/should-shortlink')
-  async shouldShortlink(@Body() body: { messages: string[] }) {
-    return { ask: this._shortLinkService.askShortLinkedin(body.messages) };
+  async shouldShortlink(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { messages: string[] }
+  ) {
+    return {
+      ask: this._shortLinkService.askShortLinkedin(org, body.messages),
+    };
   }
 
   @Post('/:id/comments')
@@ -266,7 +271,7 @@ export class PostsController {
   ) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     try {
-      for await (const event of this._agentGraphService.start(org.id, body)) {
+      for await (const event of this._agentGraphService.start(org, body)) {
         res.write(JSON.stringify(event) + '\n');
       }
     } catch (err) {
@@ -311,6 +316,6 @@ export class PostsController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: { content: string; len: number }
   ) {
-    return this._postsService.separatePosts(body.content, body.len);
+    return this._postsService.separatePosts(org, body.content, body.len);
   }
 }

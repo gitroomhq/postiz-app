@@ -1,5 +1,6 @@
 export interface ShortLinking {
   shortLinkDomain: string;
+  vendor: string;
   linksStatistics(
     links: string[]
   ): Promise<{ short: string; original: string; clicks: string }[]>;
