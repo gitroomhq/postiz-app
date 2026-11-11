@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { groupBy } from 'lodash';
+import dayjs from 'dayjs';
 import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
@@ -1273,12 +1274,133 @@ export class StripeService extends PaymentProviderAbstract {
     // only feeds the Facebook pixel, it runs in the background so it can
     // never fail or slow down the webhook
     this.trackConversion(event.data.object).catch((err) => {});
-    // the first payment of a new subscription makes the unpaid invoices of
-    // the cancelled ones obsolete
-    if (event.data.object.billing_reason === 'subscription_create') {
-      await this.voidUnpaidInvoices(event.data.object.customer as string);
-    }
+    await this.resubscribeOnLatePayment(event.data.object);
     return { ok: true };
+  }
+
+  // An invoice left unpaid by a cancelled subscription stays payable. Paying
+  // it buys one period on the same plan, starting now.
+  // Never throws, it runs inside the invoice.payment_succeeded webhook.
+  private async resubscribeOnLatePayment(invoice: Stripe.Invoice) {
+    try {
+      const subscriptionId =
+        invoice.parent?.subscription_details?.subscription ||
+        (invoice as any).subscription;
+      if (!subscriptionId) {
+        return;
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(
+        typeof subscriptionId === 'string' ? subscriptionId : subscriptionId.id
+      );
+      if (subscription.metadata?.service !== 'gitroom') {
+        return;
+      }
+
+      const customer = subscription.customer as string;
+      if (subscription.status !== 'canceled') {
+        // the first payment of a new subscription makes the unpaid invoices
+        // of the cancelled ones obsolete
+        if (invoice.billing_reason === 'subscription_create') {
+          await this.voidUnpaidInvoices(customer);
+        }
+        return;
+      }
+
+      // only a payment made after the cancellation is a late payment, Stripe
+      // redelivers the event of an earlier payment when the webhook was down
+      const paidAt = invoice.status_transitions?.paid_at;
+      if (
+        !(invoice.amount_paid > 0) ||
+        !paidAt ||
+        !subscription.canceled_at ||
+        paidAt <= subscription.canceled_at
+      ) {
+        return;
+      }
+
+      // runs once: not when a subscription is live, and not when one was
+      // already created for this payment (the event may be redelivered later)
+      const others = await stripe.subscriptions.list({
+        customer,
+        status: 'all',
+        limit: 100,
+      });
+      if (
+        others.data.some(
+          (f) =>
+            f.id !== subscription.id &&
+            (f.created >= paidAt ||
+              !['canceled', 'incomplete', 'incomplete_expired'].includes(
+                f.status
+              ))
+        )
+      ) {
+        return;
+      }
+
+      const org = await this._organizationService.getOrgByCustomerId(customer);
+      if (!org || org.deletedAt) {
+        return;
+      }
+
+      const item = subscription.items.data[0];
+      const card = await this.getCardKeptByInvoice(invoice.id, customer);
+      const created = await stripe.subscriptions.create(
+        {
+          customer,
+          ...(card ? { default_payment_method: card } : {}),
+          items: [{ price: item.price.id, quantity: item.quantity }],
+          metadata: subscription.metadata,
+          // Stripe rejects an anchor later than one period from its own
+          // clock, so the period is counted from Stripe's payment time
+          billing_cycle_anchor: dayjs(paidAt * 1000)
+            .add(
+              item.price.recurring!.interval_count,
+              item.price.recurring!.interval
+            )
+            .unix(),
+          proration_behavior: 'none',
+        },
+        { idempotencyKey: `resubscribe_${invoice.id}` }
+      );
+      console.log('stripe_late_payment_resubscribed', {
+        stripe_invoice_id: invoice.id,
+        stripe_subscription_id: subscription.id,
+        stripe_new_subscription_id: created.id,
+      });
+
+      await this.voidUnpaidInvoices(customer);
+    } catch (err) {
+      console.error(
+        'stripe_late_payment_resubscribe_failed',
+        { stripe_invoice_id: invoice.id },
+        err
+      );
+    }
+  }
+
+  // Never throws.
+  private async getCardKeptByInvoice(invoiceId: string, customer: string) {
+    try {
+      const paid = (await this.getInvoicePaymentIntents(invoiceId)).find(
+        (p) => p.status === 'succeeded'
+      );
+      const card =
+        typeof paid?.payment_method === 'string'
+          ? paid.payment_method
+          : paid?.payment_method?.id;
+      if (!card) {
+        return undefined;
+      }
+
+      const owner = (await stripe.paymentMethods.retrieve(card)).customer;
+      return (typeof owner === 'string' ? owner : owner?.id) === customer
+        ? card
+        : undefined;
+    } catch (err) {
+      return undefined;
+    }
   }
 
   // Unpaid invoices of cancelled subscriptions stay payable, void them so
