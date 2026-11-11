@@ -22,11 +22,13 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   name = 'Slack';
   isBetweenSteps = false;
   editor = 'normal' as const;
+  // groups:read is left out on purpose: everyone in the Postiz organization
+  // sees the same channel picker, and Slack's privacy model forbids showing
+  // private channel names to people who aren't members of them.
   scopes = [
     'channels:read',
     'chat:write',
     'users:read',
-    'groups:read',
     'channels:join',
     'chat:write.customize',
   ];
@@ -73,7 +75,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
             ? 'https://redirectmeto.com/'
             : ''
         }${process?.env?.FRONTEND_URL}/integrations/social/slack`
-      )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
+      )}&scope=channels:read,chat:write,users:read,channels:join,chat:write.customize&state=${state}`,
       codeVerifier: makeSecureId(10),
       state,
     };
@@ -134,7 +136,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   async channels(accessToken: string, params: any, id: string) {
     const list = await (
       await fetch(
-        `https://slack.com/api/conversations.list?types=public_channel,private_channel`,
+        `https://slack.com/api/conversations.list?types=public_channel`,
         {
           method: 'GET',
           headers: {
