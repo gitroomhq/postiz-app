@@ -11,6 +11,7 @@ import { Dashboard, FileInput, ProgressBar } from '@uppy/react';
 
 // Uppy styles
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
@@ -53,8 +54,10 @@ export function useUppyUploader(props: {
     backendUrl,
     disableImageCompression,
     transloadit,
-    mediaProcessing,
+    mediaProcessing: mediaProcessingEnabled,
   } = useVariables();
+  const transloaditAllowed = useDpaAllows('transloadit');
+  const mediaProcessing = useDpaAllows('runpod') && mediaProcessingEnabled;
   const { onUploadSuccess, allowedFileTypes } = props;
   const fetch = useFetch();
   return useMemo(() => {
@@ -97,7 +100,12 @@ export function useUppyUploader(props: {
           if (type === 'video/mp4' && mediaProcessing) {
             return ['video/mp4', 'video/quicktime'];
           }
-          if (type === 'video/mp4' && transloadit && transloadit.length > 0) {
+          if (
+            type === 'video/mp4' &&
+            transloaditAllowed &&
+            transloadit &&
+            transloadit.length > 0
+          ) {
             return ['video/mp4', 'video/mpeg', 'video/quicktime'];
           }
           return [type];
@@ -182,7 +190,8 @@ export function useUppyUploader(props: {
 
     // The normalizer takes precedence over Transloadit, so both can stay
     // configured and turning the normalizer off falls back to Transloadit
-    const useTransloadit = !mediaProcessing && transloadit.length > 0;
+    const useTransloadit =
+      !mediaProcessing && transloaditAllowed && transloadit.length > 0;
     const { plugin, options } = getUppyUploadPlugin(
       useTransloadit ? 'transloadit' : storageProvider,
       fetch,

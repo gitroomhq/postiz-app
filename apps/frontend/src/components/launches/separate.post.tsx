@@ -3,6 +3,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { FC, useCallback } from 'react';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 export const SeparatePost: FC<{
   posts: string[];
   len: number;
@@ -12,6 +13,7 @@ export const SeparatePost: FC<{
   const { len, posts } = props;
   const t = useT();
   const fetch = useFetch();
+  const allowed = useDpaAllows('openai');
 
   const notReversible = useCallback(async () => {
     if (
@@ -36,6 +38,10 @@ export const SeparatePost: FC<{
       props.changeLoading(false);
     }
   }, [len, posts]);
+
+  if (!allowed) {
+    return null;
+  }
 
   return (
     <Button className="!h-[30px] !text-sm !bg-red-800" onClick={notReversible}>

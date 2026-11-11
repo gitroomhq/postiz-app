@@ -18,6 +18,8 @@ export const UserContext = createContext<
       impersonate: boolean;
       allowTrial: boolean;
       isTrailing: boolean;
+      dpaSigned: boolean;
+      dpaVendors: string[];
       streakSince: string | null;
     })
 >(undefined);
@@ -40,3 +42,7 @@ export const ContextWrapper: FC<{
   return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
 };
 export const useUser = () => useContext(UserContext);
+export const useDpaAllows = (vendor: string) => {
+  const user = useUser();
+  return !user?.dpaSigned || user.dpaVendors.includes(vendor);
+};

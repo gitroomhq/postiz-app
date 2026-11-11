@@ -24,7 +24,10 @@ import clsx from 'clsx';
 import { VideoFrame } from '@gitroom/react/helpers/video.frame';
 import { useUppyUploader } from '@gitroom/frontend/components/media/new.uploader';
 import dynamic from 'next/dynamic';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import {
+  useDpaAllows,
+  useUser,
+} from '@gitroom/frontend/components/layout/user.context';
 import { AiImage } from '@gitroom/frontend/components/launches/ai.image';
 import { DropFiles } from '@gitroom/frontend/components/layout/drop.files';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -791,6 +794,7 @@ export const MultiMediaComponent: FC<{
     insertInContent,
   } = props;
   const user = useUser();
+  const polotnoAllowed = useDpaAllows('polotno');
   const modals = useModals();
   const t = useT();
   useEffect(() => {
@@ -974,19 +978,21 @@ export const MultiMediaComponent: FC<{
                     </div>
                   </div>
                 </div>
-                <div
-                  onClick={designMedia}
-                  className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px] mobile:hidden"
-                >
-                  <div className="flex gap-[5px] items-center">
-                    <div>
-                      <DesignMediaIcon />
-                    </div>
-                    <div className="text-[10px] font-[600] iconBreak:hidden block">
-                      {t('design_media', 'Design Media')}
+                {polotnoAllowed && (
+                  <div
+                    onClick={designMedia}
+                    className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px] mobile:hidden"
+                  >
+                    <div className="flex gap-[5px] items-center">
+                      <div>
+                        <DesignMediaIcon />
+                      </div>
+                      <div className="text-[10px] font-[600] iconBreak:hidden block">
+                        {t('design_media', 'Design Media')}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {!insertInContent && (
                   <ThirdPartyMedia allData={allData} onChange={changeMedia} />
@@ -1060,6 +1066,7 @@ export const MediaComponent: FC<{
     props;
   const { getValues } = useSettings();
   const user = useUser();
+  const polotnoAllowed = useDpaAllows('polotno');
   useEffect(() => {
     const settings = getValues()[props.name];
     if (settings) {
@@ -1134,12 +1141,14 @@ export const MediaComponent: FC<{
       )}
       <div className="flex gap-[5px]">
         <Button onClick={showModal}>{t('select', 'Select')}</Button>
-        <Button
-          onClick={showDesignModal}
-          className="!bg-customColor45 mobile:hidden"
-        >
-          {t('editor', 'Editor')}
-        </Button>
+        {polotnoAllowed && (
+          <Button
+            onClick={showDesignModal}
+            className="!bg-customColor45 mobile:hidden"
+          >
+            {t('editor', 'Editor')}
+          </Button>
+        )}
         <Button secondary={true} onClick={clearMedia}>
           {t('clear', 'Clear')}
         </Button>

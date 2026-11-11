@@ -1,7 +1,10 @@
 'use client';
 
 import React, { FC, useCallback, useMemo, useState } from 'react';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import {
+  useDpaAllows,
+  useUser,
+} from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
@@ -325,6 +328,7 @@ export const GeneratorComponent = () => {
   const router = useRouter();
   const modal = useModals();
   const all = useCalendar();
+  const allowed = useDpaAllows('openai');
   const generate = useCallback(async () => {
     if (!user?.tier?.ai) {
       if (
@@ -352,6 +356,11 @@ export const GeneratorComponent = () => {
       ),
     });
   }, [user, all]);
+
+  if (!allowed) {
+    return null;
+  }
+
   return (
     <div
       className="h-[44px] w-[44px] group-[.sidebar]:w-full bg-ai justify-center items-center flex rounded-[8px] cursor-pointer"

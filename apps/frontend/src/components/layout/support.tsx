@@ -5,11 +5,13 @@ import { useEffect, useState } from 'react';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { ChatbaseComponent } from '@gitroom/frontend/components/layout/chatbase.component';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 export const supportEmitter = new EventEmitter();
 export const Support = () => {
   const [show, setShow] = useState(true);
   const { discordUrl, isChatBase } = useVariables();
   const t = useT();
+  const chatbaseAllowed = useDpaAllows('chatbase');
 
   useEffect(() => {
     supportEmitter.on('change', setShow);
@@ -17,7 +19,7 @@ export const Support = () => {
       supportEmitter.off('state', setShow);
     };
   }, []);
-  if (isChatBase) {
+  if (isChatBase && chatbaseAllowed) {
     return <ChatbaseComponent />;
   }
   if (!discordUrl || !show) return null;

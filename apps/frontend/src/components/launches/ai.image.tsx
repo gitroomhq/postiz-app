@@ -7,6 +7,7 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { useDpaAllows } from '@gitroom/frontend/components/layout/user.context';
 const list = [
   'Realistic',
   'Cartoon',
@@ -125,6 +126,7 @@ export const AiImage: FC<{
   const { onChange } = props;
   const [loading, setLoading] = useState(false);
   const modals = useModals();
+  const allowed = useDpaAllows('openai');
 
   const openImageModal = useCallback(() => {
     if (loading) {
@@ -141,6 +143,10 @@ export const AiImage: FC<{
       ),
     });
   }, [loading, onChange]);
+
+  if (!allowed) {
+    return null;
+  }
 
   return (
     <div className="relative">

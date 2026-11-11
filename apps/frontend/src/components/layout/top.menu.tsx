@@ -1,7 +1,10 @@
 'use client';
 
 import { FC, ReactNode } from 'react';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import {
+  useDpaAllows,
+  useUser,
+} from '@gitroom/frontend/components/layout/user.context';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { MenuItem } from '@gitroom/frontend/components/new-layout/menu-item';
@@ -19,6 +22,7 @@ interface MenuItemInterface {
 export const useMenuItem = () => {
   const { isGeneral } = useVariables();
   const t = useT();
+  const agentsAllowed = useDpaAllows('openai');
 
   const firstMenu = [
     {
@@ -59,6 +63,7 @@ export const useMenuItem = () => {
         </svg>
       ),
       path: '/agents',
+      hide: !agentsAllowed,
     },
     {
       name: t('analytics', 'Analytics'),

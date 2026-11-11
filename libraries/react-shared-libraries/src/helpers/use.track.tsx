@@ -1,5 +1,8 @@
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
-import { useUser } from '@gitroom/frontend/components/layout/user.context';
+import {
+  useDpaAllows,
+  useUser,
+} from '@gitroom/frontend/components/layout/user.context';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useCallback } from 'react';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
@@ -7,9 +10,10 @@ export const useTrack = () => {
   const user = useUser();
   const fetch = useFetch();
   const { facebookPixel } = useVariables();
+  const metaAllowed = useDpaAllows('meta');
   return useCallback(
     async (track: TrackEnum, additional?: Record<string, any>) => {
-      if (!facebookPixel) {
+      if (!facebookPixel || !metaAllowed) {
         return;
       }
       try {
