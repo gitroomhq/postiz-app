@@ -611,6 +611,7 @@ export class StripeService extends PaymentProviderAbstract {
       for (const s of subscriptions) {
         await stripe.subscriptions.cancel(s.id);
       }
+      await this.voidUnpaidInvoices(customer);
       await this._subscriptionService.deleteSubscription(
         customer,
         STRIPE_PROVIDER
@@ -663,6 +664,7 @@ export class StripeService extends PaymentProviderAbstract {
     )) {
       await stripe.subscriptions.cancel(subscription.id);
     }
+    await this.voidUnpaidInvoices(org.paymentId);
 
     await this._subscriptionService.deleteSubscription(
       org.paymentId,
@@ -1271,7 +1273,69 @@ export class StripeService extends PaymentProviderAbstract {
     // only feeds the Facebook pixel, it runs in the background so it can
     // never fail or slow down the webhook
     this.trackConversion(event.data.object).catch((err) => {});
+    // the first payment of a new subscription makes the unpaid invoices of
+    // the cancelled ones obsolete
+    if (event.data.object.billing_reason === 'subscription_create') {
+      await this.voidUnpaidInvoices(event.data.object.customer as string);
+    }
     return { ok: true };
+  }
+
+  // Unpaid invoices of cancelled subscriptions stay payable, void them so
+  // they can't be paid for a period that is no longer provided.
+  // Never throws, a failure on one invoice does not stop the others.
+  private async voidUnpaidInvoices(customer?: string | null) {
+    try {
+      if (!customer || !customer.startsWith('cus_')) {
+        return;
+      }
+
+      const cancelled = (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'canceled',
+          limit: 100,
+        })
+      ).data
+        .filter((f) => f.metadata?.service === 'gitroom')
+        .map((f) => f.id);
+      if (!cancelled.length) {
+        return;
+      }
+
+      for (const status of ['open', 'uncollectible'] as const) {
+        const invoices = await stripe.invoices.list({
+          customer,
+          status,
+          limit: 100,
+        });
+        for (const invoice of invoices.data) {
+          const subscription =
+            invoice.parent?.subscription_details?.subscription;
+          const subscriptionId =
+            typeof subscription === 'string' ? subscription : subscription?.id;
+          if (!subscriptionId || !cancelled.includes(subscriptionId)) {
+            continue;
+          }
+
+          try {
+            await stripe.invoices.voidInvoice(invoice.id);
+          } catch (err) {
+            console.error(
+              'stripe_void_unpaid_invoices_failed',
+              { stripe_customer_id: customer, stripe_invoice_id: invoice.id },
+              err
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error(
+        'stripe_void_unpaid_invoices_failed',
+        { stripe_customer_id: customer },
+        err
+      );
+    }
   }
 
   // The first charge of a subscription is the conversion: a trial that turned
@@ -1460,6 +1524,7 @@ export class StripeService extends PaymentProviderAbstract {
     for (const subscription of subscriptions) {
       await stripe.subscriptions.cancel(subscription.id);
     }
+    await this.voidUnpaidInvoices(customer);
     await this._subscriptionService.deleteSubscription(
       customer,
       STRIPE_PROVIDER
@@ -1772,6 +1837,7 @@ export class StripeService extends PaymentProviderAbstract {
     for (const subscriptionId of preview.subscriptionIds) {
       await stripe.subscriptions.cancel(subscriptionId);
     }
+    await this.voidUnpaidInvoices(org?.paymentId);
 
     if (preview.subscriptionIds.length) {
       await this._subscriptionService.deleteSubscription(
