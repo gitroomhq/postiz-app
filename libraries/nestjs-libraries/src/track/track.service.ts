@@ -3,6 +3,7 @@ import { User } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/social/facebook.provider';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 
 // The Conversions API is called directly instead of through
 // facebook-nodejs-business-sdk: the SDK registers a process wide
@@ -11,6 +12,8 @@ import { META_GRAPH_API_VERSION } from '@gitroom/nestjs-libraries/integrations/s
 // no timeout.
 @Injectable()
 export class TrackService {
+  constructor(private _organizationService: OrganizationService) {}
+
   private hashValue(value: string) {
     return createHash('sha256')
       .update(value.trim().toLowerCase())
@@ -45,6 +48,15 @@ export class TrackService {
     }
 
     try {
+      if (
+        user &&
+        (await this._organizationService.getOrgsByUserId(user.id)).some(
+          (org) => !this._organizationService.dpaAllows(org, ['meta'])
+        )
+      ) {
+        return;
+      }
+
       const clientIp = ip || user?.ip;
       const response = await fetch(
         `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${pixelId}/events`,

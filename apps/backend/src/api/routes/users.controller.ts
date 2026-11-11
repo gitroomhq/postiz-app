@@ -54,6 +54,7 @@ export class UsersController {
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() organization: Organization
   ) {
+    this._orgService.checkDpa(organization, ['chatbase']);
     if (!process.env.CHATBASE_TOKEN) {
       throw new HttpException('Chatbase SSO is not configured', 400);
     }
@@ -113,6 +114,8 @@ export class UsersController {
         ? false
         : organization?.isTrailing,
       allowTrial: organization?.allowTrial,
+      dpaSigned: organization?.dpaSigned,
+      dpaVendors: this._orgService.dpaVendors(),
       streakSince: organization?.streakSince || null,
       publicApi:
         // @ts-ignore
