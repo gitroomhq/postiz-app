@@ -317,6 +317,7 @@ export class OrganizationRepository {
           deletedAt: true,
           allowTrial: true,
           isTrailing: true,
+          dpaSigned: true,
           subscription: {
             select: {
               subscriptionTier: true,
@@ -378,6 +379,7 @@ export class OrganizationRepository {
         deletedAt: organization.deletedAt,
         allowTrial: organization.allowTrial,
         isTrailing: organization.isTrailing,
+        dpaSigned: organization.dpaSigned,
       },
       subscription: organization.subscription || null,
       owner: owner
@@ -707,6 +709,21 @@ export class OrganizationRepository {
       },
       data: {
         shortlink,
+      },
+    });
+  }
+
+  updateDpaSigned(orgId: string, dpaSigned: boolean) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        dpaSigned,
+      },
+      select: {
+        id: true,
+        dpaSigned: true,
       },
     });
   }

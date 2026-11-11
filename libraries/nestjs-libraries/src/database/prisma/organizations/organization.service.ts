@@ -9,7 +9,6 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { Organization, ShortLinkPreference, User } from '@prisma/client';
-import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Injectable()
 export class OrganizationService {
@@ -218,5 +217,36 @@ export class OrganizationService {
       orgId,
       shortlink
     );
+  }
+
+  updateDpaSigned(orgId: string, dpaSigned: boolean) {
+    return this._organizationRepository.updateDpaSigned(orgId, dpaSigned);
+  }
+
+  dpaVendors() {
+    return (process.env.DPA_VENDORS || '')
+      .split(',')
+      .map((p) => p.trim())
+      .filter((f) => f);
+  }
+
+  dpaAllows(org: Organization | null, vendors: string[]) {
+    return (
+      !org?.dpaSigned ||
+      vendors.every((vendor) => this.dpaVendors().includes(vendor))
+    );
+  }
+
+  async dpaAllowsById(orgId: string, vendors: string[]) {
+    return this.dpaAllows(await this.getOrgById(orgId), vendors);
+  }
+
+  checkDpa(org: Organization | null, vendors: string[]) {
+    if (!this.dpaAllows(org, vendors)) {
+      throw new HttpException(
+        'This feature is not available under your data processing agreement',
+        403
+      );
+    }
   }
 }

@@ -20,6 +20,7 @@ model Organization {
   deletedAt           DateTime?
   allowTrial          Boolean              @default(false)
   isTrailing          Boolean              @default(false)
+  dpaSigned           Boolean              @default(false)
   shortlink           ShortLinkPreference  @default(ASK)
   autoPost            AutoPost[]
   Comments            Comments[]
