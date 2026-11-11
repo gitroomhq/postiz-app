@@ -57,6 +57,7 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { GetOrgActivityDto } from '@gitroom/nestjs-libraries/dtos/analytics/get.org.activity.dto';
 import { ResetCreditsDto } from '@gitroom/nestjs-libraries/dtos/billing/reset.credits.dto';
+import { DpaSignedDto } from '@gitroom/nestjs-libraries/dtos/settings/dpa.signed.dto';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import dayjs from 'dayjs';
 
@@ -499,6 +500,16 @@ export class PublicIntegrationsController {
     return reset;
   }
 
+  @Put('/dpa')
+  @UseGuards(SuperAdminGuard)
+  async updateDpaSigned(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: DpaSignedDto
+  ) {
+    Sentry.metrics.count('public_api-request', 1);
+    return this._organizationService.updateDpaSigned(org.id, body.dpaSigned);
+  }
+
   @Get('/notifications')
   async getNotifications(
     @GetOrgFromRequest() org: Organization,
@@ -521,9 +532,13 @@ export class PublicIntegrationsController {
   }
 
   @Post('/video/function')
-  videoFunction(@Body() body: VideoFunctionDto) {
+  videoFunction(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: VideoFunctionDto
+  ) {
     Sentry.metrics.count('public_api-request', 1);
     return this._mediaService.videoFunction(
+      org,
       body.identifier,
       body.functionName,
       body.params

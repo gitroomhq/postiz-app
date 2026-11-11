@@ -19,6 +19,7 @@ export class VideoManager {
     tools: { functionName: string; output: string }[];
     placement: string;
     trial: boolean;
+    vendors: string[];
   }[] {
     return (Reflect.getMetadata('video', VideoAbstract) || [])
       .filter((f: any) => f.available)
@@ -31,6 +32,7 @@ export class VideoManager {
         description: p.description,
         placement: p.placement,
         trial: p.trial,
+        vendors: p.vendors,
       }));
   }
 

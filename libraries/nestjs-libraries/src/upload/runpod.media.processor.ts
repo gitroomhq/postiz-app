@@ -15,6 +15,7 @@ export class RunPodMediaProcessor<
   Result = MediaProcessorResult
 > implements IMediaProcessor<Job, Result>
 {
+  vendor = 'runpod';
   private _baseUrl: string;
 
   constructor(private _apiKey: string, endpointId: string) {

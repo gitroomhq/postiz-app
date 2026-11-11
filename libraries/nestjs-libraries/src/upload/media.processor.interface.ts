@@ -67,6 +67,7 @@ export interface IMediaProcessor<
   Job = MediaProcessorJob,
   Result = MediaProcessorResult
 > {
+  vendor: string;
   submit(job: Job): Promise<string>;
   status(jobId: string): Promise<MediaProcessorStatus<Result>>;
 }

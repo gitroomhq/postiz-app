@@ -3,6 +3,7 @@ import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media
 import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { generationError } from '@gitroom/nestjs-libraries/openai/generation.error';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
@@ -91,7 +92,8 @@ export class MediaService {
     private _openAi: OpenaiService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _organizationService: OrganizationService
   ) {}
 
   async deleteMedia(org: string, id: string) {
@@ -108,6 +110,7 @@ export class MediaService {
     generatePromptFirst?: boolean
   ) {
     try {
+      this._organizationService.checkDpa(org, ['openai']);
       const generating = await this._subscriptionService.useCredit(
         org,
         'ai_images',
@@ -192,7 +195,10 @@ export class MediaService {
     if (
       !this.processor ||
       !PROCESSABLE[extname(fileName).toLowerCase()] ||
-      !client
+      !client ||
+      !(await this._organizationService.dpaAllowsById(org, [
+        this.processor.vendor,
+      ]))
     ) {
       return media;
     }
@@ -365,7 +371,10 @@ export class MediaService {
       !this.processor ||
       !processable ||
       !this.storage.signDownloadUrl ||
-      !this.storage.signUploadUrl
+      !this.storage.signUploadUrl ||
+      !(await this._organizationService.dpaAllowsById(media.organizationId, [
+        this.processor.vendor,
+      ]))
     ) {
       await this.releaseUnprocessed(media.organizationId, media.id, media.name);
       return null;
@@ -499,8 +508,12 @@ export class MediaService {
     return this._mediaRepository.saveMediaInformation(org, data);
   }
 
-  getVideoOptions() {
-    return this._videoManager.getAllVideos();
+  getVideoOptions(org: Organization) {
+    return this._videoManager
+      .getAllVideos()
+      .filter((video) =>
+        this._organizationService.dpaAllows(org, video.vendors)
+      );
   }
 
   async generateVideoAllowed(org: Organization, type: string) {
@@ -508,6 +521,8 @@ export class MediaService {
     if (!video) {
       throw new Error(`Video type ${type} not found`);
     }
+
+    this._organizationService.checkDpa(org, video.vendors);
 
     if (!video.trial && org.isTrailing) {
       throw new HttpException(
@@ -536,6 +551,8 @@ export class MediaService {
     if (!video) {
       throw new Error(`Video type ${body.type} not found`);
     }
+
+    this._organizationService.checkDpa(org, video.vendors);
 
     if (!video.trial && org.isTrailing) {
       throw new HttpException(
@@ -650,11 +667,18 @@ export class MediaService {
     }
   }
 
-  async videoFunction(identifier: string, functionName: string, body: any) {
+  async videoFunction(
+    org: Organization,
+    identifier: string,
+    functionName: string,
+    body: any
+  ) {
     const video = this._videoManager.getVideoByName(identifier);
     if (!video) {
       throw new Error(`Video with identifier ${identifier} not found`);
     }
+
+    this._organizationService.checkDpa(org, video.vendors);
 
     // @ts-ignore
     const functionToCall = video.instance[functionName];

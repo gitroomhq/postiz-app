@@ -1,7 +1,7 @@
 import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
 import { createTool } from '@mastra/core/tools';
 import { Injectable } from '@nestjs/common';
-import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
 import z from 'zod';
 import { ModuleRef } from '@nestjs/core';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
@@ -9,7 +9,7 @@ import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
 @Injectable()
 export class VideoFunctionTool implements AgentToolInterface {
   constructor(
-    private _videoManagerService: VideoManager,
+    private _mediaService: MediaService,
     private _moduleRef: ModuleRef
   ) {}
   name = 'videoFunctionTool';
@@ -34,7 +34,10 @@ export class VideoFunctionTool implements AgentToolInterface {
       outputSchema: z.object({}).passthrough(),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
-        const videos = this._videoManagerService.getAllVideos();
+        const org = JSON.parse(
+          (context?.requestContext as any)?.get('organization') as string
+        );
+        const videos = this._mediaService.getVideoOptions(org);
         const findVideo = videos.find(
           (p) =>
             p.identifier === inputData.identifier &&

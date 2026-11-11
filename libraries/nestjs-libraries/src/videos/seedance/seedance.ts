@@ -34,6 +34,7 @@ class SeedanceParams {
   tools: [],
   trial: false,
   available: !!process.env.EVOLINK_API_KEY,
+  vendors: ['evolink'],
 })
 export class Seedance extends VideoAbstract<SeedanceParams> {
   override dto = SeedanceParams;

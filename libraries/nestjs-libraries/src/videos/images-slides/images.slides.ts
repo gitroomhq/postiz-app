@@ -67,6 +67,7 @@ class ImagesSlidesParams {
     !!process.env.TRANSLOADIT_SECRET &&
     !!process.env.OPENAI_API_KEY &&
     !!process.env.FAL_KEY,
+  vendors: ['elevenlabs', 'transloadit', 'openai', 'fal'],
 })
 export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
   override dto = ImagesSlidesParams;

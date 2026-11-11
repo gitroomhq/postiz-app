@@ -209,15 +209,21 @@ export class MediaController {
   }
 
   @Get('/video-options')
-  getVideos() {
-    return this._mediaService.getVideoOptions();
+  getVideos(@GetOrgFromRequest() org: Organization) {
+    return this._mediaService.getVideoOptions(org);
   }
 
   @Post('/video/function')
   videoFunction(
+    @GetOrgFromRequest() org: Organization,
     @Body() body: VideoFunctionDto
   ) {
-    return this._mediaService.videoFunction(body.identifier, body.functionName, body.params);
+    return this._mediaService.videoFunction(
+      org,
+      body.identifier,
+      body.functionName,
+      body.params
+    );
   }
 
   @Get('/generate-video/:type/allowed')

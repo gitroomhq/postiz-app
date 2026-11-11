@@ -35,6 +35,7 @@ export interface VideoParams {
   tools: { functionName: string; output: string }[];
   available: boolean;
   trial: boolean;
+  vendors: string[];
 }
 
 export function ExposeVideoFunction(description?: string) {

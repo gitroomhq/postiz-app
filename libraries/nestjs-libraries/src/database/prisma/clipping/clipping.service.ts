@@ -186,6 +186,13 @@ export class ClippingService {
       throw new HttpException('Clipping is not available', 503);
     }
 
+    this._organizationService.checkDpa(org, [
+      this.ingest.vendor,
+      this.clipper.vendor,
+      'deepgram',
+      'openai',
+    ]);
+
     if (!this.isYoutubeUrl(body.url)) {
       throw new HttpException('Only YouTube videos can be clipped', 400);
     }
