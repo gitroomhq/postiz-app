@@ -25,6 +25,7 @@ interface Charge {
   status: string;
   refunded: boolean;
   amount_refunded: number;
+  disputed: boolean;
   description: string | null;
   receipt_url: string | null;
   invoice_pdf: string | null;
@@ -328,6 +329,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   const t = useT();
   const { openModal } = useModals();
   const { data: charges, mutate } = useCharges();
+  const toast = useToaster();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [refunding, setRefunding] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -370,10 +372,18 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
     }
     setRefunding(true);
     try {
-      await fetch('/billing/refund-charges', {
+      const response = await fetch('/billing/refund-charges', {
         method: 'POST',
         body: JSON.stringify({ chargeIds: Array.from(selected) }),
       });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || json.failed?.length) {
+        toast.show(
+          json.reason ||
+            t('refund_charges_failed', 'Could not refund the selected charges'),
+          'warning'
+        );
+      }
       setSelected(new Set());
       await mutate();
     } finally {
@@ -430,12 +440,22 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                 <tr
                   key={charge.id}
                   className="border-b border-newTableBorder hover:bg-tableBorder cursor-pointer"
-                  onClick={() => !charge.refunded && toggleCharge(charge.id)}
+                  onClick={() =>
+                    charge.disputed
+                      ? toast.show(
+                          t(
+                            'charge_disputed_no_refund',
+                            'This charge was disputed and thus cannot be refunded'
+                          ),
+                          'warning'
+                        )
+                      : !charge.refunded && toggleCharge(charge.id)
+                  }
                 >
                   <td className="p-[8px]">
                     <div
                       className={`w-[20px] h-[20px] rounded-[4px] border-2 flex items-center justify-center ${
-                        charge.refunded
+                        charge.refunded || charge.disputed
                           ? 'border-newTextColor/20 opacity-40'
                           : selected.has(charge.id)
                           ? 'bg-forth border-forth'
@@ -470,6 +490,10 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                     {charge.refunded ? (
                       <span className="text-red-400">
                         {t('refunded', 'Refunded')}
+                      </span>
+                    ) : charge.disputed ? (
+                      <span className="text-red-400">
+                        {t('disputed', 'Disputed')}
                       </span>
                     ) : (
                       <span className="text-green-400">
