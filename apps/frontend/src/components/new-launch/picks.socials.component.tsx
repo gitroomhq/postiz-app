@@ -24,7 +24,8 @@ const PlatformBadge: FC<{ integration: Integrations; inactive?: boolean }> = ({
       inactive={inactive}
       className="absolute z-10 bottom-0 -end-[5px]"
       iconClassName="rounded-[4px] min-w-[16px] min-h-[16px]"
-      markClassName="bg-newBgColorInner"
+      // a brand mark hangs a little off the corner, to hide less of the picture
+      markClassName="-mb-[4px] -me-[4px] bg-newBgColorInner"
     />
   );
 };

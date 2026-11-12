@@ -192,7 +192,8 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                   height={36}
                 />
                 {/* a brand mark stays above the reconnect overlay (z-[199]),
-                    and in a faded row it only shows with the hover */}
+                    it hangs a little off the corner to hide less of the
+                    picture, and in a faded row it only shows with the hover */}
                 <PlatformIcon
                   identifier={integration.identifier}
                   size={18.41}
@@ -200,7 +201,7 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                   className="absolute bottom-[5px] -end-[5px]"
                   iconClassName="z-10 rounded-[8px] border border-fifth"
                   markClassName={clsx(
-                    'z-[201] bg-newBgColorInner group-hover/profile:bg-boxHover',
+                    'z-[201] -mb-[5px] -me-[3px] bg-newBgColorInner group-hover/profile:bg-boxHover',
                     !selected.some((p) => p.id === integration.id) &&
                       'hidden group-hover/profile:flex'
                   )}
