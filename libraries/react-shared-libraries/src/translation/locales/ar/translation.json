@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "يحتوي هذا المنشور على صورة مصغرة مخصصة لليوتيوب، والتي تتجاوز الصورة المصغرة المحددة في إعدادات الوسائط.",
   "label_privacy_status": "حالة الخصوصية",
   "label_description": "الوصف",
-  "youtube_description_is_post_text": "نص منشورك هو وصف الفيديو. عدّله في المحرر."
+  "youtube_description_is_post_text": "نص منشورك هو وصف الفيديو. عدّله في المحرر.",
+  "refund_charges_failed": "تعذر استرداد المبالغ المحددة",
+  "disputed": "مُتنازع عليه",
+  "charge_disputed_no_refund": "تم الاعتراض على هذه الرسوم، ولذلك لا يمكن استردادها"
 }

@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "לפוסט זה קיימת תמונת ממוזערת מיוחדת ליוטיוב, המחליפה את התמונה שנקבעה בהגדרות המדיה.",
   "label_privacy_status": "סטטוס פרטיות",
   "label_description": "תיאור",
-  "youtube_description_is_post_text": "טקסט הפוסט שלך הוא תיאור הסרטון. ניתן לערוך אותו בעורך."
+  "youtube_description_is_post_text": "טקסט הפוסט שלך הוא תיאור הסרטון. ניתן לערוך אותו בעורך.",
+  "refund_charges_failed": "לא היה ניתן להחזיר את החיובים שנבחרו",
+  "disputed": "במחלוקת",
+  "charge_disputed_no_refund": "חיוב זה היה במחלוקת ולכן לא ניתן להחזיר אותו"
 }

@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "이 게시물에는 유튜브 전용 썸네일이 설정되어 있어, 미디어 설정에서 지정한 썸네일을 덮어씁니다.",
   "label_privacy_status": "공개 상태",
   "label_description": "설명",
-  "youtube_description_is_post_text": "게시물 텍스트가 동영상 설명이 됩니다. 편집기에서 수정하세요."
+  "youtube_description_is_post_text": "게시물 텍스트가 동영상 설명이 됩니다. 편집기에서 수정하세요.",
+  "refund_charges_failed": "선택한 청구 건을 환불할 수 없습니다.",
+  "disputed": "분쟁됨",
+  "charge_disputed_no_refund": "이 청구 건은 분쟁이 제기되어 환불할 수 없습니다."
 }

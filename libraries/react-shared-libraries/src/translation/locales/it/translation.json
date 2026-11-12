@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Questo post ha una miniatura specifica per YouTube, che sostituisce la miniatura impostata nelle impostazioni multimediali.",
   "label_privacy_status": "Stato della privacy",
   "label_description": "Descrizione",
-  "youtube_description_is_post_text": "Il testo del tuo post è la descrizione del video. Modificalo nell'editor."
+  "youtube_description_is_post_text": "Il testo del tuo post è la descrizione del video. Modificalo nell'editor.",
+  "refund_charges_failed": "Impossibile rimborsare gli addebiti selezionati",
+  "disputed": "Contestato",
+  "charge_disputed_no_refund": "Questo addebito è stato contestato e quindi non può essere rimborsato"
 }

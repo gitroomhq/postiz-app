@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "该帖子有专门针对 YouTube 的缩略图，会覆盖在媒体设置中设定的缩略图。",
   "label_privacy_status": "隐私状态",
   "label_description": "描述",
-  "youtube_description_is_post_text": "你的帖子文本就是视频描述。请在编辑器中编辑。"
+  "youtube_description_is_post_text": "你的帖子文本就是视频描述。请在编辑器中编辑。",
+  "refund_charges_failed": "无法退款所选费用",
+  "disputed": "已争议",
+  "charge_disputed_no_refund": "该费用已被争议，因此无法退款"
 }

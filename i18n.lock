@@ -903,3 +903,6 @@ checksums:
     label_privacy_status: e25598b40325620e4a727d17a8747d0b
     label_description: e17686a22ffad04cc7bb70524ed4478b
     youtube_description_is_post_text: 0948f6da11be24f138ed3f3d8c97e16d
+    refund_charges_failed: 2357f7192f6ba7492229efb9109f275c
+    disputed: 608edc2188a1228d0f4b2a5969ee1c5b
+    charge_disputed_no_refund: 64dd2aab66faa782f4d7c8db5199341a

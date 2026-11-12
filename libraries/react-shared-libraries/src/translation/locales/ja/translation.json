@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "この投稿にはYouTube専用のサムネイルが設定されており、メディア設定で設定したサムネイルは上書きされます。",
   "label_privacy_status": "公開設定",
   "label_description": "説明",
-  "youtube_description_is_post_text": "投稿のテキストが動画の説明になります。エディターで編集してください。"
+  "youtube_description_is_post_text": "投稿のテキストが動画の説明になります。エディターで編集してください。",
+  "refund_charges_failed": "選択した請求の返金ができませんでした",
+  "disputed": "異議申し立て中",
+  "charge_disputed_no_refund": "この請求は異議申し立てがあったため、返金できません"
 }

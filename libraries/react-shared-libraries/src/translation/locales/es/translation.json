@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Esta publicación tiene una miniatura específica de YouTube, que reemplaza la miniatura establecida en la configuración de medios.",
   "label_privacy_status": "Estado de privacidad",
   "label_description": "Descripción",
-  "youtube_description_is_post_text": "El texto de tu publicación es la descripción del video. Edítalo en el editor."
+  "youtube_description_is_post_text": "El texto de tu publicación es la descripción del video. Edítalo en el editor.",
+  "refund_charges_failed": "No se pudo reembolsar los cargos seleccionados",
+  "disputed": "En disputa",
+  "charge_disputed_no_refund": "Este cargo fue disputado y, por lo tanto, no puede ser reembolsado"
 }

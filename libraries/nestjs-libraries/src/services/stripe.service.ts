@@ -1456,6 +1456,7 @@ export class StripeService extends PaymentProviderAbstract {
         status: charge.status,
         refunded: charge.refunded,
         amount_refunded: charge.amount_refunded,
+        disputed: charge.disputed,
         description: charge.description,
         receipt_url: charge.receipt_url || null,
         invoice: (charge as any).invoice || null,
@@ -1477,13 +1478,30 @@ export class StripeService extends PaymentProviderAbstract {
       }
     }
 
+    const disputedMap: Record<string, boolean> = {};
+    for (const charge of chargeList.filter((f) => f.disputed)) {
+      try {
+        disputedMap[charge.id] = await this.hasUnresolvedDispute(charge.id);
+      } catch {
+        disputedMap[charge.id] = true;
+      }
+    }
+
     return chargeList.map((charge) => ({
       ...charge,
+      disputed: !!disputedMap[charge.id],
       invoice_pdf:
         charge.invoice && invoicePdfMap[charge.invoice as string]
           ? invoicePdfMap[charge.invoice as string]
           : null,
     }));
+  }
+
+  private async hasUnresolvedDispute(chargeId: string) {
+    const disputes = await stripe.disputes.list({ charge: chargeId });
+    return disputes.data.some(
+      (f) => f.status !== 'won' && f.status !== 'warning_closed'
+    );
   }
 
   async refundCharges(organizationId: string, chargeIds: string[]) {
@@ -1494,17 +1512,31 @@ export class StripeService extends PaymentProviderAbstract {
 
     const refunded: string[] = [];
     const failed: string[] = [];
+    let reason: string | undefined = undefined;
 
     for (const chargeId of chargeIds) {
       try {
+        if (await this.hasUnresolvedDispute(chargeId)) {
+          failed.push(chargeId);
+          reason =
+            reason ||
+            `Charge ${chargeId} was disputed and thus cannot be refunded`;
+          continue;
+        }
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
+        console.error(
+          'stripe_refund_charge_failed',
+          { organization_id: organizationId, stripe_charge_id: chargeId },
+          err
+        );
         failed.push(chargeId);
+        reason = reason || (err as any)?.message;
       }
     }
 
-    return { refunded, failed };
+    return { refunded, failed, reason };
   }
 
   async cancelSubscription(organizationId: string) {

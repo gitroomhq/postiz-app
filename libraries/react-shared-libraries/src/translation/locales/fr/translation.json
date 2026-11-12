@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias.",
   "label_privacy_status": "Statut de confidentialité",
   "label_description": "Description",
-  "youtube_description_is_post_text": "Le texte de votre publication est la description de la vidéo. Modifiez-le dans l'éditeur."
+  "youtube_description_is_post_text": "Le texte de votre publication est la description de la vidéo. Modifiez-le dans l'éditeur.",
+  "refund_charges_failed": "Impossible de rembourser les frais sélectionnés",
+  "disputed": "Contesté",
+  "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé"
 }

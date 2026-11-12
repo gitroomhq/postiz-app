@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Bài viết này có hình thu nhỏ riêng cho YouTube, thay thế hình thu nhỏ được đặt trong cài đặt phương tiện.",
   "label_privacy_status": "Trạng thái quyền riêng tư",
   "label_description": "Mô tả",
-  "youtube_description_is_post_text": "Nội dung bài đăng của bạn là mô tả video. Hãy chỉnh sửa trong trình soạn thảo."
+  "youtube_description_is_post_text": "Nội dung bài đăng của bạn là mô tả video. Hãy chỉnh sửa trong trình soạn thảo.",
+  "refund_charges_failed": "Không thể hoàn tiền các khoản phí đã chọn",
+  "disputed": "Đang tranh chấp",
+  "charge_disputed_no_refund": "Khoản phí này đang bị tranh chấp nên không thể hoàn tiền"
 }

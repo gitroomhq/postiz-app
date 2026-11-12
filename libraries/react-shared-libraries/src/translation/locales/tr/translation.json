@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Bu gönderide, medya ayarlarında ayarlanmış küçük resmi geçersiz kılan YouTube'a özel bir küçük resim var.",
   "label_privacy_status": "Gizlilik durumu",
   "label_description": "Açıklama",
-  "youtube_description_is_post_text": "Gönderinizin metni video açıklamasıdır. Düzenleyicide düzenleyin."
+  "youtube_description_is_post_text": "Gönderinizin metni video açıklamasıdır. Düzenleyicide düzenleyin.",
+  "refund_charges_failed": "Seçilen ücretler iade edilemedi",
+  "disputed": "İtiraz edildi",
+  "charge_disputed_no_refund": "Bu ücrete itiraz edildi, bu nedenle iade edilemez"
 }

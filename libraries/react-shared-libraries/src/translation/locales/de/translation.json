@@ -898,5 +898,8 @@
   "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt.",
   "label_privacy_status": "Datenschutzstatus",
   "label_description": "Beschreibung",
-  "youtube_description_is_post_text": "Der Text Ihres Beitrags ist die Videobeschreibung. Bearbeiten Sie ihn im Editor."
+  "youtube_description_is_post_text": "Der Text Ihres Beitrags ist die Videobeschreibung. Bearbeiten Sie ihn im Editor.",
+  "refund_charges_failed": "Die ausgewählten Beträge konnten nicht erstattet werden",
+  "disputed": "Angefochten",
+  "charge_disputed_no_refund": "Dieser Betrag wurde angefochten und kann daher nicht erstattet werden"
 }
