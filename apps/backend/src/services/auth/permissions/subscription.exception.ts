@@ -50,6 +50,11 @@ const getErrorMessage = (error: {
         default:
           return 'You have reached the maximum number of generated videos for your subscription. Please upgrade your subscription to generate more videos.';
       }
+    case Sections.ADMIN:
+      switch (error.action) {
+        default:
+          return 'Only an admin of this organization can do this.';
+      }
     case Sections.CLIPPING_MINUTES:
       switch (error.action) {
         default:

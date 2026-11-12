@@ -91,7 +91,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
       if (response.status === 406) {
         if (
           await deleteDialog(
-            "This feature is not available during the trial. You can end the trial now: your plan's first payment is charged today instead of at the end of the trial.",
+            "This feature is not available during the trial. You can end the trial now: your plan's first payment is charged today instead of at the end of the trial. Only an admin or the super admin of the organization can end the trial and pay.",
             'End trial and pay now',
             'Trial',
 
