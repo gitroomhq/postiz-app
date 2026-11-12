@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "Este cargo fue disputado y, por lo tanto, no puede ser reembolsado",
   "billing_discount_modal_still_active": "Tu suscripción sigue activa. Elige una de las opciones a continuación para continuar.",
   "billing_subscription_not_cancelled": "Tu suscripción no fue cancelada",
-  "billing_cancel_failed": "No pudimos cancelar tu suscripción. Por favor, inténtalo de nuevo o contacta al soporte."
+  "billing_cancel_failed": "No pudimos cancelar tu suscripción. Por favor, inténtalo de nuevo o contacta al soporte.",
+  "no_analytics_to_show_for_this_channel": "No hay análisis para mostrar en este canal. Si esperabas ver datos, intenta reconectar el canal."
 }

@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "חיוב זה היה במחלוקת ולכן לא ניתן להחזיר אותו",
   "billing_discount_modal_still_active": "המנוי שלך עדיין פעיל. אנא בחר אחת מהאפשרויות למטה כדי להמשיך.",
   "billing_subscription_not_cancelled": "המנוי שלך לא בוטל",
-  "billing_cancel_failed": "לא הצלחנו לבטל את המנוי שלך. נסה שוב או פנה לתמיכה."
+  "billing_cancel_failed": "לא הצלחנו לבטל את המנוי שלך. נסה שוב או פנה לתמיכה.",
+  "no_analytics_to_show_for_this_channel": "אין נתוני אנליטיקה להצגה עבור הערוץ הזה. אם ציפית לראות נתונים, נסה לחבר מחדש את הערוץ."
 }

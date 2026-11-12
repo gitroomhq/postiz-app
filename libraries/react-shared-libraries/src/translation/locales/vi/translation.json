@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "Khoản phí này đang bị tranh chấp nên không thể hoàn tiền",
   "billing_discount_modal_still_active": "Gói đăng ký của bạn vẫn còn hiệu lực. Vui lòng chọn một trong các tùy chọn bên dưới để tiếp tục.",
   "billing_subscription_not_cancelled": "Gói đăng ký của bạn chưa được hủy",
-  "billing_cancel_failed": "Chúng tôi không thể hủy gói đăng ký của bạn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ."
+  "billing_cancel_failed": "Chúng tôi không thể hủy gói đăng ký của bạn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ.",
+  "no_analytics_to_show_for_this_channel": "Không có phân tích nào để hiển thị cho kênh này. Nếu bạn mong đợi thấy dữ liệu, hãy thử kết nối lại kênh."
 }

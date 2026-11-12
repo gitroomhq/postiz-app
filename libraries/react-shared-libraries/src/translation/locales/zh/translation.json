@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "该费用已被争议，因此无法退款",
   "billing_discount_modal_still_active": "您的订阅仍在生效。请选择以下其中一个选项以继续。",
   "billing_subscription_not_cancelled": "您的订阅未被取消。",
-  "billing_cancel_failed": "我们无法取消您的订阅。请重试或联系支持人员。"
+  "billing_cancel_failed": "我们无法取消您的订阅。请重试或联系支持人员。",
+  "no_analytics_to_show_for_this_channel": "此频道暂无可显示的数据分析。如果您本应看到数据，请尝试重新连接该频道。"
 }
