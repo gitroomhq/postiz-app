@@ -15,7 +15,9 @@ export const PreConditionComponentModal: FC = () => {
         first payment is charged today instead of at the end of the trial, and
         nothing extra is added.{'\n'}
         {'\n'}
-        ** Please note this payment is final and not refundable.
+        ** Please note this payment is final and not refundable.{'\n'}
+        Only an admin or the super admin of the organization can end the trial
+        and pay.
       </div>
       <div className="flex gap-[2px] justify-center">
         <Button

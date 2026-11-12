@@ -53,6 +53,7 @@ export class BillingController {
   }
 
   @Get('/check/:id')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async checkId(
     @GetOrgFromRequest() org: Organization,
     @Param('id') body: string
@@ -63,20 +64,26 @@ export class BillingController {
   }
 
   @Get('/check-discount')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async checkDiscount(@GetOrgFromRequest() org: Organization) {
+    const offer = await (await this.provider(org)).checkDiscount(org);
+    console.log('billing_check_discount', {
+      organization_id: org.id,
+      offer_coupon: !!offer,
+    });
     return {
-      offerCoupon: !(await (await this.provider(org)).checkDiscount(org))
-        ? false
-        : AuthService.signJWT({ discount: true }),
+      offerCoupon: !offer ? false : AuthService.signJWT({ discount: true }),
     };
   }
 
   @Post('/apply-discount')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async applyDiscount(@GetOrgFromRequest() org: Organization) {
     await (await this.provider(org)).applyDiscount(org);
   }
 
   @Post('/finish-trial')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async finishTrial(@GetOrgFromRequest() org: Organization) {
     const provider = await this.provider(org);
     try {
@@ -97,6 +104,7 @@ export class BillingController {
   }
 
   @Get('/is-trial-finished')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async isTrialFinished(@GetOrgFromRequest() org: Organization) {
     return {
       finished: !org.isTrailing,
@@ -104,6 +112,7 @@ export class BillingController {
   }
 
   @Post('/embedded')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async embedded(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
@@ -125,6 +134,7 @@ export class BillingController {
   }
 
   @Post('/subscribe')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async subscribe(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User,
@@ -167,6 +177,7 @@ export class BillingController {
   }
 
   @Get('/portal')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
     const { url } = await (await this.provider(org)).portalLink(org.id);
     return {
@@ -181,6 +192,7 @@ export class BillingController {
   }
 
   @Get('/renewal')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async getRenewal(@GetOrgFromRequest() org: Organization) {
     return (await this.provider(org)).getRenewalDate(org.id);
   }
@@ -191,11 +203,17 @@ export class BillingController {
   }
 
   @Post('/cancel')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async cancel(
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User
   ) {
+    console.log('billing_cancel_requested', { organization_id: org.id });
     const result = await (await this.provider(org)).setToCancel(org.id);
+    console.log('billing_cancel_done', {
+      organization_id: org.id,
+      cancel_at: result.cancel_at,
+    });
 
     if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs())) {
       try {
@@ -223,6 +241,7 @@ export class BillingController {
   }
 
   @Post('/prorate')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async prorate(
     @GetOrgFromRequest() org: Organization,
     @Body() body: BillingSubscribeDto
@@ -305,11 +324,13 @@ export class BillingController {
   }
 
   @Get('/chatbase-refund/preview')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
     return (await this.provider(org)).chatbaseRefundPreview(org.id);
   }
 
   @Post('/chatbase-refund')
+  @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async chatbaseRefund(
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization

@@ -1202,6 +1202,17 @@ export class PostsService {
     const postList = [];
     const batchId = uuidv4();
     for (const post of body.posts) {
+      // the posts to update must belong to the organization
+      const postIds = [
+        ...new Set((post.value || []).map((p) => p.id).filter(Boolean)),
+      ];
+      if (
+        postIds.length &&
+        (await this._postRepository.countPostsByIds(orgId, postIds)) !==
+          postIds.length
+      ) {
+        throw new NotFoundException('Post not found');
+      }
       if (
         (body.type === 'schedule' || body.type === 'now') &&
         !body.republish &&

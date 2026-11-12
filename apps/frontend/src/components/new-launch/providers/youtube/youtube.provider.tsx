@@ -47,11 +47,18 @@ const YoutubeSettings: FC = () => {
   // the thumbnail is set from the media settings now, older posts may still
   // carry one here, and it wins over the media thumbnail
   const thumbnail = useWatch({ control, name: 'thumbnail' });
-  // the post text is the video description (snippet.description)
-  const description = useMemo(
-    () => stripHtmlValidation('normal', value?.[0]?.content || '', true).trim(),
-    [value]
-  );
+  // the post text is the video description (snippet.description), cleaned
+  // the same way as when it is posted
+  const description = useMemo(() => {
+    const content = value?.[0]?.content || '';
+    return stripHtmlValidation(
+      'normal',
+      content,
+      true,
+      false,
+      !/<\/?[a-z][\s\S]*>/i.test(content)
+    ).trim();
+  }, [value]);
   return (
     <div className="flex flex-col">
       <Input label="Title" {...register('title')} maxLength={100} />

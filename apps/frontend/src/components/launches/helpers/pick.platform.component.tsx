@@ -292,7 +292,15 @@ export const PickPlatforms: FC<{
                         )}
                       >
                         <div className="flex items-center justify-center gap-[10px]">
-                          <div className="relative">
+                          {/* a brand mark is bigger than this avatar: it sits
+                              next to it, on the pill (see isBrandMark) */}
+                          <div
+                            className={clsx(
+                              'relative',
+                              isBrandMark(integration.identifier) &&
+                                'flex items-center gap-[6px]'
+                            )}
+                          >
                             <img
                               src={integration.picture || '/no-picture.jpg'}
                               className="rounded-full"
@@ -303,9 +311,11 @@ export const PickPlatforms: FC<{
                             <PlatformIcon
                               identifier={integration.identifier}
                               size={15}
-                              className="absolute z-10 -bottom-[5px] -end-[5px]"
+                              className={clsx(
+                                !isBrandMark(integration.identifier) &&
+                                  'absolute z-10 -bottom-[5px] -end-[5px]'
+                              )}
                               iconClassName="rounded-full border border-fifth"
-                              markClassName="bg-newBgColorInner"
                             />
                           </div>
                           <div>

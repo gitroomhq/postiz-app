@@ -1422,8 +1422,16 @@ const CalendarItem: FC<{
         )}
       >
         {/* a past post is grayed out as a whole, a brand mark can't be: its
-            avatar, text and time are instead (see isBrandMark) */}
-        <div className={clsx('relative min-w-[20px]')}>
+            avatar, text and time are instead (see isBrandMark). It is also
+            bigger than this avatar, so it sits under it and not on it (above
+            the now line, z-[15]), and the avatar-only cards of the phone month
+            view go without it */}
+        <div
+          className={clsx(
+            'relative min-w-[20px]',
+            brandMark && 'flex flex-col items-start gap-[3px] shrink-0'
+          )}
+        >
           <img
             className={clsx(
               'w-[20px] h-[20px] rounded-[8px]',
@@ -1435,9 +1443,14 @@ const CalendarItem: FC<{
             identifier={post.integration?.providerIdentifier}
             size={12}
             inactive={isBeforeNow}
-            className="absolute z-10 top-[10px] end-0"
+            className={clsx(
+              brandMark ? 'relative z-[16]' : 'absolute z-10 top-[10px] end-0'
+            )}
             iconClassName="w-[12px] h-[12px] rounded-[8px] border border-fifth"
-            markClassName="bg-newColColor"
+            markClassName={clsx(
+              'bg-newColColor',
+              display === 'month' && 'mobile:hidden'
+            )}
           />
         </div>
         <div

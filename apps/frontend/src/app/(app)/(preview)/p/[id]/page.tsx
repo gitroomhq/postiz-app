@@ -127,7 +127,7 @@ export default async function Auth(
                       <PlatformIcon
                         identifier={post[0].integration.providerIdentifier}
                         size={24}
-                        channel={post[0].integration.profile}
+                        channel={post[0].integration.profile || ''}
                         className="absolute -end-[5px] -bottom-[5px] z-[20]"
                         iconClassName="w-[24px] h-[24px] bg-newBgColor aspect-square rounded-full"
                         markClassName="bg-newBgColorInner"

@@ -643,6 +643,17 @@ export class PostsRepository {
     });
   }
 
+  countPostsByIds(orgId: string, ids: string[]) {
+    return this._post.model.post.count({
+      where: {
+        organizationId: orgId,
+        id: {
+          in: ids,
+        },
+      },
+    });
+  }
+
   async createOrUpdatePost(
     state: 'draft' | 'schedule' | 'now' | 'update',
     orgId: string,
@@ -796,6 +807,7 @@ export class PostsRepository {
       ? (
           await this._post.model.post.findFirst({
             where: {
+              organizationId: orgId,
               group: body.group,
               deletedAt: null,
               parentPostId: null,
@@ -810,6 +822,7 @@ export class PostsRepository {
     if (body.group && !keepGroup) {
       await this._post.model.post.updateMany({
         where: {
+          organizationId: orgId,
           group: body.group,
           deletedAt: null,
         },
@@ -825,6 +838,7 @@ export class PostsRepository {
     if (body.group && keepGroup) {
       await this._post.model.post.updateMany({
         where: {
+          organizationId: orgId,
           group: body.group,
           deletedAt: null,
           id: {

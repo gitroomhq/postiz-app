@@ -336,7 +336,7 @@ export const withProvider = function <T extends object>(params: {
                           channel={selectedIntegration?.integration.internalId}
                           className="absolute bottom-0 end-0"
                           iconClassName="rounded-[16px] min-w-[16px] min-h-[16px] w-[16px] h-[16px]"
-                          markClassName="bg-newSettings"
+                          markClassName="-mb-[4px] -me-[8px] bg-newSettings"
                         />
                       </div>
                       <div className="text-[20px]">{selectedIntegration?.integration.name}</div>

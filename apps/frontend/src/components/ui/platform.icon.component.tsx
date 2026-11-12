@@ -5,8 +5,8 @@ import clsx from 'clsx';
 // it too.
 
 // Platforms that only allow their official mark: its own shape and colors,
-// never rounded, cropped, recolored, dimmed or covered, and on one solid
-// background.
+// never rounded, cropped, recolored, dimmed or covered, on one solid
+// background and never under a minimum height.
 // YouTube: https://developers.google.com/youtube/terms/branding-guidelines
 // (YouTube API Services Developer Policies III.F.2), the files are the official
 // icons from https://brand.youtube/youtube-icon
@@ -18,12 +18,13 @@ const brandMarks: Record<
     whiteSrc: string;
     blackSrc: string;
     ratio: number;
-    // the mark is as wide as the square icon of the other platforms, raise
-    // this to never show it under a given height
+    // the mark is never shown under this height, whatever the size of the
+    // square icon of the other platforms is
     minHeight: number;
     // the mark has to be clickable: where a click does nothing else, it opens
-    // the channel (by its id or its handle)
-    link: (channel: string) => string | undefined;
+    // the channel (by its id or its handle), or the home page of the platform
+    // when the channel has neither
+    link: (channel: string) => string;
   }
 > = {
   youtube: {
@@ -31,13 +32,15 @@ const brandMarks: Record<
     whiteSrc: '/icons/platforms/youtube-white.svg',
     blackSrc: '/icons/platforms/youtube-black.svg',
     ratio: 396.533 / 277.776,
-    minHeight: 0,
+    // "The minimum height for digital media is 20 dp (20 px)", the YouTube API
+    // compliance review measures it on every icon
+    minHeight: 20,
     link: (channel) =>
       /^UC[\w-]{22}$/.test(channel)
         ? `https://www.youtube.com/channel/${channel}`
-        : /^@[\w.-]+$/.test(channel)
-        ? `https://www.youtube.com/${channel}`
-        : undefined,
+        : /^@[^\s/?#\\]+$/.test(channel)
+        ? `https://www.youtube.com/${encodeURI(channel)}`
+        : 'https://www.youtube.com',
   },
 };
 
@@ -47,11 +50,12 @@ export const isBrandMark = (identifier?: string) =>
   !!brandMarks[identifier || ''];
 
 // The platform icon of a channel. `className` positions it, `iconClassName`
-// styles the square icon (rounding, border). A brand mark is as wide as the
-// square icon, ignores `iconClassName` and takes `markClassName` instead (its
-// solid background). While `inactive` it shows its monochrome version, on a
-// colored background (`white`) the white one, and with a `channel` (its id or
-// handle) it links to it.
+// styles the square icon (rounding, border). A brand mark is at least as wide
+// as the square icon and never under its minimum height, so it is bigger than
+// a small one: it ignores `iconClassName` and takes `markClassName` instead
+// (its solid background). While `inactive` it shows its monochrome version, on
+// a colored background (`white`) the white one, and with a `channel` (its id
+// or handle) it links to it.
 export const PlatformIcon: FC<{
   identifier?: string;
   size: number;
@@ -85,10 +89,11 @@ export const PlatformIcon: FC<{
     );
   }
 
-  const width = Math.max(size, mark.minHeight * mark.ratio);
-  const height = Math.round((width / mark.ratio) * 100) / 100;
+  const fullWidth = Math.max(size, mark.minHeight * mark.ratio);
+  const width = Math.round(fullWidth * 100) / 100;
+  const height = Math.round((fullWidth / mark.ratio) * 100) / 100;
   const style = { width, height, minWidth: width, minHeight: height };
-  const href = channel && mark.link(channel);
+  const href = typeof channel === 'string' ? mark.link(channel) : undefined;
   const markClass = clsx(
     'flex shrink-0 p-[1px] rounded-[3px]',
     className,
@@ -103,17 +108,18 @@ export const PlatformIcon: FC<{
       style={style}
     />
   ) : inactive ? (
+    // dark is the default theme, a `.light` ancestor switches to the dark mark
     <>
       <img
         src={mark.blackSrc}
         alt={identifier}
-        className="block max-w-none dark:hidden"
+        className="hidden max-w-none [.light_&]:block"
         style={style}
       />
       <img
         src={mark.whiteSrc}
         alt={identifier}
-        className="hidden max-w-none dark:block"
+        className="block max-w-none [.light_&]:hidden"
         style={style}
       />
     </>
@@ -136,6 +142,6 @@ export const PlatformIcon: FC<{
       {images}
     </a>
   ) : (
-    <span className={markClass}>{images}</span>
+    <span className={clsx(markClass, 'pointer-events-none')}>{images}</span>
   );
 };

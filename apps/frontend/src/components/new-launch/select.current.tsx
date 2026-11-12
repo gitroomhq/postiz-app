@@ -129,7 +129,8 @@ export const SelectCurrent: FC = () => {
             </div>
           )}
           {/* a locked tab is dimmed, a brand mark can't be: only its avatar is
-              (see isBrandMark) */}
+              (see isBrandMark). It is also bigger than the avatar of a tab, so
+              it sits next to it, in a wider tab */}
           {selectedIntegrations.map(({ integration }) => (
             <div
               onClick={() => {
@@ -138,7 +139,10 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'border mobile:border-[1.5px] cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] mobile:w-[44px] mobile:h-[44px] mobile:shrink-0 rounded-[8px] items-center bg-newBgLineColor mobile:bg-newSettings justify-center',
+                'border mobile:border-[1.5px] cursor-pointer relative flex gap-[8px] h-[40px] mobile:h-[44px] mobile:shrink-0 rounded-[8px] items-center bg-newBgLineColor mobile:bg-newSettings justify-center',
+                isBrandMark(integration.identifier)
+                  ? 'px-[6px] shrink-0'
+                  : 'w-[40px] mobile:w-[44px]',
                 !isBrandMark(integration.identifier) && locked && 'opacity-50',
                 current === integration.id
                   ? 'border-[#FC69FF] text-[#FC69FF]'
@@ -163,7 +167,8 @@ export const SelectCurrent: FC = () => {
                   'data-tooltip-content': integration.name,
                 }}
                 className={clsx(
-                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500',
+                  isBrandMark(integration.identifier) && 'gap-[6px]'
                 )}
               >
                 <SafeImage
@@ -186,7 +191,10 @@ export const SelectCurrent: FC = () => {
                   identifier={integration.identifier}
                   size={12}
                   inactive={locked}
-                  className="absolute z-10 bottom-[6px] end-[6px]"
+                  className={clsx(
+                    !isBrandMark(integration.identifier) &&
+                      'absolute z-10 bottom-[6px] end-[6px]'
+                  )}
                   iconClassName="min-w-[12px] min-h-[12px] rounded-[3px]"
                   markClassName="bg-newBgLineColor mobile:bg-newSettings"
                 />

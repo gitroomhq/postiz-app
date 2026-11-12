@@ -241,15 +241,15 @@ export const PlatformAnalytics = () => {
                 <div
                   className={clsx(
                     'relative rounded-full flex justify-center items-center gap-[6px]',
-                    !isBrandMark(integration.identifier) &&
-                      integration.disabled &&
-                      'opacity-50'
+                    isBrandMark(integration.identifier)
+                      ? 'isolate'
+                      : integration.disabled && 'opacity-50'
                   )}
                 >
                   {(integration.inBetweenSteps ||
                     integration.refreshNeeded) && (
                     <div className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer">
-                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-0 top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+                      <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[7px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
                         !
                       </div>
                       <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
@@ -273,7 +273,9 @@ export const PlatformAnalytics = () => {
                     height={36}
                   />
                   {/* a brand mark stays above the reconnect overlay (z-[199]),
-                      and in a faded row it only shows with the hover */}
+                      the wrapper is isolated so it stays under the tooltips,
+                      it hangs a little off the corner to hide less of the
+                      picture, and in a faded row it only shows with the hover */}
                   <PlatformIcon
                     identifier={integration.identifier}
                     size={18.41}
@@ -281,7 +283,7 @@ export const PlatformAnalytics = () => {
                     className="absolute bottom-[5px] -end-[5px]"
                     iconClassName="z-10 rounded-[8px] border border-fifth"
                     markClassName={clsx(
-                      'z-[201] bg-newBgColorInner group-hover/profile:bg-boxHover',
+                      'z-[201] -mb-[5px] -me-[3px] bg-newBgColorInner group-hover/profile:bg-boxHover',
                       currentIntegration.id !== integration.id &&
                         'hidden group-hover/profile:flex'
                     )}

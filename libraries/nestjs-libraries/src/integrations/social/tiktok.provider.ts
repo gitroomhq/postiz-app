@@ -1238,23 +1238,27 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       return { unavailable: true as const };
     }
 
-    const { publicPostId } = this.parsePublishStatus(
-      await (
-        await this.fetch(
-          'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=UTF-8',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              publish_id: publishId,
-            }),
-          }
-        )
-      ).text()
-    );
+    const raw = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/status/fetch/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            publish_id: publishId,
+          }),
+        }
+      )
+    ).text();
+    const { post, publicPostId } = this.parsePublishStatus(raw);
+
+    if (draft && post?.data?.status === 'FAILED') {
+      // an inbox item TikTok confirmed and then failed - the only trace of it
+      console.log(`TikTok inbox upload ${publishId} failed later: ${raw}`);
+    }
 
     if (!publicPostId) {
       // a draft with no public post (not published yet, or published as
