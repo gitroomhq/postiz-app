@@ -895,5 +895,8 @@
   "thumbnails_and_alt_text": "Vorschaubilder & Alt-Text",
   "media_settings_section_description": "Klicken Sie auf ein Medienelement, um dessen Alternativtext oder, falls es sich um ein Video handelt, dessen Thumbnail festzulegen.",
   "media_settings_section_tooltip": "Vorschaubilder gelten für Videos im Hauptbeitrag und werden an jeden Kanal gesendet, der sie unterstützt. YouTube kann sie bei Videos ignorieren, die als Shorts behandelt werden (vertikal, bis zu 3 Minuten), ohne dass die Veröffentlichung fehlschlägt, und erfordert für benutzerdefinierte Vorschaubilder einen kanal, der per Telefon verifiziert ist. Wenn YouTube das Vorschaubild ablehnt, wird das Video trotzdem veröffentlicht, und Postiz kann die Eignung nicht im Voraus prüfen.",
-  "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt."
+  "youtube_thumbnail_overrides_media": "Dieser Beitrag hat ein YouTube-spezifisches Vorschaubild, das das in den Medien-Einstellungen festgelegte Vorschaubild überschreibt.",
+  "refund_charges_failed": "Die ausgewählten Beträge konnten nicht erstattet werden",
+  "disputed": "Angefochten",
+  "charge_disputed_no_refund": "Dieser Betrag wurde angefochten und kann daher nicht erstattet werden"
 }

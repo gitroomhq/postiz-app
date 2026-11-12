@@ -895,5 +895,8 @@
   "thumbnails_and_alt_text": "Vignettes et texte alternatif",
   "media_settings_section_description": "Cliquez sur un élément média pour définir son texte alternatif, ou sa miniature s’il s’agit d’une vidéo.",
   "media_settings_section_tooltip": "Les vignettes s’appliquent aux vidéos de la publication principale et sont envoyées à chaque canal qui les prend en charge. YouTube peut les ignorer pour les vidéos traitées comme Shorts (verticales, jusqu’à 3 minutes) sans empêcher la publication, et exige une chaîne vérifiée par téléphone pour les vignettes personnalisées. Si YouTube rejette la vignette, la vidéo est quand même publiée, et Postiz ne peut pas vérifier l’éligibilité à l’avance.",
-  "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias."
+  "youtube_thumbnail_overrides_media": "Cette publication possède une vignette spécifique à YouTube, qui remplace la vignette définie dans les paramètres multimédias.",
+  "refund_charges_failed": "Impossible de rembourser les frais sélectionnés",
+  "disputed": "Contesté",
+  "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé"
 }

@@ -900,3 +900,6 @@ checksums:
     media_settings_section_description: 7a1088432c597eb418e0f42adef16b3e
     media_settings_section_tooltip: 6028d539cd20cb33a6bdd124d821abfc
     youtube_thumbnail_overrides_media: 13a189563a704c46244bc3a57c677d81
+    refund_charges_failed: 2357f7192f6ba7492229efb9109f275c
+    disputed: 608edc2188a1228d0f4b2a5969ee1c5b
+    charge_disputed_no_refund: 64dd2aab66faa782f4d7c8db5199341a
