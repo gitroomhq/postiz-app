@@ -16,11 +16,15 @@ export class SubscriptionExceptionFilter implements ExceptionFilter {
       exception.getResponse() as any;
 
     const message = getErrorMessage(error);
+    const role = ctx.getRequest()?.org?.users?.[0]?.role;
 
     response.status(status).json({
       statusCode: status,
       message,
       url: process.env.FRONTEND_URL + '/billing',
+      ...(role
+        ? { canManageBillingUi: role === 'SUPERADMIN' || role === 'ADMIN' }
+        : {}),
     });
   }
 }

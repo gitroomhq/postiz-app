@@ -926,3 +926,4 @@ checksums:
     billing_subscription_not_cancelled: 7b1dab8acf6420daa58a5ffea6ffe6e9
     billing_cancel_failed: 00e2666f61f4bbea8c3fbc6d622bde22
     no_analytics_to_show_for_this_channel: a19af696374d03aa7c7dc1e9968e0d71
+    no_ai_credits_ask_admin: ceea67311bb15d9567ffec3c5427c91b

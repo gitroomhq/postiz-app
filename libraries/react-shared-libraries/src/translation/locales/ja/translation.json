@@ -921,5 +921,6 @@
   "billing_discount_modal_still_active": "ご契約はまだ有効です。続けるには、以下のいずれかのオプションを選択してください。",
   "billing_subscription_not_cancelled": "ご契約はキャンセルされていません。",
   "billing_cancel_failed": "ご契約のキャンセルに失敗しました。再度お試しいただくか、サポートまでご連絡ください。",
-  "no_analytics_to_show_for_this_channel": "このチャンネルに表示できる分析情報はありません。データが表示されるはずの場合は、チャンネルの再接続をお試しください。"
+  "no_analytics_to_show_for_this_channel": "このチャンネルに表示できる分析情報はありません。データが表示されるはずの場合は、チャンネルの再接続をお試しください。",
+  "no_ai_credits_ask_admin": "AIクレジットが残っていません。組織の管理者にお問い合わせください。"
 }

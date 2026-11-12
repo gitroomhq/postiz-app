@@ -921,5 +921,6 @@
   "billing_discount_modal_still_active": "您的订阅仍在生效。请选择以下其中一个选项以继续。",
   "billing_subscription_not_cancelled": "您的订阅未被取消。",
   "billing_cancel_failed": "我们无法取消您的订阅。请重试或联系支持人员。",
-  "no_analytics_to_show_for_this_channel": "此频道暂无可显示的数据分析。如果您本应看到数据，请尝试重新连接该频道。"
+  "no_analytics_to_show_for_this_channel": "此频道暂无可显示的数据分析。如果您本应看到数据，请尝试重新连接该频道。",
+  "no_ai_credits_ask_admin": "您的AI积分已用完。请联系您所在组织的管理员。"
 }
