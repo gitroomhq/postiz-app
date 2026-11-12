@@ -242,6 +242,22 @@ export class IntegrationManager {
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
   }
+
+  // Providers that connect with a plain redirect to the platform - nothing to
+  // type or install first - so following a link is enough (the same ones the
+  // invite links of the add-channel screen offer)
+  getLinkableSocialsIntegrations() {
+    return socialIntegrationList
+      .filter(
+        (p) =>
+          !this.isHiddenProvider(p.identifier) &&
+          !p.externalUrl &&
+          !p.customFields &&
+          !p.isWeb3 &&
+          !p.isChromeExtension
+      )
+      .map((p) => p.identifier);
+  }
   getSocialIntegration(integration: string): SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;
   }

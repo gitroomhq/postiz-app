@@ -904,5 +904,17 @@
   "charge_disputed_no_refund": "تم الاعتراض على هذه الرسوم، ولذلك لا يمكن استردادها",
   "billing_discount_modal_still_active": "اشتراكك لا يزال نشِطاً. اختر أحد الخيارات أدناه للمتابعة.",
   "billing_subscription_not_cancelled": "لم يتم إلغاء اشتراكك",
-  "billing_cancel_failed": "تعذر علينا إلغاء اشتراكك. يرجى المحاولة مرة أخرى أو التواصل مع الدعم."
+  "billing_cancel_failed": "تعذر علينا إلغاء اشتراكك. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.",
+  "connect_link_title": "يريد Postiz الاتصال بحسابك على {{platform}}",
+  "connect_link_trust": "تابع فقط إذا كنت تثق بمن أرسل لك هذا الرابط",
+  "connect_link_automate": "سيقوم Postiz بأتمتة حسابك على {{platform}}: يمكنه جدولة المنشورات ونشرها نيابةً عنك",
+  "connect_link_system": "كل شيء يمر عبر نظام Postiz: يُضاف حسابك إلى مساحة عمل في Postiz ويُدار من هناك",
+  "connect_link_redirect": "عند الانتهاء ستُنقل إلى {{site}}، وهو موقع خارج Postiz",
+  "connect_link_next": "ستُنقل إلى {{platform}} لتسجيل الدخول والموافقة على الوصول",
+  "connect_link_continue": "المتابعة إلى {{platform}}",
+  "connect_link_connecting": "جارٍ الاتصال...",
+  "connect_link_close": "ليس ما توقعته؟ أغلق هذه الصفحة ولن يتم ربط أي شيء.",
+  "connect_link_secured_by": "محمي بواسطة",
+  "connect_link_expired": "هذا الرابط لم يعد صالحًا",
+  "connect_link_expired_description": "روابط الاتصال صالحة لمدة ساعة واحدة. اطلب رابطًا جديدًا ممن أرسله إليك."
 }

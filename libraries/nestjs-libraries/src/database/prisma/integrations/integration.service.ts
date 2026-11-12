@@ -28,6 +28,7 @@ import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
+import { randomBytes } from 'crypto';
 
 dayjs.extend(utc);
 
@@ -458,6 +459,132 @@ export class IntegrationService {
     });
 
     return { success: true };
+  }
+
+  // Connect links (public API): the link opens a Postiz page that explains what
+  // connecting the channel means, and only from there the person is sent to
+  // the platform. Like the invite links of the dashboard, only providers that
+  // connect with a plain redirect can be linked.
+  async createConnectLink(
+    org: string,
+    integration: string,
+    redirectUrl?: string
+  ) {
+    if (
+      !this._integrationManager
+        .getAllowedSocialsIntegrations()
+        .includes(integration) ||
+      this._integrationManager.isHiddenProvider(integration)
+    ) {
+      throw new HttpException('Integration not allowed', HttpStatus.BAD_REQUEST);
+    }
+
+    if (
+      !this._integrationManager
+        .getLinkableSocialsIntegrations()
+        .includes(integration)
+    ) {
+      throw new HttpException(
+        'This integration cannot be connected with a link',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const token = randomBytes(32).toString('hex');
+    await ioRedis.set(
+      `connectLink:${token}`,
+      JSON.stringify({
+        org,
+        integration,
+        redirectUrl,
+        redirectTo: redirectUrl
+          ? this.connectLinkRedirectHost(redirectUrl)
+          : undefined,
+      }),
+      'EX',
+      3600
+    );
+
+    return { url: `${process.env.FRONTEND_URL}/integrations/connect/${token}` };
+  }
+
+  // The browser is sent to this URL with the result added to its query string,
+  // and the page shows its host: it has to be http(s), parse the way a browser
+  // reads it and carry no fragment
+  private connectLinkRedirectHost(redirectUrl: string) {
+    try {
+      const { protocol, host } = new URL(redirectUrl);
+      if (
+        ['http:', 'https:'].includes(protocol) &&
+        !redirectUrl.includes('#')
+      ) {
+        return host;
+      }
+    } catch (err) {}
+
+    throw new HttpException(
+      'The redirect URL must be an http(s) URL without a fragment',
+      HttpStatus.BAD_REQUEST
+    );
+  }
+
+  private async loadConnectLink(token: string) {
+    const link = JSON.parse(
+      (await ioRedis.get(`connectLink:${token}`)) || 'null'
+    ) as {
+      org: string;
+      integration: string;
+      redirectUrl?: string;
+      redirectTo?: string;
+    } | null;
+    if (!link) {
+      throw new HttpException(
+        'This connection link expired, please ask for a new one',
+        HttpStatus.NOT_FOUND
+      );
+    }
+    return link;
+  }
+
+  // The organization the channel is added to, the controller checks its plan
+  async getConnectLinkOrganization(token: string) {
+    return (await this.loadConnectLink(token)).org;
+  }
+
+  // What the page shows: the platform, and where the person ends up afterwards
+  async getConnectLink(token: string) {
+    const { integration, redirectTo } = await this.loadConnectLink(token);
+    const provider = this._integrationManager.getSocialIntegration(integration);
+    return {
+      identifier: provider.identifier,
+      name: provider.name,
+      ...(redirectTo ? { redirectTo } : {}),
+    };
+  }
+
+  // The person agreed: from here it is the same flow as connecting from the
+  // dashboard, the platform sends them back to /integrations/social/:provider.
+  // The link stays valid until it expires, so they can come back and try again
+  async startConnectLink(token: string) {
+    const { org, integration, redirectUrl } = await this.loadConnectLink(token);
+    const provider = this._integrationManager.getSocialIntegration(integration);
+
+    try {
+      const { codeVerifier, state, url } = await provider.generateAuthUrl();
+
+      await ioRedis.set(`organization:${state}`, org, 'EX', 3600);
+      await ioRedis.set(`login:${state}`, codeVerifier, 'EX', 3600);
+      if (redirectUrl) {
+        await ioRedis.set(`redirect:${state}`, redirectUrl, 'EX', 3600);
+      }
+
+      return { url };
+    } catch (err) {
+      throw new HttpException(
+        'Failed to generate auth URL',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   async checkAnalytics(

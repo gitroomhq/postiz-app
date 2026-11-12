@@ -904,5 +904,17 @@
   "charge_disputed_no_refund": "该费用已被争议，因此无法退款",
   "billing_discount_modal_still_active": "您的订阅仍在生效。请选择以下其中一个选项以继续。",
   "billing_subscription_not_cancelled": "您的订阅未被取消。",
-  "billing_cancel_failed": "我们无法取消您的订阅。请重试或联系支持人员。"
+  "billing_cancel_failed": "我们无法取消您的订阅。请重试或联系支持人员。",
+  "connect_link_title": "Postiz 想要连接到您的 {{platform}}",
+  "connect_link_trust": "仅在您信任发送此链接的人时才继续",
+  "connect_link_automate": "Postiz 将自动化管理您的 {{platform}} 账号：它可以代表您排期并发布帖子",
+  "connect_link_system": "一切都通过 Postiz 系统进行：您的账号会被添加到一个 Postiz 工作区并在那里进行管理",
+  "connect_link_redirect": "完成后，您将被带到 {{site}}，这是 Postiz 之外的网站",
+  "connect_link_next": "您将前往 {{platform}} 登录并批准访问",
+  "connect_link_continue": "继续前往 {{platform}}",
+  "connect_link_connecting": "正在连接...",
+  "connect_link_close": "和您预期的不一样？关闭此页面，就不会连接任何内容。",
+  "connect_link_secured_by": "安全保障来自",
+  "connect_link_expired": "此链接已失效",
+  "connect_link_expired_description": "连接链接的有效期为一小时。请向发送链接的人索取新的链接。"
 }

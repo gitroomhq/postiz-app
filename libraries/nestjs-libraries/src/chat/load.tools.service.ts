@@ -80,6 +80,7 @@ export class LoadToolsService {
         - Generate text for posts
         - Show global analytics about socials
         - List integrations (channels)
+        - Give the user a link to connect a new channel (integrationConnectTool)
         - List groups (customers) and filter the channels by a group
 
       - We schedule posts to different integration like facebook, instagram, etc. but to the user we don't say integrations we say channels as integration is the technical name

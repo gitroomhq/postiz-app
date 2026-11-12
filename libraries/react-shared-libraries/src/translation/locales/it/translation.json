@@ -904,5 +904,17 @@
   "charge_disputed_no_refund": "Questo addebito è stato contestato e quindi non può essere rimborsato",
   "billing_discount_modal_still_active": "Il tuo abbonamento è ancora attivo. Scegli una delle opzioni qui sotto per continuare.",
   "billing_subscription_not_cancelled": "Il tuo abbonamento non è stato cancellato.",
-  "billing_cancel_failed": "Non siamo riusciti a cancellare il tuo abbonamento. Riprova o contatta l'assistenza."
+  "billing_cancel_failed": "Non siamo riusciti a cancellare il tuo abbonamento. Riprova o contatta l'assistenza.",
+  "connect_link_title": "Postiz vuole connettersi al tuo {{platform}}",
+  "connect_link_trust": "Continua solo se ti fidi di chi ti ha inviato questo link",
+  "connect_link_automate": "Postiz automatizzerà il tuo account {{platform}}: può programmare e pubblicare post per tuo conto",
+  "connect_link_system": "Tutto passa attraverso il sistema Postiz: il tuo account viene aggiunto a uno spazio di lavoro Postiz e gestito da lì",
+  "connect_link_redirect": "Al termine verrai indirizzato a {{site}}, un sito web esterno a Postiz",
+  "connect_link_next": "Verrai portato su {{platform}} per accedere e approvare l'accesso",
+  "connect_link_continue": "Continua su {{platform}}",
+  "connect_link_connecting": "Connessione in corso...",
+  "connect_link_close": "Non è quello che ti aspettavi? Chiudi questa pagina e non verrà collegato nulla.",
+  "connect_link_secured_by": "Protetto da",
+  "connect_link_expired": "Questo link non è più valido",
+  "connect_link_expired_description": "I link di connessione sono validi per un'ora. Chiedine uno nuovo a chi te l'ha inviato."
 }

@@ -904,5 +904,17 @@
   "charge_disputed_no_refund": "Esta cobrança foi contestada e, portanto, não pode ser reembolsada",
   "billing_discount_modal_still_active": "Sua assinatura ainda está ativa. Escolha uma das opções abaixo para continuar.",
   "billing_subscription_not_cancelled": "Sua assinatura não foi cancelada",
-  "billing_cancel_failed": "Não conseguimos cancelar sua assinatura. Por favor, tente novamente ou entre em contato com o suporte."
+  "billing_cancel_failed": "Não conseguimos cancelar sua assinatura. Por favor, tente novamente ou entre em contato com o suporte.",
+  "connect_link_title": "O Postiz quer se conectar ao seu {{platform}}",
+  "connect_link_trust": "Continue apenas se você confia em quem enviou este link",
+  "connect_link_automate": "O Postiz vai automatizar sua conta do {{platform}}: ele pode agendar e publicar posts em seu nome",
+  "connect_link_system": "Tudo passa pelo sistema do Postiz: sua conta é adicionada a um espaço de trabalho do Postiz e gerenciada a partir dele",
+  "connect_link_redirect": "Ao terminar, você será enviado para {{site}}, um site fora do Postiz",
+  "connect_link_next": "Você será levado ao {{platform}} para entrar e aprovar o acesso",
+  "connect_link_continue": "Continuar para {{platform}}",
+  "connect_link_connecting": "Conectando...",
+  "connect_link_close": "Não era o que você esperava? Feche esta página e nada será conectado.",
+  "connect_link_secured_by": "Protegido por",
+  "connect_link_expired": "Este link não é mais válido",
+  "connect_link_expired_description": "Os links de conexão funcionam por uma hora. Peça um novo a quem enviou este para você."
 }
