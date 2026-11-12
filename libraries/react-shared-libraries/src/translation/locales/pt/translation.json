@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "Esta cobrança foi contestada e, portanto, não pode ser reembolsada",
   "billing_discount_modal_still_active": "Sua assinatura ainda está ativa. Escolha uma das opções abaixo para continuar.",
   "billing_subscription_not_cancelled": "Sua assinatura não foi cancelada",
-  "billing_cancel_failed": "Não conseguimos cancelar sua assinatura. Por favor, tente novamente ou entre em contato com o suporte."
+  "billing_cancel_failed": "Não conseguimos cancelar sua assinatura. Por favor, tente novamente ou entre em contato com o suporte.",
+  "no_analytics_to_show_for_this_channel": "Não há análises para mostrar neste canal. Se você esperava ver dados, tente reconectar o canal."
 }

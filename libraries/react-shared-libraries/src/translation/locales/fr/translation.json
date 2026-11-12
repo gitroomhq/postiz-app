@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé",
   "billing_discount_modal_still_active": "Votre abonnement est toujours actif. Choisissez l'une des options ci-dessous pour continuer.",
   "billing_subscription_not_cancelled": "Votre abonnement n'a pas été annulé.",
-  "billing_cancel_failed": "Nous n'avons pas pu annuler votre abonnement. Veuillez réessayer ou contacter le support."
+  "billing_cancel_failed": "Nous n'avons pas pu annuler votre abonnement. Veuillez réessayer ou contacter le support.",
+  "no_analytics_to_show_for_this_channel": "Aucune analyse à afficher pour ce canal. Si vous vous attendiez à voir des données, essayez de reconnecter le canal."
 }

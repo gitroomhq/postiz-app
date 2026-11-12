@@ -920,5 +920,6 @@
   "charge_disputed_no_refund": "Bu ücrete itiraz edildi, bu nedenle iade edilemez",
   "billing_discount_modal_still_active": "Aboneliğiniz hâlâ aktif. Devam etmek için aşağıdaki seçeneklerden birini seçin.",
   "billing_subscription_not_cancelled": "Aboneliğiniz iptal edilmedi",
-  "billing_cancel_failed": "Aboneliğinizi iptal edemedik. Lütfen tekrar deneyin veya destek ile iletişime geçin."
+  "billing_cancel_failed": "Aboneliğinizi iptal edemedik. Lütfen tekrar deneyin veya destek ile iletişime geçin.",
+  "no_analytics_to_show_for_this_channel": "Bu kanal için gösterilecek analiz yok. Veri görmeyi bekliyorsanız, kanalı yeniden bağlamayı deneyin."
 }
