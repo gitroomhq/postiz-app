@@ -3,6 +3,7 @@
 import {
   AddProviderButton,
   CustomVariables,
+  useExtensionConnect,
 } from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { capitalize, groupBy, orderBy } from 'lodash';
@@ -554,11 +555,13 @@ export const LaunchesComponent = () => {
     },
     []
   );
+  const extensionConnect = useExtensionConnect();
   const refreshChannel = useCallback(
     (
         integration: Integration & {
           identifier: string;
           isCustomFields?: boolean;
+          isChromeExtension?: boolean;
           customFields?: any[];
         }
       ) =>
@@ -579,6 +582,13 @@ export const LaunchesComponent = () => {
                 variables={integration.customFields || []}
               />
             ),
+          });
+          return;
+        }
+
+        if (integration.isChromeExtension) {
+          await extensionConnect(integration.identifier, {
+            refresh: integration.internalId,
           });
           return;
         }
