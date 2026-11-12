@@ -16,6 +16,10 @@ import { PicksSocialsComponent } from '@gitroom/frontend/components/new-launch/p
 import { EditorWrapper } from '@gitroom/frontend/components/new-launch/editor';
 import { SelectCurrent } from '@gitroom/frontend/components/new-launch/select.current';
 import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
+import {
   Providers,
   ShowAllProviders,
 } from '@gitroom/frontend/components/new-launch/providers/show.all.providers';
@@ -174,15 +178,29 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
 
     return (
       <div className="flex items-center gap-[10px]">
-        <div className="relative mobile:hidden">
-          <img
-            src={`/icons/platforms/${currentIntegration.identifier}.png`}
-            className="w-[20px] h-[20px] rounded-[4px]"
-            alt={currentIntegration.identifier}
+        {/* a brand mark can't be covered: the settings icon sits next to it,
+            and on this colored bar it is the white version (see isBrandMark) */}
+        <div
+          className={clsx(
+            'mobile:hidden',
+            isBrandMark(currentIntegration.identifier)
+              ? 'flex items-center gap-[6px]'
+              : 'relative'
+          )}
+        >
+          <PlatformIcon
+            identifier={currentIntegration.identifier}
+            size={20}
+            white
+            iconClassName="w-[20px] h-[20px] rounded-[4px]"
           />
           <SettingsIcon
             size={15}
-            className="text-white absolute -end-[5px] -bottom-[5px]"
+            className={clsx(
+              'text-white',
+              !isBrandMark(currentIntegration.identifier) &&
+                'absolute -end-[5px] -bottom-[5px]'
+            )}
           />
         </div>
         <div>

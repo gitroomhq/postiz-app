@@ -641,6 +641,7 @@ export class StripeService extends PaymentProviderAbstract {
       for (const s of subscriptions) {
         await stripe.subscriptions.cancel(s.id);
       }
+      await this.voidUnpaidInvoices(customer);
       await this._subscriptionService.deleteSubscription(
         customer,
         STRIPE_PROVIDER
@@ -693,6 +694,7 @@ export class StripeService extends PaymentProviderAbstract {
     )) {
       await stripe.subscriptions.cancel(subscription.id);
     }
+    await this.voidUnpaidInvoices(org.paymentId);
 
     await this._subscriptionService.deleteSubscription(
       org.paymentId,
@@ -1314,7 +1316,69 @@ export class StripeService extends PaymentProviderAbstract {
     // only feeds the Facebook pixel, it runs in the background so it can
     // never fail or slow down the webhook
     this.trackConversion(event.data.object).catch((err) => {});
+    // the first payment of a new subscription makes the unpaid invoices of
+    // the cancelled ones obsolete
+    if (event.data.object.billing_reason === 'subscription_create') {
+      await this.voidUnpaidInvoices(event.data.object.customer as string);
+    }
     return { ok: true };
+  }
+
+  // Unpaid invoices of cancelled subscriptions stay payable, void them so
+  // they can't be paid for a period that is no longer provided.
+  // Never throws, a failure on one invoice does not stop the others.
+  private async voidUnpaidInvoices(customer?: string | null) {
+    try {
+      if (!customer || !customer.startsWith('cus_')) {
+        return;
+      }
+
+      const cancelled = (
+        await stripe.subscriptions.list({
+          customer,
+          status: 'canceled',
+          limit: 100,
+        })
+      ).data
+        .filter((f) => f.metadata?.service === 'gitroom')
+        .map((f) => f.id);
+      if (!cancelled.length) {
+        return;
+      }
+
+      for (const status of ['open', 'uncollectible'] as const) {
+        const invoices = await stripe.invoices.list({
+          customer,
+          status,
+          limit: 100,
+        });
+        for (const invoice of invoices.data) {
+          const subscription =
+            invoice.parent?.subscription_details?.subscription;
+          const subscriptionId =
+            typeof subscription === 'string' ? subscription : subscription?.id;
+          if (!subscriptionId || !cancelled.includes(subscriptionId)) {
+            continue;
+          }
+
+          try {
+            await stripe.invoices.voidInvoice(invoice.id);
+          } catch (err) {
+            console.error(
+              'stripe_void_unpaid_invoices_failed',
+              { stripe_customer_id: customer, stripe_invoice_id: invoice.id },
+              err
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error(
+        'stripe_void_unpaid_invoices_failed',
+        { stripe_customer_id: customer },
+        err
+      );
+    }
   }
 
   // The first charge of a subscription is the conversion: a trial that turned
@@ -1435,6 +1499,7 @@ export class StripeService extends PaymentProviderAbstract {
         status: charge.status,
         refunded: charge.refunded,
         amount_refunded: charge.amount_refunded,
+        disputed: charge.disputed,
         description: charge.description,
         receipt_url: charge.receipt_url || null,
         invoice: (charge as any).invoice || null,
@@ -1456,13 +1521,30 @@ export class StripeService extends PaymentProviderAbstract {
       }
     }
 
+    const disputedMap: Record<string, boolean> = {};
+    for (const charge of chargeList.filter((f) => f.disputed)) {
+      try {
+        disputedMap[charge.id] = await this.hasUnresolvedDispute(charge.id);
+      } catch {
+        disputedMap[charge.id] = true;
+      }
+    }
+
     return chargeList.map((charge) => ({
       ...charge,
+      disputed: !!disputedMap[charge.id],
       invoice_pdf:
         charge.invoice && invoicePdfMap[charge.invoice as string]
           ? invoicePdfMap[charge.invoice as string]
           : null,
     }));
+  }
+
+  private async hasUnresolvedDispute(chargeId: string) {
+    const disputes = await stripe.disputes.list({ charge: chargeId });
+    return disputes.data.some(
+      (f) => f.status !== 'won' && f.status !== 'warning_closed'
+    );
   }
 
   async refundCharges(organizationId: string, chargeIds: string[]) {
@@ -1473,23 +1555,33 @@ export class StripeService extends PaymentProviderAbstract {
 
     const refunded: string[] = [];
     const failed: string[] = [];
+    let reason: string | undefined = undefined;
 
     for (const chargeId of chargeIds) {
       try {
+        if (await this.hasUnresolvedDispute(chargeId)) {
+          failed.push(chargeId);
+          reason =
+            reason ||
+            `Charge ${chargeId} was disputed and thus cannot be refunded`;
+          continue;
+        }
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
         logger.error('stripe_operation_failed', {
           operation: 'refund_charge',
+          organization_id: organizationId,
           stripe_charge_id: chargeId,
           error_type: errorType(err),
           error_message: errorMessage(err),
         });
         failed.push(chargeId);
+        reason = reason || (err as any)?.message;
       }
     }
 
-    return { refunded, failed };
+    return { refunded, failed, reason };
   }
 
   async cancelSubscription(organizationId: string) {
@@ -1509,6 +1601,7 @@ export class StripeService extends PaymentProviderAbstract {
     for (const subscription of subscriptions) {
       await stripe.subscriptions.cancel(subscription.id);
     }
+    await this.voidUnpaidInvoices(customer);
     await this._subscriptionService.deleteSubscription(
       customer,
       STRIPE_PROVIDER
@@ -1825,6 +1918,7 @@ export class StripeService extends PaymentProviderAbstract {
     for (const subscriptionId of preview.subscriptionIds) {
       await stripe.subscriptions.cancel(subscriptionId);
     }
+    await this.voidUnpaidInvoices(org?.paymentId);
 
     if (preview.subscriptionIds.length) {
       await this._subscriptionService.deleteSubscription(

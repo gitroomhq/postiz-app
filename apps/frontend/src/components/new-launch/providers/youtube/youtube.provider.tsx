@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useMemo } from 'react';
 import {
   PostComment,
   withProvider,
@@ -13,6 +13,8 @@ import { useWatch } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Select } from '@gitroom/react/form/select';
 import { YoutubePreview } from '@gitroom/frontend/components/new-launch/providers/youtube/youtube.preview';
+import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
+import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 const type = [
   {
     label: 'Public',
@@ -41,14 +43,39 @@ const madeForKids = [
 const YoutubeSettings: FC = () => {
   const t = useT();
   const { register, control, setValue } = useSettings();
+  const { value } = useIntegration();
   // the thumbnail is set from the media settings now, older posts may still
   // carry one here, and it wins over the media thumbnail
   const thumbnail = useWatch({ control, name: 'thumbnail' });
+  // the post text is the video description (snippet.description)
+  const description = useMemo(
+    () => stripHtmlValidation('normal', value?.[0]?.content || '', true).trim(),
+    [value]
+  );
   return (
     <div className="flex flex-col">
       <Input label="Title" {...register('title')} maxLength={100} />
+      <div className="flex flex-col gap-[6px] mb-[18px]">
+        <div className="text-[14px]">
+          {t('label_description', 'Description')}
+        </div>
+        {!!description && (
+          <div
+            dir="auto"
+            className="bg-newBgColorInner border-newTableBorder border rounded-[8px] px-[16px] py-[10px] text-[14px] text-textColor whitespace-pre-line break-words line-clamp-3"
+          >
+            {description}
+          </div>
+        )}
+        <div className="text-[12px] opacity-70">
+          {t(
+            'youtube_description_is_post_text',
+            'Your post text is the video description. Edit it in the editor.'
+          )}
+        </div>
+      </div>
       <Select
-        label="Type"
+        label="Privacy Status"
         {...register('type', {
           value: 'public',
         })}

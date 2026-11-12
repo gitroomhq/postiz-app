@@ -897,5 +897,11 @@
   "thumbnails_and_alt_text": "Miniaturas e texto alternativo",
   "media_settings_section_description": "Clique em um item de mídia para definir seu texto alternativo ou sua miniatura, se for um vídeo.",
   "media_settings_section_tooltip": "As miniaturas se aplicam aos vídeos na postagem principal e são enviadas para todos os canais que as suportam. O YouTube pode ignorá-las em vídeos que considera Shorts (verticais, de até 3 minutos) sem impedir a publicação, e exige um canal verificado por telefone para miniaturas personalizadas. Se o YouTube rejeitar a miniatura, o vídeo ainda será publicado e o Postiz não pode verificar a elegibilidade com antecedência.",
-  "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia."
+  "youtube_thumbnail_overrides_media": "Esta publicação possui uma miniatura específica do YouTube, que substitui a miniatura definida nas configurações de mídia.",
+  "label_privacy_status": "Status de privacidade",
+  "label_description": "Descrição",
+  "youtube_description_is_post_text": "O texto da sua publicação é a descrição do vídeo. Edite-o no editor.",
+  "refund_charges_failed": "Não foi possível reembolsar as cobranças selecionadas",
+  "disputed": "Contestada",
+  "charge_disputed_no_refund": "Esta cobrança foi contestada e, portanto, não pode ser reembolsada"
 }

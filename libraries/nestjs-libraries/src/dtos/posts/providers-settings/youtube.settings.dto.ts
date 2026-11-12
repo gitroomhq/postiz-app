@@ -64,8 +64,10 @@ export class YoutubeTagsSettings {
 }
 
 export class YoutubeSettingsDto {
+  // YouTube's own limits only (title 1-100 characters), the Required Minimum
+  // Functionality does not allow more
   @IsString()
-  @MinLength(2)
+  @MinLength(1)
   @MaxLength(100)
   @IsDefined()
   title: string;

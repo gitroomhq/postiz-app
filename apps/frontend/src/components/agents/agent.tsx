@@ -14,7 +14,10 @@ import useSWR from 'swr';
 import { orderBy } from 'lodash';
 import { SVGLine } from '@gitroom/frontend/components/launches/launches.component';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
-import SafeImage from '@gitroom/react/helpers/safe.image';
+import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useWaitForClass } from '@gitroom/helpers/utils/use.wait.for.class';
 import { MultiMediaComponent } from '@gitroom/frontend/components/media/media.component';
@@ -148,13 +151,19 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
               key={integration.id}
               className={clsx(
                 'flex gap-[12px] items-center group/profile justify-center hover:bg-boxHover rounded-e-[8px] hover:opacity-100 cursor-pointer mobile:shrink-0',
-                !selected.some((p) => p.id === integration.id) && 'opacity-20'
+                !selected.some((p) => p.id === integration.id) &&
+                  !isBrandMark(integration.identifier) &&
+                  'opacity-20'
               )}
             >
+              {/* a brand mark can't be dimmed with its row: the avatar and the
+                  name are instead (see isBrandMark) */}
               <div
                 className={clsx(
                   'relative rounded-full flex justify-center items-center gap-[6px]',
-                  integration.disabled && 'opacity-50'
+                  !isBrandMark(integration.identifier) &&
+                    integration.disabled &&
+                    'opacity-50'
                 )}
               >
                 {(integration.inBetweenSteps || integration.refreshNeeded) && (
@@ -171,23 +180,39 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                 <ImageWithFallback
                   fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
                   src={integration.picture}
-                  className="rounded-[8px]"
+                  className={clsx(
+                    'rounded-[8px]',
+                    isBrandMark(integration.identifier) &&
+                      (!selected.some((p) => p.id === integration.id)
+                        ? 'opacity-20 group-hover/profile:opacity-100'
+                        : integration.disabled && 'opacity-50')
+                  )}
                   alt={integration.identifier}
                   width={36}
                   height={36}
                 />
-                <SafeImage
-                  src={`/icons/platforms/${integration.identifier}.png`}
-                  className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-                  alt={integration.identifier}
-                  width={18.41}
-                  height={18.41}
+                {/* a brand mark stays above the reconnect overlay (z-[199]),
+                    and in a faded row it only shows with the hover */}
+                <PlatformIcon
+                  identifier={integration.identifier}
+                  size={18.41}
+                  inactive={integration.disabled}
+                  className="absolute bottom-[5px] -end-[5px]"
+                  iconClassName="z-10 rounded-[8px] border border-fifth"
+                  markClassName={clsx(
+                    'z-[201] bg-newBgColorInner group-hover/profile:bg-boxHover',
+                    !selected.some((p) => p.id === integration.id) &&
+                      'hidden group-hover/profile:flex'
+                  )}
                 />
               </div>
               <div
                 className={clsx(
                   'flex-1 whitespace-nowrap text-ellipsis overflow-hidden group-[.sidebar]:hidden mobile:hidden',
-                  integration.disabled && 'opacity-50'
+                  !selected.some((p) => p.id === integration.id) &&
+                    isBrandMark(integration.identifier)
+                    ? 'opacity-20 group-hover/profile:opacity-100'
+                    : integration.disabled && 'opacity-50'
                 )}
               >
                 {integration.name}

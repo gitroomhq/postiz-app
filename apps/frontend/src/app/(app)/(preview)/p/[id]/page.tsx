@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { Metadata } from 'next';
 import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import { PlatformIcon } from '@gitroom/frontend/components/ui/platform.icon.component';
 import Link from 'next/link';
 import { CommentsComponents } from '@gitroom/frontend/components/preview/comments.components';
 import { PreviewCommentsProvider } from '@gitroom/frontend/components/preview/preview.comments.context';
@@ -123,13 +124,14 @@ export default async function Auth(
                           src={post[0].integration.picture}
                         />
                       </div>
-                      <div className="absolute -end-[5px] -bottom-[5px] w-[24px] h-[24px] z-[20]">
-                        <img
-                          className="w-full h-full bg-newBgColor aspect-square rounded-full"
-                          alt={post[0].integration.providerIdentifier}
-                          src={`/icons/platforms/${post[0].integration.providerIdentifier}.png`}
-                        />
-                      </div>
+                      <PlatformIcon
+                        identifier={post[0].integration.providerIdentifier}
+                        size={24}
+                        channel={post[0].integration.profile}
+                        className="absolute -end-[5px] -bottom-[5px] z-[20]"
+                        iconClassName="w-[24px] h-[24px] bg-newBgColor aspect-square rounded-full"
+                        markClassName="bg-newBgColorInner"
+                      />
                     </div>
                   </div>
                   <div className="flex-1 flex flex-col gap-[8px] min-w-0">

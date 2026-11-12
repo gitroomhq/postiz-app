@@ -5,7 +5,6 @@ import {
   CustomVariables,
 } from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
@@ -17,6 +16,10 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
@@ -375,7 +378,9 @@ export const MenuComponent: FC<
       <div
         className={clsx(
           'relative gap-[6px] flex justify-center items-center',
-          integration.disabled && 'opacity-50'
+          !isBrandMark(integration.identifier) &&
+            integration.disabled &&
+            'opacity-50'
         )}
       >
         <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
@@ -399,26 +404,28 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px] min-w-[36px] min-h-[36px]"
+          className={clsx(
+            'rounded-[8px] min-w-[36px] min-h-[36px]',
+            isBrandMark(integration.identifier) &&
+              integration.disabled &&
+              'opacity-50'
+          )}
           alt={integration.identifier}
           width={36}
           height={36}
         />
-        {integration.identifier === 'youtube' ? (
-          <img
-            src="/icons/platforms/youtube.svg"
-            className="absolute z-10 bottom-[5px] -end-[5px]"
-            width={20}
-          />
-        ) : (
-          <SafeImage
-            src={`/icons/platforms/${integration.identifier}.png`}
-            className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-            alt={integration.identifier}
-            width={18.41}
-            height={18.41}
-          />
-        )}
+        {/* a brand mark stays above the reconnect overlay (z-[199]) */}
+        <PlatformIcon
+          identifier={integration.identifier}
+          size={18.41}
+          inactive={integration.disabled}
+          channel={
+            integration.refreshNeeded ? undefined : integration.internalId
+          }
+          className="absolute bottom-[5px] -end-[5px]"
+          iconClassName="z-10 rounded-[8px] border border-fifth"
+          markClassName="z-[201] transition-all bg-newBgColorInner group-hover/profile:bg-boxHover"
+        />
       </div>
       <div
         // @ts-ignore

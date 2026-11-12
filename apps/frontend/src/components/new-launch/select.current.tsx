@@ -7,6 +7,10 @@ import {
 } from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -101,7 +105,7 @@ export const SelectCurrent: FC = () => {
           ref={contentRef}
           className={clsx(
             'flex gap-[6px] mobile:gap-[4px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary mobile:scrollbar-none',
-            locked && 'opacity-50 pointer-events-none'
+            locked && 'pointer-events-none'
           )}
         >
           {/* an existing post opens on its channels, without the global mode */}
@@ -115,7 +119,8 @@ export const SelectCurrent: FC = () => {
                 'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] mobile:w-[44px] mobile:h-[44px] mobile:shrink-0 justify-center items-center bg-newBgLineColor mobile:bg-newSettings',
                 current !== 'global'
                   ? 'text-[#A3A3A3]'
-                  : 'border mobile:border-[1.5px] border-[#FC69FF] text-[#FC69FF]'
+                  : 'border mobile:border-[1.5px] border-[#FC69FF] text-[#FC69FF]',
+                locked && 'opacity-50'
               )}
             >
               <div>
@@ -123,6 +128,8 @@ export const SelectCurrent: FC = () => {
               </div>
             </div>
           )}
+          {/* a locked tab is dimmed, a brand mark can't be: only its avatar is
+              (see isBrandMark) */}
           {selectedIntegrations.map(({ integration }) => (
             <div
               onClick={() => {
@@ -132,6 +139,7 @@ export const SelectCurrent: FC = () => {
               key={integration.id}
               className={clsx(
                 'border mobile:border-[1.5px] cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] mobile:w-[44px] mobile:h-[44px] mobile:shrink-0 rounded-[8px] items-center bg-newBgLineColor mobile:bg-newSettings justify-center',
+                !isBrandMark(integration.identifier) && locked && 'opacity-50',
                 current === integration.id
                   ? 'border-[#FC69FF] text-[#FC69FF]'
                   : 'border-transparent'
@@ -160,7 +168,12 @@ export const SelectCurrent: FC = () => {
               >
                 <SafeImage
                   src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full min-w-[26px]"
+                  className={clsx(
+                    'rounded-full min-w-[26px]',
+                    isBrandMark(integration.identifier) &&
+                      locked &&
+                      'opacity-50'
+                  )}
                   alt={integration.identifier}
                   width={26}
                   height={26}
@@ -169,21 +182,14 @@ export const SelectCurrent: FC = () => {
                     e.currentTarget.srcset = '/no-picture.jpg';
                   }}
                 />
-                {integration.identifier === 'youtube' ? (
-                  <img
-                    src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
-                    width={12}
-                  />
-                ) : (
-                  <SafeImage
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
-                    alt={integration.identifier}
-                    width={12}
-                    height={12}
-                  />
-                )}
+                <PlatformIcon
+                  identifier={integration.identifier}
+                  size={12}
+                  inactive={locked}
+                  className="absolute z-10 bottom-[6px] end-[6px]"
+                  iconClassName="min-w-[12px] min-h-[12px] rounded-[3px]"
+                  markClassName="bg-newBgLineColor mobile:bg-newSettings"
+                />
               </div>
             </div>
           ))}
