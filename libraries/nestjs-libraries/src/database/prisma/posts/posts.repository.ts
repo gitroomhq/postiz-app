@@ -627,10 +627,12 @@ export class PostsRepository {
     });
   }
 
-  countPostsByIds(orgId: string, ids: string[]) {
+  countPostsOfOtherOrganizations(orgId: string, ids: string[]) {
     return this._post.model.post.count({
       where: {
-        organizationId: orgId,
+        organizationId: {
+          not: orgId,
+        },
         id: {
           in: ids,
         },
