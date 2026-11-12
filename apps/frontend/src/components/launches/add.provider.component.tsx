@@ -512,7 +512,6 @@ export const AddProviderComponent: FC<{
   isMobile?: boolean;
 }> = (props) => {
   const { update, social, article, onboarding, isMobile } = props;
-  const { isGeneral } = useVariables();
   const extensionConnect = useExtensionConnect();
   const toaster = useToaster();
   const router = useRouter();
