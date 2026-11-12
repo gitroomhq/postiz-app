@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "Der Text Ihres Beitrags ist die Videobeschreibung. Bearbeiten Sie ihn im Editor.",
   "refund_charges_failed": "Die ausgewählten Beträge konnten nicht erstattet werden",
   "disputed": "Angefochten",
-  "charge_disputed_no_refund": "Dieser Betrag wurde angefochten und kann daher nicht erstattet werden"
+  "charge_disputed_no_refund": "Dieser Betrag wurde angefochten und kann daher nicht erstattet werden",
+  "billing_discount_modal_still_active": "Ihr Abonnement ist weiterhin aktiv. Wählen Sie unten eine der Optionen, um fortzufahren.",
+  "billing_subscription_not_cancelled": "Ihr Abonnement wurde nicht gekündigt.",
+  "billing_cancel_failed": "Wir konnten Ihr Abonnement nicht kündigen. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support."
 }

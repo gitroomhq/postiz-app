@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "O texto da sua publicação é a descrição do vídeo. Edite-o no editor.",
   "refund_charges_failed": "Não foi possível reembolsar as cobranças selecionadas",
   "disputed": "Contestada",
-  "charge_disputed_no_refund": "Esta cobrança foi contestada e, portanto, não pode ser reembolsada"
+  "charge_disputed_no_refund": "Esta cobrança foi contestada e, portanto, não pode ser reembolsada",
+  "billing_discount_modal_still_active": "Sua assinatura ainda está ativa. Escolha uma das opções abaixo para continuar.",
+  "billing_subscription_not_cancelled": "Sua assinatura não foi cancelada",
+  "billing_cancel_failed": "Não conseguimos cancelar sua assinatura. Por favor, tente novamente ou entre em contato com o suporte."
 }

@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "Le texte de votre publication est la description de la vidéo. Modifiez-le dans l'éditeur.",
   "refund_charges_failed": "Impossible de rembourser les frais sélectionnés",
   "disputed": "Contesté",
-  "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé"
+  "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé",
+  "billing_discount_modal_still_active": "Votre abonnement est toujours actif. Choisissez l'une des options ci-dessous pour continuer.",
+  "billing_subscription_not_cancelled": "Votre abonnement n'a pas été annulé.",
+  "billing_cancel_failed": "Nous n'avons pas pu annuler votre abonnement. Veuillez réessayer ou contacter le support."
 }

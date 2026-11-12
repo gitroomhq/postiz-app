@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "Nội dung bài đăng của bạn là mô tả video. Hãy chỉnh sửa trong trình soạn thảo.",
   "refund_charges_failed": "Không thể hoàn tiền các khoản phí đã chọn",
   "disputed": "Đang tranh chấp",
-  "charge_disputed_no_refund": "Khoản phí này đang bị tranh chấp nên không thể hoàn tiền"
+  "charge_disputed_no_refund": "Khoản phí này đang bị tranh chấp nên không thể hoàn tiền",
+  "billing_discount_modal_still_active": "Gói đăng ký của bạn vẫn còn hiệu lực. Vui lòng chọn một trong các tùy chọn bên dưới để tiếp tục.",
+  "billing_subscription_not_cancelled": "Gói đăng ký của bạn chưa được hủy",
+  "billing_cancel_failed": "Chúng tôi không thể hủy gói đăng ký của bạn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ."
 }

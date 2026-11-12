@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "نص منشورك هو وصف الفيديو. عدّله في المحرر.",
   "refund_charges_failed": "تعذر استرداد المبالغ المحددة",
   "disputed": "مُتنازع عليه",
-  "charge_disputed_no_refund": "تم الاعتراض على هذه الرسوم، ولذلك لا يمكن استردادها"
+  "charge_disputed_no_refund": "تم الاعتراض على هذه الرسوم، ولذلك لا يمكن استردادها",
+  "billing_discount_modal_still_active": "اشتراكك لا يزال نشِطاً. اختر أحد الخيارات أدناه للمتابعة.",
+  "billing_subscription_not_cancelled": "لم يتم إلغاء اشتراكك",
+  "billing_cancel_failed": "تعذر علينا إلغاء اشتراكك. يرجى المحاولة مرة أخرى أو التواصل مع الدعم."
 }

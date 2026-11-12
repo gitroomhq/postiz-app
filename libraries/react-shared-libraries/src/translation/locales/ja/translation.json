@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "投稿のテキストが動画の説明になります。エディターで編集してください。",
   "refund_charges_failed": "選択した請求の返金ができませんでした",
   "disputed": "異議申し立て中",
-  "charge_disputed_no_refund": "この請求は異議申し立てがあったため、返金できません"
+  "charge_disputed_no_refund": "この請求は異議申し立てがあったため、返金できません",
+  "billing_discount_modal_still_active": "ご契約はまだ有効です。続けるには、以下のいずれかのオプションを選択してください。",
+  "billing_subscription_not_cancelled": "ご契約はキャンセルされていません。",
+  "billing_cancel_failed": "ご契約のキャンセルに失敗しました。再度お試しいただくか、サポートまでご連絡ください。"
 }

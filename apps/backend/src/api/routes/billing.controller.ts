@@ -63,10 +63,13 @@ export class BillingController {
 
   @Get('/check-discount')
   async checkDiscount(@GetOrgFromRequest() org: Organization) {
+    const offer = await (await this.provider(org)).checkDiscount(org);
+    console.log('billing_check_discount', {
+      organization_id: org.id,
+      offer_coupon: !!offer,
+    });
     return {
-      offerCoupon: !(await (await this.provider(org)).checkDiscount(org))
-        ? false
-        : AuthService.signJWT({ discount: true }),
+      offerCoupon: !offer ? false : AuthService.signJWT({ discount: true }),
     };
   }
 
@@ -189,7 +192,12 @@ export class BillingController {
     @GetOrgFromRequest() org: Organization,
     @GetUserFromRequest() user: User
   ) {
+    console.log('billing_cancel_requested', { organization_id: org.id });
     const result = await (await this.provider(org)).setToCancel(org.id);
+    console.log('billing_cancel_done', {
+      organization_id: org.id,
+      cancel_at: result.cancel_at,
+    });
 
     if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs())) {
       try {
