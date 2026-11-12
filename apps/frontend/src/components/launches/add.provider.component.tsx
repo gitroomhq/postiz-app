@@ -17,6 +17,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import clsx from 'clsx';
+import { PlatformIcon } from '@gitroom/frontend/components/ui/platform.icon.component';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
 const resolver = classValidatorResolver(ApiKeyDto);
@@ -730,18 +731,14 @@ export const AddProviderComponent: FC<{
                 )}
               >
                 <div>
-                  {item.identifier === 'youtube' ? (
-                    <img src={`/icons/platforms/youtube.svg`} />
-                  ) : (
-                    <img
-                      className={clsx(
-                        'w-[32px] h-[32px]',
-                        item.identifier !== 'google_my_business' &&
-                          'rounded-full'
-                      )}
-                      src={`/icons/platforms/${item.identifier}.png`}
-                    />
-                  )}
+                  <PlatformIcon
+                    identifier={item.identifier}
+                    size={32}
+                    iconClassName={clsx(
+                      'w-[32px] h-[32px]',
+                      item.identifier !== 'google_my_business' && 'rounded-full'
+                    )}
+                  />
                 </div>
                 <div
                   className={clsx(

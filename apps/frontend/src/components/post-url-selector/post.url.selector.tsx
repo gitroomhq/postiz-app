@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import removeMd from 'remove-markdown';
 import clsx from 'clsx';
+import { PlatformIcon } from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 const postUrlEmitter = new EventEmitter();
@@ -178,13 +179,12 @@ export const PostSelector: FC<{
                               src={p.integration.picture}
                               className="w-[32px] h-[32px] rounded-full"
                             />
-                            <img
-                              className="w-[20px] h-[20px] rounded-full absolute z-10 -bottom-[5px] -end-[5px] border border-fifth"
-                              src={
-                                `/icons/platforms/` +
-                                p?.integration?.providerIdentifier +
-                                '.png'
-                              }
+                            <PlatformIcon
+                              identifier={p?.integration?.providerIdentifier}
+                              size={20}
+                              className="absolute z-10 -bottom-[5px] -end-[5px]"
+                              iconClassName="w-[20px] h-[20px] rounded-full border border-fifth"
+                              markClassName="bg-newBgColorInner"
                             />
                           </div>
                           <div>{p.integration.name}</div>
