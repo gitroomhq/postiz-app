@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "El texto de tu publicación es la descripción del video. Edítalo en el editor.",
   "refund_charges_failed": "No se pudo reembolsar los cargos seleccionados",
   "disputed": "En disputa",
-  "charge_disputed_no_refund": "Este cargo fue disputado y, por lo tanto, no puede ser reembolsado"
+  "charge_disputed_no_refund": "Este cargo fue disputado y, por lo tanto, no puede ser reembolsado",
+  "billing_discount_modal_still_active": "Tu suscripción sigue activa. Elige una de las opciones a continuación para continuar.",
+  "billing_subscription_not_cancelled": "Tu suscripción no fue cancelada",
+  "billing_cancel_failed": "No pudimos cancelar tu suscripción. Por favor, inténtalo de nuevo o contacta al soporte."
 }

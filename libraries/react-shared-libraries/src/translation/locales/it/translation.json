@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "Il testo del tuo post è la descrizione del video. Modificalo nell'editor.",
   "refund_charges_failed": "Impossibile rimborsare gli addebiti selezionati",
   "disputed": "Contestato",
-  "charge_disputed_no_refund": "Questo addebito è stato contestato e quindi non può essere rimborsato"
+  "charge_disputed_no_refund": "Questo addebito è stato contestato e quindi non può essere rimborsato",
+  "billing_discount_modal_still_active": "Il tuo abbonamento è ancora attivo. Scegli una delle opzioni qui sotto per continuare.",
+  "billing_subscription_not_cancelled": "Il tuo abbonamento non è stato cancellato.",
+  "billing_cancel_failed": "Non siamo riusciti a cancellare il tuo abbonamento. Riprova o contatta l'assistenza."
 }

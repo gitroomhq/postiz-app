@@ -901,5 +901,8 @@
   "youtube_description_is_post_text": "게시물 텍스트가 동영상 설명이 됩니다. 편집기에서 수정하세요.",
   "refund_charges_failed": "선택한 청구 건을 환불할 수 없습니다.",
   "disputed": "분쟁됨",
-  "charge_disputed_no_refund": "이 청구 건은 분쟁이 제기되어 환불할 수 없습니다."
+  "charge_disputed_no_refund": "이 청구 건은 분쟁이 제기되어 환불할 수 없습니다.",
+  "billing_discount_modal_still_active": "구독이 아직 활성화되어 있습니다. 계속하려면 아래 옵션 중 하나를 선택하세요.",
+  "billing_subscription_not_cancelled": "구독이 취소되지 않았습니다.",
+  "billing_cancel_failed": "구독을 취소할 수 없습니다. 다시 시도하거나 고객 지원팀에 문의하세요."
 }

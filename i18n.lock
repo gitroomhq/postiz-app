@@ -906,3 +906,6 @@ checksums:
     refund_charges_failed: 2357f7192f6ba7492229efb9109f275c
     disputed: 608edc2188a1228d0f4b2a5969ee1c5b
     charge_disputed_no_refund: 64dd2aab66faa782f4d7c8db5199341a
+    billing_discount_modal_still_active: e0b46754f967bac21c5201a13fce5c87
+    billing_subscription_not_cancelled: 7b1dab8acf6420daa58a5ffea6ffe6e9
+    billing_cancel_failed: 00e2666f61f4bbea8c3fbc6d622bde22
