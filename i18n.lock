@@ -830,6 +830,7 @@ checksums:
     republish_the_post: 6c16f02f8d70ced4cc6ccc1112968704
     post_already_published_republish_warning: b552a207c31d6381fb831da005dac9ed
     republish_at: 282cf74a2c63ff46388104f9853bfaf8
+    post_date_passed_post_now_warning: 22b230c0a34e05ca006388a9e50f5353
     republish_recurring_note: e0eafbc730f5e8d5f9f5cb5aab48fe2d
     comment: 1be52fc8cdfb25a4c4abe2482fc478aa
     reply: 37a07e1dbda9841da3feb16c9e1e63b5
@@ -874,16 +875,31 @@ checksums:
     channels_settings: 770e5ae7cec0a83e1454246b52591093
     delete_selected: adad57b0659260858fbf786ef31e9612
     are_you_sure_you_want_to_delete_selected_media: 2fcf9a6ddcd40aa74d2cf914730ecc4b
-    delete_post_from_all_channels_question: f37374b458fa43056a019397f342ea04
-    delete_from_all_channels: 39a7f754c6a1f730cd511307e483e13d
-    delete_only_from: 819a30bf30916eba1d5ced11efc16fde
-    draft_post_in_all_channels_question: 042b07c5150e2dc8b37553301cb2aa73
-    draft_all_channels: c9008358b4c607d26973eb08fb961424
-    post_now_in_all_channels_question: aba83099c4258ae0d2272b16d835b2b4
-    post_now_all_channels: c4a25fc5f6abc7fb2c584d22e5bea01c
-    schedule_post_in_all_channels_question: 8fd19c2e5e74c4a8438ba180beaed615
-    schedule_all_channels: 2c761cc9d12ac53696ddfbdabdff1088
-    only_channel: 5687ae99e7f5b168e35532f895efd2e8
+    delete_post_choose_channels: 2ce4f8d5229eea533970d92cdf38dbce
+    delete_published_post_note: 52f4d37d9ec42ecf2448046bf8494946
+    delete_this_published_post_note: 36a1e54cfbff524ae93fc3ec124b7b82
+    delete_from_one_channel: 5096cf710e8876621cf7c16d3047439e
+    delete_from_channels: 9f0fb30a11d762e2975b067d8080289c
+    draft_post_choose_channels: 8049f60cffa0e356743c1caf8703d4a6
+    post_now_choose_channels: b05d50082b67a05a5b22ab2ba24bfd0e
+    schedule_post_choose_channels: 3d5f9c335ca381bc8a0bdcab440cf8b8
+    update_post_choose_channels: 972a7e24a15e38ca7f0ae9ed6ba15bda
+    unticked_channels_saved_note: 938fac9e8c40ddbd5f8539d6351442aa
+    published: ad5e035c44f71ed32d41e47c7643f32f
+    scheduled: 1283929a2810dcf6110765f387dc118e
+    channel_failed: 99f87615af1fffa2b8802866b096705a
+    channel_posting_now: 179efa69938b84b9e59d9a7976c98645
+    channel_stays_scheduled: 2923585c7752105981ea130e108f4235
+    channel_stays_draft: 21941c18b79cd8fd4f8acaa6b96d09c9
+    channel_stays_published: 123bc6a017b785954bef2a1b03d1eb24
+    channel_tick_to_post_again: f0354cce7d8cc8c0bdb4ceaade60061a
+    channel_tick_to_post_again_now: 67e3fb3793c70e9cc08d7abdf7f2bc87
+    channel_will_post_again: dcff55ef9fcbe6f95bbbbcb73ab08462
+    channel_will_post_again_now: e87ce91412efbd473d9a9c626d40ba59
+    channel_tick_to_post_now: a9d330c186ffd632f2f7e5a1e69b4e29
+    channel_will_post_now: 0d790a1a2630f38c28ed32c288e8fb12
+    update_and_reschedule: c712dbb06262f5b4602d6a86179b4425
+    update_and_post_now: 57a5bfc25bda041648b25176837094ef
     hubspot_installed: 5937d91a1e1f8093b2bf31c834ebc18d
     hubspot_installed_description: d0044e3cca1e574871461cab9f8722c0
     timezone: 370780b854bdbef55320f977a4fb9ddb
@@ -909,6 +925,8 @@ checksums:
     billing_discount_modal_still_active: e0b46754f967bac21c5201a13fce5c87
     billing_subscription_not_cancelled: 7b1dab8acf6420daa58a5ffea6ffe6e9
     billing_cancel_failed: 00e2666f61f4bbea8c3fbc6d622bde22
+    no_analytics_to_show_for_this_channel: a19af696374d03aa7c7dc1e9968e0d71
+    no_ai_credits_ask_admin: ceea67311bb15d9567ffec3c5427c91b
     connect_link_title: 28192d3c14d0a02125889004b908e4fd
     connect_link_trust: 7f3b071ea4cb489f408d4ecd86bd1b7e
     connect_link_automate: aeca86b09f0a104ac88dcfe151a7e0d5

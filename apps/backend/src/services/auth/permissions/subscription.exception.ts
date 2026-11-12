@@ -16,11 +16,15 @@ export class SubscriptionExceptionFilter implements ExceptionFilter {
       exception.getResponse() as any;
 
     const message = getErrorMessage(error);
+    const role = ctx.getRequest()?.org?.users?.[0]?.role;
 
     response.status(status).json({
       statusCode: status,
       message,
       url: process.env.FRONTEND_URL + '/billing',
+      ...(role
+        ? { canManageBillingUi: role === 'SUPERADMIN' || role === 'ADMIN' }
+        : {}),
     });
   }
 }
@@ -49,6 +53,11 @@ const getErrorMessage = (error: {
       switch (error.action) {
         default:
           return 'You have reached the maximum number of generated videos for your subscription. Please upgrade your subscription to generate more videos.';
+      }
+    case Sections.ADMIN:
+      switch (error.action) {
+        default:
+          return 'Only an admin of this organization can do this.';
       }
     case Sections.CLIPPING_MINUTES:
       switch (error.action) {
