@@ -921,5 +921,6 @@
   "billing_discount_modal_still_active": "Il tuo abbonamento è ancora attivo. Scegli una delle opzioni qui sotto per continuare.",
   "billing_subscription_not_cancelled": "Il tuo abbonamento non è stato cancellato.",
   "billing_cancel_failed": "Non siamo riusciti a cancellare il tuo abbonamento. Riprova o contatta l'assistenza.",
-  "no_analytics_to_show_for_this_channel": "Nessun dato analitico da mostrare per questo canale. Se ti aspettavi di vedere dei dati, prova a riconnettere il canale."
+  "no_analytics_to_show_for_this_channel": "Nessun dato analitico da mostrare per questo canale. Se ti aspettavi di vedere dei dati, prova a riconnettere il canale.",
+  "no_ai_credits_ask_admin": "Non hai più crediti AI. Per favore, contatta un amministratore della tua organizzazione."
 }
