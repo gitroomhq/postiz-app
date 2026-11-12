@@ -889,7 +889,7 @@
   "finish_trial_failed_description": "Non siamo riusciti ad addebitare la tua carta. Per favore riprova.",
   "try_again": "Riprova",
   "finish_trial": "Termina la prova",
-  "finish_trial_confirmation": "Terminare la prova addebiterà oggi il primo pagamento del tuo piano invece che alla fine della prova. Non verrà aggiunto alcun costo extra. Continuare?",
+  "finish_trial_confirmation": "Terminare la prova comporta l'addebito del primo pagamento del tuo piano oggi invece che alla fine del periodo di prova. Continuare?",
   "finish_trial_charge_me_now": "Termina la prova e paga ora",
   "trial": "Prova",
   "thumbnails_and_alt_text": "Miniature e testo alternativo",

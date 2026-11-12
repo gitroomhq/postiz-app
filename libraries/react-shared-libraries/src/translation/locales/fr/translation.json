@@ -889,7 +889,7 @@
   "finish_trial_failed_description": "Nous n'avons pas pu débiter votre carte. Veuillez réessayer.",
   "try_again": "Réessayer",
   "finish_trial": "Terminer l'essai",
-  "finish_trial_confirmation": "Mettre fin à l’essai entraîne le paiement immédiat de votre abonnement au lieu du paiement à la fin de la période d’essai. Aucun frais supplémentaire ne sera appliqué. Continuer ?",
+  "finish_trial_confirmation": "Mettre fin à l’essai déclenche le premier paiement de votre forfait dès aujourd’hui, au lieu de la fin de l’essai. Continuer ?",
   "finish_trial_charge_me_now": "Mettre fin à l'essai et payer maintenant",
   "trial": "Essai",
   "thumbnails_and_alt_text": "Vignettes et texte alternatif",
