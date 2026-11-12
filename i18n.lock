@@ -893,7 +893,7 @@ checksums:
     finish_trial_failed_description: f67cb5adf7e1f3dbf1412edbf62e4974
     try_again: 33dd8820e743e35a66e6977f69e9d3b5
     finish_trial: 1d20d4471820f251c64a436b63db678f
-    finish_trial_confirmation: 908f84ab1b3fb4bee0d3a4699a1f1b25
+    finish_trial_confirmation: 2b9199ca18ff34a6958cdb89c708d51f
     finish_trial_charge_me_now: 7050d69051856a6676ad647cb846fb67
     trial: 4fd32760caf3bd7169935b0a6d2b5b67
     thumbnails_and_alt_text: 20fe8924ed0e3ebe39a0d1953dc24df1

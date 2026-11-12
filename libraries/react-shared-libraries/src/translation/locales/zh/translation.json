@@ -889,7 +889,7 @@
   "finish_trial_failed_description": "我们无法扣款，请重试。",
   "try_again": "重试",
   "finish_trial": "结束试用",
-  "finish_trial_confirmation": "结束试用将使您的计划首付款今天扣费，而不是在试用期结束时扣费。不会额外收取费用。是否继续？",
+  "finish_trial_confirmation": "提前结束试用将会在今天收取您套餐的首付款，而不是在试用期结束时收取。确定要继续吗？",
   "finish_trial_charge_me_now": "结束试用并立即付款",
   "trial": "试用",
   "thumbnails_and_alt_text": "缩略图与替代文本",

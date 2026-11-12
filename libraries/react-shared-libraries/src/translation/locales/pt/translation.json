@@ -889,7 +889,7 @@
   "finish_trial_failed_description": "Não conseguimos cobrar no seu cartão. Por favor, tente novamente.",
   "try_again": "Tentar novamente",
   "finish_trial": "Finalizar avaliação",
-  "finish_trial_confirmation": "Encerrar o teste faz com que o primeiro pagamento do seu plano seja cobrado hoje, em vez de ao final do teste. Nenhum valor extra será adicionado. Deseja continuar?",
+  "finish_trial_confirmation": "Encerrar o período de teste fará com que o primeiro pagamento do seu plano seja cobrado hoje, em vez de no final do teste. Deseja continuar?",
   "finish_trial_charge_me_now": "Encerrar teste e pagar agora",
   "trial": "Avaliação",
   "thumbnails_and_alt_text": "Miniaturas e texto alternativo",

@@ -889,7 +889,7 @@
   "finish_trial_failed_description": "Chúng tôi không thể thanh toán thẻ của bạn. Vui lòng thử lại.",
   "try_again": "Thử lại",
   "finish_trial": "Kết thúc dùng thử",
-  "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ tiến hành thanh toán đầu tiên cho gói của bạn ngay hôm nay thay vì vào cuối giai đoạn dùng thử. Không có khoản phí nào thêm. Tiếp tục?",
+  "finish_trial_confirmation": "Kết thúc giai đoạn dùng thử sẽ khiến khoản thanh toán đầu tiên của gói được tính ngay hôm nay thay vì vào cuối giai đoạn dùng thử. Tiếp tục?",
   "finish_trial_charge_me_now": "Kết thúc dùng thử và thanh toán ngay",
   "trial": "Dùng thử",
   "thumbnails_and_alt_text": "Hình thu nhỏ & văn bản thay thế",
