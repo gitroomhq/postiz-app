@@ -392,7 +392,7 @@ export const MenuComponent: FC<
             className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
             onClick={
               integration.refreshNeeded
-                ? refreshChannel(integration)
+                ? undefined
                 : continueIntegration(integration)
             }
           >
