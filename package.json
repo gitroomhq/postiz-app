@@ -7,7 +7,7 @@
   "keywords": [],
   "author": "",
   "engines": {
-    "node": "22.23.4"
+    "node": "22.23.5"
   },
   "packageManager": "pnpm@10.6.1",
   "scripts": {

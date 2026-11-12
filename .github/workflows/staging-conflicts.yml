@@ -144,7 +144,7 @@ jobs:
         if: steps.probe.outputs.conflicted == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 22.12.0
+          node-version: 22.35.5
 
       - name: Install pnpm
         if: steps.probe.outputs.conflicted == 'true'

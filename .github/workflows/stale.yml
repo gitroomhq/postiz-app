@@ -27,7 +27,7 @@ jobs:
           stale-pr-label: "stale" 
           stale-pr-message: "This PR is stale because it has been open for 90 days with no activity."
           close-pr-message: "This PR was closed because it has been inactive for 7 days since being marked as stale." 
-          exempt-pr-label: "no-stale-bot" 
+          exempt-pr-labels: "no-stale-bot"
           
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           operations-per-run: 180
