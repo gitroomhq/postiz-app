@@ -83,13 +83,28 @@ const dcrIssuerPaths = [
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
+  // MCP_URL's origin when it is an http(s) URL. It switches RFC 9207 issuer
+  // identification on (start.mcp.ts), so a malformed value leaves it off
+  // instead of failing every consent
+  mcpOrigin() {
+    try {
+      const url = new URL(process.env.MCP_URL!);
+      return ['http:', 'https:'].includes(url.protocol)
+        ? url.origin
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   // RFC 9207 iss for a client that discovered the DCR issuer, the only one
   // advertising it (and only once MCP_URL is set): every dynamically
   // registered client, or a pre-registered one whose RFC 8707 resource is an
   // MCP path that issuer serves (HubSpot reads the root metadata instead).
   // The host is the one the client discovered it on, MCP_URL by default
   issuer(app: Pick<OAuthApp, 'dynamic' | 'clientId'>, resource?: string) {
-    if (!process.env.MCP_URL || app.clientId === hubspotOAuthClientId()) {
+    const mcpOrigin = this.mcpOrigin();
+    if (!mcpOrigin || app.clientId === hubspotOAuthClientId()) {
       return undefined;
     }
 
@@ -105,9 +120,9 @@ export class OAuthService {
     }
 
     const hosts = [
-      process.env.MCP_URL,
-      process.env.NEXT_PUBLIC_BACKEND_URL!,
-    ].map((url) => new URL(url).origin);
+      mcpOrigin,
+      new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).origin,
+    ];
     return new URL(
       '/mcp-oauth-dynamic',
       hosts.find((origin) => origin === target?.origin) || hosts[0]

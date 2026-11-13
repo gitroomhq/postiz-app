@@ -218,7 +218,7 @@ export const startMcp = async (app: INestApplication) => {
       issuer: new URL('/mcp-oauth-dynamic', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
       registration: true,
       refresh: false,
-      issuerIdentification: !!process.env.MCP_URL,
+      issuerIdentification: !!oauthService.mcpOrigin(),
     },
     ...(hubspotOAuthClientId
       ? {

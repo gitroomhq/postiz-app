@@ -30,6 +30,9 @@ export class ConfigurationChecker {
     this.checkIsValidUrl('FRONTEND_URL');
     this.checkIsValidUrl('NEXT_PUBLIC_BACKEND_URL');
     this.checkIsValidUrl('BACKEND_INTERNAL_URL');
+    if (this.get('MCP_URL')) {
+      this.checkIsValidUrl('MCP_URL');
+    }
     this.checkNonEmpty('STORAGE_PROVIDER', 'Needed to setup storage.');
   }
 
