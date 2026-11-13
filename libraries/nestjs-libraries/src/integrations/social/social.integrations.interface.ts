@@ -199,7 +199,7 @@ export interface SocialProvider
   ): Promise<PendingCheckResponse>;
   migrationMatch(
     auth: Pick<AuthTokenDetails, 'id' | 'username'>,
-    integration: Integration
+    integration: Omit<Integration, 'token' | 'refreshToken'>
   ): boolean;
   finalizePost(
     accessToken: string,

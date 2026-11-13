@@ -29,6 +29,8 @@ import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/au
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { TemporalService } from 'nestjs-temporal-core';
 import { randomBytes } from 'crypto';
+import { ApplicationFailure } from '@temporalio/common';
+import { EncryptionService } from '@gitroom/nestjs-libraries/services/encryption.service';
 
 dayjs.extend(utc);
 
@@ -42,7 +44,8 @@ export class IntegrationService {
     private _notificationService: NotificationService,
     @Inject(forwardRef(() => RefreshIntegrationService))
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _temporalService: TemporalService
+    private _temporalService: TemporalService,
+    private _encryptionService: EncryptionService
   ) {}
 
   async changeActiveCron(orgId: string) {
@@ -822,6 +825,48 @@ export class IntegrationService {
     );
     const loadOnlyIds = exisingData.map((p) => p.value);
     return difference(id, loadOnlyIds);
+  }
+
+  // One page of the encryptTokensWorkflow: encrypts the tokens that are still
+  // stored plain. New tokens are already stored encrypted, this is for the
+  // ones that were stored before the encryption.
+  async encryptStoredTokens(afterId?: string) {
+    if (!this._encryptionService.canEncrypt()) {
+      // a configuration that has to change first, no retry will fix it
+      throw ApplicationFailure.nonRetryable(
+        'The encryption is off, set ENCRYPTION_PROVIDER and remove ENCRYPTION_READ_ONLY'
+      );
+    }
+
+    const integrations = await this._integrationRepository.getPlainTokens(
+      afterId
+    );
+
+    // A channel that cannot be encrypted is counted and skipped, it must not
+    // stop all the channels after it
+    let changed = 0;
+    let failed = 0;
+    for (const integration of integrations) {
+      try {
+        if (
+          await this._integrationRepository.encryptStoredTokens(integration)
+        ) {
+          changed++;
+        }
+      } catch (err) {
+        failed++;
+        console.error(
+          `Could not encrypt the stored tokens of integration ${integration.id}:`,
+          (err as Error)?.message
+        );
+      }
+    }
+
+    return {
+      changed,
+      failed,
+      lastId: integrations[integrations.length - 1]?.id,
+    };
   }
 
   async findFreeDateTime(

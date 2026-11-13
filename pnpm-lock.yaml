@@ -36,6 +36,9 @@ importers:
       '@atproto/api':
         specifier: ^0.15.15
         version: 0.15.27
+      '@aws-sdk/client-kms':
+        specifier: ^3.1003.0
+        version: 3.1003.0
       '@aws-sdk/client-s3':
         specifier: ^3.787.0
         version: 3.1003.0
@@ -1195,6 +1198,10 @@ packages:
 
   '@aws-sdk/client-kendra@3.1003.0':
     resolution: {integrity: sha512-PGEY5PKvdRUDEl+nutcV/5pmCIvh70TAcu0pQaaThEzLDm8zuWRl4OP93rEd03EOVSNagucP/ia4YtE9HxQ9LQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-kms@3.1003.0':
+    resolution: {integrity: sha512-XO11qsl/p+WTzOTf4o9w6aZZ0lh2QHwwpuv9en2fgtVL4PnibndWC4Ln/5CB9fJpeUsQo8dLAys1PVhTh4lcGQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-s3@3.1003.0':
@@ -18624,6 +18631,50 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
     optional: true
+
+  '@aws-sdk/client-kms@3.1003.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/core': 3.973.18
+      '@aws-sdk/credential-provider-node': 3.972.17
+      '@aws-sdk/middleware-host-header': 3.972.7
+      '@aws-sdk/middleware-logger': 3.972.7
+      '@aws-sdk/middleware-recursion-detection': 3.972.7
+      '@aws-sdk/middleware-user-agent': 3.972.18
+      '@aws-sdk/region-config-resolver': 3.972.7
+      '@aws-sdk/types': 3.973.5
+      '@aws-sdk/util-endpoints': 3.996.4
+      '@aws-sdk/util-user-agent-browser': 3.972.7
+      '@aws-sdk/util-user-agent-node': 3.973.3
+      '@smithy/config-resolver': 4.4.10
+      '@smithy/core': 3.23.8
+      '@smithy/fetch-http-handler': 5.3.13
+      '@smithy/hash-node': 4.2.11
+      '@smithy/invalid-dependency': 4.2.11
+      '@smithy/middleware-content-length': 4.2.11
+      '@smithy/middleware-endpoint': 4.4.22
+      '@smithy/middleware-retry': 4.4.39
+      '@smithy/middleware-serde': 4.2.12
+      '@smithy/middleware-stack': 4.2.11
+      '@smithy/node-config-provider': 4.3.11
+      '@smithy/node-http-handler': 4.4.14
+      '@smithy/protocol-http': 5.3.11
+      '@smithy/smithy-client': 4.12.2
+      '@smithy/types': 4.19.0
+      '@smithy/url-parser': 4.2.11
+      '@smithy/util-base64': 4.3.2
+      '@smithy/util-body-length-browser': 4.2.2
+      '@smithy/util-body-length-node': 4.2.3
+      '@smithy/util-defaults-mode-browser': 4.3.38
+      '@smithy/util-defaults-mode-node': 4.2.41
+      '@smithy/util-endpoints': 3.3.2
+      '@smithy/util-middleware': 4.2.11
+      '@smithy/util-retry': 4.2.11
+      '@smithy/util-utf8': 4.2.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - aws-crt
 
   '@aws-sdk/client-s3@3.1003.0':
     dependencies:

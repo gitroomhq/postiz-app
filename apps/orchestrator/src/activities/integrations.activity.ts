@@ -20,4 +20,9 @@ export class IntegrationsActivity {
   async refreshToken(integration: Integration) {
     return this._refreshIntegrationService.refresh(integration);
   }
+
+  @ActivityMethod()
+  async encryptStoredTokens(afterId?: string) {
+    return this._integrationService.encryptStoredTokens(afterId);
+  }
 }
