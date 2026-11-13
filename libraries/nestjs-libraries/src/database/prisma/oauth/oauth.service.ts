@@ -76,18 +76,21 @@ const browserSchemes = [
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
-  // RFC 8414 issuer the client discovered, the same values start.mcp.ts
-  // advertises: dynamically registered clients come through the DCR issuer,
-  // HubSpot reads the metadata from the domain root, the other pre-defined
-  // client (the ChatGPT app) through the ChatGPT one
-  issuer(app: Pick<OAuthApp, 'dynamic' | 'clientId'>) {
-    if (app.clientId === hubspotOAuthClientId()) {
-      return new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).origin;
-    }
-    return new URL(
-      app.dynamic ? '/mcp-oauth-dynamic' : '/mcp-oauth-chatgpt',
-      process.env.NEXT_PUBLIC_BACKEND_URL!
-    ).toString();
+  // RFC 9207 iss of a dynamically registered client: the DCR issuer on the
+  // host it discovered it on, told by its RFC 8707 resource. The MCP backend
+  // can run on its own host (MCP_URL), which is also the default
+  issuer(resource?: string) {
+    const hosts = [process.env.MCP_URL, process.env.NEXT_PUBLIC_BACKEND_URL]
+      .filter((url): url is string => !!url)
+      .map((url) => new URL(url).origin);
+    const host = hosts.find((origin) => {
+      try {
+        return !!resource && new URL(resource).origin === origin;
+      } catch {
+        return false;
+      }
+    });
+    return new URL('/mcp-oauth-dynamic', host || hosts[0]).toString();
   }
 
   async getApp(orgId: string) {

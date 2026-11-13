@@ -205,7 +205,7 @@ export const startMcp = async (app: INestApplication) => {
   // RFC 9207 issuer identification is advertised only on the DCR issuer: Codex
   // needs it (its authorization endpoint origin check), while ChatGPT picks a
   // different callback once it sees the flag and HubSpot is untested with it,
-  // so the pre-registered issuers keep today's behavior (iss is still sent)
+  // so the pre-registered issuers keep today's behavior
   const authorizationServers: Record<string, { issuer: string; registration: boolean; refresh: boolean; issuerIdentification: boolean }> = {
     '/mcp-oauth-chatgpt': {
       issuer: new URL('/mcp-oauth-chatgpt', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),

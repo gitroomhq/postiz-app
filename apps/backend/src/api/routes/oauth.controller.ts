@@ -117,7 +117,12 @@ export class OAuthController {
       app.dynamic ? body.redirect_uri! : app.redirectUrl
     );
     redirectUrl.searchParams.set('code', code);
-    redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
+    if (app.dynamic) {
+      redirectUrl.searchParams.set(
+        'iss',
+        this._oauthService.issuer(body.resource)
+      );
+    }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }
@@ -226,7 +231,12 @@ export class OAuthAuthorizedController {
     if (body.action === 'deny') {
       const redirectUrl = new URL(redirectTarget);
       redirectUrl.searchParams.set('error', 'access_denied');
-      redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
+      if (app.dynamic) {
+        redirectUrl.searchParams.set(
+          'iss',
+          this._oauthService.issuer(body.resource)
+        );
+      }
       if (body.state) {
         redirectUrl.searchParams.set('state', body.state);
       }
@@ -244,11 +254,15 @@ export class OAuthAuthorizedController {
       })
     );
 
-    // RFC 9207: clients that support issuer identification (ChatGPT) use it to
-    // pick their shared callback and to verify the response came from this AS
+    // RFC 9207 iss, only on the DCR issuer, the one that advertises it
     const redirectUrl = new URL(redirectTarget);
     redirectUrl.searchParams.set('code', code);
-    redirectUrl.searchParams.set('iss', this._oauthService.issuer(app));
+    if (app.dynamic) {
+      redirectUrl.searchParams.set(
+        'iss',
+        this._oauthService.issuer(body.resource)
+      );
+    }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }
