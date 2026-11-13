@@ -219,6 +219,8 @@ export class PostActivity {
     integration: Integration,
     posts: Post[]
   ) {
+    integration = await this._integrationService.decryptTokens(integration);
+
     // kept only for in-flight postWorkflowV108 runs, which set a
     // heartbeatTimeout on this activity - removing the sender would kill
     // them. Under V109+ (no heartbeatTimeout) this is a no-op and can be
@@ -383,6 +385,8 @@ export class PostActivity {
     posts: Post[],
     allowPending: boolean
   ) {
+    integration = await this._integrationService.decryptTokens(integration);
+
     // kept only for in-flight postWorkflowV108 runs, which set a
     // heartbeatTimeout on this activity - removing the sender would kill
     // them. Under V109+ (no heartbeatTimeout) this is a no-op and can be
@@ -490,6 +494,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async checkPostStatus(integration: Integration, pendingData: any) {
+    integration = await this._integrationService.decryptTokens(integration);
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -501,6 +506,7 @@ export class PostActivity {
 
   @ActivityMethod()
   async finalizePost(integration: Integration, pendingData: any) {
+    integration = await this._integrationService.decryptTokens(integration);
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -631,6 +637,19 @@ export class PostActivity {
   async refreshToken(
     integration: Integration
   ): Promise<false | AuthTokenDetails> {
+    // The workflows call this from their catch block, an error thrown here
+    // would fail the whole run: a token that cannot be read is answered like
+    // a refresh that did not work, without flagging the channel
+    try {
+      integration = await this._integrationService.decryptTokens(integration);
+    } catch (err) {
+      console.error(
+        `Could not read the tokens of integration ${integration?.id}:`,
+        (err as Error)?.message
+      );
+      return false;
+    }
+
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
@@ -662,6 +681,19 @@ export class PostActivity {
     integration: Integration,
     cause: string
   ): Promise<false | AuthTokenDetails> {
+    // The workflows call this from their catch block, an error thrown here
+    // would fail the whole run: a token that cannot be read is answered like
+    // a refresh that did not work, without flagging the channel
+    try {
+      integration = await this._integrationService.decryptTokens(integration);
+    } catch (err) {
+      console.error(
+        `Could not read the tokens of integration ${integration?.id}:`,
+        (err as Error)?.message
+      );
+      return false;
+    }
+
     const getIntegration = this._integrationManager.getSocialIntegration(
       integration.providerIdentifier
     );
