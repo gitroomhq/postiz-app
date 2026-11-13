@@ -191,6 +191,9 @@ export const startMcp = async (app: INestApplication) => {
     });
   }
 
+  // new URL('/path', base) drops the path of the backend (/api in the Docker image)
+  const publicBackendUrl = new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).toString().replace(/\/+$/, '');
+
   // Two RFC 8414 path-based issuers backed by the same endpoints and code.
   // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
   // not advertise a registration_endpoint, so the OpenAI builder defaults to
@@ -204,12 +207,12 @@ export const startMcp = async (app: INestApplication) => {
   // grant, so the root is answered only when that client is configured
   const authorizationServers: Record<string, { issuer: string; registration: boolean; refresh: boolean }> = {
     '/mcp-oauth-chatgpt': {
-      issuer: new URL('/mcp-oauth-chatgpt', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+      issuer: `${publicBackendUrl}/mcp-oauth-chatgpt`,
       registration: false,
       refresh: false,
     },
     '/mcp-oauth-dynamic': {
-      issuer: new URL('/mcp-oauth-dynamic', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+      issuer: `${publicBackendUrl}/mcp-oauth-dynamic`,
       registration: true,
       refresh: false,
     },
@@ -251,7 +254,7 @@ export const startMcp = async (app: INestApplication) => {
   const createResourceMiddleware = (mcpPath: string, authorizationServer: string) =>
     createOAuthMiddleware({
       oauth: {
-        resource: new URL(mcpPath, process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+        resource: `${publicBackendUrl}${mcpPath}`,
         authorizationServers: [authorizationServers[authorizationServer].issuer],
         scopesSupported: oauthScopes,
         validateToken: async (token: string) => {
@@ -264,6 +267,9 @@ export const startMcp = async (app: INestApplication) => {
           return { valid: true, subject: token };
         },
       },
+      // RFC 9728 path-inserted form (/.well-known/oauth-protected-resource/mcp-oauth):
+      // the root well-known must stay 404 so clients don't demand OAuth for other paths
+      resourceMetadataUrl: `${publicBackendUrl}/.well-known/oauth-protected-resource${mcpPath}`,
       mcpPath,
     });
 

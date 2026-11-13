@@ -313,7 +313,9 @@ export class OAuthService {
       return true;
     }
     try {
-      return !!resource && new URL(resource).pathname.startsWith('/mcp-oauth');
+      // the resources live behind the path of the backend, if it has one (/api)
+      const backendPath = new URL(process.env.NEXT_PUBLIC_BACKEND_URL!).pathname.replace(/\/+$/, '');
+      return !!resource && new URL(resource).pathname.startsWith(`${backendPath}/mcp-oauth`);
     } catch {
       return false;
     }

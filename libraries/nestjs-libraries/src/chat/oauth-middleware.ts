@@ -23,6 +23,7 @@ interface OAuthMiddlewareLogger {
 
 export interface OAuthMiddlewareOptions {
   oauth: MCPServerOAuthConfig;
+  resourceMetadataUrl: string;
   mcpPath?: string;
   logger?: OAuthMiddlewareLogger;
 }
@@ -34,17 +35,10 @@ export interface OAuthMiddlewareResult {
 }
 
 export function createOAuthMiddleware(options: OAuthMiddlewareOptions) {
-  const { oauth, mcpPath = '/mcp', logger } = options;
+  const { oauth, resourceMetadataUrl, mcpPath = '/mcp', logger } = options;
 
   const protectedResourceMetadata = generateProtectedResourceMetadata(oauth);
   const wellKnownPath = '/.well-known/oauth-protected-resource';
-  // RFC 9728 path-inserted form (/.well-known/oauth-protected-resource/mcp-oauth):
-  // the root well-known must stay 404 so clients don't demand OAuth for other paths
-  const resourcePath = new URL(oauth.resource).pathname;
-  const resourceMetadataUrl = new URL(
-    wellKnownPath + (resourcePath === '/' ? '' : resourcePath),
-    oauth.resource,
-  ).toString();
 
   return async function oauthMiddleware(
     req: http.IncomingMessage,
