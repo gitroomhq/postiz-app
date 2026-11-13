@@ -137,8 +137,9 @@ export async function proxy(request: NextRequest) {
     return topResponse;
   }
   try {
+    const landingPath = !!process.env.IS_GENERAL ? '/launches' : '/analytics';
     if (org) {
-      const { id } = await (
+      const { id, expired } = await (
         await internalFetch('/user/join-org', {
           body: JSON.stringify({
             org,
@@ -146,6 +147,11 @@ export async function proxy(request: NextRequest) {
           method: 'POST',
         })
       ).json();
+      if (expired) {
+        return NextResponse.redirect(
+          new URL(`${landingPath}?invitation=expired`, nextUrl.href)
+        );
+      }
       const redirect = NextResponse.redirect(
         new URL(`/?added=true`, nextUrl.href)
       );
@@ -166,12 +172,7 @@ export async function proxy(request: NextRequest) {
       return redirect;
     }
     if (nextUrl.pathname === '/') {
-      return NextResponse.redirect(
-        new URL(
-          !!process.env.IS_GENERAL ? '/launches' : `/analytics`,
-          nextUrl.href
-        )
-      );
+      return NextResponse.redirect(new URL(landingPath, nextUrl.href));
     }
 
     return topResponse;
