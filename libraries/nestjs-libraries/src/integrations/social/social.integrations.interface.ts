@@ -181,6 +181,14 @@ export interface SocialProvider
     ISocialMediaIntegration {
   identifier: string;
   refreshWait?: boolean;
+  // A token rejected by finalizePost means its mutation did not run (it makes
+  // one mutating call): the post activity then refreshes the token and repeats
+  // finalizePost itself. Without it the workflow refreshes and goes back to
+  // checkPostStatus, which for an arm -> confirm -> publish provider finds the
+  // confirmed attempt and stops with a false "may have already published".
+  // Never set it when finalizePost can throw RefreshToken after a mutation
+  // that cannot be repeated.
+  refreshRepeat?: boolean;
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;
   refreshCron?: boolean;
@@ -199,7 +207,7 @@ export interface SocialProvider
   ): Promise<PendingCheckResponse>;
   migrationMatch(
     auth: Pick<AuthTokenDetails, 'id' | 'username'>,
-    integration: Integration
+    integration: Omit<Integration, 'token' | 'refreshToken'>
   ): boolean;
   finalizePost(
     accessToken: string,

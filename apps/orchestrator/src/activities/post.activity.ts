@@ -32,6 +32,7 @@ import {
   BadBody,
   Disconnect,
   PublishedWithError,
+  RefreshToken,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
@@ -278,6 +279,49 @@ export class PostActivity {
     return this.postSocialInternal(integration, posts, true);
   }
 
+  // For the providers with refreshRepeat: a token the platform rejects on the
+  // finalize call means nothing was published, so the token is refreshed and
+  // the call runs once more here, inside the activity. The workflows - frozen
+  // once on main - refresh the token as well, but then go back to
+  // checkPostStatus first, where a provider that arms and confirms its create
+  // finds its own confirmed attempt and stops with a "may have already
+  // published" warning for a post that was never created. When the token
+  // cannot be refreshed the error goes to the workflow like before.
+  private async refreshAndRepeat<T>(
+    integration: Integration,
+    func: (integration: Integration) => Promise<T>
+  ): Promise<T> {
+    const getIntegration = this._integrationManager.getSocialIntegration(
+      integration.providerIdentifier
+    );
+
+    try {
+      return await func(integration);
+    } catch (err) {
+      if (!(err instanceof RefreshToken) || !getIntegration.refreshRepeat) {
+        throw err;
+      }
+
+      setHeartbeatDetails(`${integration.providerIdentifier}: refresh token`);
+      const refresh = await this._refreshIntegrationService
+        .refresh(integration, err.message || '')
+        .catch(() => false as const);
+      if (!refresh || !refresh.accessToken) {
+        throw err;
+      }
+
+      if (getIntegration.refreshWait) {
+        await timer(10000);
+      }
+
+      return func({
+        ...integration,
+        token: refresh.accessToken,
+        refreshToken: refresh.refreshToken || integration.refreshToken,
+      });
+    }
+  }
+
   // A Disconnect error means the platform will keep rejecting this channel no
   // matter how many token refreshes (e.g. TikTok's daily active user cap):
   // mark the channel as needing a re-connect and notify the user, then rethrow
@@ -464,7 +508,9 @@ export class PostActivity {
 
     return withHeartbeat(() =>
       this.handleDisconnect(integration, () =>
-        getIntegration.finalizePost(integration.token, pendingData, integration)
+        this.refreshAndRepeat(integration, (current) =>
+          getIntegration.finalizePost(current.token, pendingData, current)
+        )
       )
     );
   }

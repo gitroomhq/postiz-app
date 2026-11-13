@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "この請求は異議申し立てがあったため、返金できません",
   "billing_discount_modal_still_active": "ご契約はまだ有効です。続けるには、以下のいずれかのオプションを選択してください。",
   "billing_subscription_not_cancelled": "ご契約はキャンセルされていません。",
-  "billing_cancel_failed": "ご契約のキャンセルに失敗しました。再度お試しいただくか、サポートまでご連絡ください。"
+  "billing_cancel_failed": "ご契約のキャンセルに失敗しました。再度お試しいただくか、サポートまでご連絡ください。",
+  "no_analytics_to_show_for_this_channel": "このチャンネルに表示できる分析情報はありません。データが表示されるはずの場合は、チャンネルの再接続をお試しください。",
+  "no_ai_credits_ask_admin": "AIクレジットが残っていません。組織の管理者にお問い合わせください。",
+  "connect_link_title": "Postiz があなたの {{platform}} への接続を求めています",
+  "connect_link_trust": "このリンクの送信者を信頼できる場合にのみ続行してください",
+  "connect_link_automate": "Postiz があなたの {{platform}} アカウントを自動化します。あなたに代わって投稿の予約と公開ができます",
+  "connect_link_system": "すべては Postiz のシステムを経由します。アカウントは Postiz のワークスペースに追加され、そこから管理されます",
+  "connect_link_redirect": "完了すると、Postiz 外部のウェブサイト {{site}} に移動します",
+  "connect_link_next": "{{platform}} に移動して、ログインとアクセスの承認を行います",
+  "connect_link_continue": "{{platform}} に進む",
+  "connect_link_connecting": "接続中...",
+  "connect_link_close": "思っていたものと違いますか？このページを閉じれば、何も接続されません。",
+  "connect_link_secured_by": "セキュリティ提供:",
+  "connect_link_expired": "このリンクは無効になりました",
+  "connect_link_expired_description": "接続リンクの有効期限は1時間です。送信者に新しいリンクを依頼してください。"
 }

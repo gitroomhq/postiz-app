@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "Khoản phí này đang bị tranh chấp nên không thể hoàn tiền",
   "billing_discount_modal_still_active": "Gói đăng ký của bạn vẫn còn hiệu lực. Vui lòng chọn một trong các tùy chọn bên dưới để tiếp tục.",
   "billing_subscription_not_cancelled": "Gói đăng ký của bạn chưa được hủy",
-  "billing_cancel_failed": "Chúng tôi không thể hủy gói đăng ký của bạn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ."
+  "billing_cancel_failed": "Chúng tôi không thể hủy gói đăng ký của bạn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ.",
+  "no_analytics_to_show_for_this_channel": "Không có phân tích nào để hiển thị cho kênh này. Nếu bạn mong đợi thấy dữ liệu, hãy thử kết nối lại kênh.",
+  "no_ai_credits_ask_admin": "Bạn không còn tín dụng AI. Vui lòng liên hệ quản trị viên của tổ chức bạn.",
+  "connect_link_title": "Postiz muốn kết nối với {{platform}} của bạn",
+  "connect_link_trust": "Chỉ tiếp tục nếu bạn tin tưởng người đã gửi liên kết này cho bạn",
+  "connect_link_automate": "Postiz sẽ tự động hóa tài khoản {{platform}} của bạn: có thể lên lịch và đăng bài thay bạn",
+  "connect_link_system": "Mọi thứ đều đi qua hệ thống Postiz: tài khoản của bạn được thêm vào một không gian làm việc Postiz và được quản lý từ đó",
+  "connect_link_redirect": "Khi hoàn tất, bạn sẽ được chuyển đến {{site}}, một trang web bên ngoài Postiz",
+  "connect_link_next": "Bạn sẽ được chuyển đến {{platform}} để đăng nhập và phê duyệt quyền truy cập",
+  "connect_link_continue": "Tiếp tục đến {{platform}}",
+  "connect_link_connecting": "Đang kết nối...",
+  "connect_link_close": "Không như bạn mong đợi? Hãy đóng trang này và sẽ không có gì được kết nối.",
+  "connect_link_secured_by": "Bảo mật bởi",
+  "connect_link_expired": "Liên kết này không còn hiệu lực",
+  "connect_link_expired_description": "Liên kết kết nối có hiệu lực trong một giờ. Hãy yêu cầu người gửi cấp liên kết mới."
 }

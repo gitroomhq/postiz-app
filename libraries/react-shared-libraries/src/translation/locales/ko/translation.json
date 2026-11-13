@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "이 청구 건은 분쟁이 제기되어 환불할 수 없습니다.",
   "billing_discount_modal_still_active": "구독이 아직 활성화되어 있습니다. 계속하려면 아래 옵션 중 하나를 선택하세요.",
   "billing_subscription_not_cancelled": "구독이 취소되지 않았습니다.",
-  "billing_cancel_failed": "구독을 취소할 수 없습니다. 다시 시도하거나 고객 지원팀에 문의하세요."
+  "billing_cancel_failed": "구독을 취소할 수 없습니다. 다시 시도하거나 고객 지원팀에 문의하세요.",
+  "no_analytics_to_show_for_this_channel": "이 채널에 표시할 분석 데이터가 없습니다. 데이터를 볼 것으로 예상했다면 채널을 다시 연결해 보세요.",
+  "no_ai_credits_ask_admin": "AI 크레딧이 남아있지 않습니다. 소속 조직의 관리자에게 문의하세요.",
+  "connect_link_title": "Postiz가 회원님의 {{platform}}에 연결하려고 합니다",
+  "connect_link_trust": "이 링크를 보낸 사람을 신뢰하는 경우에만 계속하세요",
+  "connect_link_automate": "Postiz가 회원님의 {{platform}} 계정을 자동화합니다. 회원님을 대신해 게시물을 예약하고 게시할 수 있습니다",
+  "connect_link_system": "모든 작업은 Postiz 시스템을 통해 이루어집니다. 계정이 Postiz 워크스페이스에 추가되어 그곳에서 관리됩니다",
+  "connect_link_redirect": "완료되면 Postiz 외부 웹사이트인 {{site}}(으)로 이동합니다",
+  "connect_link_next": "로그인하고 액세스를 승인할 수 있도록 {{platform}}(으)로 이동합니다",
+  "connect_link_continue": "{{platform}}(으)로 계속",
+  "connect_link_connecting": "연결 중...",
+  "connect_link_close": "예상한 내용이 아닌가요? 이 페이지를 닫으면 아무것도 연결되지 않습니다.",
+  "connect_link_secured_by": "보안 제공:",
+  "connect_link_expired": "이 링크는 더 이상 유효하지 않습니다",
+  "connect_link_expired_description": "연결 링크는 1시간 동안 유효합니다. 링크를 보낸 사람에게 새 링크를 요청하세요."
 }

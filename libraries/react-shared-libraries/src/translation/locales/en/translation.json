@@ -924,5 +924,19 @@
   "charge_disputed_no_refund": "This charge was disputed and thus cannot be refunded",
   "billing_discount_modal_still_active": "Your subscription is still active. Choose one of the options below to continue.",
   "billing_subscription_not_cancelled": "Your subscription was not cancelled",
-  "billing_cancel_failed": "We could not cancel your subscription. Please try again or contact support."
+  "billing_cancel_failed": "We could not cancel your subscription. Please try again or contact support.",
+  "no_analytics_to_show_for_this_channel": "No analytics to show for this channel. If you expected to see data, try reconnecting the channel.",
+  "no_ai_credits_ask_admin": "You have no AI credits left. Please ask an admin of your organization.",
+  "connect_link_title": "Postiz wants to connect to your {{platform}}",
+  "connect_link_trust": "Only continue if you trust whoever sent you this link",
+  "connect_link_automate": "Postiz will automate your {{platform}} account: it can schedule and publish posts on your behalf",
+  "connect_link_system": "Everything goes through the Postiz system: your account is added to a Postiz workspace and managed from there",
+  "connect_link_redirect": "When you are done you will be sent to {{site}}, a website outside of Postiz",
+  "connect_link_next": "You will be taken to {{platform}} to sign in and approve the access",
+  "connect_link_continue": "Continue to {{platform}}",
+  "connect_link_connecting": "Connecting...",
+  "connect_link_close": "Not what you expected? Close this page and nothing will be connected.",
+  "connect_link_secured_by": "Secured by",
+  "connect_link_expired": "This link is no longer valid",
+  "connect_link_expired_description": "Connection links work for one hour. Ask whoever sent it to you for a new one."
 }

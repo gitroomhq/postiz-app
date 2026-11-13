@@ -927,3 +927,17 @@ checksums:
     billing_discount_modal_still_active: e0b46754f967bac21c5201a13fce5c87
     billing_subscription_not_cancelled: 7b1dab8acf6420daa58a5ffea6ffe6e9
     billing_cancel_failed: 00e2666f61f4bbea8c3fbc6d622bde22
+    no_analytics_to_show_for_this_channel: a19af696374d03aa7c7dc1e9968e0d71
+    no_ai_credits_ask_admin: ceea67311bb15d9567ffec3c5427c91b
+    connect_link_title: 28192d3c14d0a02125889004b908e4fd
+    connect_link_trust: 7f3b071ea4cb489f408d4ecd86bd1b7e
+    connect_link_automate: aeca86b09f0a104ac88dcfe151a7e0d5
+    connect_link_system: 99b4c25002464ed61aae60873e6696c4
+    connect_link_redirect: 97807c4b66dbc3e379dcd17dcf555c4e
+    connect_link_next: 92be9bc5c54ecd2d6262de3c75cde125
+    connect_link_continue: 4c71b9d883d9965e16729f6ad02c73c6
+    connect_link_connecting: 0627ab04701831ecbde4135e1ef9210c
+    connect_link_close: cef636594144aab36fe4df845c933ec5
+    connect_link_secured_by: 9a5dc58668d380ad412347d6de2200be
+    connect_link_expired: f536192f63445c31ddf1ac9ce2bf343c
+    connect_link_expired_description: 5171dc0e2b33e37c1d570c8ec332d641

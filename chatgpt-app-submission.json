@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Postiz",
     "subtitle": "Schedule Social Media Posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts\n- Delete posts.",
+    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Get a link to connect a new channel\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts\n- Delete posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -30,6 +30,18 @@
         "read_only_justification": "Only retrieves the organization's customer groups.",
         "open_world_justification": "Does not write to public internet state or third-party systems.",
         "destructive_justification": "Does not delete, overwrite, revoke access, or send content."
+      }
+    },
+    "integrationConnectTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a connection link in Postiz, valid for one hour, that the user opens to add a new channel.",
+        "open_world_justification": "Only creates the link inside Postiz, with an optional return address that is stored with it and shown to the user; the channel is added later by the user, who approves the access on the platform in their own browser.",
+        "destructive_justification": "Does not delete, overwrite or publish anything; no channel is added or changed until the user completes the page behind the link."
       }
     },
     "integrationSchema": {

@@ -1202,14 +1202,17 @@ export class PostsService {
     const postList = [];
     const batchId = uuidv4();
     for (const post of body.posts) {
-      // the posts to update must belong to the organization
+      // the posts to update can't belong to another organization, an id that
+      // doesn't exist yet is a new post (the editor makes one for every post)
       const postIds = [
         ...new Set((post.value || []).map((p) => p.id).filter(Boolean)),
       ];
       if (
         postIds.length &&
-        (await this._postRepository.countPostsByIds(orgId, postIds)) !==
-          postIds.length
+        (await this._postRepository.countPostsOfOtherOrganizations(
+          orgId,
+          postIds
+        ))
       ) {
         throw new NotFoundException('Post not found');
       }

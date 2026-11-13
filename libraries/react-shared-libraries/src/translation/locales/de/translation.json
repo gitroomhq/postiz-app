@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "Dieser Betrag wurde angefochten und kann daher nicht erstattet werden",
   "billing_discount_modal_still_active": "Ihr Abonnement ist weiterhin aktiv. Wählen Sie unten eine der Optionen, um fortzufahren.",
   "billing_subscription_not_cancelled": "Ihr Abonnement wurde nicht gekündigt.",
-  "billing_cancel_failed": "Wir konnten Ihr Abonnement nicht kündigen. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support."
+  "billing_cancel_failed": "Wir konnten Ihr Abonnement nicht kündigen. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.",
+  "no_analytics_to_show_for_this_channel": "Für diesen Kanal sind keine Analysedaten verfügbar. Wenn Sie Daten erwartet haben, versuchen Sie, den Kanal erneut zu verbinden.",
+  "no_ai_credits_ask_admin": "Sie haben keine KI-Guthaben mehr. Bitte wenden Sie sich an einen Administrator Ihrer Organisation.",
+  "connect_link_title": "Postiz möchte sich mit Ihrem {{platform}}-Konto verbinden",
+  "connect_link_trust": "Fahren Sie nur fort, wenn Sie der Person vertrauen, die Ihnen diesen Link geschickt hat",
+  "connect_link_automate": "Postiz automatisiert Ihr {{platform}}-Konto: Es kann in Ihrem Namen Beiträge planen und veröffentlichen",
+  "connect_link_system": "Alles läuft über das Postiz-System: Ihr Konto wird einem Postiz-Arbeitsbereich hinzugefügt und von dort verwaltet",
+  "connect_link_redirect": "Danach werden Sie zu {{site}} weitergeleitet, einer Website außerhalb von Postiz",
+  "connect_link_next": "Sie werden zu {{platform}} weitergeleitet, um sich anzumelden und den Zugriff zu genehmigen",
+  "connect_link_continue": "Weiter zu {{platform}}",
+  "connect_link_connecting": "Verbindung wird hergestellt...",
+  "connect_link_close": "Nicht das, was Sie erwartet haben? Schließen Sie diese Seite und es wird nichts verbunden.",
+  "connect_link_secured_by": "Gesichert durch",
+  "connect_link_expired": "Dieser Link ist nicht mehr gültig",
+  "connect_link_expired_description": "Verbindungslinks sind eine Stunde lang gültig. Bitten Sie die Person, die ihn Ihnen geschickt hat, um einen neuen."
 }

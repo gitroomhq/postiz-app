@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "חיוב זה היה במחלוקת ולכן לא ניתן להחזיר אותו",
   "billing_discount_modal_still_active": "המנוי שלך עדיין פעיל. אנא בחר אחת מהאפשרויות למטה כדי להמשיך.",
   "billing_subscription_not_cancelled": "המנוי שלך לא בוטל",
-  "billing_cancel_failed": "לא הצלחנו לבטל את המנוי שלך. נסה שוב או פנה לתמיכה."
+  "billing_cancel_failed": "לא הצלחנו לבטל את המנוי שלך. נסה שוב או פנה לתמיכה.",
+  "no_analytics_to_show_for_this_channel": "אין נתוני אנליטיקה להצגה עבור הערוץ הזה. אם ציפית לראות נתונים, נסה לחבר מחדש את הערוץ.",
+  "no_ai_credits_ask_admin": "לא נותרו לך קרדיטים ל-AI. אנא פנה למנהל הארגון שלך.",
+  "connect_link_title": "Postiz רוצה להתחבר ל-{{platform}} שלך",
+  "connect_link_trust": "המשך רק אם אתה סומך על מי ששלח לך את הקישור הזה",
+  "connect_link_automate": "Postiz יפעיל אוטומציה על חשבון ה-{{platform}} שלך: הוא יכול לתזמן ולפרסם פוסטים בשמך",
+  "connect_link_system": "הכול עובר דרך מערכת Postiz: החשבון שלך מתווסף לסביבת עבודה ב-Postiz ומנוהל משם",
+  "connect_link_redirect": "בסיום תועבר אל {{site}}, אתר מחוץ ל-Postiz",
+  "connect_link_next": "תועבר אל {{platform}} כדי להתחבר ולאשר את הגישה",
+  "connect_link_continue": "המשך אל {{platform}}",
+  "connect_link_connecting": "מתחבר...",
+  "connect_link_close": "לא מה שציפית? סגור את הדף הזה ושום דבר לא יחובר.",
+  "connect_link_secured_by": "מאובטח על ידי",
+  "connect_link_expired": "הקישור הזה כבר לא תקף",
+  "connect_link_expired_description": "קישורי חיבור תקפים לשעה אחת. בקש קישור חדש ממי ששלח לך אותו."
 }

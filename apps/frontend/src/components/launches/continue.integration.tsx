@@ -44,7 +44,9 @@ export const ContinueIntegration: FC<{
       if (returnURL) {
         // If returnURL exists, always redirect to it with the path params
         const params = path.includes('?') ? path.split('?')[1] : '';
-        push(params ? `${returnURL}?${params}` : returnURL);
+        // a returnURL of the public API may carry its own query string
+        const separator = returnURL.includes('?') ? '&' : '?';
+        push(params ? `${returnURL}${separator}${params}` : returnURL);
       } else if (logged) {
         // If logged in without returnURL, use normal navigation
         push(path);
@@ -226,10 +228,23 @@ export const ContinueIntegration: FC<{
           ? `/integrations/provider/${twoStepState.integrationId}/connect`
           : `/integrations/public/provider/${twoStepState.integrationId}/connect`;
 
-        const response = await fetch(endpoint, {
+        const body = JSON.stringify({ ...modifiedParams, ...data });
+        let response = await fetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({ ...modifiedParams, ...data }),
+          body,
         });
+
+        // Logged into another organization than the one the channel is added
+        // to (a connect link or an invite link): save it by the connection state
+        if (logged && response.status === HttpStatusCode.NotFound) {
+          response = await fetch(
+            `/integrations/public/provider/${twoStepState.integrationId}/connect`,
+            {
+              method: 'POST',
+              body,
+            }
+          );
+        }
 
         if (
           response.status !== HttpStatusCode.Ok &&

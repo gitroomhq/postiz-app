@@ -922,5 +922,19 @@
   "charge_disputed_no_refund": "Ce prélèvement a fait l’objet d’une contestation et ne peut donc pas être remboursé",
   "billing_discount_modal_still_active": "Votre abonnement est toujours actif. Choisissez l'une des options ci-dessous pour continuer.",
   "billing_subscription_not_cancelled": "Votre abonnement n'a pas été annulé.",
-  "billing_cancel_failed": "Nous n'avons pas pu annuler votre abonnement. Veuillez réessayer ou contacter le support."
+  "billing_cancel_failed": "Nous n'avons pas pu annuler votre abonnement. Veuillez réessayer ou contacter le support.",
+  "no_analytics_to_show_for_this_channel": "Aucune analyse à afficher pour ce canal. Si vous vous attendiez à voir des données, essayez de reconnecter le canal.",
+  "no_ai_credits_ask_admin": "Vous n'avez plus de crédits IA. Veuillez contacter un administrateur de votre organisation.",
+  "connect_link_title": "Postiz souhaite se connecter à votre compte {{platform}}",
+  "connect_link_trust": "Ne continuez que si vous faites confiance à la personne qui vous a envoyé ce lien",
+  "connect_link_automate": "Postiz automatisera votre compte {{platform}} : il peut programmer et publier des posts en votre nom",
+  "connect_link_system": "Tout passe par le système Postiz : votre compte est ajouté à un espace de travail Postiz et géré depuis celui-ci",
+  "connect_link_redirect": "Une fois terminé, vous serez redirigé vers {{site}}, un site externe à Postiz",
+  "connect_link_next": "Vous allez être redirigé vers {{platform}} pour vous connecter et approuver l'accès",
+  "connect_link_continue": "Continuer vers {{platform}}",
+  "connect_link_connecting": "Connexion...",
+  "connect_link_close": "Ce n'est pas ce que vous attendiez ? Fermez cette page et rien ne sera connecté.",
+  "connect_link_secured_by": "Sécurisé par",
+  "connect_link_expired": "Ce lien n'est plus valide",
+  "connect_link_expired_description": "Les liens de connexion sont valables une heure. Demandez-en un nouveau à la personne qui vous l'a envoyé."
 }

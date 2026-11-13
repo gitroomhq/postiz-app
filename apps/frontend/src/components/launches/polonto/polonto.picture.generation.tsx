@@ -13,6 +13,7 @@ import { Button } from '@gitroom/react/form/button';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 const GenerateTab = observer(({ store }: any) => {
   const inputRef = React.useRef<any>(null);
   const [image, setImage] = React.useState(null);
@@ -20,6 +21,7 @@ const GenerateTab = observer(({ store }: any) => {
   const { billingEnabled } = useVariables();
   const fetch = useFetch();
   const toast = useToaster();
+  const user = useUser();
   const loadCredits = useCallback(async () => {
     if (!billingEnabled) {
       return {
@@ -37,6 +39,16 @@ const GenerateTab = observer(({ store }: any) => {
 
   const handleGenerate = async () => {
     if (data?.credits <= 0) {
+      if (user?.role === 'USER') {
+        toast.show(
+          t(
+            'no_ai_credits_ask_admin',
+            'You have no AI credits left. Please ask an admin of your organization.'
+          ),
+          'warning'
+        );
+        return;
+      }
       window.open('/billing', '_blank');
       return;
     }
