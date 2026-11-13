@@ -72,25 +72,46 @@ const browserSchemes = [
   'about:',
 ];
 
+// MCP paths whose authorization server is the DCR issuer (start.mcp.ts)
+const dcrIssuerPaths = [
+  '/mcp-oauth',
+  '/mcp-oauth-claude',
+  '/mcp-oauth-dynamic',
+];
+
 @Injectable()
 export class OAuthService {
   constructor(private _oauthRepository: OAuthRepository) {}
 
-  // RFC 9207 iss of a dynamically registered client: the DCR issuer on the
-  // host it discovered it on, told by its RFC 8707 resource. The MCP backend
-  // can run on its own host (MCP_URL), which is also the default
-  issuer(resource?: string) {
-    const hosts = [process.env.MCP_URL, process.env.NEXT_PUBLIC_BACKEND_URL]
-      .filter((url): url is string => !!url)
-      .map((url) => new URL(url).origin);
-    const host = hosts.find((origin) => {
-      try {
-        return !!resource && new URL(resource).origin === origin;
-      } catch {
-        return false;
-      }
-    });
-    return new URL('/mcp-oauth-dynamic', host || hosts[0]).toString();
+  // RFC 9207 iss for a client that discovered the DCR issuer, the only one
+  // advertising it (and only once MCP_URL is set): every dynamically
+  // registered client, or a pre-registered one whose RFC 8707 resource is an
+  // MCP path that issuer serves (HubSpot reads the root metadata instead).
+  // The host is the one the client discovered it on, MCP_URL by default
+  issuer(app: Pick<OAuthApp, 'dynamic' | 'clientId'>, resource?: string) {
+    if (!process.env.MCP_URL || app.clientId === hubspotOAuthClientId()) {
+      return undefined;
+    }
+
+    let target: URL | undefined;
+    try {
+      target = new URL(resource!);
+    } catch {
+      target = undefined;
+    }
+
+    if (!app.dynamic && !dcrIssuerPaths.includes(target?.pathname || '')) {
+      return undefined;
+    }
+
+    const hosts = [
+      process.env.MCP_URL,
+      process.env.NEXT_PUBLIC_BACKEND_URL!,
+    ].map((url) => new URL(url).origin);
+    return new URL(
+      '/mcp-oauth-dynamic',
+      hosts.find((origin) => origin === target?.origin) || hosts[0]
+    ).toString();
   }
 
   async getApp(orgId: string) {

@@ -117,11 +117,9 @@ export class OAuthController {
       app.dynamic ? body.redirect_uri! : app.redirectUrl
     );
     redirectUrl.searchParams.set('code', code);
-    if (app.dynamic) {
-      redirectUrl.searchParams.set(
-        'iss',
-        this._oauthService.issuer(body.resource)
-      );
+    const iss = this._oauthService.issuer(app, body.resource);
+    if (iss) {
+      redirectUrl.searchParams.set('iss', iss);
     }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
@@ -231,11 +229,9 @@ export class OAuthAuthorizedController {
     if (body.action === 'deny') {
       const redirectUrl = new URL(redirectTarget);
       redirectUrl.searchParams.set('error', 'access_denied');
-      if (app.dynamic) {
-        redirectUrl.searchParams.set(
-          'iss',
-          this._oauthService.issuer(body.resource)
-        );
+      const iss = this._oauthService.issuer(app, body.resource);
+      if (iss) {
+        redirectUrl.searchParams.set('iss', iss);
       }
       if (body.state) {
         redirectUrl.searchParams.set('state', body.state);
@@ -254,14 +250,12 @@ export class OAuthAuthorizedController {
       })
     );
 
-    // RFC 9207 iss, only on the DCR issuer, the one that advertises it
+    // RFC 9207 iss, when the client discovered the issuer that advertises it
     const redirectUrl = new URL(redirectTarget);
     redirectUrl.searchParams.set('code', code);
-    if (app.dynamic) {
-      redirectUrl.searchParams.set(
-        'iss',
-        this._oauthService.issuer(body.resource)
-      );
+    const iss = this._oauthService.issuer(app, body.resource);
+    if (iss) {
+      redirectUrl.searchParams.set('iss', iss);
     }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
