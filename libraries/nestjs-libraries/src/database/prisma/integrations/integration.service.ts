@@ -30,7 +30,10 @@ import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integration
 import { TemporalService } from 'nestjs-temporal-core';
 import { randomBytes } from 'crypto';
 import { ApplicationFailure } from '@temporalio/common';
-import { EncryptionService } from '@gitroom/nestjs-libraries/services/encryption.service';
+import {
+  EncryptionService,
+  integrationEncryptedFields,
+} from '@gitroom/nestjs-libraries/services/encryption.service';
 
 dayjs.extend(utc);
 
@@ -825,6 +828,22 @@ export class IntegrationService {
     );
     const loadOnlyIds = exisingData.map((p) => p.value);
     return difference(id, loadOnlyIds);
+  }
+
+  // The tokens of a channel that came from a workflow. A workflow carries the
+  // channel from one activity to the next, so an activity can get its tokens
+  // encrypted (an activity handed them out that way) or plain (the workflow
+  // started before the tokens were encrypted, or the install has no
+  // encryption), and even one of each. Every activity that uses a token of a
+  // channel it got from a workflow goes through here first; a plain token is
+  // used as it is.
+  async decryptTokens<T extends Partial<Integration>>(integration: T) {
+    return integration
+      ? this._encryptionService.decryptFields(
+          integration,
+          integrationEncryptedFields
+        )
+      : integration;
   }
 
   // One page of the encryptTokensWorkflow: encrypts the tokens that are still
