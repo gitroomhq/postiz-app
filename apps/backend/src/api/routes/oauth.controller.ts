@@ -117,6 +117,10 @@ export class OAuthController {
       app.dynamic ? body.redirect_uri! : app.redirectUrl
     );
     redirectUrl.searchParams.set('code', code);
+    const iss = this._oauthService.issuer(app, body.resource);
+    if (iss) {
+      redirectUrl.searchParams.set('iss', iss);
+    }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }
@@ -225,6 +229,10 @@ export class OAuthAuthorizedController {
     if (body.action === 'deny') {
       const redirectUrl = new URL(redirectTarget);
       redirectUrl.searchParams.set('error', 'access_denied');
+      const iss = this._oauthService.issuer(app, body.resource);
+      if (iss) {
+        redirectUrl.searchParams.set('iss', iss);
+      }
       if (body.state) {
         redirectUrl.searchParams.set('state', body.state);
       }
@@ -242,8 +250,13 @@ export class OAuthAuthorizedController {
       })
     );
 
+    // RFC 9207 iss, when the client discovered the issuer that advertises it
     const redirectUrl = new URL(redirectTarget);
     redirectUrl.searchParams.set('code', code);
+    const iss = this._oauthService.issuer(app, body.resource);
+    if (iss) {
+      redirectUrl.searchParams.set('iss', iss);
+    }
     if (body.state) {
       redirectUrl.searchParams.set('state', body.state);
     }
