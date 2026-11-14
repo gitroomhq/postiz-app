@@ -18,6 +18,8 @@ import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/n
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
+import dayjs from 'dayjs';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
@@ -25,7 +27,6 @@ import {
   AuthorizationActions,
   Sections,
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
-import dayjs from 'dayjs';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -92,7 +93,12 @@ export class BillingController {
       }
       return { finish: true };
     } catch (err) {
-      console.error('finishTrial failed', err);
+      logger.error('stripe_operation_failed', {
+        operation: 'finish_trial',
+        org_id: org.id,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { finish: false };
     }
   }
@@ -222,7 +228,13 @@ export class BillingController {
             process.env.FRONTEND_URL
           }/billing">Billing page</a>.`
         );
-      } catch (err) {}
+      } catch (err) {
+        logger.error('cancellation_email_failed', {
+          org_id: org.id,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return result;
