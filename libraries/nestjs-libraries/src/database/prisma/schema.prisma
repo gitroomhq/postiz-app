@@ -502,8 +502,10 @@ model Post {
   @@index([publishDate, state, deletedAt, parentPostId, integrationId, organizationId, creationMethod])
   @@index([state])
   @@index([organizationId])
-  // state and deletedAt ride along so that counting the posts of a period is
-  // answered from the index alone, without reading each post from the table.
+  // deletedAt lets the calendar skip deleted posts inside the index. With
+  // state, the posts-per-period count can also skip the table for posts on
+  // pages PostgreSQL has marked all-visible; on a table that changes as much
+  // as this one, that is only part of them.
   @@index([organizationId, publishDate, state, deletedAt])
   @@index([organizationId, intervalInDays])
   @@index([parentPostId])
