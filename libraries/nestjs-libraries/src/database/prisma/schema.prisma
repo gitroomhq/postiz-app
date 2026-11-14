@@ -236,7 +236,10 @@ model Media {
   oauthApps          OAuthApp[]
 
   @@index([name])
-  @@index([organizationId])
+  // The media library: the count is answered from this index alone and the
+  // newest-first page is read in index order. With organizationId only, both
+  // read every file of the organization from the table.
+  @@index([organizationId, createdAt, deletedAt, status])
   @@index([type])
 }
 
@@ -502,7 +505,11 @@ model Post {
   @@index([publishDate, state, deletedAt, parentPostId, integrationId, organizationId, creationMethod])
   @@index([state])
   @@index([organizationId])
-  @@index([organizationId, publishDate])
+  // deletedAt lets the calendar skip deleted posts inside the index. With
+  // state, the posts-per-period count can also skip the table for posts on
+  // pages PostgreSQL has marked all-visible; on a table that changes as much
+  // as this one, that is only part of them.
+  @@index([organizationId, publishDate, state, deletedAt])
   @@index([organizationId, intervalInDays])
   @@index([parentPostId])
   @@index([submittedForOrderId])
