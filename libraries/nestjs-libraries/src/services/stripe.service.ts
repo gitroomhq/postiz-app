@@ -570,7 +570,7 @@ export class StripeService extends PaymentProviderAbstract {
     );
   }
 
-  async setToCancel(organizationId: string) {
+  async setToCancel(organizationId: string, cancel?: boolean) {
     const id = makeId(10);
     const org = await this._organizationService.getOrgById(organizationId);
     const customer = await this.createOrGetCustomer(org!);
@@ -584,6 +584,13 @@ export class StripeService extends PaymentProviderAbstract {
 
     // If the user is toggling back (un-cancelling), just remove the cancel
     if (sub.cancel_at_period_end) {
+      if (cancel) {
+        return {
+          id,
+          cancel_at: sub.cancel_at ? new Date(sub.cancel_at * 1000) : undefined,
+          unchanged: true,
+        };
+      }
       let cancel_at: number | null = null;
       for (const s of subscriptions) {
         const updated = await stripe.subscriptions.update(s.id, {
@@ -598,6 +605,10 @@ export class StripeService extends PaymentProviderAbstract {
         id,
         cancel_at: cancel_at ? new Date(cancel_at * 1000) : undefined,
       };
+    }
+
+    if (cancel === false) {
+      return { id, cancel_at: undefined, unchanged: true };
     }
 
     // Check if the latest invoice has a failed payment
