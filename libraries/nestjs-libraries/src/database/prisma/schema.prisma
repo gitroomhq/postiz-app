@@ -503,6 +503,7 @@ model Post {
   @@index([state])
   @@index([organizationId])
   @@index([organizationId, publishDate])
+  @@index([organizationId, intervalInDays])
   @@index([parentPostId])
   @@index([submittedForOrderId])
   @@index([intervalInDays])

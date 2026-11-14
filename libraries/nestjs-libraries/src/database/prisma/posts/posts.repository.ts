@@ -192,72 +192,85 @@ export class PostsRepository {
     const startDate = dayjs.utc(query.startDate).toDate();
     const endDate = dayjs.utc(query.endDate).toDate();
 
-    const list = await this._post.model.post.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              {
-                organizationId: orgId,
-              },
-            ],
-          },
-          {
-            OR: [
-              {
-                publishDate: {
-                  gte: startDate,
-                  lte: endDate,
-                },
-              },
-              {
-                intervalInDays: {
-                  not: null,
-                },
-              },
-            ],
-          },
-        ],
-        integration: {
-          deletedAt: null,
-          organizationId: orgId,
-          ...(query.customer ? { customerId: query.customer } : {}),
-        },
-        deletedAt: null,
-        parentPostId: null,
-      },
-      select: {
-        id: true,
-        content: true,
-        publishDate: true,
-        releaseURL: true,
-        releaseId: true,
-        state: true,
-        error: true,
-        intervalInDays: true,
-        group: true,
-        creationMethod: true,
-        settings: true,
-        tags: {
-          where: {
-            tag: {
-              deletedAt: null,
+    const whereBase = {
+      AND: [
+        {
+          OR: [
+            {
+              organizationId: orgId,
             },
-          },
-          select: {
-            tag: true,
+          ],
+        },
+      ],
+      integration: {
+        deletedAt: null as any,
+        organizationId: orgId,
+        ...(query.customer ? { customerId: query.customer } : {}),
+      },
+      deletedAt: null as Date | null,
+      parentPostId: null as string | null,
+    };
+
+    const select = {
+      id: true,
+      content: true,
+      publishDate: true,
+      releaseURL: true,
+      releaseId: true,
+      state: true,
+      error: true,
+      intervalInDays: true,
+      group: true,
+      creationMethod: true,
+      settings: true,
+      tags: {
+        where: {
+          tag: {
+            deletedAt: null as Date | null,
           },
         },
-        integration: {
-          select: {
-            id: true,
-            providerIdentifier: true,
-            name: true,
-            picture: true,
-          },
+        select: {
+          tag: true,
         },
       },
-    });
+      integration: {
+        select: {
+          id: true,
+          providerIdentifier: true,
+          name: true,
+          picture: true,
+        },
+      },
+    };
+
+    // The posts of the range and the repeating posts are loaded separately: as
+    // one query ("in the range OR repeating") PostgreSQL can't use the
+    // [organizationId, publishDate] index and reads every post of the
+    // organization from disk, whatever the range is.
+    const [inRange, repeating] = await Promise.all([
+      this._post.model.post.findMany({
+        where: {
+          ...whereBase,
+          publishDate: {
+            gte: startDate,
+            lte: endDate,
+          },
+          intervalInDays: null,
+        },
+        select,
+      }),
+      this._post.model.post.findMany({
+        where: {
+          ...whereBase,
+          intervalInDays: {
+            not: null,
+          },
+        },
+        select,
+      }),
+    ]);
+
+    const list = [...inRange, ...repeating];
 
     // This runs on the request thread, so keep it linear: push into one array
     // (spreading the accumulator on every post was quadratic and blocked the
