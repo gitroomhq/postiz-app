@@ -936,5 +936,6 @@
   "connect_link_expired": "이 링크는 더 이상 유효하지 않습니다",
   "connect_link_expired_description": "연결 링크는 1시간 동안 유효합니다. 링크를 보낸 사람에게 새 링크를 요청하세요.",
   "label_made_with_ai": "AI로 제작됨",
-  "facebook_made_with_ai": "AI로 제작됨 (텍스트 및 사진 게시물만 해당)"
+  "facebook_made_with_ai": "AI로 제작됨 (텍스트 및 사진 게시물만 해당)",
+  "youtube_made_with_ai": "AI로 제작됨 (사실적인 변경 또는 합성 콘텐츠)"
 }

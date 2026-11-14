@@ -936,5 +936,6 @@
   "connect_link_expired": "このリンクは無効になりました",
   "connect_link_expired_description": "接続リンクの有効期限は1時間です。送信者に新しいリンクを依頼してください。",
   "label_made_with_ai": "AIで作成",
-  "facebook_made_with_ai": "AIで作成（テキストと写真の投稿のみ）"
+  "facebook_made_with_ai": "AIで作成（テキストと写真の投稿のみ）",
+  "youtube_made_with_ai": "AIで作成（リアルな改変または合成コンテンツ）"
 }

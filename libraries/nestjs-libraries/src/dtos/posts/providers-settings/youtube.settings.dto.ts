@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsDefined,
   IsIn,
   IsOptional,
@@ -15,6 +16,7 @@ import {
 } from 'class-validator';
 import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import { Type } from 'class-transformer';
+import { JSONSchema } from 'class-validator-jsonschema';
 
 // YouTube caps the combined length of all tags at 500 characters.
 // Tags containing whitespace are wrapped in quotes by YouTube, which adds
@@ -91,4 +93,12 @@ export class YoutubeSettingsDto {
   @IsYoutubeTagsLength()
   @Type(() => YoutubeTagsSettings)
   tags: YoutubeTagsSettings[];
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Discloses that the video has realistic altered or AI generated content (YouTube shows its altered or synthetic content label). YouTube asks for it only when the content looks realistic, not for animation or clearly unrealistic content.',
+  })
+  made_with_ai?: boolean;
 }

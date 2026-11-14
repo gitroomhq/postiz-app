@@ -936,5 +936,6 @@
   "connect_link_expired": "Dieser Link ist nicht mehr gültig",
   "connect_link_expired_description": "Verbindungslinks sind eine Stunde lang gültig. Bitten Sie die Person, die ihn Ihnen geschickt hat, um einen neuen.",
   "label_made_with_ai": "Mit KI erstellt",
-  "facebook_made_with_ai": "Mit KI erstellt (nur für Text- und Foto-Beiträge)"
+  "facebook_made_with_ai": "Mit KI erstellt (nur für Text- und Foto-Beiträge)",
+  "youtube_made_with_ai": "Mit KI erstellt (realistische veränderte oder synthetische Inhalte)"
 }

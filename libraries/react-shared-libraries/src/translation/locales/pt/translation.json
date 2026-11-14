@@ -936,5 +936,6 @@
   "connect_link_expired": "Este link não é mais válido",
   "connect_link_expired_description": "Os links de conexão funcionam por uma hora. Peça um novo a quem enviou este para você.",
   "label_made_with_ai": "Feito com IA",
-  "facebook_made_with_ai": "Feito com IA (apenas para publicações de texto e fotos)"
+  "facebook_made_with_ai": "Feito com IA (apenas para publicações de texto e fotos)",
+  "youtube_made_with_ai": "Feito com IA (conteúdo alterado ou sintético realista)"
 }

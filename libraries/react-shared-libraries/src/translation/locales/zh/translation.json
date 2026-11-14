@@ -936,5 +936,6 @@
   "connect_link_expired": "此链接已失效",
   "connect_link_expired_description": "连接链接的有效期为一小时。请向发送链接的人索取新的链接。",
   "label_made_with_ai": "由AI制作",
-  "facebook_made_with_ai": "由AI制作（仅适用于文字和图片帖子）"
+  "facebook_made_with_ai": "由AI制作（仅适用于文字和图片帖子）",
+  "youtube_made_with_ai": "由AI制作（逼真的修改或合成内容）"
 }
