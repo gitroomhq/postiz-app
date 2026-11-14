@@ -24,7 +24,10 @@ import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashbo
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 
 @Rules(
-  "Instagram should have at least one attachment, if it's a story, it can have only one picture"
+  [
+    "Instagram should have at least one attachment, if it's a story, it can have only one picture.",
+    'If the content of the post (text, pictures or video) was made with AI, ask the user if they want to mark it as AI, and set made_with_ai to true only when they say yes.',
+  ].join(' ')
 )
 export class InstagramProvider
   extends SocialAbstract
@@ -785,6 +788,7 @@ export class InstagramProvider
           )}`
         : ``;
     const isTrialReel = this.assetBoolean(firstPost.settings.is_trial_reel);
+    const madeWithAi = this.assetBoolean(firstPost.settings.made_with_ai);
     const medias = await Promise.all(
       firstPost?.media?.map(async (m) => {
         const caption =
@@ -836,6 +840,11 @@ export class InstagramProvider
         const itemCollaborators =
           firstPost?.media?.length === 1 ? collaborators : ``;
 
+        // is_ai_generated is rejected on carousel child items,
+        // it goes on the carousel container instead
+        const itemAiGenerated =
+          madeWithAi && !isCarousel ? `&is_ai_generated=true` : ``;
+
         // audio_configuration is only supported for Reels (single video, not a story)
         // and only with Facebook Login (not Instagram Login / graph.instagram.com)
         const audioConfiguration =
@@ -861,7 +870,7 @@ export class InstagramProvider
 
         const { id: photoId } = await (
           await this.fetch(
-            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${altText}${isCarousel}${itemCollaborators}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
+            `https://${type}/${META_GRAPH_API_VERSION}/${id}/media?${mediaType}${altText}${isCarousel}${itemCollaborators}${itemAiGenerated}${trialParams}${audioConfiguration}&access_token=${accessToken}${caption}`,
             {
               method: 'POST',
             }
@@ -898,6 +907,7 @@ export class InstagramProvider
                 ),
               }
             : {}),
+          ...(madeWithAi ? { madeWithAi } : {}),
         },
       },
     ];
@@ -912,6 +922,7 @@ export class InstagramProvider
       message?: string;
       carouselId?: string;
       collaborators?: string[];
+      madeWithAi?: boolean;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -979,6 +990,7 @@ export class InstagramProvider
       message?: string;
       carouselId?: string;
       collaborators?: string[];
+      madeWithAi?: boolean;
     },
     integration: Integration
   ): Promise<PendingCheckResponse> {
@@ -1041,6 +1053,8 @@ export class InstagramProvider
                   JSON.stringify(pendingData.collaborators)
                 )}`
               : ``
+          }${
+            pendingData.madeWithAi ? `&is_ai_generated=true` : ``
           }&access_token=${accessToken}`,
           {
             method: 'POST',

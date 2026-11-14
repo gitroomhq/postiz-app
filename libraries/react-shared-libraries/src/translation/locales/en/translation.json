@@ -936,5 +936,7 @@
   "connect_link_close": "Not what you expected? Close this page and nothing will be connected.",
   "connect_link_secured_by": "Secured by",
   "connect_link_expired": "This link is no longer valid",
-  "connect_link_expired_description": "Connection links work for one hour. Ask whoever sent it to you for a new one."
+  "connect_link_expired_description": "Connection links work for one hour. Ask whoever sent it to you for a new one.",
+  "label_made_with_ai": "Made with AI",
+  "facebook_made_with_ai": "Made with AI (only for text and photo posts)"
 }

@@ -934,5 +934,7 @@
   "connect_link_close": "예상한 내용이 아닌가요? 이 페이지를 닫으면 아무것도 연결되지 않습니다.",
   "connect_link_secured_by": "보안 제공:",
   "connect_link_expired": "이 링크는 더 이상 유효하지 않습니다",
-  "connect_link_expired_description": "연결 링크는 1시간 동안 유효합니다. 링크를 보낸 사람에게 새 링크를 요청하세요."
+  "connect_link_expired_description": "연결 링크는 1시간 동안 유효합니다. 링크를 보낸 사람에게 새 링크를 요청하세요.",
+  "label_made_with_ai": "AI로 제작됨",
+  "facebook_made_with_ai": "AI로 제작됨 (텍스트 및 사진 게시물만 해당)"
 }

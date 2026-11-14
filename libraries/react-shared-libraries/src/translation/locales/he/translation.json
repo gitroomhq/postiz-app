@@ -934,5 +934,7 @@
   "connect_link_close": "לא מה שציפית? סגור את הדף הזה ושום דבר לא יחובר.",
   "connect_link_secured_by": "מאובטח על ידי",
   "connect_link_expired": "הקישור הזה כבר לא תקף",
-  "connect_link_expired_description": "קישורי חיבור תקפים לשעה אחת. בקש קישור חדש ממי ששלח לך אותו."
+  "connect_link_expired_description": "קישורי חיבור תקפים לשעה אחת. בקש קישור חדש ממי ששלח לך אותו.",
+  "label_made_with_ai": "נוצר באמצעות בינה מלאכותית",
+  "facebook_made_with_ai": "נוצר באמצעות בינה מלאכותית (רק לפוסטים של טקסט ותמונות)"
 }

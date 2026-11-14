@@ -19,7 +19,10 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 const instagramProvider = new InstagramProvider();
 
 @Rules(
-  "Instagram should have at least one attachment, if it's a story, it can have only one picture"
+  [
+    "Instagram should have at least one attachment, if it's a story, it can have only one picture.",
+    'If the content of the post (text, pictures or video) was made with AI, ask the user if they want to mark it as AI, and set made_with_ai to true only when they say yes.',
+  ].join(' ')
 )
 export class InstagramStandaloneProvider
   extends SocialAbstract

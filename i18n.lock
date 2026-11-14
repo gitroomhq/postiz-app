@@ -939,3 +939,5 @@ checksums:
     connect_link_secured_by: 9a5dc58668d380ad412347d6de2200be
     connect_link_expired: f536192f63445c31ddf1ac9ce2bf343c
     connect_link_expired_description: 5171dc0e2b33e37c1d570c8ec332d641
+    label_made_with_ai: 2802faf2fece45bea413db4008f61bb1
+    facebook_made_with_ai: ec14128e3b4ab3994911459d13af5488

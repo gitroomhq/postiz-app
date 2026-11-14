@@ -934,5 +934,7 @@
   "connect_link_close": "和您预期的不一样？关闭此页面，就不会连接任何内容。",
   "connect_link_secured_by": "安全保障来自",
   "connect_link_expired": "此链接已失效",
-  "connect_link_expired_description": "连接链接的有效期为一小时。请向发送链接的人索取新的链接。"
+  "connect_link_expired_description": "连接链接的有效期为一小时。请向发送链接的人索取新的链接。",
+  "label_made_with_ai": "由AI制作",
+  "facebook_made_with_ai": "由AI制作（仅适用于文字和图片帖子）"
 }

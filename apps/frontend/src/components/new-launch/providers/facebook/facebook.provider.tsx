@@ -11,6 +11,7 @@ import {
 import { getPresetBackground } from '@gitroom/frontend/components/new-launch/providers/facebook/facebook.background';
 import { Input } from '@gitroom/react/form/input';
 import { Select } from '@gitroom/react/form/select';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { FacebookPreview } from '@gitroom/frontend/components/new-launch/providers/facebook/facebook.preview';
@@ -78,6 +79,15 @@ export const FacebookSettings = () => {
             label={'Video Title (only for video Post)'}
             {...register('title')}
           />
+          <div className="mb-[18px]">
+            <Checkbox
+              label={t(
+                'facebook_made_with_ai',
+                'Made with AI (only for text and photo posts)'
+              )}
+              {...register('made_with_ai')}
+            />
+          </div>
         </>
       )}
 

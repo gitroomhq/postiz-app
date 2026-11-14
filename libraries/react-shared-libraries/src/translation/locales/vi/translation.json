@@ -934,5 +934,7 @@
   "connect_link_close": "Không như bạn mong đợi? Hãy đóng trang này và sẽ không có gì được kết nối.",
   "connect_link_secured_by": "Bảo mật bởi",
   "connect_link_expired": "Liên kết này không còn hiệu lực",
-  "connect_link_expired_description": "Liên kết kết nối có hiệu lực trong một giờ. Hãy yêu cầu người gửi cấp liên kết mới."
+  "connect_link_expired_description": "Liên kết kết nối có hiệu lực trong một giờ. Hãy yêu cầu người gửi cấp liên kết mới.",
+  "label_made_with_ai": "Được tạo bằng AI",
+  "facebook_made_with_ai": "Được tạo bằng AI (chỉ dành cho bài đăng văn bản và ảnh)"
 }

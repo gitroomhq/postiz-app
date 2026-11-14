@@ -934,5 +934,7 @@
   "connect_link_close": "Nicht das, was Sie erwartet haben? Schließen Sie diese Seite und es wird nichts verbunden.",
   "connect_link_secured_by": "Gesichert durch",
   "connect_link_expired": "Dieser Link ist nicht mehr gültig",
-  "connect_link_expired_description": "Verbindungslinks sind eine Stunde lang gültig. Bitten Sie die Person, die ihn Ihnen geschickt hat, um einen neuen."
+  "connect_link_expired_description": "Verbindungslinks sind eine Stunde lang gültig. Bitten Sie die Person, die ihn Ihnen geschickt hat, um einen neuen.",
+  "label_made_with_ai": "Mit KI erstellt",
+  "facebook_made_with_ai": "Mit KI erstellt (nur für Text- und Foto-Beiträge)"
 }

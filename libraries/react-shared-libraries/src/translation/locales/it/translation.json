@@ -934,5 +934,7 @@
   "connect_link_close": "Non è quello che ti aspettavi? Chiudi questa pagina e non verrà collegato nulla.",
   "connect_link_secured_by": "Protetto da",
   "connect_link_expired": "Questo link non è più valido",
-  "connect_link_expired_description": "I link di connessione sono validi per un'ora. Chiedine uno nuovo a chi te l'ha inviato."
+  "connect_link_expired_description": "I link di connessione sono validi per un'ora. Chiedine uno nuovo a chi te l'ha inviato.",
+  "label_made_with_ai": "Realizzato con l'IA",
+  "facebook_made_with_ai": "Realizzato con l'IA (solo per post di testo e foto)"
 }

@@ -934,5 +934,7 @@
   "connect_link_close": "思っていたものと違いますか？このページを閉じれば、何も接続されません。",
   "connect_link_secured_by": "セキュリティ提供:",
   "connect_link_expired": "このリンクは無効になりました",
-  "connect_link_expired_description": "接続リンクの有効期限は1時間です。送信者に新しいリンクを依頼してください。"
+  "connect_link_expired_description": "接続リンクの有効期限は1時間です。送信者に新しいリンクを依頼してください。",
+  "label_made_with_ai": "AIで作成",
+  "facebook_made_with_ai": "AIで作成（テキストと写真の投稿のみ）"
 }

@@ -934,5 +934,7 @@
   "connect_link_close": "Beklediğiniz bu değil mi? Bu sayfayı kapatın, hiçbir şey bağlanmaz.",
   "connect_link_secured_by": "Güvenliği sağlayan:",
   "connect_link_expired": "Bu bağlantı artık geçerli değil",
-  "connect_link_expired_description": "Bağlantı linkleri bir saat geçerlidir. Size gönderen kişiden yenisini isteyin."
+  "connect_link_expired_description": "Bağlantı linkleri bir saat geçerlidir. Size gönderen kişiden yenisini isteyin.",
+  "label_made_with_ai": "Yapay zeka ile oluşturuldu",
+  "facebook_made_with_ai": "Yapay zeka ile oluşturuldu (yalnızca metin ve fotoğraf gönderileri için)"
 }
