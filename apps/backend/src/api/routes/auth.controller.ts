@@ -233,7 +233,7 @@ export class AuthController {
     @Query() query: any,
     @Res({ passthrough: true }) response: Response
   ) {
-    const state = `login-${makeSecureId(16)}`;
+    const state = `login-${provider.toUpperCase()}-${makeSecureId(16)}`;
     response.cookie('oauth_state', state, {
       domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
       ...(!process.env.NOT_SECURED
