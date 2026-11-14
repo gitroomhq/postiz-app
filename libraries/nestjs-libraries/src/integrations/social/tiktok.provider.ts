@@ -303,7 +303,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       refresh_token: refreshToken,
     };
 
-    const { access_token, refresh_token, ...all } = await (
+    const { access_token, refresh_token, expires_in } = await (
       await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -331,7 +331,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     return {
       refreshToken: refresh_token,
-      expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
+      expiresIn: Math.min(Number(expires_in) || 7200, 7200),
       accessToken: access_token,
       id: open_id.replace(/-/g, ''),
       name: display_name,
@@ -380,7 +380,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       }${process?.env?.FRONTEND_URL}/integrations/social/tiktok`,
     };
 
-    const { access_token, refresh_token, scope } = await (
+    const { access_token, refresh_token, scope, expires_in } = await (
       await fetch('https://open.tiktokapis.com/v2/oauth/token/', {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -413,7 +413,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
       name: display_name,
       accessToken: access_token,
       refreshToken: refresh_token,
-      expiresIn: dayjs().add(23, 'hours').unix() - dayjs().unix(),
+      expiresIn: Math.min(Number(expires_in) || 7200, 7200),
       picture: avatar_url,
       username: username,
     };
