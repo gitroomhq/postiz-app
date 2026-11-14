@@ -235,12 +235,10 @@ model Media {
   userPicture        User[]
   oauthApps          OAuthApp[]
 
-  @@index([name])
   // The media library: the count is answered from this index alone and the
   // newest-first page is read in index order. With organizationId only, both
   // read every file of the organization from the table.
   @@index([organizationId, createdAt, deletedAt, status])
-  @@index([type])
 }
 
 model SocialMediaAgency {
@@ -500,7 +498,6 @@ model Post {
 
   @@index([group])
   @@index([batchId])
-  @@index([deletedAt])
   @@index([publishDate])
   @@index([publishDate, state, deletedAt, parentPostId, integrationId, organizationId, creationMethod])
   @@index([state])
@@ -514,12 +511,8 @@ model Post {
   @@index([parentPostId])
   @@index([submittedForOrderId])
   @@index([intervalInDays])
-  @@index([approvedSubmitForOrder])
-  @@index([creationMethod])
   @@index([lastMessageId])
   @@index([createdAt])
-  @@index([updatedAt])
-  @@index([releaseURL])
   @@index([integrationId])
 }
 
@@ -536,7 +529,6 @@ model Notifications {
   @@index([createdAt])
   @@index([organizationId])
   @@index([organizationId, createdAt, deletedAt])
-  @@index([deletedAt])
 }
 
 model MessagesGroup {
