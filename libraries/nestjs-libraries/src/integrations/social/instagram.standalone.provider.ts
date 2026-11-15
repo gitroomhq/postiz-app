@@ -183,11 +183,12 @@ export class InstagramStandaloneProvider
     try {
       this.checkScopes(this.scopes, getAccessToken.permissions);
     } catch (err) {
+      const { access_token: shortLivedToken, ...exchange } = getAccessToken;
       console.error(
         'Instagram standalone scope check failed:',
         JSON.stringify({
-          user_id: getAccessToken.user_id,
-          permissions: getAccessToken.permissions,
+          ...exchange,
+          longLived: { hasToken: !!access_token, expires_in, ...all },
         })
       );
       throw err;
