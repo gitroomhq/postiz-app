@@ -863,11 +863,14 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
               },
             });
           } catch (err: any) {
+            const data = err?.response?.data;
             console.error(
               'YouTube thumbnail set failed:',
               videoId,
               err?.response?.status,
-              JSON.stringify(err?.response?.data || err?.message || {})
+              typeof data?.pipe === 'function'
+                ? err?.message
+                : JSON.stringify(data || err?.message || {})
             );
             throw err;
           }
