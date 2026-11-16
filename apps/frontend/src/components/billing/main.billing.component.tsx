@@ -537,6 +537,7 @@ export const MainBillingComponent: FC<{
           const { cancel_at } = await (
             await fetch('/billing/cancel', {
               method: 'POST',
+              body: JSON.stringify({ cancel: false }),
             })
           ).json();
           setSubscription((subs) => ({
@@ -624,6 +625,7 @@ export const MainBillingComponent: FC<{
               setLoading(true);
               const response = await fetch('/billing/cancel', {
                 method: 'POST',
+                body: JSON.stringify({ cancel: true }),
               });
               if (!response.ok) {
                 throw new Error(`status ${response.status}`);
