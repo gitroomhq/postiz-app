@@ -300,10 +300,9 @@ export class PostsController {
     @Body('date') date: string,
     // 'update' is the safe default: clients that don't send an action must
     // never requeue (and thereby republish) a post by accident
-    @Body('action') action: 'schedule' | 'update' = 'update',
-    @Body('republish') republish = false
+    @Body('action') action: 'schedule' | 'update' = 'update'
   ) {
-    return this._postsService.changeDate(org.id, id, date, action, republish);
+    return this._postsService.changeDate(org.id, id, date, action);
   }
 
   @Post('/separate-posts')
