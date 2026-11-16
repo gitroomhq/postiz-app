@@ -1192,7 +1192,13 @@ export class TiktokBusinessProvider
       )
     ).text();
 
-    this.throwIfTokenError(JSON.parse(body));
+    const post = JSON.parse(body);
+    this.throwIfTokenError(post);
+
+    if (draft && post?.data?.status === 'FAILED') {
+      // an inbox item TikTok confirmed and then failed - the only trace of it
+      console.log(`TikTok inbox upload ${publishId} failed later: ${body}`);
+    }
 
     const publicPostId = this.publicPostId(body);
     if (!publicPostId) {
