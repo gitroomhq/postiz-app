@@ -3,6 +3,9 @@ name: Deploy to AWS
 # Asks gitroomhq/postiz-aws to build and deploy this commit (its deploy-postiz
 # workflow). Needs the secret POSTIZ_AWS_DISPATCH_TOKEN: a fine-grained token
 # with Contents read and write on gitroomhq/postiz-aws only.
+#
+# The dispatch carries the commit's title, author and short sha, which name the
+# deploy run in postiz-aws, and who pushed.
 
 on:
   push:
@@ -27,7 +30,19 @@ jobs:
       - name: Trigger deploy-postiz
         env:
           GH_TOKEN: ${{ secrets.POSTIZ_AWS_DISPATCH_TOKEN }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+          AUTHOR: ${{ github.event.head_commit.author.username || github.event.head_commit.author.name || github.actor }}
         run: |
+          title=$(head -n 1 <<< "$MESSAGE")
+          # a merged pull request: its title and number, not "Merge pull request #1 from ..."
+          if [[ "$title" =~ ^Merge\ pull\ request\ (#[0-9]+)\  ]]; then
+            pr_title=$(sed -n 3p <<< "$MESSAGE")
+            if [ -n "$pr_title" ]; then title="$pr_title (${BASH_REMATCH[1]})"; fi
+          fi
           gh api repos/gitroomhq/postiz-aws/dispatches \
             -f event_type=deploy-postiz \
-            -f "client_payload[ref]=${{ github.sha }}"
+            -f "client_payload[ref]=$GITHUB_SHA" \
+            -f "client_payload[short_sha]=${GITHUB_SHA:0:7}" \
+            -f "client_payload[title]=${title:0:120}" \
+            -f "client_payload[author]=$AUTHOR" \
+            -f "client_payload[pusher]=$GITHUB_ACTOR"
