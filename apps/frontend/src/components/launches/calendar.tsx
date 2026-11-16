@@ -917,9 +917,6 @@ export const CalendarColumn: FC<{
         body: JSON.stringify({
           date: getDate.utc().format('YYYY-MM-DDTHH:mm:ss'),
           action,
-          // published posts always confirm via the modal before reaching here;
-          // for QUEUE posts the flag is a no-op on the server
-          ...(action === 'schedule' ? { republish: true } : {}),
         }),
       });
 
@@ -1358,7 +1355,7 @@ const CalendarItem: FC<{
               <OpenPost />
             </div>
           )}{' '}
-        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId) ? (
+        {((post.integration.providerIdentifier === 'x' && disableXAnalytics) || !post.releaseId || (state !== 'PUBLISHED' && state !== 'ERROR')) ? (
           <></>
         ) : post.releaseId === 'missing' && missingRelease ? (
           <div

@@ -1,4 +1,11 @@
-import { IsIn, IsOptional, IsString, ValidateIf, IsUrl } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  ValidateIf,
+  IsUrl,
+} from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
 
 // Maximum characters Facebook allows on a background ("text format") post.
@@ -120,4 +127,12 @@ export class FacebookDto {
     description: 'Title of the video, used only for video (non-story) posts',
   })
   title?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Labels the post as AI generated. Text, link and photo posts only - Facebook has no AI label for the video posts and stories published here, so it is discarded for those.',
+  })
+  made_with_ai?: boolean;
 }

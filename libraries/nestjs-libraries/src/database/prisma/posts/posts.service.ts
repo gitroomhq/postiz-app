@@ -1146,39 +1146,10 @@ export class PostsService {
     return '';
   }
 
-  // A schedule-type save targeting an already-PUBLISHED post republishes it to
-  // the platform: require the explicit `republish` opt-in instead. The message
-  // doubles as the confirmation dialog for API/MCP automation.
-  private guardAgainstRepublish(
-    post: {
-      state: State;
-      publishDate: Date;
-      integration?: { providerIdentifier: string };
-    } | null,
-    source: 'createPost' | 'changeDate'
-  ) {
-    if (post?.state !== 'PUBLISHED') {
-      return;
-    }
-
-    const howToUpdate =
-      source === 'createPost' ? `use type 'update'` : `use action 'update'`;
-
-    throw new BadRequestException(
-      `This post was already published on ${dayjs
-        .utc(post.publishDate)
-        .format(
-          'YYYY-MM-DD HH:mm'
-        )} UTC. Saving it this way would publish it again to ${
-        post.integration?.providerIdentifier || 'the channel'
-      }. To edit without republishing, ${howToUpdate}. To intentionally publish again, pass republish: true.`
-    );
-  }
-
   // A schedule-type save carrying a past date would publish within seconds
   // (the workflow's initial sleep is max(0, publishDate - now)): reject it.
-  // The one-minute grace absorbs clock skew and form latency. Like the
-  // republish guard, the message doubles as the dialog for API/MCP automation.
+  // The one-minute grace absorbs clock skew and form latency. The message
+  // doubles as the confirmation dialog for API/MCP automation.
   private guardAgainstPastSchedule(date: string) {
     if (!date || dayjs.utc(date).isAfter(dayjs.utc().subtract(1, 'minute'))) {
       return;
@@ -1216,17 +1187,6 @@ export class PostsService {
       ) {
         throw new NotFoundException('Post not found');
       }
-      if (
-        (body.type === 'schedule' || body.type === 'now') &&
-        !body.republish &&
-        post.value?.[0]?.id
-      ) {
-        this.guardAgainstRepublish(
-          await this._postRepository.getPostById(post.value[0].id, orgId),
-          'createPost'
-        );
-      }
-
       if (body.type === 'schedule') {
         this.guardAgainstPastSchedule(body.date);
       }
@@ -1491,14 +1451,9 @@ export class PostsService {
     orgId: string,
     id: string,
     date: string,
-    action: 'schedule' | 'update' = 'schedule',
-    republish = false
+    action: 'schedule' | 'update' = 'schedule'
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
-
-    if (action === 'schedule' && !republish) {
-      this.guardAgainstRepublish(getPostById, 'changeDate');
-    }
 
     // Drafts stay drafts on a date move, nothing fires - only guard saves
     // that (re)queue an actual publish.

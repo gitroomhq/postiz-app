@@ -12,6 +12,7 @@ import { MediumTags } from '@gitroom/frontend/components/new-launch/providers/me
 import { useWatch } from 'react-hook-form';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Select } from '@gitroom/react/form/select';
+import { Checkbox } from '@gitroom/react/form/checkbox';
 import { YoutubePreview } from '@gitroom/frontend/components/new-launch/providers/youtube/youtube.preview';
 import { useIntegration } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
@@ -106,6 +107,15 @@ const YoutubeSettings: FC = () => {
         ))}
       </Select>
       <MediumTags label="Tags" {...register('tags')} />
+      <div className="mt-[18px]">
+        <Checkbox
+          label={t(
+            'youtube_made_with_ai',
+            'Made with AI (realistic altered or synthetic content)'
+          )}
+          {...register('made_with_ai')}
+        />
+      </div>
       {!!thumbnail?.path && (
         <div className="mt-[20px] flex items-center gap-[10px] text-[12px]">
           <div className="flex-1">
