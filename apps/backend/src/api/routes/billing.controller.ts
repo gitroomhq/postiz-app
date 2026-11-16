@@ -20,6 +20,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { PaymentService } from '@gitroom/nestjs-libraries/services/payment/payment.service';
 import { BillingSyncDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.sync.dto';
+import { BillingCancelDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.cancel.dto';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
 import {
   AuthorizationActions,
@@ -200,16 +201,23 @@ export class BillingController {
   @CheckPolicies([AuthorizationActions.Create, Sections.ADMIN])
   async cancel(
     @GetOrgFromRequest() org: Organization,
-    @GetUserFromRequest() user: User
+    @GetUserFromRequest() user: User,
+    @Body() body: BillingCancelDto
   ) {
     console.log('billing_cancel_requested', { organization_id: org.id });
-    const result = await (await this.provider(org)).setToCancel(org.id);
+    const result = await (
+      await this.provider(org)
+    ).setToCancel(org.id, body.cancel);
     console.log('billing_cancel_done', {
       organization_id: org.id,
       cancel_at: result.cancel_at,
     });
 
-    if (result.cancel_at && dayjs(result.cancel_at).isAfter(dayjs())) {
+    if (
+      !result.unchanged &&
+      result.cancel_at &&
+      dayjs(result.cancel_at).isAfter(dayjs())
+    ) {
       try {
         await this._notificationService.sendEmail(
           user.email,
