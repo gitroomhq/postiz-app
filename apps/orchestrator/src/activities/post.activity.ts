@@ -385,6 +385,25 @@ export class PostActivity {
     posts: Post[],
     allowPending: boolean
   ) {
+    // The channel still holds the account id of the login step: no page was
+    // selected, so the platform would reject the post. Thrown as BadBody so
+    // every workflow version - frozen once on main - fails the post with this
+    // message without needing a new workflow.
+    if (
+      this._integrationManager.getSocialIntegration(
+        integration.providerIdentifier
+      )?.pageRequiredToPost &&
+      !!integration.rootInternalId &&
+      integration.internalId === integration.rootInternalId
+    ) {
+      throw new BadBody(
+        integration.providerIdentifier,
+        JSON.stringify({}),
+        Buffer.from('{}'),
+        'The connection of this channel was not finished. Please finish connecting it and select the page or account to post to, then try again.'
+      );
+    }
+
     integration = await this._integrationService.decryptTokens(integration);
 
     // kept only for in-flight postWorkflowV108 runs, which set a
