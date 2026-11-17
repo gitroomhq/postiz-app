@@ -165,8 +165,9 @@ export class IntegrationService {
     return this._integrationRepository.getChannelHealth(org, includeDeleted);
   }
 
-  // A channel whose internalId still equals the account id never finished
-  // page selection, even if a token refresh flipped inBetweenSteps off
+  // Only for providers that cannot post without a selected page: the channel
+  // is still in between steps, or its internalId still equals the account id
+  // because a token refresh flipped inBetweenSteps off
   needsPageSelection(
     integration: Pick<
       Integration,
@@ -175,11 +176,10 @@ export class IntegrationService {
     provider: SocialProvider
   ) {
     return (
-      integration.inBetweenSteps ||
-      (provider?.isBetweenSteps &&
-        !provider.pageIdMayEqualRootId &&
-        !!integration.rootInternalId &&
-        integration.internalId === integration.rootInternalId)
+      !!provider?.pageRequiredToPost &&
+      (integration.inBetweenSteps ||
+        (!!integration.rootInternalId &&
+          integration.internalId === integration.rootInternalId))
     );
   }
 
@@ -452,7 +452,10 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
-    if (!this.needsPageSelection(getIntegration, provider)) {
+    if (
+      !getIntegration.inBetweenSteps &&
+      !this.needsPageSelection(getIntegration, provider)
+    ) {
       throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
     }
 
