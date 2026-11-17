@@ -16,6 +16,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import utc from 'dayjs/plugin/utc';
 import { v4 as uuidv4 } from 'uuid';
+import { capitalize } from 'lodash';
 import { CreateTagDto } from '@gitroom/nestjs-libraries/dtos/posts/create.tag.dto';
 import {
   EncryptionService,
@@ -166,10 +167,25 @@ export class PostsRepository {
   // bad_body failures whose message came from a provider handleErrors
   // mapping or a hand-written provider throw (unmapped API responses carry
   // the 'Unknown Error' placeholder instead). Internal debug strings (e.g.
-  // 'Refresh channel needed') and unmapped failures come out as null.
-  private curatedError(error?: string | null): string | null {
+  // 'Refresh channel needed') and unmapped failures come out as null, except
+  // the two unconfirmed-post strings, which get the notification's text.
+  private curatedError(
+    error?: string | null,
+    integration?: { providerIdentifier: string; name: string }
+  ): string | null {
     if (!error) {
       return null;
+    }
+    // the post may be live, but the platform never gave a final status
+    if (
+      error === 'Could not confirm the post status' ||
+      error === 'Could not publish after several attempts'
+    ) {
+      return `Your post was sent to ${capitalize(
+        integration?.providerIdentifier
+      )}, but we couldn't confirm it was published. Please check your ${
+        integration?.name
+      } account before posting again to avoid duplicates.`;
     }
     try {
       const parsed = JSON.parse(error);
@@ -281,7 +297,14 @@ export class PostsRepository {
     const result: any[] = [];
 
     for (const row of list) {
-      const post = { ...row, error: this.curatedError(row.error) };
+      const post = {
+        ...row,
+        // the stored error stays on the row after a retry succeeds
+        error:
+          row.state === 'ERROR'
+            ? this.curatedError(row.error, row.integration)
+            : null,
+      };
       if (!post.intervalInDays || post.intervalInDays < 1) {
         result.push(post);
         continue;
