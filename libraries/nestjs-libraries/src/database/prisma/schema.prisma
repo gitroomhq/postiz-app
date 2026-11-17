@@ -43,6 +43,8 @@ model Organization {
   webhooks            Webhooks[]
   oauthApp            OAuthApp[]
   oauthAuthorizations OAuthAuthorization[]
+  civicCampaigns      CivicCampaign[]
+  facebookAdsConnections FacebookAdsConnection[]
 
   @@index([apiKey])
   @@index([streakSince])
@@ -230,6 +232,85 @@ model Media {
   @@index([type])
 }
 
+// Neutral public-information assets. This module deliberately has no models
+// for voters, targets, audiences, ad sets, or advertising campaigns.
+model CivicCampaign {
+  id               String           @id @default(cuid())
+  organizationId   String
+  theme            String
+  placeLabel       String
+  language         String
+  pollDate         DateTime?
+  officialUrl      String?
+  helpline         String?
+  paidForBy        String?
+  authorizedBy     String?
+  approverName     String?
+  demoWatermark    Boolean          @default(true)
+  status           String           @default("draft")
+  handoffClickedAt DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  organization     Organization     @relation(fields: [organizationId], references: [id])
+  assets           CivicAsset[]
+  receipts         PublishReceipt[]
+
+  @@index([organizationId])
+  @@index([status])
+}
+
+model CivicAsset {
+  id            String        @id @default(cuid())
+  campaignId    String
+  headline      String
+  body          String
+  caption       String
+  reelVO        String
+  imagePrompts  String
+  imageUrl      String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  campaign      CivicCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+}
+
+model PublishReceipt {
+  id             String        @id @default(cuid())
+  campaignId     String
+  platform       String
+  postId         String
+  pageId         String?
+  permalink      String?
+  status         String
+  error          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  campaign       CivicCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, postId])
+  @@index([campaignId])
+  @@index([status])
+}
+
+
+model FacebookAdsConnection {
+  id                   String       @id @default(cuid())
+  organizationId       String
+  facebookUserId       String
+  name                 String
+  accessToken          String
+  tokenExpiration      DateTime?
+  selectedBusinessId   String?
+  selectedAdAccountId  String?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organization         Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId])
+  @@index([organizationId])
+  @@index([facebookUserId])
+}
 model SocialMediaAgency {
   id               String                   @id @default(uuid())
   userId           String                   @unique

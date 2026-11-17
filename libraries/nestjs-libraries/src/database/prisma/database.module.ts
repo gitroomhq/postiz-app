@@ -44,6 +44,9 @@ import { ErrorsRepository } from '@gitroom/nestjs-libraries/database/prisma/erro
 import { ErrorsService } from '@gitroom/nestjs-libraries/database/prisma/errors/errors.service';
 import { AdminStatsRepository } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.repository';
 import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/admin-stats/admin-stats.service';
+import { ApprovalService, CivicCampaignService, CreativeService, PublishService } from '@gitroom/nestjs-libraries/database/prisma/civic/civic.service';
+import { FacebookAdsService } from '@gitroom/nestjs-libraries/database/prisma/facebook-ads/facebook.ads.service';
+import { FacebookAdsClient } from '@gitroom/nestjs-libraries/integrations/facebook-ads/facebook.ads.client';
 
 @Global()
 @Module({
@@ -97,6 +100,12 @@ import { AdminStatsService } from '@gitroom/nestjs-libraries/database/prisma/adm
     ErrorsService,
     AdminStatsRepository,
     AdminStatsService,
+    CreativeService,
+    ApprovalService,
+    PublishService,
+    CivicCampaignService,
+    FacebookAdsClient,
+    FacebookAdsService,
   ],
   get exports() {
     return this.providers;

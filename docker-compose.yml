@@ -87,7 +87,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       TEMPORAL_ADDRESS: temporal:7233
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-postiz}
+      # Start workers only for the locally configured channels. Add a provider
+      # identifier here before scheduling another social network.
+      POSTIZ_WORKER_QUEUES: ${POSTIZ_WORKER_QUEUES:-main,facebook,instagram,whatsapp}
       IS_GENERAL: "true"
+      # Avoid an optional Mastra storage migration from taking down core Postiz.
+      DISABLE_POSTIZ_MCP: "true"
       # "local" is suitable for previews only. Facebook and Instagram can publish
       # generated media only when its URL is publicly reachable over HTTPS.
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
@@ -105,6 +110,11 @@ services:
       LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+      WHATSAPP_GRAPH_API_VERSION: ${WHATSAPP_GRAPH_API_VERSION:-v23.0}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: ${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}
+      FACEBOOK_MARKETING_API_VERSION: ${FACEBOOK_MARKETING_API_VERSION:-v26.0}
+      FACEBOOK_ADS_REDIRECT_URI: ${FACEBOOK_ADS_REDIRECT_URI:-}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -130,6 +140,9 @@ services:
     volumes:
       - postiz_uploads:/uploads
       - postiz_config:/config
+      # Keep the Create Post AI panel source-controlled and hot-reloadable even
+      # when the large upstream Postiz image is recreated.
+      - ./tools/ymi-postiz-createpost-ai.js:/app/apps/frontend/public/ymi-postiz-createpost-ai.js:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -161,6 +174,10 @@ services:
       GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-3.1-flash-lite-image}
       GEMINI_PAID_IMAGE_MODE: ${GEMINI_PAID_IMAGE_MODE:-false}
       GEMINI_IMAGE_MAX_COUNT: ${GEMINI_IMAGE_MAX_COUNT:-4}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+      FACEBOOK_MARKETING_API_VERSION: ${FACEBOOK_MARKETING_API_VERSION:-v26.0}
+      ADMIN_UI_PUBLIC_URL: ${ADMIN_UI_PUBLIC_URL:-http://localhost:3001}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.env:/app/.env.stack
@@ -169,19 +186,19 @@ services:
       postiz:
         condition: service_healthy
 
-  # Optional local-media tunnel. Start only with:
+  # Optional local-media tunnel. Prefer the Docker Desktop ngrok extension for
+  # upstairs-self-owl.ngrok-free.dev pointing at localhost:4007. Do NOT also run
+  # this service or you get ERR_NGROK_334. Start only with:
   # docker compose --profile tunnel up -d ngrok
-  # It exposes the Postiz container without moving the /uploads volume to a
-  # cloud provider. Set FRONTEND_URL to the resulting HTTPS URL before
-  # publishing a media post.
+  # Set FRONTEND_URL to the HTTPS URL before publishing a media post.
   ngrok:
     image: ngrok/ngrok:latest
     container_name: postiz-ngrok
-    restart: unless-stopped
+    restart: "on-failure:3"
     profiles: ["tunnel"]
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
-    command: ["http", "postiz:5000"]
+    command: ["http", "--url=https://upstairs-self-owl.ngrok-free.dev", "postiz:5000"]
     ports:
       - "127.0.0.1:${NGROK_INSPECT_PORT:-4040}:4040"
     depends_on:

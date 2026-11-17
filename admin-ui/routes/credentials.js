@@ -19,6 +19,7 @@ const ENV_MAP = {
   tumblr:    { id: 'TUMBLR_CLIENT_ID',    secret: 'TUMBLR_CLIENT_SECRET' },
   openai:    { token: 'OPENAI_API_KEY' },
   gemini:    { token: 'GEMINI_API_KEY' },
+  openrouter:{ token: 'OPENROUTER_API_KEY' },
 };
 
 function normalizeRows(raw) {

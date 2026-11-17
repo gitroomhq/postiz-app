@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; padding:32px; background:#0e0e0e; color:#fff; font-family:Arial,sans-serif; }
+    h1 { margin:0 0 8px; font-size:28px; } .hint { color:#c9bfdc; margin-bottom:24px; }
+    .layout { display:grid; grid-template-columns:58% 42%; min-height:850px; border:1px solid #37313f; border-radius:16px; overflow:hidden; background:#181719; }
+    .left { padding:28px; border-right:1px solid #37313f; } .right { padding:28px; }
+    .channels { display:flex; gap:12px; margin:14px 0 26px; } .chip { border:1px solid #793de5; border-radius:20px; padding:10px 16px; background:#271644; }
+    .assistant { border:1px solid #443f50; border-radius:14px; padding:22px; background:#202024; }
+    .label { font-weight:700; color:#cdbaff; font-size:14px; margin-bottom:8px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .field { border:1px solid #4a4652; border-radius:8px; padding:13px; color:#d8d2df; background:#16161a; min-height:46px; }
+    .field.wide { grid-column:1 / -1; min-height:88px; } .controls { display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
+    button { border:0; border-radius:8px; padding:12px 18px; color:white; font-weight:700; background:#6b2bd9; } button.alt { background:#158e7f; } button.outline { background:#3a3642; }
+    .composer { margin-top:24px; border:1px solid #443f50; border-radius:14px; padding:18px; min-height:195px; background:#16161a; }
+    .media { display:flex; gap:10px; margin-top:18px; } .photo { width:96px; height:72px; border-radius:8px; background:linear-gradient(145deg,#a87b48,#201f28 55%,#5f4732); border:2px solid #9a69ee; }
+    .preview { border:1px solid #443f50; border-radius:12px; min-height:700px; padding:22px; background:#16161a; } .profile { font-size:17px; font-weight:700; } .copy { margin:18px 0; line-height:1.55; color:#eee; }
+    .preview-img { height:310px; border-radius:12px; background:linear-gradient(140deg,#1b1917,#9b784b 45%,#514032); margin-top:20px; display:flex; align-items:flex-end; padding:18px; color:#fff; font-size:22px; font-weight:700; }
+    .callout { display:inline-block; margin-top:10px; padding:7px 11px; border-radius:7px; background:#fdcc4a; color:#181719; font-weight:700; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>Create Post — workflow map</h1>
+  <div class="hint">Illustrative map of the installed Postiz workflow. Choose channels, prepare text/media, preview, then schedule or publish.</div>
+  <main class="layout">
+    <section class="left">
+      <h2>1. Select channels</h2><div class="channels"><span class="chip">Facebook Page</span><span class="chip">Instagram Professional</span></div>
+      <div class="assistant"><div class="label">2. AI Create Post Assistant</div><div class="grid">
+        <div class="field">Post topic / product</div><div class="field">Tone and goal</div>
+        <div class="field">Audience and service area</div><div class="field">Language</div>
+        <div class="field">Brand and hashtags</div><div class="field">☑ Generate Gemini image(s) · 1–4</div>
+        <div class="field wide">Visual prompt: product, style, objects, lighting, mood and variation instructions.</div>
+      </div><div class="controls"><button>Generate AI Post</button><button class="outline">Preview Post</button><button class="alt">Rewrite Manual Post</button></div><span class="callout">Review every generated caption and image</span></div>
+      <div class="composer"><div class="label">3. Manual composer and attached media</div><div>Write, paste, or edit the final caption here. Select Rewrite Manual Post for a mood/style change.</div><div class="media"><div class="photo"></div><div class="photo"></div><div class="photo"></div></div><div class="callout">Instagram needs at least one attached media file</div></div>
+    </section>
+    <section class="right"><h2>4. Preview before publishing</h2><div class="preview"><div class="profile">Your connected Page / Account</div><div class="copy">The preview shows the final caption, hashtags, and the selected image carousel. Remove, regenerate, or edit before scheduling.</div><div class="preview-img">Generated image preview</div><div class="controls"><button>Save draft</button><button class="alt">Add to Calendar</button><button class="outline">Publish now</button></div><span class="callout">5. Confirm date/time, then monitor Calendar and Temporal status</span></div></section>
+  </main>
+</body>
+</html>

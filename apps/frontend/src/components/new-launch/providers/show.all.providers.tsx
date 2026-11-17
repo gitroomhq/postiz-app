@@ -40,6 +40,7 @@ import SkoolProvider from '@gitroom/frontend/components/new-launch/providers/sko
 import WhopProvider from '@gitroom/frontend/components/new-launch/providers/whop/whop.provider';
 import MeweProvider from '@gitroom/frontend/components/new-launch/providers/mewe/mewe.provider';
 import TumblrProvider from '@gitroom/frontend/components/new-launch/providers/tumblr/tumblr.provider';
+import WhatsAppProvider from '@gitroom/frontend/components/new-launch/providers/whatsapp/whatsapp.provider';
 
 export const Providers = [
   {
@@ -173,6 +174,10 @@ export const Providers = [
   {
     identifier: 'mewe',
     component: MeweProvider,
+  },
+  {
+    identifier: 'whatsapp',
+    component: WhatsAppProvider,
   },
   {
     identifier: 'tumblr',

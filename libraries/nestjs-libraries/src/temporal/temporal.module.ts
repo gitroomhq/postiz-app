@@ -23,6 +23,17 @@ export const getTemporalModule = (
     Number(process.env.WORKER_CONCURRENCY_DIVIDER) || 1
   );
 
+  // A local Postiz instance does not need to compile and start a Temporal
+  // worker for every supported social network.  Doing so can leave the main
+  // workflow queue unpolled for many minutes, which makes "Post now" remain
+  // in QUEUE.  Keep the local default focused on the installed channels; an
+  // operator can opt back into additional queues through this env variable.
+  const enabledQueues = (process.env.POSTIZ_WORKER_QUEUES ||
+    'main,facebook,instagram,whatsapp')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return TemporalModule.register({
     isGlobal: true,
     connection: {
@@ -46,6 +57,7 @@ export const getTemporalModule = (
               integration,
               taskQueue: integration.identifier.split('-')[0],
             }))
+            .filter(({ taskQueue }) => enabledQueues.includes(taskQueue))
             .filter(({ taskQueue }) => !excludeQueues.includes(taskQueue))
             .map(({ integration, taskQueue }) => {
               // Split the per-provider cap across the servers sharing this

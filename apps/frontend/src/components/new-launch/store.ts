@@ -193,6 +193,9 @@ export const useLaunchStore = create<StoreState>()((set) => ({
       }
 
       return {
+        ...(integration.identifier === 'whatsapp'
+          ? { current: integration.id }
+          : {}),
         selectedIntegrations: [
           ...state.selectedIntegrations,
           { integration, settings, ref: createRef() },

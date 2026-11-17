@@ -73,6 +73,21 @@ export const useMenuItem = () => {
       path: '/agents',
     },
     {
+      name: 'Civic Desk',
+      icon: <span aria-hidden="true">i</span>,
+      path: '/civic-desk',
+    },
+    {
+      name: 'Facebook Ads',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M3 5.5C3 4.11929 4.11929 3 5.5 3H18.5C19.8807 3 21 4.11929 21 5.5V18.5C21 19.8807 19.8807 21 18.5 21H5.5C4.11929 21 3 19.8807 3 18.5V5.5Z" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M7 16V10M12 16V8M17 16V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ),
+      path: '/facebook-ads',
+    },
+    {
       name: t('analytics', 'Analytics'),
       icon: (
         <svg

@@ -1,95 +1,29 @@
 import { useEffect, useState } from 'react'
-import { postizIntegrations } from '../api'
+import { access } from '../api'
+import { useTenant, scopeChannels } from '../tenant'
 
 export default function ProvidersPage() {
-  const [integrations, setIntegrations] = useState([])
-  const [error, setError] = useState(null)
-  const [msg, setMsg] = useState(null)
+  const { channelIds, isWorkspace, selectedBrand } = useTenant()
+  const [channels, setChannels] = useState([])
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
   async function load() {
-    setLoading(true)
-    try {
-      const data = await postizIntegrations.list()
-      const rows = Array.isArray(data) ? data : data?.items || data?.integrations || []
-      setIntegrations(rows)
-    } catch (e) {
-      setError(e.message)
-      setIntegrations([])
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true); setError('')
+    try { setChannels(await access.channels()) } catch (e) { setError(e.message) } finally { setLoading(false) }
   }
-
   useEffect(() => { load() }, [])
 
-  async function disconnect(id, name) {
-    if (!confirm(`Disconnect ${name}?`)) return
-    try {
-      await postizIntegrations.disconnect(id)
-      setMsg(`${name} disconnected`)
-      load()
-    } catch (e) { setError(e.message) }
-  }
+  const visible = isWorkspace ? channels : scopeChannels(channels, channelIds)
 
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Connected Providers</h1>
-        <a className="btn btn-primary btn-sm" href="http://localhost:4007" target="_blank" rel="noreferrer">
-          Connect via Postiz ↗
-        </a>
-      </div>
-
-      <div className="alert alert-info">
-        To connect a new social account, open <a href="http://localhost:4007" target="_blank" rel="noreferrer" style={{ color: '#93c5fd' }}>Postiz</a> → Settings → Channels. Make sure the provider's credentials are saved in the <strong>Credentials</strong> tab first.
-      </div>
-
-      {msg   && <div className="alert alert-success">{msg}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
-
-      <div className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>Account</th>
-              <th>Provider</th>
-              <th>Type</th>
-              <th>Connected</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {integrations.map(ig => (
-              <tr key={ig.id}>
-                <td>
-                  <div className="flex items-center gap-2">
-                    {ig.picture && <img src={ig.picture} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />}
-                    <strong>{ig.name || ig.profile}</strong>
-                  </div>
-                </td>
-                <td><span className="badge badge-starting" style={{ textTransform: 'capitalize' }}>{ig.providerIdentifier}</span></td>
-                <td className="text-muted">{ig.type}</td>
-                <td className="text-muted">{ig.createdAt ? new Date(ig.createdAt).toLocaleDateString() : '—'}</td>
-                <td>
-                  <button className="btn btn-danger btn-sm" onClick={() => disconnect(ig.id, ig.name || ig.profile)}>
-                    Disconnect
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {!loading && integrations.length === 0 && (
-              <tr><td colSpan={5} className="text-muted" style={{ textAlign: 'center', padding: 28 }}>
-                No connected accounts yet.{' '}
-                <a href="http://localhost:4007" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>Connect one via Postiz →</a>
-              </td></tr>
-            )}
-            {loading && (
-              <tr><td colSpan={5} className="text-muted" style={{ textAlign: 'center', padding: 24 }}><span className="spinner" /> Loading…</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
+  return <div>
+    <div className="page-header"><div><h1 className="page-title">Assigned Channels</h1><p className="text-muted mt-4">{isWorkspace ? 'Channels assigned to your workspace role.' : `Pages and accounts owned by ${selectedBrand?.name || 'this brand'}.`}</p></div><button className="btn btn-ghost btn-sm" onClick={load}>Refresh</button></div>
+    <div className="alert alert-info">To connect another social account, use Calendar or Create Post inside this Admin UI, then assign it to a brand under Brands &amp; Clients.</div>
+    {error && <div className="alert alert-error">{error}</div>}
+    <div className="card table-wrap"><table><thead><tr><th>Account</th><th>Provider</th><th>Type</th><th>Access</th></tr></thead><tbody>
+      {visible.map((channel) => <tr key={channel.id}><td><div className="flex items-center gap-2">{channel.picture && <img src={channel.picture} alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />}<strong>{channel.name}</strong></div></td><td><span className="badge badge-starting">{channel.provider}</span></td><td className="text-muted">{channel.type || 'Social channel'}</td><td><span className="badge badge-healthy">Assigned</span></td></tr>)}
+      {!loading && !visible.length && <tr><td colSpan={4} className="text-muted" style={{ textAlign: 'center', padding: 28 }}>{isWorkspace ? 'No channels have been assigned to this role.' : 'This brand has no channels assigned yet. Add them under Brands & Clients.'}</td></tr>}
+      {loading && <tr><td colSpan={4} className="text-muted" style={{ textAlign: 'center', padding: 24 }}><span className="spinner" /> Loading…</td></tr>}
+    </tbody></table></div>
+  </div>
 }

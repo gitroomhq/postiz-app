@@ -7,9 +7,10 @@ const PROVIDER_LABELS = {
   reddit: 'Reddit', discord: 'Discord', pinterest: 'Pinterest', tumblr: 'Tumblr',
   openai: 'OpenAI (AI Writer)',
   gemini: 'Google Gemini (AI Writer)',
+  openrouter: 'OpenRouter (AI text & image models)',
 }
 
-const TOKEN_ONLY_PROVIDERS = new Set(['openai', 'gemini'])
+const TOKEN_ONLY_PROVIDERS = new Set(['openai', 'gemini', 'openrouter'])
 
 export default function CredentialsPage() {
   const [list, setList] = useState([])
@@ -223,4 +224,5 @@ const HINTS = {
   pinterest: '<b>1.</b> <a href="https://developers.pinterest.com/apps/" target="_blank" style="color:#3b82f6">Pinterest Developer</a> → Create App<br><b>2.</b> Redirect: <code>http://localhost:4007/integrations/social/pinterest</code>',
   openai:    '<b>1.</b> Open <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#3b82f6">OpenAI API Keys</a><br><b>2.</b> Create a new secret key<br><b>3.</b> Save it here, then click <strong>Apply & Restart Postiz</strong><br><b>4.</b> Postiz AI writer in Create Post will use this key',
   gemini:    '<b>1.</b> Create a restricted Gemini API key in Google AI Studio<br><b>2.</b> Save it here, then click <strong>Apply & Restart Postiz</strong><br><b>3.</b> Gemini is quota-limited and is used here for captions, hashtags, and media prompts',
+  openrouter:'<b>1.</b> Open <a href="https://openrouter.ai/keys" target="_blank" style="color:#3b82f6">OpenRouter API Keys</a><br><b>2.</b> Create an API key and save it here<br><b>3.</b> In Postiz Create Post, select <strong>OpenRouter</strong> and choose a text and image model.',
 }

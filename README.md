@@ -1,4 +1,16 @@
 <p align="center">
+## Civic Desk: public-information workflow
+
+`/civic-desk` provides **create → generate → human approve → publish with the existing Facebook Page integration → record the published post → open Ads Manager**.
+
+- It does not create Meta campaigns, ad sets, ads, custom audiences, lookalikes, or special advertising categories.
+- It does not accept targeting, voter records, demographic rows, direct-message actions, or people-search data.
+- `placeLabel` appears only in artwork; it is not a delivery input.
+- Existing Facebook Page credentials publish the organic post. Optional OpenAI/FAL keys are used only for creative generation.
+- Any delivery configuration is performed outside Postiz in Meta Ads Manager under Meta's own authorization and disclosure rules.
+
+See [MANUAL_TEST.md](MANUAL_TEST.md) for the test-Page procedure.
+
   <a href="https://postiz.com/" target="_blank">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/765e9d72-3ee7-4a56-9d59-a2c9befe2311">

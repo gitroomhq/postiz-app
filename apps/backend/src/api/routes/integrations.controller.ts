@@ -357,7 +357,10 @@ export class IntegrationsController {
           );
 
           if (!data) {
-            return;
+            return {
+              error:
+                'The provider access token could not be refreshed. Reconnect the WhatsApp channel with a valid Postiz Local system-user token.',
+            };
           }
 
           const { accessToken } = data;
@@ -369,10 +372,18 @@ export class IntegrationsController {
             return this.functionIntegration(org, body);
           }
 
-          return false;
+          return {
+            error:
+              'The provider did not return a usable access token. Reconnect the WhatsApp channel with a valid Postiz Local system-user token.',
+          };
         }
 
-        return false;
+        return {
+          error:
+            err instanceof Error
+              ? err.message
+              : 'The provider could not complete this request',
+        };
       }
     }
     throw new Error('Function not found');

@@ -97,6 +97,13 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     }
   }, [hide]);
 
+  useEffect(() => {
+    const identifier = integrations.find((item) => item.id === current)?.identifier;
+    if (identifier === 'whatsapp') {
+      setShowSettings(true);
+    }
+  }, [current, integrations]);
+
   const currentIntegrationText = useMemo(() => {
     if (current === 'global') {
       return (
@@ -437,6 +444,26 @@ export const ManageModal: FC<AddEditModalProps> = (props) => {
     },
     [ref, repeater, tags, date, addEditSets, dummy, shortlinkPreferenceData]
   );
+
+  // WhatsApp template creation happens inside the provider settings panel.
+  // Queue the current post via the same validated submit path instead of
+  // requiring the user to wait for approval and click Post now a second time.
+  useEffect(() => {
+    const queueWhatsAppTemplatePost = () => {
+      if (!loading && selectedIntegrations.length) {
+        void schedule('now')();
+      }
+    };
+    window.addEventListener(
+      'postiz:whatsapp-template-submitted',
+      queueWhatsAppTemplatePost
+    );
+    return () =>
+      window.removeEventListener(
+        'postiz:whatsapp-template-submitted',
+        queueWhatsAppTemplatePost
+      );
+  }, [schedule, loading, selectedIntegrations.length]);
 
   return (
     <div className="w-full h-full flex-1 p-[40px] flex relative">

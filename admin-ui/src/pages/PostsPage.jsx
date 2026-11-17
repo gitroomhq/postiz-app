@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { aiContent, postizPosts } from '../api'
 
 const STATUS_BADGE = {
@@ -30,6 +31,19 @@ export default function PostsPage() {
   const [model, setModel] = useState('gemini-3.1-flash-lite')
   const [imageModel, setImageModel] = useState('gemini-3.1-flash-lite-image')
   const [generateImage, setGenerateImage] = useState(false)
+
+  function selectProvider(next) {
+    setAiProvider(next)
+    if (next === 'openrouter') {
+      setModel('openai/gpt-4o-mini')
+      setImageModel('openai/gpt-5-image')
+    } else if (next === 'openai') {
+      setModel('gpt-4o-mini')
+    } else {
+      setModel('gemini-3.1-flash-lite')
+      setImageModel('gemini-3.1-flash-lite-image')
+    }
+  }
 
   async function copy(text) {
     try {
@@ -92,9 +106,9 @@ export default function PostsPage() {
         <h1 className="page-title">Posts</h1>
         <div className="flex gap-2">
           <button className="btn btn-ghost btn-sm" onClick={load}>Refresh</button>
-          <a className="btn btn-primary btn-sm" href="http://localhost:4007/launches" target="_blank" rel="noreferrer">
-            New Post in Postiz ↗
-          </a>
+          <Link className="btn btn-primary btn-sm" to="/create-post">
+            Create Post
+          </Link>
         </div>
       </div>
 
@@ -161,7 +175,8 @@ export default function PostsPage() {
         <div className="grid-2">
         <div className="form-group">
           <label>AI Provider</label>
-          <select className="form-control" value={aiProvider} onChange={e => setAiProvider(e.target.value)}>
+          <select className="form-control" value={aiProvider} onChange={e => selectProvider(e.target.value)}>
+            <option value="openrouter">OpenRouter (text + image models)</option>
             <option value="gemini">Google Gemini (quota limited)</option>
             <option value="openai">OpenAI</option>
           </select>
@@ -192,6 +207,13 @@ export default function PostsPage() {
                 Generate image (uses quota)
               </label>
             </div>
+          </div>
+        )}
+        {aiProvider === 'openrouter' && (
+          <div className="grid-3">
+            <div className="form-group"><label>Post model</label><input className="form-control" value={model} onChange={e => setModel(e.target.value)} placeholder="anthropic/claude-sonnet-4" /></div>
+            <div className="form-group"><label>Image model</label><input className="form-control" value={imageModel} onChange={e => setImageModel(e.target.value)} placeholder="openai/gpt-5-image" /></div>
+            <div className="form-group"><label style={{ textTransform: 'none', letterSpacing: 0 }}><input type="checkbox" checked={generateImage} onChange={e => setGenerateImage(e.target.checked)} style={{ marginRight: 8 }} />Generate image</label></div>
           </div>
         )}
         <div className="form-group">

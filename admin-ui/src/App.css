@@ -48,6 +48,8 @@ body {
 .nav-link.active { background: #334155; color: #f1f5f9; font-weight: 500; }
 
 .sidebar-spacer { flex: 1; }
+.workspace-user { border-top: 1px solid #334155; padding: 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 3px; color: #e2e8f0; font-size: 12px; }
+.workspace-user span { color: #60a5fa; text-transform: uppercase; font-size: 10px; letter-spacing: .06em; }
 
 .content { flex: 1; padding: 32px; overflow-y: auto; }
 
@@ -122,6 +124,15 @@ body {
   font-size: 14px;
 }
 .form-control:focus { outline: none; border-color: #3b82f6; }
+.compact-select { min-width: 96px; padding: 5px 8px; font-size: 12px; }
+.channel-scope-select { min-width: 155px; min-height: 54px; padding: 5px 8px; font-size: 12px; }
+.form-label { display: block; font-size: 12px; color: #94a3b8; margin: 5px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+.channel-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.channel-choice { background: #0f172a; border: 1px solid #334155; border-radius: 7px; padding: 8px 10px; color: #e2e8f0; cursor: pointer; }
+.channel-choice small { color: #64748b; margin-left: 4px; }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.role-card { padding: 12px; border: 1px solid #334155; background: #0f172a; border-radius: 8px; }
+.role-card p { margin-top: 9px; font-size: 12px; line-height: 1.45; color: #94a3b8; }
 
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
@@ -193,6 +204,13 @@ tbody tr:hover td { background: rgba(51,65,85,0.4); }
   white-space: pre-wrap;
   word-break: break-all;
 }
+.metric-list { display: flex; flex-wrap: wrap; gap: 7px 14px; max-width: 580px; }
+.metric-list span { font-size: 12px; color: #94a3b8; }
+.recommendation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.recommendation-grid .card { margin-bottom: 0; }
+.recommendation-title { font-size: 16px; margin: 12px 0 8px; }
+.prewrap { min-height: 82px; white-space: pre-wrap; line-height: 1.45; }
+.checklist { color: #cbd5e1; padding-left: 18px; display: grid; gap: 8px; line-height: 1.4; }
 
 /* ── Spinner ── */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -207,3 +225,96 @@ tbody tr:hover td { background: rgba(51,65,85,0.4); }
   vertical-align: middle;
   margin-right: 6px;
 }
+
+
+/* Facebook Ads */
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.card-head .card-title { margin-bottom: 6px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+.form-actions { display: flex; gap: 8px; margin: 4px 0 16px; }
+.ads-hint { margin: -4px 0 14px; }
+.ads-table { margin-top: 8px; }
+.ads-textarea { min-height: 96px; resize: vertical; }
+select.form-control, .ads-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0f172a;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7.5L10 12.5L15 7.5' stroke='%2394a3b8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+select.form-control option, .ads-select option { background: #0f172a; color: #e2e8f0; }
+@media (max-width: 860px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span-2 { grid-column: auto; }
+  .card-head { flex-direction: column; }
+}
+/* Tenant switcher + Postiz embed */
+.sidebar { width: 240px; }
+.tenant-switcher { padding: 0 4px 10px; margin-bottom: 8px; border-bottom: 1px solid #334155; }
+.tenant-switcher label { display: block; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; font-weight: 600; }
+.tenant-switcher-hint { margin-top: 6px; font-size: 11px; }
+.nav-link.secondary { font-size: 12px; color: #64748b; }
+.layout-embed { height: 100vh; overflow: hidden; }
+.layout-embed .sidebar { overflow-y: auto; }
+.content.embed { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.postiz-embed-page { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+.postiz-embed-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: #1e293b; border-bottom: 1px solid #334155; flex-shrink: 0; }
+.postiz-embed-bar .page-title { font-size: 16px; margin-bottom: 2px; }
+.postiz-embed { flex: 1; width: 100%; border: 0; min-height: 0; background: #0f172a; }
+.handler-pill { display: inline-block; margin-left: 6px; }
+
+.ads-post-preview {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+.ads-post-preview img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.ads-post-preview a { color: #93c5fd; }
+
+.ads-status-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.ads-search-row { display: flex; gap: 8px; align-items: center; }
+.ads-search-row .form-control { flex: 1; }
+.ads-chip-results, .ads-chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ads-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+.ads-chip button {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.check-line { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.9rem; line-height: 1.35; }
+.check-line input { margin-top: 0.2rem; }
+
+
+.ads-manage-header { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+.ads-manage-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.ads-manage-page .ads-status-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.35rem; }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { postizAuth } from '../api'
 
-export default function LoginPage({ onLogin }) {
+export default function LoginPage({ onLogin, error: externalError = '' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -28,7 +28,7 @@ export default function LoginPage({ onLogin }) {
         <div className="login-title">Postiz <span style={{ color: '#3b82f6' }}>Admin</span></div>
         <div className="login-sub">Sign in with your Postiz account</div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {(error || externalError) && <div className="alert alert-error">{error || externalError}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

@@ -1,0 +1,15 @@
+import { useEffect, useMemo, useState } from 'react'
+import { analytics } from '../api'
+import { useTenant, scopeChannels } from '../tenant'
+
+const display = (value) => Number(value || 0).toLocaleString()
+export default function AnalyticsPage() {
+  const { tenantId, isWorkspace, selectedBrand, channelIds } = useTenant()
+  const [data, setData] = useState(null); const [error, setError] = useState(''); const [loading, setLoading] = useState(true)
+  async function load() { setLoading(true); setError(''); try { setData(await analytics.get()) } catch (e) { setError(e.message) } finally { setLoading(false) } }
+  useEffect(() => { load() }, [tenantId])
+  const channels = isWorkspace ? (data?.channels || []) : scopeChannels(data?.channels || [], channelIds)
+  const totals = useMemo(() => channels.reduce((all, channel) => { Object.entries(channel.metrics || {}).forEach(([key, value]) => { all[key] = (all[key] || 0) + Number(value || 0) }); return all }, {}), [channels])
+  const highlights = Object.entries(totals).filter(([, value]) => Number.isFinite(value)).sort((a, b) => b[1] - a[1]).slice(0, 6)
+  return <div><div className="page-header"><div><h1 className="page-title">Analytics</h1><p className="text-muted mt-4">{isWorkspace ? 'Live account analytics are collected from each connected platform and stored locally as snapshots.' : `Analytics scoped to ${selectedBrand?.name || 'this brand'}.`}</p></div><button className="btn btn-primary btn-sm" onClick={load} disabled={loading}>{loading && <span className="spinner" />} Refresh analytics</button></div>{error && <div className="alert alert-error">{error}</div>}<div className="alert alert-info">Reach, impressions, engagement, views and audience metrics depend on the platform, connected account type, and granted permissions.</div><div className="grid-3">{highlights.map(([key, value]) => <div className="stat-card" key={key}><div className="stat-label">{key.replaceAll('_', ' ')}</div><div className="stat-value">{display(value)}</div></div>)}</div><div className="card table-wrap"><table><thead><tr><th>Channel</th><th>Platform</th><th>Available metrics</th><th>Status</th></tr></thead><tbody>{channels.map((channel) => <tr key={channel.id}><td><strong>{channel.name}</strong></td><td><span className="badge badge-starting">{channel.provider}</span></td><td className="metric-list">{Object.entries(channel.metrics || {}).filter(([, value]) => Number(value)).slice(0, 8).map(([key, value]) => <span key={key}>{key.replaceAll('_', ' ')}: <strong>{display(value)}</strong></span>)}{!Object.keys(channel.metrics || {}).length && <span className="text-muted">No metric values returned</span>}</td><td>{channel.error ? <span className="badge badge-unhealthy">{channel.error}</span> : <span className="badge badge-healthy">Collected</span>}</td></tr>)}{!loading && !channels.length && <tr><td colSpan={4} className="text-muted">No assigned channels available.</td></tr>}</tbody></table></div></div>
+}

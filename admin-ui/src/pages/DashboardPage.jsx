@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { health, docker } from '../api'
 
 const BADGE = { healthy: 'badge-healthy', unhealthy: 'badge-unhealthy', starting: 'badge-starting' }
@@ -41,7 +42,10 @@ export default function DashboardPage() {
           <button className="btn btn-danger btn-sm" onClick={restart} disabled={restarting}>
             {restarting && <span className="spinner" />} Restart Postiz
           </button>
-          <a className="btn btn-primary btn-sm" href="http://localhost:4007" target="_blank" rel="noreferrer">
+          <Link className="btn btn-primary btn-sm" to="/calendar">
+            Open Calendar
+          </Link>
+          <a className="btn btn-ghost btn-sm" href="http://localhost:4007" target="_blank" rel="noreferrer">
             Open Postiz ↗
           </a>
         </div>
@@ -68,7 +72,7 @@ export default function DashboardPage() {
         <div className="stat-card">
           <div className="stat-label">Postiz UI</div>
           <div className="stat-value" style={{ fontSize: 14, color: '#93c5fd', paddingTop: 6 }}>
-            <a href="http://localhost:4007" target="_blank" rel="noreferrer" style={{ color: '#3b82f6' }}>localhost:4007</a>
+            <Link to="/calendar" style={{ color: '#3b82f6' }}>Calendar in Admin</Link>
           </div>
         </div>
         <div className="stat-card">

@@ -43,6 +43,8 @@ import { GoogleProvider } from '@gitroom/backend/services/auth/providers/google.
 import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farcaster.provider';
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
+import { CivicDeskController } from '@gitroom/backend/api/routes/civic-desk.controller';
+import { FacebookAdsController } from '@gitroom/backend/api/routes/facebook-ads.controller';
 
 const authenticatedController = [
   UsersController,
@@ -64,6 +66,8 @@ const authenticatedController = [
   OAuthAuthorizedController,
   AnnouncementsController,
   AdminController,
+  CivicDeskController,
+  FacebookAdsController,
 ];
 @Module({
   imports: [UploadModule],

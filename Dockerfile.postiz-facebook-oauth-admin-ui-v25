@@ -1,6 +1,23 @@
 ARG POSTIZ_BASE_IMAGE=ghcr.io/gitroomhq/postiz-app:latest
 FROM ${POSTIZ_BASE_IMAGE}
 
+# The upstream image starts the optional Mastra MCP/observability store during
+# backend boot. In this local stack its schema migration can fail and take down
+# the whole API. Keep core Postiz (login, scheduling and publishing) independent
+# from that optional assistant service; the custom OpenAI/Gemini assistant stays
+# available through the Admin UI.
+RUN set -eux; \
+    sed -i "s/await (0, start_mcp_1.startMcp)(app);/if (process.env.DISABLE_POSTIZ_MCP !== 'true') await (0, start_mcp_1.startMcp)(app);/" \
+      /app/apps/backend/dist/apps/backend/src/main.js
+
+# The native /agents page also lazily initializes Mastra when it lists chat
+# threads. Do not allow that optional dependency to terminate the main API.
+RUN set -eux; \
+    controller=/app/apps/backend/dist/apps/backend/src/api/routes/copilot.controller.js; \
+    sed -i "/async agent(req, res, organization) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return res.status(503).json({ message: 'Native Postiz Agent is disabled in this local stack. Use Admin Growth Agent.' });" "$controller"; \
+    sed -i "/async getMessagesList(organization, threadId) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return { messages: [] };" "$controller"; \
+    sed -i "/async getList(organization) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return { threads: [] };" "$controller"
+
 # Meta no longer accepts the v20.0 OAuth dialog for the Page permissions used
 # by Postiz. Keep the bundled Facebook and Instagram providers on Graph API v25.
 RUN set -eux; \
@@ -184,7 +201,7 @@ RUN set -eux; \
   const DEFAULT_LUXURY_IMAGE_TEMPLATE = [
     'Create a premium cinematic social media cover image for **{{brand}}**, a luxury furniture and electronics wholesaler and manufacturer of handmade customised furniture.',
     '',
-    '**Visual concept:** A breathtaking, sophisticated contemporary living space designed around one extraordinary piece of handcrafted customised furniture. The hero furniture should dominate the composition - sculptural, elegant, meticulously crafted, with rich natural wood, refined upholstery and exquisite detailing. Subtle premium electronics should naturally integrate into the environment without distracting from the furniture.',
+    '**Visual concept:** The hero image must show the exact product, service, occasion, or offer named in “Topic context” below. Never substitute an unrelated furniture item. For example, a sweets or bakery campaign must visibly feature premium sweets, cakes, or a festive dessert display; a furniture campaign must visibly feature the requested furniture. Only use luxury furniture when the topic is actually about furniture.',
     '',
     '**Mood:** aspirational, luxurious, timeless, sophisticated and emotionally captivating.',
     '',
@@ -204,7 +221,7 @@ RUN set -eux; \
     '',
     'The final image should look like a **Rs10-crore luxury interior campaign**, not a conventional furniture advertisement.',
     '',
-    'Topic context: {{topic}}',
+    'Topic context: {{topic}} — this is mandatory visual subject matter.',
     'Tone: {{tone}}',
     'Goal: {{goal}}',
     'Audience: {{audience}}',
@@ -308,6 +325,9 @@ RUN set -eux; \
   function renderMediaInPostPreview(images) {
     const sources = Array.isArray(images) ? images.filter(Boolean).slice(0, 4) : [];
     if (!sources.length) return;
+    // WhatsApp owns its preview. Injecting a second image panel beside it
+    // breaks the two-column composer layout and makes the preview misleading.
+    if (document.querySelector('[data-whatsapp-composer-mode]')) return;
 
     const title = Array.from(document.querySelectorAll('h1,h2,h3,h4,div')).find(function (element) {
       return element.offsetParent !== null && String(element.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === 'post preview';
@@ -947,6 +967,11 @@ RUN set -eux; \
 })();
 EOF
 
+# Keep the launch-page assistant in a source-controlled file. It detects the
+# dedicated WhatsApp composer and asks the AI service for message copy instead
+# of Instagram-style captions.
+COPY tools/ymi-postiz-createpost-ai.js /app/apps/frontend/public/ymi-postiz-createpost-ai.js
+
 RUN set -eux; \
     cat > '/app/apps/frontend/src/app/(app)/(site)/launches/page.tsx' <<'EOF'
 export const dynamic = 'force-dynamic';
@@ -981,7 +1006,7 @@ export function YmiCreatePostAiLoader(): null {
     const existing = document.querySelector('script[data-ymi-createpost-ai="1"]');
     if (existing) return;
     const script = document.createElement('script');
-    script.src = '/ymi-postiz-createpost-ai.js?v=20260817-rewrite-provider-v8';
+    script.src = '/ymi-postiz-createpost-ai.js?v=20261008-openrouter-models-v1';
     script.defer = true;
     script.setAttribute('data-ymi-createpost-ai', '1');
     document.head.appendChild(script);
@@ -995,3 +1020,52 @@ EOF
 RUN set -eux; \
     cd /app/apps/frontend; \
     pnpm run build
+
+# Facebook Ads (Marketing API v26.0) sources from this checkout.
+COPY libraries/nestjs-libraries/src/integrations/facebook-ads /app/libraries/nestjs-libraries/src/integrations/facebook-ads
+COPY libraries/nestjs-libraries/src/database/prisma/facebook-ads /app/libraries/nestjs-libraries/src/database/prisma/facebook-ads
+COPY libraries/nestjs-libraries/src/dtos/facebook-ads /app/libraries/nestjs-libraries/src/dtos/facebook-ads
+COPY apps/backend/src/api/routes/facebook-ads.controller.ts /app/apps/backend/src/api/routes/facebook-ads.controller.ts
+COPY apps/frontend/src/components/facebook-ads /app/apps/frontend/src/components/facebook-ads
+COPY ["apps/frontend/src/app/(app)/(site)/facebook-ads", "/app/apps/frontend/src/app/(app)/(site)/facebook-ads"]
+COPY tools/patch-facebook-ads-image.mjs /tmp/patch-facebook-ads-image.mjs
+RUN node /tmp/patch-facebook-ads-image.mjs
+
+# Native WhatsApp Business Cloud API channel.  These source files are copied
+# into the upstream Postiz image and both affected applications are rebuilt so
+# the provider is visible in Integrations and the composer.
+COPY libraries/nestjs-libraries/src/dtos/posts/providers-settings/whatsapp.dto.ts /app/libraries/nestjs-libraries/src/dtos/posts/providers-settings/whatsapp.dto.ts
+COPY libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts /app/libraries/nestjs-libraries/src/dtos/posts/providers-settings/all.providers.settings.ts
+COPY libraries/nestjs-libraries/src/integrations/social/whatsapp.provider.ts /app/libraries/nestjs-libraries/src/integrations/social/whatsapp.provider.ts
+COPY libraries/nestjs-libraries/src/integrations/integration.manager.ts /app/libraries/nestjs-libraries/src/integrations/integration.manager.ts
+COPY libraries/nestjs-libraries/src/temporal/temporal.module.ts /app/libraries/nestjs-libraries/src/temporal/temporal.module.ts
+COPY libraries/nestjs-libraries/src/database/prisma/schema.prisma /app/libraries/nestjs-libraries/src/database/prisma/schema.prisma
+COPY apps/frontend/src/components/new-launch/providers/whatsapp/whatsapp.provider.tsx /app/apps/frontend/src/components/new-launch/providers/whatsapp/whatsapp.provider.tsx
+COPY libraries/react-shared-libraries/src/helpers/use.media.directory.ts /app/libraries/react-shared-libraries/src/helpers/use.media.directory.ts
+COPY apps/frontend/src/components/new-launch/providers/show.all.providers.tsx /app/apps/frontend/src/components/new-launch/providers/show.all.providers.tsx
+COPY apps/frontend/src/components/new-launch/manage.modal.tsx /app/apps/frontend/src/components/new-launch/manage.modal.tsx
+COPY apps/frontend/src/components/new-launch/store.ts /app/apps/frontend/src/components/new-launch/store.ts
+COPY apps/backend/src/api/routes/integrations.controller.ts /app/apps/backend/src/api/routes/integrations.controller.ts
+RUN set -eux; \
+    cd /app; \
+    export NODE_OPTIONS=--max-old-space-size=4096; \
+    pnpm prisma-generate; \
+    pnpm --filter ./apps/backend run build; \
+    pnpm --filter ./apps/frontend run build
+
+# The Temporal worker performs scheduled publishing, so it needs the native
+# WhatsApp provider too—not only the API process used by the web application.
+RUN set -eux; \
+    cd /app; \
+    export NODE_OPTIONS=--max-old-space-size=4096; \
+    pnpm --filter ./apps/orchestrator run build
+
+# Reapply the local optional-MCP guard after the source builds above, which
+# regenerate the compiled backend files supplied by the upstream image.
+RUN set -eux; \
+    sed -i "s/await (0, start_mcp_1.startMcp)(app);/if (process.env.DISABLE_POSTIZ_MCP !== 'true') await (0, start_mcp_1.startMcp)(app);/" \
+      /app/apps/backend/dist/apps/backend/src/main.js; \
+    controller=/app/apps/backend/dist/apps/backend/src/api/routes/copilot.controller.js; \
+    sed -i "/async agent(req, res, organization) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return res.status(503).json({ message: 'Native Postiz Agent is disabled in this local stack. Use Admin Growth Agent.' });" "$controller"; \
+    sed -i "/async getMessagesList(organization, threadId) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return { messages: [] };" "$controller"; \
+    sed -i "/async getList(organization) {/a\\        if (process.env.DISABLE_POSTIZ_MCP === 'true') return { threads: [] };" "$controller"
