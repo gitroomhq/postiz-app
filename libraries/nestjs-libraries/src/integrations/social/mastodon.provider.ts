@@ -501,6 +501,35 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       ) || []
     );
 
+    // v2 uploads of videos / GIFs / audio are processed asynchronously and
+    // can't be attached to a status until they are ready.
+    const started = Date.now();
+    while (
+      (
+        await this.checkPostStatus(
+          accessToken,
+          {
+            url,
+            message: commentPost.message,
+            mediaIds: uploadFiles,
+            idempotencyKey: '',
+          },
+          {} as Integration
+        )
+      ).status !== 'ready'
+    ) {
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'The media took too long to process, please try again'
+        );
+      }
+
+      await timer(20000);
+    }
+
     const form = new FormData();
     form.append('status', commentPost.message);
     form.append('visibility', 'public');
