@@ -299,7 +299,11 @@ export class PostsRepository {
     for (const row of list) {
       const post = {
         ...row,
-        error: this.curatedError(row.error, row.integration),
+        // the stored error stays on the row after a retry succeeds
+        error:
+          row.state === 'ERROR'
+            ? this.curatedError(row.error, row.integration)
+            : null,
       };
       if (!post.intervalInDays || post.intervalInDays < 1) {
         result.push(post);
