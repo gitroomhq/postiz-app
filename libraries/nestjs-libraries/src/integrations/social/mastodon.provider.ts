@@ -178,7 +178,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     // SSRF-safe dispatcher because the URLs are not fully under our control,
     // and the whole request is rebuilt per attempt by runStreamedUpload since
     // a consumed stream can't be replayed.
-    const media = await this.runStreamedUpload<{ id: string }>(async () => {
+    const upload = async (version: 'v1' | 'v2') => {
       const fileResponse = await fetch(fileUrl, {
         // identity encoding so content-length matches the streamed bytes
         headers: { 'accept-encoding': 'identity' },
@@ -201,7 +201,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
         form.append('description', alt);
       }
 
-      const mediaResponse = await fetch(`${instanceUrl}/api/v1/media`, {
+      const mediaResponse = await fetch(`${instanceUrl}/api/${version}/media`, {
         method: 'POST',
         headers: {
           ...form.getHeaders(),
@@ -235,6 +235,19 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       }
 
       return (await mediaResponse.json()) as { id: string };
+    };
+
+    // v1 is deprecated; it stays as a fallback when the v2 upload fails,
+    // except on a rate limit, which runStreamedUpload retries after a wait.
+    const media = await this.runStreamedUpload<{ id: string }>(async () => {
+      try {
+        return await upload('v2');
+      } catch (err: any) {
+        if (!err?.response || err.response.status === 429) {
+          throw err;
+        }
+        return upload('v1');
+      }
     }, this.identifier);
 
     return media.id;
