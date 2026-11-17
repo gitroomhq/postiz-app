@@ -178,7 +178,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
     // SSRF-safe dispatcher because the URLs are not fully under our control,
     // and the whole request is rebuilt per attempt by runStreamedUpload since
     // a consumed stream can't be replayed.
-    const media = await this.runStreamedUpload<{ id: string }>(async () => {
+    const upload = async (version: 'v1' | 'v2') => {
       const fileResponse = await fetch(fileUrl, {
         // identity encoding so content-length matches the streamed bytes
         headers: { 'accept-encoding': 'identity' },
@@ -201,7 +201,7 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
         form.append('description', alt);
       }
 
-      const mediaResponse = await fetch(`${instanceUrl}/api/v1/media`, {
+      const mediaResponse = await fetch(`${instanceUrl}/api/${version}/media`, {
         method: 'POST',
         headers: {
           ...form.getHeaders(),
@@ -235,6 +235,19 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
       }
 
       return (await mediaResponse.json()) as { id: string };
+    };
+
+    // v1 is deprecated; it stays as a fallback when the v2 upload fails,
+    // except on a rate limit, which runStreamedUpload retries after a wait.
+    const media = await this.runStreamedUpload<{ id: string }>(async () => {
+      try {
+        return await upload('v2');
+      } catch (err: any) {
+        if (!err?.response || err.response.status === 429) {
+          throw err;
+        }
+        return upload('v1');
+      }
     }, this.identifier);
 
     return media.id;
@@ -487,6 +500,35 @@ export class MastodonProvider extends SocialAbstract implements SocialProvider {
         this.uploadFile(url, media.path, accessToken, media.alt)
       ) || []
     );
+
+    // v2 uploads of videos / GIFs / audio are processed asynchronously and
+    // can't be attached to a status until they are ready.
+    const started = Date.now();
+    while (
+      (
+        await this.checkPostStatus(
+          accessToken,
+          {
+            url,
+            message: commentPost.message,
+            mediaIds: uploadFiles,
+            idempotencyKey: '',
+          },
+          {} as Integration
+        )
+      ).status !== 'ready'
+    ) {
+      if (Date.now() - started > 8 * 60 * 1000) {
+        throw new BadBody(
+          this.identifier,
+          '{}',
+          '{}',
+          'The media took too long to process, please try again'
+        );
+      }
+
+      await timer(20000);
+    }
 
     const form = new FormData();
     form.append('status', commentPost.message);
