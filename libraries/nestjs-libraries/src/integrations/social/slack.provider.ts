@@ -4,28 +4,49 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
-import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
+import {
+  BadBody,
+  RefreshToken,
+  SocialAbstract,
+  ValidityMedia,
+} from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { SlackDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/slack.dto';
 import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 export class SlackProvider extends SocialAbstract implements SocialProvider {
-  override maxConcurrentJob = 3; // Slack has moderate API limits
+  override maxConcurrentJob = 10; // Slack limits are per workspace
   identifier = 'slack';
   name = 'Slack';
   isBetweenSteps = false;
   editor = 'normal' as const;
+  // groups:read is left out on purpose: everyone in the Postiz organization
+  // sees the same channel picker, and Slack's privacy model forbids showing
+  // private channel names to people who aren't members of them.
   scopes = [
     'channels:read',
     'chat:write',
     'users:read',
-    'groups:read',
     'channels:join',
     'chat:write.customize',
   ];
   dto = SlackDto;
+
+  // Media goes out as Block Kit image blocks, which Slack only accepts for
+  // png / jpg / gif; an mp4 makes chat.postMessage reject the whole message.
+  override async checkValidity(
+    posts: Array<ValidityMedia[]>
+  ): Promise<string | true> {
+    const hasVideo = posts?.some((post) =>
+      post?.some((item) => (item?.path?.indexOf?.('mp4') ?? -1) > -1)
+    );
+    if (hasVideo) {
+      return 'No video support for Slack, only images';
+    }
+    return true;
+  }
 
   maxLength() {
     return 400000;
@@ -43,7 +64,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     };
   }
   async generateAuthUrl() {
-    const state = makeId(6);
+    const state = makeSecureId(6);
 
     return {
       url: `https://slack.com/oauth/v2/authorize?client_id=${
@@ -54,8 +75,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
             ? 'https://redirectmeto.com/'
             : ''
         }${process?.env?.FRONTEND_URL}/integrations/social/slack`
-      )}&scope=channels:read,chat:write,users:read,groups:read,channels:join,chat:write.customize&state=${state}`,
-      codeVerifier: makeId(10),
+      )}&scope=channels:read,chat:write,users:read,channels:join,chat:write.customize&state=${state}`,
+      codeVerifier: makeSecureId(10),
       state,
     };
   }
@@ -115,7 +136,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   async channels(accessToken: string, params: any, id: string) {
     const list = await (
       await fetch(
-        `https://slack.com/api/conversations.list?types=public_channel,private_channel`,
+        `https://slack.com/api/conversations.list?types=public_channel`,
         {
           method: 'GET',
           headers: {
@@ -129,6 +150,32 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
       id: p.id,
       name: p.name,
     }));
+  }
+
+  // Slack answers HTTP 200 with { ok: false, error } on failures, so the post
+  // used to be marked completed with no message in the channel.
+  private checkApiError(all: any) {
+    if (all?.ok !== false) {
+      return;
+    }
+    const json = JSON.stringify(all);
+    const message =
+      [all.error, ...(all.errors || [])].filter(Boolean).join(': ') ||
+      'Slack rejected the request';
+    if (
+      [
+        'invalid_auth',
+        'token_revoked',
+        'token_expired',
+        'account_inactive',
+      ].includes(all.error)
+    ) {
+      throw new RefreshToken(this.identifier, json, Buffer.from('{}'), message);
+    }
+    if (all.error === 'ratelimited') {
+      throw new Error(message);
+    }
+    throw new BadBody(this.identifier, json, Buffer.from('{}'), message);
   }
 
   async post(
@@ -153,7 +200,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     });
 
     // Post the main message
-    const { ts, channel: responseChannel } = await (
+    const posted = await (
       await fetch(`https://slack.com/api/chat.postMessage`, {
         method: 'POST',
         headers: {
@@ -183,6 +230,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+    this.checkApiError(posted);
+    const { ts, channel: responseChannel } = posted;
 
     // Get permalink for the message
     const { permalink } = await (
@@ -220,7 +269,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
     const threadTs = lastCommentId || postId;
 
     // Post the threaded reply
-    const { ts, channel: responseChannel } = await (
+    const posted = await (
       await fetch(`https://slack.com/api/chat.postMessage`, {
         method: 'POST',
         headers: {
@@ -251,6 +300,8 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
         }),
       })
     ).json();
+    this.checkApiError(posted);
+    const { ts, channel: responseChannel } = posted;
 
     // Get permalink for the comment
     const { permalink } = await (

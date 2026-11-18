@@ -7,7 +7,10 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { ThrottlerRealIpGuard } from '@gitroom/nestjs-libraries/throttler/throttler.provider';
 import { Response, Request } from 'express';
 
 import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
@@ -22,20 +25,32 @@ import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { RealIP } from 'nestjs-real-ip';
 import { UserAgent } from '@gitroom/nestjs-libraries/user/user.agent';
 import { Provider } from '@prisma/client';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import * as Sentry from '@sentry/nestjs';
+import { FarcasterProvider } from '@gitroom/nestjs-libraries/integrations/social/farcaster.provider';
+import { AttributionService } from '@gitroom/nestjs-libraries/services/attribution/attribution.service';
 
 @ApiTags('Auth')
 @Controller('/auth')
 export class AuthController {
   constructor(
     private _authService: AuthService,
-    private _emailService: EmailService
+    private _emailService: EmailService,
+    private _attributionService: AttributionService
   ) {}
 
   @Get('/can-register')
   async canRegister() {
     return {
       register: await this._authService.canRegister(Provider.LOCAL as string),
+    };
+  }
+
+  // URL parameters the app keeps until sign-up for the attribution tools
+  @Get('/attribution')
+  attribution() {
+    return {
+      params: this._attributionService.queryParams(),
     };
   }
 
@@ -213,8 +228,25 @@ export class AuthController {
   }
 
   @Get('/oauth/:provider')
-  async oauthLink(@Param('provider') provider: string, @Query() query: any) {
-    return this._authService.oauthLink(provider, query);
+  async oauthLink(
+    @Param('provider') provider: string,
+    @Query() query: any,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const state = `login-${makeSecureId(16)}`;
+    response.cookie('oauth_state', state, {
+      domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+      ...(!process.env.NOT_SECURED
+        ? {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none',
+          }
+        : {}),
+      expires: new Date(Date.now() + 1000 * 60 * 10),
+    });
+
+    return this._authService.oauthLink(provider, { ...query, state });
   }
 
   @Post('/activate')
@@ -267,17 +299,79 @@ export class AuthController {
     }
   }
 
+  // public and creates a signer at Neynar per call, so cap it per client
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Post('/farcaster/signer')
+  async farcasterSigner() {
+    try {
+      return await new FarcasterProvider().createSigner();
+    } catch (err: any) {
+      return { error: err.message || 'Failed to create signer' };
+    }
+  }
+
+  // the modal polls every 2s for up to 10 minutes, so leave room for that
+  @UseGuards(ThrottlerRealIpGuard)
+  @Throttle({ default: { limit: 1000, ttl: 3600000 } })
+  @Get('/farcaster/signer')
+  async farcasterSignerStatus(@Query('signerUuid') signerUuid: string) {
+    try {
+      return await new FarcasterProvider().signerStatus(signerUuid);
+    } catch (err: any) {
+      return { error: err.message || 'Failed to check signer' };
+    }
+  }
+
+  @Post('/oauth/:provider/redirect')
+  oauthRedirect(
+    @Param('provider') provider: string,
+    @Body('code') code: string,
+    @Body('state') state: string,
+    @Res({ passthrough: false }) response: Response
+  ) {
+    if (!code) {
+      return response.redirect(303, `${process.env.FRONTEND_URL}/auth/login`);
+    }
+
+    const params = new URLSearchParams();
+    params.set('code', code);
+    if (state) params.set('state', state);
+    params.set('provider', provider.toUpperCase());
+    return response.redirect(
+      303,
+      `${process.env.FRONTEND_URL}/auth?${params.toString()}`
+    );
+  }
+
   @Post('/oauth/:provider/exists')
   async oauthExists(
+    @Req() req: Request,
     @Body('code') code: string,
     @Body('redirect_uri') redirect_uri: string,
+    @Body('state') state: string,
     @Param('provider') provider: string,
     @Res({ passthrough: false }) response: Response
   ) {
-    const { jwt, token } = await this._authService.checkExists(
+    // a cross-site form post can spoof any body field, a json body cannot
+    if (!req.headers['content-type']?.includes('application/json')) {
+      return response.status(400).send('Invalid request');
+    }
+
+    // Existing-user OAuth login: this path doesn't run routeAuth, so read the
+    // org invite cookie and join the org here too (when the invite is valid).
+    // See register/login for the same logic.
+    const getOrgFromCookie = this._authService.getOrgFromCookie(
+      req?.cookies?.org
+    );
+
+    const { jwt, token, addedOrg } = await this._authService.checkExists(
       provider,
       code,
-      redirect_uri
+      redirect_uri,
+      state,
+      req?.cookies?.oauth_state,
+      getOrgFromCookie
     );
 
     if (token) {
@@ -298,6 +392,27 @@ export class AuthController {
 
     if (process.env.NOT_SECURED) {
       response.header('auth', jwt);
+    }
+
+    // Joined a new org via the invite: tell the frontend to switch the active
+    // org to it (mirrors register/login). showorg is also a header so the
+    // NOT_SECURED setup, which can't set cross-site cookies, still works.
+    if (typeof addedOrg !== 'boolean' && addedOrg?.organizationId) {
+      response.cookie('showorg', addedOrg.organizationId, {
+        domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+        ...(!process.env.NOT_SECURED
+          ? {
+              secure: true,
+              httpOnly: true,
+              sameSite: 'none',
+            }
+          : {}),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
+      });
+
+      if (process.env.NOT_SECURED) {
+        response.header('showorg', addedOrg.organizationId);
+      }
     }
 
     response.header('reload', 'true');

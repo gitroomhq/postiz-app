@@ -7,6 +7,7 @@ import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/us
 import { getCookieUrlFromDomain } from '@gitroom/helpers/subdomain/subdomain.management';
 import { HttpForbiddenException } from '@gitroom/nestjs-libraries/services/exception.filter';
 import { MastraService } from '@gitroom/nestjs-libraries/chat/mastra.service';
+import { setSentryUserContext } from '@gitroom/nestjs-libraries/sentry/initialize.sentry';
 
 export const removeAuth = (res: Response) => {
   res.cookie('auth', '', {
@@ -42,7 +43,7 @@ export class AuthMiddleware implements NestMiddleware {
       const payload = AuthService.verifyJWT(auth) as User | null;
       const orgHeader = req.cookies.showorg || req.headers.showorg;
 
-      if (!payload?.id) {
+      if (!payload?.id || typeof payload.id !== 'string') {
         throw new HttpForbiddenException();
       }
 
@@ -79,6 +80,13 @@ export class AuthMiddleware implements NestMiddleware {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-expect-error
           req.org = loadImpersonate.organization;
+
+          setSentryUserContext({
+            userId: user.id,
+            email: user.email,
+            orgId: loadImpersonate.organization.id,
+            paymentId: loadImpersonate.organization.paymentId,
+          });
           next();
           return;
         }
@@ -89,7 +97,9 @@ export class AuthMiddleware implements NestMiddleware {
         await this._organizationService.getOrgsByUserId(user.id)
       ).filter((f) => !f.users[0].disabled);
       const setOrg =
-        organization.find((org) => org.id === orgHeader) || organization[0];
+        organization.find((org) => org.id === orgHeader) ||
+        organization.find((org) => org.subscription) ||
+        organization[0];
 
       if (!organization) {
         throw new HttpForbiddenException();
@@ -106,6 +116,13 @@ export class AuthMiddleware implements NestMiddleware {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
       req.org = setOrg;
+
+      setSentryUserContext({
+        userId: user.id,
+        email: user.email,
+        orgId: setOrg.id,
+        paymentId: setOrg.paymentId,
+      });
     } catch (err) {
       throw new HttpForbiddenException();
     }

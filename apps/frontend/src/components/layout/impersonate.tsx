@@ -25,6 +25,7 @@ interface Charge {
   status: string;
   refunded: boolean;
   amount_refunded: number;
+  disputed: boolean;
   description: string | null;
   receipt_url: string | null;
   invoice_pdf: string | null;
@@ -328,6 +329,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   const t = useT();
   const { openModal } = useModals();
   const { data: charges, mutate } = useCharges();
+  const toast = useToaster();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [refunding, setRefunding] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -370,10 +372,18 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
     }
     setRefunding(true);
     try {
-      await fetch('/billing/refund-charges', {
+      const response = await fetch('/billing/refund-charges', {
         method: 'POST',
         body: JSON.stringify({ chargeIds: Array.from(selected) }),
       });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok || json.failed?.length) {
+        toast.show(
+          json.reason ||
+            t('refund_charges_failed', 'Could not refund the selected charges'),
+          'warning'
+        );
+      }
       setSelected(new Set());
       await mutate();
     } finally {
@@ -430,12 +440,22 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                 <tr
                   key={charge.id}
                   className="border-b border-newTableBorder hover:bg-tableBorder cursor-pointer"
-                  onClick={() => !charge.refunded && toggleCharge(charge.id)}
+                  onClick={() =>
+                    charge.disputed
+                      ? toast.show(
+                          t(
+                            'charge_disputed_no_refund',
+                            'This charge was disputed and thus cannot be refunded'
+                          ),
+                          'warning'
+                        )
+                      : !charge.refunded && toggleCharge(charge.id)
+                  }
                 >
                   <td className="p-[8px]">
                     <div
                       className={`w-[20px] h-[20px] rounded-[4px] border-2 flex items-center justify-center ${
-                        charge.refunded
+                        charge.refunded || charge.disputed
                           ? 'border-newTextColor/20 opacity-40'
                           : selected.has(charge.id)
                           ? 'bg-forth border-forth'
@@ -470,6 +490,10 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
                     {charge.refunded ? (
                       <span className="text-red-400">
                         {t('refunded', 'Refunded')}
+                      </span>
+                    ) : charge.disputed ? (
+                      <span className="text-red-400">
+                        {t('disputed', 'Disputed')}
                       </span>
                     ) : (
                       <span className="text-green-400">
@@ -885,18 +909,27 @@ const SwitchUser = () => {
     // one row per user-organization: dedupe by user id, drop the impersonated user
     const seen = new Set<string>();
     return (data || [])
-      .filter((curr: any) => curr.user.id !== currentUser?.id)
+      .filter((curr: any) => curr?.user?.id !== currentUser?.id)
       .filter((curr: any) => {
-        if (seen.has(curr.user.id)) {
+        if (seen.has(curr?.user?.id)) {
           return false;
         }
-        seen.add(curr.user.id);
+        seen.add(curr?.user?.id);
         return true;
       })
       .map((curr: any) => ({
-        id: curr.user.id,
-        name: curr.user.name,
-        email: curr.user.email,
+        id: curr?.user?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
+        orgs: (data || [])
+          .filter((org: any) => org?.user?.id === curr?.user?.id)
+          .map(
+            (org: any) =>
+              `${org?.organization?.name} (${org?.role} / ${
+                org?.organization?.subscription?.subscriptionTier || 'FREE'
+              })`
+          )
+          .join(', '),
       }));
   }, [data, currentUser?.id]);
 
@@ -980,17 +1013,18 @@ const SwitchUser = () => {
             className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
             onClick={() => setName('')}
           />
-          <div className="absolute top-[100%] start-0 w-full bg-sixth border border-customColor6 text-textColor z-[999]">
+          <div className="absolute top-[100%] start-0 w-max min-w-full max-w-[90vw] bg-sixth border border-customColor6 text-textColor z-[999]">
             {mapData.map((item: any) => (
               <div
                 onClick={pick(item)}
-                key={item.id}
-                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                key={item?.id}
+                className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
               >
                 {t('user_1', 'user:')}
-                {item.id.split('-').at(-1)} -{' '}
-                {item.name ? `${item.name} - ` : ''}
-                {item.email}
+                {item?.id?.split('-')?.at(-1)} -{' '}
+                {item?.name ? `${item?.name} - ` : ''}
+                {item?.email}
+                {item?.orgs ? ` - ${item?.orgs}` : ''}
               </div>
             ))}
           </div>
@@ -1051,24 +1085,27 @@ export const Impersonate = () => {
   const mapData = useMemo(() => {
     return data?.map(
       (curr: any) => ({
-        id: curr.id,
-        name: curr.user.name,
-        email: curr.user.email,
+        id: curr?.id,
+        name: curr?.user?.name,
+        email: curr?.user?.email,
+        orgName: curr?.organization?.name,
+        role: curr?.role,
+        tier: curr?.organization?.subscription?.subscriptionTier || 'FREE',
       }),
       []
     );
   }, [data]);
   return (
     <div>
-      <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
+      <div className="bg-forth h-[52px] mobile:h-auto mobile:py-[8px] mobile:px-[8px] flex justify-center items-center border-input border rounded-[8px] text-white">
         <div
           className={`relative flex flex-col ${
-            user?.impersonate ? 'w-full px-[20px]' : 'w-[600px]'
+            user?.impersonate ? 'w-full px-[20px] mobile:px-0' : 'w-[600px] mobile:w-full'
           }`}
         >
           <div className="relative z-[1]">
             {user?.impersonate ? (
-              <div className="text-center flex justify-center items-center gap-[10px]">
+              <div className="text-center flex justify-center items-center gap-[10px] mobile:flex-wrap">
                 <div className="whitespace-nowrap">
                   {t('currently_impersonating', 'Currently Impersonating')}
                 </div>
@@ -1086,8 +1123,8 @@ export const Impersonate = () => {
                 <SwitchUser />
               </div>
             ) : (
-              <div className="flex items-center gap-[10px]">
-                <div className="flex-1">
+              <div className="flex items-center gap-[10px] mobile:flex-wrap">
+                <div className="flex-1 mobile:basis-full">
                   <Input
                     autoComplete="off"
                     placeholder="Write the user details"
@@ -1112,15 +1149,16 @@ export const Impersonate = () => {
                 className="bg-primary/80 fixed start-0 top-0 w-full h-full z-[998]"
                 onClick={() => setName('')}
               />
-              <div className="absolute top-[100%] w-full start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
+              <div className="absolute top-[100%] w-max min-w-full max-w-[90vw] start-0 bg-sixth border border-customColor6 text-textColor z-[999]">
                 {mapData?.map((user: any) => (
                   <div
-                    onClick={setUser(user.id)}
-                    key={user.id}
-                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer"
+                    onClick={setUser(user?.id)}
+                    key={user?.id}
+                    className="p-[10px] border-b border-customColor6 hover:bg-tableBorder cursor-pointer whitespace-nowrap truncate"
                   >
                     {t('user_1', 'user:')}
-                    {user.id.split('-').at(-1)} - {user.name} - {user.email}
+                    {user?.id?.split('-')?.at(-1)} - {user?.name} - {user?.email}{' '}
+                    - {user?.orgName} ({user?.role} / {user?.tier})
                   </div>
                 ))}
               </div>

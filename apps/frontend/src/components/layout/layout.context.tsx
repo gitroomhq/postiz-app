@@ -3,6 +3,7 @@
 import { ReactNode, useCallback } from 'react';
 import { FetchWrapperComponent } from '@gitroom/helpers/utils/custom.fetch';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
+import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 import { useReturnUrl } from '@gitroom/frontend/app/(app)/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 export default function LayoutContext(params: { children: ReactNode }) {
@@ -24,6 +25,7 @@ export function setCookie(cname: string, cvalue: string, exdays: number) {
 function LayoutContextInner(params: { children: ReactNode }) {
   const returnUrl = useReturnUrl();
   const { backendUrl, isGeneral, isSecured } = useVariables();
+  const decision = useDecisionModal();
   const afterRequest = useCallback(
     async (url: string, options: RequestInit, response: Response) => {
       if (
@@ -91,8 +93,8 @@ function LayoutContextInner(params: { children: ReactNode }) {
       if (response.status === 406) {
         if (
           await deleteDialog(
-            'You are currently on trial, in order to use the feature you must finish the trial',
-            'Finish the trial, charge me now',
+            "This feature is not available during the trial. You can end the trial now: your plan's first payment is charged today instead of at the end of the trial. Only an admin or the super admin of the organization can end the trial and pay.",
+            'End trial and pay now',
             'Trial',
 
           )
@@ -104,15 +106,20 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 402) {
-        if (
-          await deleteDialog(
-            (
-              await response.json()
-            ).message,
-            'Move to billing',
-            'Payment Required'
-          )
-        ) {
+        const { message, canManageBillingUi } = await response
+          .clone()
+          .json()
+          .catch(() => ({}));
+        if (canManageBillingUi === false) {
+          await decision.open({
+            title: 'Payment Required',
+            onlyApprove: true,
+            approveLabel: 'OK',
+            description: `${message} Please ask an admin of your organization.`,
+          });
+          return true;
+        }
+        if (await deleteDialog(message, 'Move to billing', 'Payment Required')) {
           window.open('/billing', '_blank');
           return false;
         }

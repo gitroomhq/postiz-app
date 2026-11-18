@@ -166,7 +166,9 @@ const InnerWallet = () => {
         })
         .catch(() => {
           wallet.select(null);
-          wallet.disconnect();
+          wallet.disconnect().catch(() => {
+            /** empty */
+          });
         });
     }
     if (buttonState === 'connected') {

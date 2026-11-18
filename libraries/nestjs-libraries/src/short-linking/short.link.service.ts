@@ -79,8 +79,17 @@ export class ShortLinkService {
         await Promise.all(
           urls.map(async (url) => {
             if (url.indexOf(ShortLinkService.provider.shortLinkDomain) === -1) {
-              replacementMap[url] =
-                await ShortLinkService.provider.convertLinkToShortLink(id, url);
+              // a failed provider call keeps the original URL instead of "undefined"
+              try {
+                replacementMap[url] =
+                  (await ShortLinkService.provider.convertLinkToShortLink(
+                    id,
+                    url
+                  )) || url;
+              } catch (e) {
+                console.error('Short link failed:', e);
+                replacementMap[url] = url;
+              }
             } else {
               replacementMap[url] = url; // Keep the original URL if it matches the prefix
             }

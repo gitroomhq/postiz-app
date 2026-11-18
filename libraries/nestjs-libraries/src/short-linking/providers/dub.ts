@@ -35,19 +35,24 @@ export class Dub implements ShortLinking {
   }
 
   async convertLinkToShortLink(id: string, link: string) {
-    return (
-      await (
-        await fetch(`${DUB_API_ENDPOINT}/links`, {
-          ...getOptions(),
-          method: 'POST',
-          body: JSON.stringify({
-            url: link,
-            tenantId: id,
-            domain: this.shortLinkDomain,
-          }),
-        })
-      ).json()
-    ).shortLink;
+    const response = await fetch(`${DUB_API_ENDPOINT}/links`, {
+      ...getOptions(),
+      method: 'POST',
+      body: JSON.stringify({
+        url: link,
+        tenantId: id,
+        domain: this.shortLinkDomain,
+      }),
+    });
+
+    const body = await response.json();
+    if (!response.ok) {
+      console.error(
+        `Dub short link failed (${response.status}): ${JSON.stringify(body)}`
+      );
+    }
+
+    return body.shortLink;
   }
 
   async convertShortLinkToLink(shortLink: string) {

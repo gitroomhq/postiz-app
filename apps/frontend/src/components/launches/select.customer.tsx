@@ -15,8 +15,9 @@ export const SelectCustomer: FC<{
   onChange: (value: string) => void;
   integrations: Integrations[];
   customer?: string;
+  list?: boolean;
 }> = (props) => {
-  const { onChange, integrations, customer: currentCustomer } = props;
+  const { onChange, integrations, customer: currentCustomer, list } = props;
   const { setCurrent } = useLaunchStore(
     useShallow((state) => ({
       setCurrent: state.setCurrent,
@@ -47,8 +48,61 @@ export const SelectCustomer: FC<{
   const totalCustomers = useMemo(() => {
     return uniqBy(integrations, (i) => i?.customer?.id).length;
   }, [integrations]);
+
+  const selectCustomer = useCallback(
+    (id: string) => () => {
+      toaster.show(
+        t('customer_socials_selected', 'Customer socials selected'),
+        'success'
+      );
+      setCustomer(id);
+      onChange(id);
+      setOpen(false);
+      setCurrent('global');
+    },
+    [onChange]
+  );
+
   if (totalCustomers <= 1) {
     return null;
+  }
+
+  const customers = uniqBy(integrations, (u) => u?.customer?.name).filter(
+    (f) => f.customer?.name
+  );
+
+  if (list) {
+    return (
+      <div className="flex flex-col gap-[8px] pb-[16px]">
+        <div className="text-[14px] font-[600] text-textItemBlur">
+          {t('customers', 'Customers')}
+        </div>
+        {customers.map((p) => {
+          const selected = customer === p.customer?.id;
+          return (
+            <div
+              onClick={selectCustomer(p.customer?.id)}
+              key={p.customer?.id}
+              className="min-h-[48px] flex items-center justify-between gap-[12px] cursor-pointer select-none"
+            >
+              <div className="text-[14px] font-[600] truncate">
+                {p.customer?.name}
+              </div>
+              <div
+                className={clsx(
+                  'w-[24px] h-[24px] min-w-[24px] rounded-full border-[1.5px] flex justify-center items-center',
+                  selected ? 'border-[#FC69FF]' : 'border-newTextColor/20'
+                )}
+              >
+                {selected && (
+                  <div className="w-[12px] h-[12px] rounded-full bg-[#FC69FF]" />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   }
 
   return (
@@ -77,26 +131,15 @@ export const SelectCustomer: FC<{
           <div className="text-[14px] font-[600] px-[12px] mb-[5px]">
             {t('customers', 'Customers')}
           </div>
-          {uniqBy(integrations, (u) => u?.customer?.name)
-            .filter((f) => f.customer?.name)
-            .map((p) => (
-              <div
-                onClick={() => {
-                  toaster.show(
-                    t('customer_socials_selected', 'Customer socials selected'),
-                    'success'
-                  );
-                  setCustomer(p.customer?.id);
-                  onChange(p.customer?.id);
-                  setOpen(false);
-                  setCurrent('global')
-                }}
-                key={p.customer?.id}
-                className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
-              >
-                {p.customer?.name}
-              </div>
-            ))}
+          {customers.map((p) => (
+            <div
+              onClick={selectCustomer(p.customer?.id)}
+              key={p.customer?.id}
+              className="p-[12px] hover:bg-newBgColor text-[14px] font-[500] h-[32px] flex items-center"
+            >
+              {p.customer?.name}
+            </div>
+          ))}
         </div>
       )}
     </div>

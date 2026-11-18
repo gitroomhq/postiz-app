@@ -5,16 +5,18 @@ import {
   PostResponse,
   SocialProvider,
 } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { makeSecureId } from '@gitroom/nestjs-libraries/services/make.secure.id';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
 import {
+  BadBody,
   SocialAbstract,
   ValidityMedia,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
 import * as process from 'node:process';
 import dayjs from 'dayjs';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 import { GmbSettingsDto } from '@gitroom/nestjs-libraries/dtos/posts/providers-settings/gmb.settings.dto';
 
 const clientAndGmb = () => {
@@ -42,6 +44,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
   identifier = 'gmb';
   name = 'Google My Business';
   isBetweenSteps = true;
+  pageRequiredToPost = true;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -156,7 +159,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
   }
 
   async generateAuthUrl() {
-    const state = makeId(7);
+    const state = makeSecureId(7);
     const { client } = clientAndGmb();
     return {
       url: client.generateAuthUrl({
@@ -166,7 +169,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
         redirect_uri: `${process.env.FRONTEND_URL}/integrations/social/gmb`,
         scope: this.scopes.slice(0),
       }),
-      codeVerifier: makeId(11),
+      codeVerifier: makeSecureId(11),
       state,
     };
   }
@@ -201,6 +204,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  @DashboardFunction()
   async pages(accessToken: string) {
     // Get all accounts with pagination
     const allAccounts: any[] = [];
@@ -234,6 +238,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
     const allLocations: Array<{
       id: string;
       name: string;
+      address: string;
       picture: { data: { url: string } };
       accountName: string;
       locationName: string;
@@ -303,6 +308,14 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
                 // id is the full resource path for the v4 API: accounts/{accountId}/locations/{locationId}
                 id: fullResourceName,
                 name: location.title || 'Unnamed Location',
+                address: [
+                  ...(location.storefrontAddress?.addressLines || []),
+                  location.storefrontAddress?.locality,
+                  location.storefrontAddress?.administrativeArea,
+                  location.storefrontAddress?.postalCode,
+                ]
+                  .filter((f) => f)
+                  .join(', '),
                 picture: { data: { url: photoUrl } },
                 accountName: accountName,
                 locationName: location.name,
@@ -483,14 +496,33 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
       'create local post'
     );
 
-    const postData = await response.json();
+    const postData = await response.json().catch(() => ({}));
+
+    if (postData?.state === 'REJECTED') {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(postData),
+        JSON.stringify(postBody),
+        'Google rejected this post for a content policy violation. Please review the post content and try again.'
+      );
+    }
+
+    if (!postData?.name) {
+      throw new BadBody(
+        this.identifier,
+        JSON.stringify(postData),
+        JSON.stringify(postBody),
+        'Google did not confirm the post creation. Please try again.'
+      );
+    }
 
     // Extract the post ID and construct the URL
-    const postId = postData.name || '';
+    const postId = postData.name;
     const locationId = id.split('/').pop();
 
-    // GMB posts don't have direct URLs, but we can link to the business profile
-    const releaseURL = `https://business.google.com/locations/${locationId}`;
+    const releaseURL =
+      postData.searchUrl ||
+      `https://business.google.com/locations/${locationId}`;
 
     return [
       {

@@ -10,6 +10,7 @@ import {
   SendEmail,
   sendEmailSignal,
 } from '@gitroom/orchestrator/signals/send.email.signal';
+import { emailQueues } from '@gitroom/nestjs-libraries/temporal/email.queues';
 
 const { sendEmail } = proxyActivities<EmailActivity>({
   startToCloseTimeout: '10 minute',
@@ -17,8 +18,27 @@ const { sendEmail } = proxyActivities<EmailActivity>({
   cancellationType: 'ABANDON',
 });
 
+const { sendEmail: sendPriorityEmail } = proxyActivities<EmailActivity>({
+  startToCloseTimeout: '10 minute',
+  taskQueue: emailQueues.priority.taskQueue,
+  cancellationType: 'ABANDON',
+});
+
+const { sendEmail: sendBulkEmail } = proxyActivities<EmailActivity>({
+  startToCloseTimeout: '10 minute',
+  taskQueue: emailQueues.bulk.taskQueue,
+  cancellationType: 'ABANDON',
+});
+
+// One workflow per email, the Resend rate limit is enforced on the email task queues
+export async function sendSingleEmailWorkflow(email: SendEmail) {
+  const send = email.addTo === 'top' ? sendPriorityEmail : sendBulkEmail;
+  await send(email.to, email.subject, email.html, email.replyTo);
+}
+
 const RATE_LIMIT_MS = 700;
 
+// Deprecated: no longer started, kept registered so the running `send_email` can drain its queue
 export async function sendEmailWorkflow({
   queue = [],
 }: {

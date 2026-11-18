@@ -90,6 +90,7 @@ export const Subreddit: FC<{
           ...restrictions,
           type: restrictions.allow[0],
           media: [],
+          url: '',
         },
       },
     });

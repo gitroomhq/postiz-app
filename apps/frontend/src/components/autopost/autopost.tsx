@@ -73,8 +73,8 @@ export const Autopost: FC = () => {
       <h3 className="text-[20px]">{t('autopost', 'Autopost')}</h3>
       <div className="text-customColor18 mt-[4px]">
         {t(
-          'autopost_can_automatically_posts_your_rss_new_items_to_social_media',
-          'Autopost can automatically posts your RSS new items to social media'
+          'autopost_creates_drafts_from_your_rss_new_items',
+          'Autopost creates drafts from your RSS new items, review and schedule them from the calendar to publish them'
         )}
       </div>
       <div className="my-[16px] mt-[16px] bg-sixth border-fifth items-center border rounded-[4px] p-[24px] flex gap-[24px]">
@@ -163,16 +163,6 @@ const getOptionsChoose = (t: (key: string, fallback: string) => string) => [
     value: false,
   },
 ];
-const getPostImmediately = (t: (key: string, fallback: string) => string) => [
-  {
-    label: t('post_on_next_available_slot', 'Post on the next available slot'),
-    value: true,
-  },
-  {
-    label: t('post_immediately', 'Post Immediately'),
-    value: false,
-  },
-];
 export const AddOrEditWebhook: FC<{
   data?: any;
   reload: () => void;
@@ -182,7 +172,6 @@ export const AddOrEditWebhook: FC<{
   const t = useT();
   const options = getOptions(t);
   const optionsChoose = getOptionsChoose(t);
-  const postImmediately = getPostImmediately(t);
   const [allIntegrations, setAllIntegrations] = useState(
     (JSON.parse(data?.integrations || '[]')?.length || 0) > 0
       ? options[1]
@@ -318,19 +307,6 @@ export const AddOrEditWebhook: FC<{
               })}
             >
               {optionsChoose.map((option) => (
-                <option key={String(option.value)} value={String(option.value)}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="When should we post it?"
-              translationKey="label_when_post"
-              {...form.register('onSlot', {
-                setValueAs: (value) => value === 'true' || value === true,
-              })}
-            >
-              {postImmediately.map((option) => (
                 <option key={String(option.value)} value={String(option.value)}>
                   {option.label}
                 </option>

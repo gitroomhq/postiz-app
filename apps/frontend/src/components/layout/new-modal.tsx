@@ -24,6 +24,7 @@ interface OpenModalInterface {
   top?: string | number;
   closeOnEscape?: boolean;
   withCloseButton?: boolean;
+  destructive?: boolean;
   askClose?: boolean;
   onClose?: () => void;
   children: ReactNode | ((close: () => void) => ReactNode);
@@ -136,22 +137,29 @@ export const Component: FC<{
         className={clsx(
           !modal.fullScreen
             ? 'pb-[50px] min-w-full min-h-full'
-            : 'w-full h-full',
+            : 'w-full h-full mobile:block',
           'fixed flex left-0 top-0 bg-popup transition-all animate-fadeIn overflow-y-auto text-newTextColor',
           !isLast && '!overflow-hidden'
         )}
       >
-        <div className={clsx(modal.fullScreen && 'flex', 'relative flex-1')}>
+        <div
+          className={clsx(
+            modal.fullScreen && 'flex mobile:min-h-full',
+            'relative flex-1 mobile:min-w-0'
+          )}
+        >
           <div
             className={clsx(
               modal.fullScreen
-                ? 'flex flex-1'
+                ? 'flex flex-1 mobile:min-w-0'
                 : 'absolute top-0 left-0 min-w-full min-h-full'
             )}
           >
             <div
               className={clsx(
-                modal.fullScreen ? 'w-full h-full flex-1' : 'mx-auto py-[48px]'
+                modal.fullScreen
+                  ? 'w-full h-full flex-1 mobile:min-w-0 mobile:h-auto'
+                  : 'mx-auto py-[48px] mobile:max-w-[100vw] mobile:py-[16px]'
               )}
               {...(modal.size && { style: { width: modal.size } })}
             >
@@ -183,12 +191,12 @@ export const Component: FC<{
                 : {}
             }
             className={clsx(
-              'absolute min-w-full',
+              'absolute min-w-full mobile:w-full',
               !modal.fullScreen
                 ? modal.top
                   ? ''
-                  : 'min-h-full pt-[100px] pb-[100px]'
-                : 'h-screen',
+                  : 'min-h-full pt-[100px] pb-[100px] mobile:pt-[24px] mobile:pb-[24px] mobile:px-[8px]'
+                : 'h-screen mobile:h-dvh',
               modal.size && modal.height
                 ? 'flex justify-center items-center'
                 : 'top-0 left-0'
@@ -196,9 +204,11 @@ export const Component: FC<{
           >
             <div
               className={clsx(
-                !modal.removeLayout && 'gap-[40px] p-[32px]',
-                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] relative',
-                modal.size ? '' : 'min-w-[600px]',
+                !modal.removeLayout &&
+                  'gap-[40px] p-[32px] mobile:gap-[24px] mobile:p-[16px]',
+                'bg-newBgColorInner mx-auto flex flex-col w-fit rounded-[24px] mobile:rounded-[16px] relative mobile:!max-w-full',
+                modal.destructive && 'border-2 border-red-700',
+                modal.size ? '' : 'min-w-[600px] mobile:min-w-0 mobile:w-full',
                 modal.fullScreen && 'h-full'
               )}
               {...((!!modal.size || !!modal.height || !!modal.maxSize) && {
@@ -211,14 +221,14 @@ export const Component: FC<{
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center">
-                <div className="text-[24px] font-[600] flex-1">
+                <div className="text-[24px] mobile:text-[20px] mobile:pe-[28px] font-[600] flex-1">
                   {modal.title}
                 </div>
                 {typeof modal.withCloseButton === 'undefined' ||
                 modal.withCloseButton ? (
                   <div className="cursor-pointer">
                     <button
-                      className="outline-none absolute end-[20px] top-[20px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
+                      className="outline-none absolute end-[20px] top-[20px] mobile:end-[12px] mobile:top-[12px] mantine-UnstyledButton-root mantine-ActionIcon-root hover:bg-tableBorder cursor-pointer mantine-Modal-close mantine-1dcetaa"
                       type="button"
                       onClick={closeModalFunction}
                     >
@@ -336,14 +346,23 @@ export const DecisionModal: FC<{
   approveLabel: string;
   cancelLabel: string;
   onlyApprove: boolean;
+  destructive?: boolean;
   resolution: (value: boolean) => void;
-}> = ({ description, cancelLabel, approveLabel, resolution, onlyApprove }) => {
+}> = ({
+  description,
+  cancelLabel,
+  approveLabel,
+  resolution,
+  onlyApprove,
+  destructive,
+}) => {
   const { closeCurrent } = useModals();
   return (
     <div className="flex flex-col">
       <div className="max-w-[600px]">{description}</div>
       <div className="flex gap-[12px] mt-[16px]">
         <Button
+          className={destructive ? '!bg-red-800' : undefined}
           onClick={() => {
             resolution(true);
             closeCurrent();
@@ -373,6 +392,7 @@ export const areYouSure = ({
   description = 'Are you sure you want to close this modal?' as any,
   approveLabel = 'Yes',
   cancelLabel = 'No',
+  destructive = false,
 } = {}): Promise<boolean> => {
   return new Promise<boolean>((newRes) => {
     decisionModalEmitter.emit('open', {
@@ -380,6 +400,7 @@ export const areYouSure = ({
       description,
       approveLabel,
       cancelLabel,
+      destructive,
       newRes,
     });
   });
@@ -402,16 +423,19 @@ export const useDecisionModal = () => {
       onlyApprove = false,
       approveLabel = 'Yes',
       cancelLabel = 'No',
+      destructive = false,
       newRes = undefined as any,
     } = {}) => {
       return new Promise<boolean>((res) => {
         modals.openModal({
           title,
           askClose: false,
+          destructive,
           onClose: () => res(false),
           children: (
             <DecisionModal
               onlyApprove={onlyApprove}
+              destructive={destructive}
               resolution={(value) => (newRes ? newRes(value) : res(value))}
               description={description}
               approveLabel={approveLabel}

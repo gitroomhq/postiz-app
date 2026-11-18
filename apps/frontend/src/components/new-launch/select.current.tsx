@@ -7,10 +7,15 @@ import {
 } from '@gitroom/frontend/components/new-launch/store';
 import clsx from 'clsx';
 import SafeImage from '@gitroom/react/helpers/safe.image';
+import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useShallow } from 'zustand/react/shallow';
 import { GlobalIcon } from '@gitroom/frontend/components/ui/icons';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { Integrations } from '@gitroom/frontend/components/launches/calendar.context';
+import { useExistingData } from '@gitroom/frontend/components/launches/helpers/use.existing.data';
 import {
   useDecisionModal,
   useModals,
@@ -52,6 +57,7 @@ export function useHasScroll(ref: RefObject<HTMLElement | null>): boolean {
 
 export const SelectCurrent: FC = () => {
   const modals = useDecisionModal();
+  const existingData = useExistingData();
   const {
     selectedIntegrations,
     current,
@@ -94,30 +100,37 @@ export const SelectCurrent: FC = () => {
 
   return (
     <>
-      <div className="select-none left-0 absolute w-full z-[100] px-[20px]">
+      <div className="select-none left-0 absolute w-full z-[100] px-[20px] mobile:static mobile:px-0">
         <div
           ref={contentRef}
           className={clsx(
-            'flex gap-[6px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary',
-            locked && 'opacity-50 pointer-events-none'
+            'flex gap-[6px] mobile:gap-[4px] w-full overflow-x-auto scrollbar scrollbar-thumb-tableBorder scrollbar-track-secondary mobile:scrollbar-none',
+            locked && 'pointer-events-none'
           )}
         >
-          <div
-            onClick={() => {
-              setHide(true);
-              setCurrent('global');
-            }}
-            className={clsx(
-              'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] justify-center items-center bg-newBgLineColor',
-              current !== 'global'
-                ? 'text-[#A3A3A3]'
-                : 'border border-[#FC69FF] text-[#FC69FF]'
-            )}
-          >
-            <div>
-              <GlobalIcon />
+          {/* an existing post opens on its channels, without the global mode */}
+          {!existingData.integration && (
+            <div
+              onClick={() => {
+                setHide(true);
+                setCurrent('global');
+              }}
+              className={clsx(
+                'cursor-pointer flex gap-[8px] rounded-[8px] w-[40px] h-[40px] mobile:w-[44px] mobile:h-[44px] mobile:shrink-0 justify-center items-center bg-newBgLineColor mobile:bg-newSettings',
+                current !== 'global'
+                  ? 'text-[#A3A3A3]'
+                  : 'border mobile:border-[1.5px] border-[#FC69FF] text-[#FC69FF]',
+                locked && 'opacity-50'
+              )}
+            >
+              <div>
+                <GlobalIcon className="mobile:w-[24px] mobile:h-[24px]" />
+              </div>
             </div>
-          </div>
+          )}
+          {/* a locked tab is dimmed, a brand mark can't be: only its avatar is
+              (see isBrandMark). It is also bigger than the avatar of a tab, so
+              it sits next to it, in a wider tab */}
           {selectedIntegrations.map(({ integration }) => (
             <div
               onClick={() => {
@@ -126,31 +139,46 @@ export const SelectCurrent: FC = () => {
               }}
               key={integration.id}
               className={clsx(
-                'border cursor-pointer relative flex gap-[8px] w-[40px] h-[40px] rounded-[8px] items-center bg-newBgLineColor justify-center',
+                'border mobile:border-[1.5px] cursor-pointer relative flex gap-[8px] h-[40px] mobile:h-[44px] mobile:shrink-0 rounded-[8px] items-center bg-newBgLineColor mobile:bg-newSettings justify-center',
+                isBrandMark(integration.identifier)
+                  ? 'px-[6px] shrink-0'
+                  : 'w-[40px] mobile:w-[44px]',
+                !isBrandMark(integration.identifier) && locked && 'opacity-50',
                 current === integration.id
                   ? 'border-[#FC69FF] text-[#FC69FF]'
                   : 'border-transparent'
               )}
             >
-              <div
-                onClick={removeSocial(integration)}
-                className="absolute justify-center items-center flex w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
-              >
-                X
-              </div>
-              <IsGlobal id={integration.id} />
+              {/* an existing post keeps its channels, each with its own content */}
+              {!existingData.integration && (
+                <>
+                  <div
+                    onClick={removeSocial(integration)}
+                    className="absolute justify-center items-center flex mobile:hidden w-[8px] h-[8px] -top-[1px] -start-[3px] bg-red-500 rounded-full text-white text-[8px]"
+                  >
+                    X
+                  </div>
+                  <IsGlobal id={integration.id} />
+                </>
+              )}
               <div
                 {...{
                   'data-tooltip-id': 'tooltip',
                   'data-tooltip-content': integration.name,
                 }}
                 className={clsx(
-                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500'
+                  'relative w-full h-full rounded-full flex justify-center items-center filter transition-all duration-500',
+                  isBrandMark(integration.identifier) && 'gap-[6px]'
                 )}
               >
                 <SafeImage
                   src={integration.picture || '/no-picture.jpg'}
-                  className="rounded-full min-w-[26px]"
+                  className={clsx(
+                    'rounded-full min-w-[26px]',
+                    isBrandMark(integration.identifier) &&
+                      locked &&
+                      'opacity-50'
+                  )}
                   alt={integration.identifier}
                   width={26}
                   height={26}
@@ -159,27 +187,25 @@ export const SelectCurrent: FC = () => {
                     e.currentTarget.srcset = '/no-picture.jpg';
                   }}
                 />
-                {integration.identifier === 'youtube' ? (
-                  <img
-                    src="/icons/platforms/youtube.svg"
-                    className="absolute z-10 bottom-[2px] end-[2px] min-w-[12px]"
-                    width={12}
-                  />
-                ) : (
-                  <SafeImage
-                    src={`/icons/platforms/${integration.identifier}.png`}
-                    className="min-w-[12px] min-h-[12px] rounded-[3px] absolute z-10 bottom-[6px] end-[6px]"
-                    alt={integration.identifier}
-                    width={12}
-                    height={12}
-                  />
-                )}
+                <PlatformIcon
+                  identifier={integration.identifier}
+                  size={12}
+                  inactive={locked}
+                  className={clsx(
+                    !isBrandMark(integration.identifier) &&
+                      'absolute z-10 bottom-[6px] end-[6px]'
+                  )}
+                  iconClassName="min-w-[12px] min-h-[12px] rounded-[3px]"
+                  markClassName="bg-newBgLineColor mobile:bg-newSettings"
+                />
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]')} />
+      <div
+        className={clsx(hasScroll ? 'h-[55px]' : 'h-[40px]', 'mobile:hidden')}
+      />
     </>
   );
 };

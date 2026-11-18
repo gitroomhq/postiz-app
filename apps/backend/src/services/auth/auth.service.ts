@@ -7,19 +7,19 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { AuthService as AuthChecker } from '@gitroom/helpers/auth/auth.service';
 import { AuthProviderManager } from '@gitroom/backend/services/auth/providers/providers.manager';
 import dayjs from 'dayjs';
-import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { ForgotReturnPasswordDto } from '@gitroom/nestjs-libraries/dtos/auth/forgot-return.password.dto';
 import { EmailService } from '@gitroom/nestjs-libraries/services/email.service';
 import { NewsletterService } from '@gitroom/nestjs-libraries/newsletter/newsletter.service';
+import { AttributionService } from '@gitroom/nestjs-libraries/services/attribution/attribution.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private _userService: UsersService,
     private _organizationService: OrganizationService,
-    private _notificationService: NotificationService,
     private _emailService: EmailService,
-    private _providerManager: AuthProviderManager
+    private _providerManager: AuthProviderManager,
+    private _attributionService: AttributionService
   ) {}
   async canRegister(provider: string) {
     if (
@@ -62,6 +62,10 @@ export class AuthService {
           userAgent
         );
 
+        this._attributionService
+          .lead(create.users[0].user, body.attribution)
+          .catch((err) => {});
+
         const addedOrg =
           addToOrg && typeof addToOrg !== 'boolean'
             ? await this._organizationService.addUserToOrg(
@@ -73,11 +77,10 @@ export class AuthService {
             : false;
 
         const obj = { addedOrg, jwt: await this.jwt(create.users[0].user) };
-        await this._emailService.sendEmail(
+        await this._emailService.sendEmailSync(
           body.email,
           'Activate your account',
-          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`,
-          'top'
+          `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${obj.jwt}">here</a> to activate your account`
         );
         return obj;
       }
@@ -86,11 +89,28 @@ export class AuthService {
         throw new Error('Invalid user name or password');
       }
 
+      // Existing user logging in with a valid team invite: join the inviting
+      // org. Done BEFORE the activation gate on purpose, so a not-yet-activated
+      // user still gets the membership recorded -- the same model as a brand-new
+      // signup via invite, which is also added to the org while still
+      // unactivated. Activation remains required to actually use it: the throw
+      // below (and the auth middleware) keep an unactivated user out until they
+      // verify their email.
+      const addedOrg =
+        addToOrg && typeof addToOrg !== 'boolean'
+          ? await this._organizationService.addUserToOrg(
+              user.id,
+              addToOrg.id,
+              addToOrg.orgId,
+              addToOrg.role
+            )
+          : false;
+
       if (!user.activated) {
         throw new Error('User is not activated');
       }
 
-      return { addedOrg: false, jwt: await this.jwt(user) };
+      return { addedOrg, jwt: await this.jwt(user) };
     }
 
     const user = await this.loginOrRegisterProvider(
@@ -119,7 +139,13 @@ export class AuthService {
 
     try {
       const getOrg: any = AuthChecker.verifyJWT(cookie);
-      if (dayjs(getOrg.timeLimit).isBefore(dayjs())) {
+      if (
+        typeof getOrg.orgId !== 'string' ||
+        typeof getOrg.id !== 'string' ||
+        !['USER', 'ADMIN'].includes(getOrg.role) ||
+        !getOrg.timeLimit ||
+        dayjs(getOrg.timeLimit).isBefore(dayjs())
+      ) {
         return false;
       }
 
@@ -176,6 +202,10 @@ export class AuthService {
       (err) => {}
     );
 
+    this._attributionService
+      .lead(create.users[0].user, body.attribution)
+      .catch((err) => {});
+
     await NewsletterService.register(providerUser.email);
 
     try {
@@ -225,10 +255,10 @@ export class AuthService {
       expires: dayjs().add(20, 'minutes').format('YYYY-MM-DD HH:mm:ss'),
     });
 
-    await this._notificationService.sendEmail(
+    await this._emailService.sendEmailSync(
       user.email,
       'Reset your password',
-      `You have requested to reset your passsord. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
+      `You have requested to reset your password. <br />Click <a href="${process.env.FRONTEND_URL}/auth/forgot/${resetValues}">here</a> to reset your password<br />The link will expire in 20 minutes`
     );
   }
 
@@ -237,7 +267,7 @@ export class AuthService {
       id: string;
       expires: string;
     };
-    if (dayjs(user.expires).isBefore(dayjs())) {
+    if (typeof user.id !== 'string' || dayjs(user.expires).isBefore(dayjs())) {
       return false;
     }
 
@@ -278,11 +308,10 @@ export class AuthService {
 
     const jwt = await this.jwt(user);
 
-    await this._emailService.sendEmail(
+    await this._emailService.sendEmailSync(
       user.email,
       'Activate your account',
-      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`,
-      'top'
+      `Click <a href="${process.env.FRONTEND_URL}/auth/activate/${jwt}">here</a> to activate your account`
     );
 
     return true;
@@ -293,7 +322,24 @@ export class AuthService {
     return providerInstance.generateLink(query);
   }
 
-  async checkExists(provider: string, code: string, redirectUri?: string) {
+  async checkExists(
+    provider: string,
+    code: string,
+    redirectUri?: string,
+    state?: string,
+    stateCookie?: string,
+    addToOrg?: boolean | { orgId: string; role: 'USER' | 'ADMIN'; id: string }
+  ) {
+    // the mobile app passes redirect_uri and keeps no cookies, the web flow
+    // never passes it, so the state nonce is only enforced for the web flow
+    if (
+      !process.env.NOT_SECURED &&
+      !redirectUri &&
+      (!state || state !== stateCookie)
+    ) {
+      throw new Error('Invalid state');
+    }
+
     const providerInstance = this._providerManager.getProvider(provider);
     const token = await providerInstance.getToken(code, redirectUri);
     const user = await providerInstance.getUser(token);
@@ -305,7 +351,19 @@ export class AuthService {
       provider as Provider
     );
     if (checkExists) {
-      return { jwt: await this.jwt(checkExists) };
+      // Existing user signing in via OAuth while holding a valid team invite.
+      // This path bypasses routeAuth, so join the inviting org here too (OAuth
+      // accounts are always activated, so there is no activation gate to clear).
+      const addedOrg =
+        addToOrg && typeof addToOrg !== 'boolean'
+          ? await this._organizationService.addUserToOrg(
+              checkExists.id,
+              addToOrg.id,
+              addToOrg.orgId,
+              addToOrg.role
+            )
+          : false;
+      return { jwt: await this.jwt(checkExists), addedOrg };
     }
 
     return { token };

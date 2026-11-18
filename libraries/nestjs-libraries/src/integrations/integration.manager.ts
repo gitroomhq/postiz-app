@@ -12,6 +12,7 @@ import { FacebookProvider } from '@gitroom/nestjs-libraries/integrations/social/
 import { InstagramProvider } from '@gitroom/nestjs-libraries/integrations/social/instagram.provider';
 import { YoutubeProvider } from '@gitroom/nestjs-libraries/integrations/social/youtube.provider';
 import { TiktokProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.provider';
+import { TiktokBusinessProvider } from '@gitroom/nestjs-libraries/integrations/social/tiktok.business.provider';
 import { PinterestProvider } from '@gitroom/nestjs-libraries/integrations/social/pinterest.provider';
 import { DribbbleProvider } from '@gitroom/nestjs-libraries/integrations/social/dribbble.provider';
 import { LinkedinPageProvider } from '@gitroom/nestjs-libraries/integrations/social/linkedin.page.provider';
@@ -50,6 +51,7 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
   new YoutubeProvider(),
   new GmbProvider(),
   new TiktokProvider(),
+  new TiktokBusinessProvider(),
   new PinterestProvider(),
   new DribbbleProvider(),
   new DiscordProvider(),
@@ -78,22 +80,69 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
 
 @Injectable()
 export class IntegrationManager {
+  // Both are env-driven so cloud and self-hosted instances can differ:
+  // HIDDEN_PROVIDERS ("tiktok,x") hides providers from the add-channel screen,
+  // MIGRATE_PROVIDERS ("tiktok:tiktok-business") routes a reconnect of the old
+  // provider through the new provider's OAuth and migrates the channel in
+  // place, keeping its id, scheduled posts and settings.
+  isHiddenProvider(identifier: string) {
+    return (process.env.HIDDEN_PROVIDERS || '')
+      .split(',')
+      .map((p) => p.trim())
+      .includes(identifier);
+  }
+
+  // Note: a target provider that implements `reConnect` is not supported - the
+  // connect callback would run reConnect with the old app-scoped id before the
+  // migration is attempted.
+  getMigrationTarget(identifier: string): string | undefined {
+    const [, target] =
+      (process.env.MIGRATE_PROVIDERS || '')
+        .split(',')
+        .map((p) => p.trim().split(':'))
+        .find(([from, to]) => from === identifier && !!to) || [];
+
+    return target &&
+      target !== identifier &&
+      this.getAllowedSocialsIntegrations().includes(target)
+      ? target
+      : undefined;
+  }
+
+  // Reverse lookup of MIGRATE_PROVIDERS: the providers whose channels a fresh
+  // connect of `identifier` should adopt instead of creating a duplicate.
+  getMigrationSources(identifier: string): string[] {
+    return (process.env.MIGRATE_PROVIDERS || '')
+      .split(',')
+      .map((p) => p.trim().split(':'))
+      .filter(
+        ([from, to]) =>
+          to === identifier &&
+          !!from &&
+          from !== identifier &&
+          this.getAllowedSocialsIntegrations().includes(from)
+      )
+      .map(([from]) => from);
+  }
+
   async getAllIntegrations() {
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
-          name: p.name,
-          identifier: p.identifier,
-          toolTip: p.toolTip,
-          editor: p.editor,
-          isExternal: !!p.externalUrl,
-          isWeb3: !!p.isWeb3,
-          isChromeExtension: !!p.isChromeExtension,
-          ...(p.extensionCookies
-            ? { extensionCookies: p.extensionCookies }
-            : {}),
-          ...(p.customFields ? { customFields: await p.customFields() } : {}),
-        }))
+        socialIntegrationList
+          .filter((p) => !this.isHiddenProvider(p.identifier))
+          .map(async (p) => ({
+            name: p.name,
+            identifier: p.identifier,
+            toolTip: p.toolTip,
+            editor: p.editor,
+            isExternal: !!p.externalUrl,
+            isWeb3: !!p.isWeb3,
+            isChromeExtension: !!p.isChromeExtension,
+            ...(p.extensionCookies
+              ? { extensionCookies: p.extensionCookies }
+              : {}),
+            ...(p.customFields ? { customFields: await p.customFields() } : {}),
+          }))
       ),
       article: [] as any[],
     };
@@ -114,6 +163,28 @@ export class IntegrationManager {
           [],
       }),
       {}
+    );
+  }
+
+  // POST /integrations/function runs a provider method by name with the
+  // channel's token as its first argument, so only @Tool methods and the ones
+  // marked @DashboardFunction may be run that way.
+  isDashboardCallable(provider: SocialProvider, methodName: string) {
+    if (typeof (provider as any)[methodName] !== 'function') {
+      return false;
+    }
+
+    const isTool = this.getAllTools()[provider.identifier]?.some(
+      (p) => p.methodName === methodName
+    );
+
+    return (
+      isTool ||
+      !!Reflect.getMetadata(
+        'custom:dashboard_function',
+        provider.constructor.prototype,
+        methodName
+      )
     );
   }
 
@@ -170,6 +241,22 @@ export class IntegrationManager {
 
   getAllowedSocialsIntegrations() {
     return socialIntegrationList.map((p) => p.identifier);
+  }
+
+  // Providers that connect with a plain redirect to the platform - nothing to
+  // type or install first - so following a link is enough (the same ones the
+  // invite links of the add-channel screen offer)
+  getLinkableSocialsIntegrations() {
+    return socialIntegrationList
+      .filter(
+        (p) =>
+          !this.isHiddenProvider(p.identifier) &&
+          !p.externalUrl &&
+          !p.customFields &&
+          !p.isWeb3 &&
+          !p.isChromeExtension
+      )
+      .map((p) => p.identifier);
   }
   getSocialIntegration(integration: string): SocialProvider {
     return socialIntegrationList.find((i) => i.identifier === integration)!;

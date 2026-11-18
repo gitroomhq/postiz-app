@@ -1,8 +1,11 @@
 'use client';
 
-import { AddProviderButton } from '@gitroom/frontend/components/launches/add.provider.component';
+import {
+  AddProviderButton,
+  CustomVariables,
+  useExtensionConnect,
+} from '@gitroom/frontend/components/launches/add.provider.component';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import SafeImage from '@gitroom/react/helpers/safe.image';
 import { capitalize, groupBy, orderBy } from 'lodash';
 import { CalendarWeekProvider } from '@gitroom/frontend/components/launches/calendar.context';
 import { Filters } from '@gitroom/frontend/components/launches/filters';
@@ -14,6 +17,10 @@ import { Menu } from '@gitroom/frontend/components/launches/menu/menu';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Integration } from '@prisma/client';
 import ImageWithFallback from '@gitroom/react/helpers/image.with.fallback';
+import {
+  isBrandMark,
+  PlatformIcon,
+} from '@gitroom/frontend/components/ui/platform.icon.component';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useFireEvents } from '@gitroom/helpers/utils/use.fire.events';
 import { Calendar } from './calendar';
@@ -26,6 +33,11 @@ import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useIntegrationList } from '@gitroom/frontend/components/launches/helpers/use.integration.list';
 import useCookie from 'react-use-cookie';
 import { Onboarding } from '@gitroom/frontend/components/onboarding/onboarding';
+import { ChannelsAfterPayment } from '@gitroom/frontend/components/layout/check.payment';
+import { HubspotInstalled } from '@gitroom/frontend/components/launches/hubspot.installed';
+import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { Input } from '@gitroom/react/form/input';
+import { Button } from '@gitroom/react/form/button';
 
 export const SVGLine = () => {
   return (
@@ -107,6 +119,70 @@ export const OpenClose: FC<{
     </svg>
   );
 };
+const EditGroupNameModal: FC<{
+  name: string;
+  id: string;
+  close: () => void;
+  resolve: (value: string) => void;
+}> = (props) => {
+  const t = useT();
+  const { close, name, id, resolve } = props;
+  const fetch = useFetch();
+  const toaster = useToaster();
+  const [groupName, setGroupName] = useState<string>(name);
+  const save = useCallback(async () => {
+    const response = await fetch(`/integrations/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: groupName }),
+    });
+    if (!response.ok) {
+      const { message } = await response.json().catch(() => ({} as any));
+      toaster.show(
+        (Array.isArray(message) ? message[0] : message) ||
+          t('could_not_save_group', 'Could not save the group.'),
+        'warning'
+      );
+      return;
+    }
+    resolve(groupName);
+    close();
+  }, [groupName, id]);
+  return (
+    <div>
+      <Input
+        name="name"
+        disableForm={true}
+        label={t('group_name', 'Name')}
+        value={groupName}
+        onChange={(e) => setGroupName(e.target.value)}
+      />
+      <Button onClick={save} className="mt-[16px]">
+        {t('save', 'Save')}
+      </Button>
+    </div>
+  );
+};
+
+const EditPencil = () => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <path
+        d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+};
+
 export const MenuGroupComponent: FC<
   MenuComponentInterface & {
     changeItemGroup: (id: string, group: string) => void;
@@ -133,8 +209,36 @@ export const MenuGroupComponent: FC<
     changeItemGroup,
     collapsed,
   } = props;
+  const t = useT();
+  const modals = useModals();
+  const toaster = useToaster();
   const [isOpen, setIsOpen] = useState(
     !!+(localStorage.getItem(group.name + '_isOpen') || '1')
+  );
+  const editGroupName = useCallback(
+    async (e: any) => {
+      e.stopPropagation();
+      const val: string | undefined = await new Promise((resolve) => {
+        modals.openModal({
+          title: t('edit_group_name', 'Edit group name'),
+          onClose: () => resolve(undefined),
+          children: (close) => (
+            <EditGroupNameModal
+              name={group.name}
+              id={group.id}
+              close={close}
+              resolve={resolve}
+            />
+          ),
+        });
+      });
+      if (!val) {
+        return;
+      }
+      await mutate();
+      toaster.show(t('group_updated', 'Group Updated'), 'success');
+    },
+    [group.name, group.id, mutate, modals, t]
   );
   const changeOpenClose = useCallback(
     (e: any) => {
@@ -173,7 +277,7 @@ export const MenuGroupComponent: FC<
       )}
       {!!group.name && (
         <div
-          className="flex items-center gap-[5px] cursor-pointer"
+          className="flex items-center gap-[5px] cursor-pointer group"
           onClick={changeOpenClose}
         >
           <div>
@@ -190,6 +294,14 @@ export const MenuGroupComponent: FC<
           >
             {group.name}
           </div>
+          {!collapsed && (
+            <div
+              className="hidden group-hover:block hover:opacity-70"
+              onClick={editGroupName}
+            >
+              <EditPencil />
+            </div>
+          )}
         </div>
       )}
       <div
@@ -267,7 +379,9 @@ export const MenuComponent: FC<
       <div
         className={clsx(
           'relative gap-[6px] flex justify-center items-center',
-          integration.disabled && 'opacity-50'
+          isBrandMark(integration.identifier)
+            ? 'isolate'
+            : integration.disabled && 'opacity-50'
         )}
       >
         <div className="h-full w-[4px] -ms-[12px] rounded-s-[3px] opacity-0 group-hover/profile:opacity-100 transition-opacity">
@@ -278,11 +392,11 @@ export const MenuComponent: FC<
             className="absolute start-0 top-0 w-[39px] h-[46px] cursor-pointer"
             onClick={
               integration.refreshNeeded
-                ? refreshChannel(integration)
+                ? undefined
                 : continueIntegration(integration)
             }
           >
-            <div className="bg-red-500 w-[15px] h-[15px] rounded-full start-[5px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
+            <div className="bg-red-500 w-[15px] h-[15px] rounded-full -start-[7px] top-[5px] absolute z-[200] text-[10px] flex justify-center items-center">
               !
             </div>
             <div className="bg-primary/60 w-[39px] h-[46px] start-0 top-0 absolute rounded-full z-[199]" />
@@ -291,26 +405,32 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px] min-w-[36px] min-h-[36px]"
+          className={clsx(
+            'rounded-[8px] min-w-[36px] min-h-[36px]',
+            isBrandMark(integration.identifier) &&
+              integration.disabled &&
+              'opacity-50'
+          )}
           alt={integration.identifier}
           width={36}
           height={36}
         />
-        {integration.identifier === 'youtube' ? (
-          <img
-            src="/icons/platforms/youtube.svg"
-            className="absolute z-10 bottom-[5px] -end-[5px]"
-            width={20}
-          />
-        ) : (
-          <SafeImage
-            src={`/icons/platforms/${integration.identifier}.png`}
-            className="rounded-[8px] absolute z-10 bottom-[5px] -end-[5px] border border-fifth"
-            alt={integration.identifier}
-            width={18.41}
-            height={18.41}
-          />
-        )}
+        {/* a brand mark stays above the reconnect overlay (z-[199]), the
+            wrapper is isolated so it stays under the tooltips, and it hangs a
+            little off the corner to hide less of the picture */}
+        <PlatformIcon
+          identifier={integration.identifier}
+          size={18.41}
+          inactive={integration.disabled}
+          channel={
+            integration.refreshNeeded || integration.inBetweenSteps
+              ? undefined
+              : integration.internalId
+          }
+          className="absolute bottom-[5px] -end-[5px]"
+          iconClassName="z-10 rounded-[8px] border border-fifth"
+          markClassName="z-[201] -mb-[5px] -me-[3px] transition-all bg-newBgColorInner group-hover/profile:bg-boxHover"
+        />
       </div>
       <div
         // @ts-ignore
@@ -358,8 +478,10 @@ export const LaunchesComponent = () => {
   const toast = useToaster();
   const fireEvents = useFireEvents();
   const t = useT();
+  const modal = useModals();
   const [reload, setReload] = useState(false);
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
+  const [channelsOpen, setChannelsOpen] = useState(false);
   const [mode] = useCookie('mode', 'dark');
   const { isLoading, data: integrations, mutate } = useIntegrationList();
 
@@ -437,13 +559,44 @@ export const LaunchesComponent = () => {
     },
     []
   );
+  const extensionConnect = useExtensionConnect();
   const refreshChannel = useCallback(
     (
         integration: Integration & {
           identifier: string;
+          isCustomFields?: boolean;
+          isChromeExtension?: boolean;
+          customFields?: any[];
         }
       ) =>
       async () => {
+        // Custom-fields providers (Bluesky, etc.) have no OAuth URL to redirect
+        // to: reconnect by re-entering the credentials, like the menu does.
+        if (integration.isCustomFields) {
+          modal.openModal({
+            title: t('custom_url', 'Custom URL'),
+            withCloseButton: false,
+            classNames: {
+              modal: 'md',
+            },
+            children: (
+              <CustomVariables
+                identifier={integration.identifier}
+                gotoUrl={(url: string) => router.push(url)}
+                variables={integration.customFields || []}
+              />
+            ),
+          });
+          return;
+        }
+
+        if (integration.isChromeExtension) {
+          await extensionConnect(integration.identifier, {
+            refresh: integration.internalId,
+          });
+          return;
+        }
+
         const { url } = await (
           await fetch(
             `/integrations/social/${integration.identifier}?refresh=${integration.internalId}`,
@@ -496,16 +649,29 @@ export const LaunchesComponent = () => {
   return (
     <DNDProvider>
       <Onboarding />
+      <ChannelsAfterPayment integrations={integrations} />
+      <HubspotInstalled />
       <CalendarWeekProvider integrations={sortedIntegrations}>
+        {channelsOpen && (
+          <div
+            className="hidden mobile:block fixed inset-0 bg-newBackdrop opacity-60 z-[149]"
+            onClick={() => setChannelsOpen(false)}
+          />
+        )}
         <div
           className={clsx(
             'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            collapseMenu === '1' && !channelsOpen
+              ? 'group sidebar w-[100px]'
+              : 'w-[260px]',
+            channelsOpen
+              ? 'mobile:fixed mobile:inset-x-0 mobile:bottom-0 mobile:z-[150] mobile:w-full mobile:max-h-[80vh] mobile:rounded-t-[16px] mobile:overflow-hidden'
+              : 'mobile:hidden'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full mobile:static mobile:h-auto mobile:max-h-[80vh] mobile:pb-[80px] overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
@@ -513,10 +679,29 @@ export const LaunchesComponent = () => {
                 {t('channels')}
               </h2>
               <div
+                onClick={() => setChannelsOpen(false)}
+                className="hidden mobile:flex text-btnText bg-btnSimple rounded-[6px] w-[28px] h-[28px] items-center justify-center cursor-pointer select-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M1 1L11 11M11 1L1 11"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <div
                 onClick={() =>
                   setCollapseMenu(collapseMenu === '1' ? '0' : '1')
                 }
-                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
+                className="group-[.sidebar]:rotate-[180deg] group-[.sidebar]:mx-auto mobile:hidden text-btnText bg-btnSimple rounded-[6px] w-[24px] h-[24px] flex items-center justify-center cursor-pointer select-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -537,7 +722,7 @@ export const LaunchesComponent = () => {
             </div>
             <div className="flex flex-col gap-[8px] group-[.sidebar]:mx-auto group-[.sidebar]:w-[44px]">
               <AddProviderButton update={() => update(true)} />
-              <div className="flex gap-[8px] group-[.sidebar]:flex-col">
+              <div className="flex gap-[8px] group-[.sidebar]:flex-col mobile:hidden">
                 {sortedIntegrations?.length > 0 && <NewPost />}
                 {sortedIntegrations?.length > 0 &&
                   user?.tier?.ai &&
@@ -545,30 +730,31 @@ export const LaunchesComponent = () => {
               </div>
             </div>
             <div className="gap-[32px] flex flex-col select-none flex-1">
-              {sortedIntegrations.length === 0 && collapseMenu === '0' && (
-                <div className="flex-1 max-h-[500px] justify-center items-center flex">
-                  <div className="flex flex-col gap-[12px] text-center">
-                    <img
-                      src={
-                        mode === 'dark'
-                          ? '/no-channels.svg'
-                          : '/no-channels-colors.svg'
-                      }
-                      alt="No channels"
-                      className="mx-auto min-w-[100%]"
-                    />
-                    <div className="font-[600] text-[20px]">
-                      {t('no_channels', 'No channels yet')}
-                    </div>
-                    <div className="text-[14px]">
-                      {t('connect_your_accounts')}
+              {sortedIntegrations.length === 0 &&
+                (collapseMenu === '0' || channelsOpen) && (
+                  <div className="flex-1 max-h-[500px] justify-center items-center flex">
+                    <div className="flex flex-col gap-[12px] text-center">
+                      <img
+                        src={
+                          mode === 'dark'
+                            ? '/no-channels.svg'
+                            : '/no-channels-colors.svg'
+                        }
+                        alt="No channels"
+                        className="mx-auto min-w-[100%]"
+                      />
+                      <div className="font-[600] text-[20px]">
+                        {t('no_channels', 'No channels yet')}
+                      </div>
+                      <div className="text-[14px]">
+                        {t('connect_your_accounts')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
               {menuIntegrations.map((menu) => (
                 <MenuGroupComponent
-                  collapsed={collapseMenu === '1'}
+                  collapsed={collapseMenu === '1' && !channelsOpen}
                   changeItemGroup={changeItemGroup}
                   key={menu.name}
                   group={menu}
@@ -580,7 +766,7 @@ export const LaunchesComponent = () => {
                 />
               ))}
             </div>
-            <div className="mt-[5px] text-center flex flex-col">
+            <div className="mt-[5px] text-center flex flex-col mobile:hidden">
               {billingEnabled && user?.isLifetime && (
                 <div>{capitalize(user?.tier?.current || '')} tier</div>
               )}
@@ -592,7 +778,40 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-newBgColorInner flex-1 min-w-0 flex-col flex p-[20px] mobile:p-[12px] gap-[12px] mobile:min-h-[600px]">
+          <div className="hidden mobile:flex gap-[8px]">
+            <div
+              onClick={() => setChannelsOpen(true)}
+              className="cursor-pointer h-[44px] px-[12px] bg-btnSimple text-btnText rounded-[8px] flex items-center gap-[8px] select-none"
+            >
+              <div className="flex -space-x-[10px] rtl:space-x-reverse">
+                {sortedIntegrations.slice(0, 3).map((integration: any) => (
+                  <ImageWithFallback
+                    key={integration.id}
+                    fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
+                    src={integration.picture}
+                    className="rounded-full border-2 border-btnSimple"
+                    alt={integration.identifier}
+                    width={24}
+                    height={24}
+                  />
+                ))}
+              </div>
+              <div className="text-[14px] font-[500]">
+                {sortedIntegrations.length || t('channels')}
+              </div>
+            </div>
+            {sortedIntegrations?.length > 0 ? (
+              <>
+                <NewPost />
+                {user?.tier?.ai && billingEnabled && <GeneratorComponent />}
+              </>
+            ) : (
+              <div className="flex-1">
+                <AddProviderButton update={() => update(true)} />
+              </div>
+            )}
+          </div>
           <Filters />
           <div className="flex-1 flex">
             <Calendar />

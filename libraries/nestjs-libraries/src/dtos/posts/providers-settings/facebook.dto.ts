@@ -1,4 +1,12 @@
-import { IsIn, IsOptional, IsString, ValidateIf, IsUrl } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  ValidateIf,
+  IsUrl,
+} from 'class-validator';
+import { JSONSchema } from 'class-validator-jsonschema';
 
 // Maximum characters Facebook allows on a background ("text format") post.
 export const FACEBOOK_PRESET_MAX_CHARS = 130;
@@ -93,6 +101,10 @@ export const FACEBOOK_PRESETS: FacebookPreset[] = [
 ];
 
 export class FacebookDto {
+  @JSONSchema({
+    description:
+      'Link to attach as a preview card (image, title, domain), used only for text posts without media. A URL inside the content alone shows as plain text with no card',
+  })
   @IsOptional()
   @ValidateIf(p => p.url)
   @IsUrl()
@@ -108,4 +120,19 @@ export class FacebookDto {
   @IsOptional()
   @IsString()
   text_format_preset_id?: string;
+
+  @IsOptional()
+  @IsString()
+  @JSONSchema({
+    description: 'Title of the video, used only for video (non-story) posts',
+  })
+  title?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Labels the post as AI generated. Text, link and photo posts only - Facebook has no AI label for the video posts and stories published here, so it is discarded for those.',
+  })
+  made_with_ai?: boolean;
 }

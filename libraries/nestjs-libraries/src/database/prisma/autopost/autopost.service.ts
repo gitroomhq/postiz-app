@@ -102,12 +102,14 @@ export class AutopostService {
   async processCron(active: boolean, orgId: string, id: string) {
     if (active) {
       try {
-        return this._temporalService.client
+        return await this._temporalService.client
           .getRawClient()
           ?.workflow.start('autoPostWorkflow', {
             workflowId: `autopost-${id}`,
             taskQueue: 'main',
             args: [{ id, immediately: true }],
+            // Keep a running workflow, it reads the autopost settings on every run
+            workflowIdConflictPolicy: 'USE_EXISTING',
             typedSearchAttributes: new TypedSearchAttributes([
               {
                 key: organizationId,
@@ -115,7 +117,10 @@ export class AutopostService {
               },
             ]),
           });
-      } catch (err) {}
+      } catch (err) {
+        // Don't fall through and terminate an active autopost
+        return false;
+      }
     }
 
     try {

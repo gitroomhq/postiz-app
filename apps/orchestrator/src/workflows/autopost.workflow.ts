@@ -1,4 +1,10 @@
-import { proxyActivities, sleep } from '@temporalio/workflow';
+import {
+  continueAsNew,
+  patched,
+  proxyActivities,
+  sleep,
+  workflowInfo,
+} from '@temporalio/workflow';
 import { AutopostActivity } from '@gitroom/orchestrator/activities/autopost.activity';
 
 const { autoPost } = proxyActivities<AutopostActivity>({
@@ -18,6 +24,7 @@ export async function autoPostWorkflow({
   id: string;
   immediately: boolean;
 }) {
+  let loops = 0;
   while (true) {
     try {
       if (immediately) {
@@ -26,5 +33,16 @@ export async function autoPostWorkflow({
     } catch (err) {}
     immediately = true;
     await sleep(3600000);
+
+    // Keep the history small, runs started before this patch continue-as-new on their first live loop
+    if (
+      patched('autopost-continue-as-new') &&
+      (++loops >= 24 || workflowInfo().historyLength > 1000)
+    ) {
+      return await continueAsNew<typeof autoPostWorkflow>({
+        id,
+        immediately: true,
+      });
+    }
   }
 }

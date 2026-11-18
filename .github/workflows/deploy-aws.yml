@@ -1,0 +1,33 @@
+name: Deploy to AWS
+
+# Asks gitroomhq/postiz-aws to build and deploy this commit (its deploy-postiz
+# workflow). Needs the secret POSTIZ_AWS_DISPATCH_TOKEN: a fine-grained token
+# with Contents read and write on gitroomhq/postiz-aws only.
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - 'apps/extension/**'
+      - 'apps/sdk/**'
+      - 'apps/commands/**'
+      - 'Jenkins/**'
+      - 'reports/**'
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: github.repository == 'gitroomhq/postiz-app'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy-postiz
+        env:
+          GH_TOKEN: ${{ secrets.POSTIZ_AWS_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/gitroomhq/postiz-aws/dispatches \
+            -f event_type=deploy-postiz \
+            -f "client_payload[ref]=${{ github.sha }}"
