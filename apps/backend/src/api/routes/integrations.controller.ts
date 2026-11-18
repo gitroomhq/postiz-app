@@ -377,7 +377,15 @@ export class IntegrationsController {
       throw new Error('Invalid provider');
     }
 
-    if (dayjs(getIntegration.tokenExpiration).isBefore(dayjs())) {
+    // Only for a channel that still has to select its page: other channels
+    // post fine past the stored expiration, a failed refresh would flag them.
+    if (
+      this._integrationService.needsPageSelection(
+        getIntegration,
+        integrationProvider
+      ) &&
+      dayjs(getIntegration.tokenExpiration).isBefore(dayjs())
+    ) {
       const data = await this._refreshIntegrationService.refresh(
         getIntegration
       );
