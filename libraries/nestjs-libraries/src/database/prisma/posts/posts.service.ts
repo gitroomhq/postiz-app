@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PostsRepository } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.repository';
 import { CreatePostDto } from '@gitroom/nestjs-libraries/dtos/posts/create.post.dto';
+import { MediaDto } from '@gitroom/nestjs-libraries/dtos/media/media.dto';
 import dayjs from 'dayjs';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import {
@@ -1215,6 +1216,36 @@ export class PostsService {
     postId: string,
     settings: Record<string, any>,
     creationMethod: CreationMethod
+  ) {
+    return this.updateUnpublishedPost(
+      orgId,
+      postId,
+      { settings },
+      creationMethod
+    );
+  }
+
+  // Same as updatePostSettings for the media of the main post: the passed list
+  // replaces the existing one, an empty list removes all of it.
+  async updatePostAttachments(
+    orgId: string,
+    postId: string,
+    attachments: MediaDto[],
+    creationMethod: CreationMethod
+  ) {
+    return this.updateUnpublishedPost(
+      orgId,
+      postId,
+      { image: attachments },
+      creationMethod
+    );
+  }
+
+  private async updateUnpublishedPost(
+    orgId: string,
+    postId: string,
+    changes: { settings?: Record<string, any>; image?: MediaDto[] },
+    creationMethod: CreationMethod
   ): Promise<{ postId: string; publishDate: string }> {
     // Ordered as post -> comments, root includes integration and tags.
     const ordered = await this.getPostsRecursively(postId, true, orgId, true);
@@ -1257,12 +1288,12 @@ export class PostsService {
     // Merge: only the passed keys change, everything else stays.
     const mergedSettings = {
       ...existingSettings,
-      ...(settings || {}),
+      ...(changes.settings || {}),
       __type: integration.providerIdentifier,
     };
 
     // Keep the existing content/ids so the posts are updated in place (the
-    // workflow identity is preserved) - only the settings differ.
+    // workflow identity is preserved) - only the passed changes differ.
     const value = ordered.map((p) => {
       let image = [];
       try {
@@ -1272,7 +1303,7 @@ export class PostsService {
         id: p.id,
         content: p.content,
         delay: p.delay || 0,
-        image,
+        image: p.id === root.id && changes.image ? changes.image : image,
       };
     });
 
@@ -1319,7 +1350,7 @@ export class PostsService {
       orgId,
       {
         date,
-        // Settings-only update: keep the current state and leave the running
+        // In-place update: keep the current state and leave the running
         // publish workflow alone.
         type: 'update',
         shortLink: false,
@@ -1338,7 +1369,7 @@ export class PostsService {
       } as any,
       creationMethod,
       // Keep the group stable: a client may have the calendar open while the
-      // settings are updated out of band, and the calendar links posts by group.
+      // post is updated out of band, and the calendar links posts by group.
       true
     );
 
