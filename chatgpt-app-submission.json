@@ -116,6 +116,30 @@
         "destructive_justification": "Permanently deletes the post (every repetition of a repeating post) and its comments from Postiz, so a scheduled post is no longer published; this cannot be undone."
       }
     },
+    "integrationAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving the analytics of one connected channel.",
+        "open_world_justification": "Calls the connected provider API to read the metrics and can update integration auth state for the user's channel.",
+        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
+      }
+    },
+    "postAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving the analytics of one published post.",
+        "open_world_justification": "Calls the connected provider API to read the metrics and can update integration auth state for the user's channel.",
+        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
+      }
+    },
     "generateVideoOptions": {
       "annotations": {
         "readOnlyHint": true,
@@ -348,6 +372,22 @@
       "file_attachment_urls": null,
       "tools_triggered": "postsListTool, deletePostTool",
       "expected_output": "Calls postsListTool for the coming weeks, finds the matching LinkedIn draft (created by an earlier test case), shows its channel, date and text, and asks for confirmation. After the user confirms, calls deletePostTool with the post id and confirms it was deleted. Nothing is published or changed on LinkedIn. If no matching draft exists, it says so and deletes nothing.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Show the analytics of a connected channel.",
+      "user_prompt": "Show me the analytics of my Postiz LinkedIn channel for the last 30 days.",
+      "file_attachment_urls": null,
+      "tools_triggered": "integrationList, integrationAnalyticsTool",
+      "expected_output": "Calls integrationList to find the LinkedIn channel, then integrationAnalyticsTool with its id and days = 30, and summarizes the returned metrics. If the platform returns no analytics, it says there is no data to show. Nothing is posted or changed.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Show the analytics of a published post.",
+      "user_prompt": "How did my last published Postiz LinkedIn post perform?",
+      "file_attachment_urls": null,
+      "tools_triggered": "postsListTool, postAnalyticsTool",
+      "expected_output": "Calls postsListTool for the recent weeks, picks the latest published LinkedIn post, then calls postAnalyticsTool with its id and summarizes the returned metrics. If there is no published post or the platform returns no analytics, it says so. Nothing is posted or changed.",
       "expected_output_url": null
     }
   ],
