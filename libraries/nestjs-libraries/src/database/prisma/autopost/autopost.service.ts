@@ -6,7 +6,7 @@ import { END, START, StateGraph } from '@langchain/langgraph';
 import { AutoPost, Integration } from '@prisma/client';
 import { BaseMessage } from '@langchain/core/messages';
 import striptags from 'striptags';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { JSDOM } from 'jsdom';
 import { z } from 'zod';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -20,6 +20,8 @@ import {
   organizationId,
 } from '@gitroom/nestjs-libraries/temporal/temporal.search.attribute';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 const parser = new Parser();
 
 interface WorkflowChannelsState {
@@ -42,11 +44,6 @@ const model = new ChatOpenAI({
   temperature: 0.7,
 });
 
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'chatgpt-image-latest',
-});
-
 const generateContent = z.object({
   socialMediaPostContent: z
     .string()
@@ -61,11 +58,13 @@ const dallePrompt = z.object({
 
 @Injectable()
 export class AutopostService {
+  private storage = UploadFactory.createStorage();
   constructor(
     private _autopostsRepository: AutopostRepository,
     private _temporalService: TemporalService,
     private _integrationService: IntegrationService,
-    private _postsService: PostsService
+    private _postsService: PostsService,
+    private _openaiService: OpenaiService
   ) {}
 
   async stopAll(org: string) {
@@ -270,7 +269,12 @@ export class AutopostService {
           content: state.load.description || state.description,
         });
 
-    const image = await dalle.invoke(generatedTextToBeSentToDallE);
+    const generatedImage = await this._openaiService.generateImage(
+      generatedTextToBeSentToDallE
+    );
+    const image = await this.storage.uploadSimple(
+      'data:image/png;base64,' + generatedImage
+    );
 
     return { ...state, image };
   }
