@@ -179,7 +179,8 @@ export class IntegrationService {
       !!provider?.pageRequiredToPost &&
       (integration.inBetweenSteps ||
         (!!integration.rootInternalId &&
-          integration.internalId === integration.rootInternalId))
+          integration.internalId === integration.rootInternalId &&
+          !provider.isPageId?.(integration.internalId)))
     );
   }
 
