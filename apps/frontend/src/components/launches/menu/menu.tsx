@@ -436,7 +436,9 @@ export const Menu: FC<{
           style={{ left: show.x, top: show.y }}
           className={`fixed p-[12px] bg-newBgColorInner shadow-menu flex flex-col gap-[16px] z-[100] rounded-[8px] border border-tableBorder text-nowrap`}
         >
-          {canDisable && !findIntegration?.refreshNeeded && (
+          {canDisable &&
+            !findIntegration?.refreshNeeded &&
+            !findIntegration?.inBetweenSteps && (
             <div
               className="flex gap-[12px] items-center py-[8px] px-[10px]"
               onClick={createPost(findIntegration!)}
