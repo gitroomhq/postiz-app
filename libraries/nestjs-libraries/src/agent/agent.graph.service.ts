@@ -319,10 +319,14 @@ export class AgentGraphService {
     try {
       const newContent = await Promise.all(
         (state.content || []).map(async (p) => {
-          const image = await this._openaiService.generateImage(p.prompt!);
+          // stored right away: the state is streamed to the client on every step
+          const image = await this.storage.uploadSimple(
+            'data:image/png;base64,' +
+              (await this._openaiService.generateImage(p.prompt!))
+          );
           return {
             ...p,
-            image: 'data:image/png;base64,' + image,
+            image,
           };
         })
       );
@@ -339,12 +343,11 @@ export class AgentGraphService {
     const all = await Promise.all(
       (state.content || []).map(async (p) => {
         if (p.image) {
-          const upload = await this.storage.uploadSimple(p.image);
-          const name = upload.split('/').pop()!;
+          const name = p.image.split('/').pop()!;
           const uploadWithId = await this._mediaService.saveFile(
             state.orgId,
             name,
-            upload
+            p.image
           );
 
           return {
