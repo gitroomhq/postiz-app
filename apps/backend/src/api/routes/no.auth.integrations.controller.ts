@@ -221,6 +221,33 @@ export class NoAuthIntegrationsController {
       throw new HttpException('', 412);
     }
 
+    // Fetch pages if this is a two-step provider and not a refresh. Runs before
+    // the channel is saved, so a failed fetch never leaves a channel behind
+    let pages: any[] = [];
+    if (integrationProvider.isBetweenSteps && !refresh) {
+      try {
+        // Check which method the provider uses (pages or companies)
+        const fetchMethod =
+          'pages' in integrationProvider
+            ? 'pages'
+            : 'companies' in integrationProvider
+            ? 'companies'
+            : null;
+
+        if (fetchMethod) {
+          // @ts-ignore - dynamic method call
+          pages = await integrationProvider[fetchMethod](accessToken);
+        }
+      } catch (err) {
+        console.log('Failed to fetch pages:', err);
+        throw new NotEnoughScopes(
+          err instanceof NotEnoughScopes
+            ? err.message
+            : 'We could not load the pages or accounts of this channel right now, please try connecting it again in a few minutes'
+        );
+      }
+    }
+
     if (refresh && String(id) !== String(refresh)) {
       // A reconnect that returns a different id is either the wrong account or
       // a channel migrating to another provider (MIGRATE_PROVIDERS) - the two
@@ -280,27 +307,6 @@ export class NoAuthIntegrationsController {
       .catch((err) => {
         console.log(err);
       });
-
-    // Fetch pages if this is a two-step provider and not a refresh
-    let pages: any[] = [];
-    if (integrationProvider.isBetweenSteps && !refresh) {
-      try {
-        // Check which method the provider uses (pages or companies)
-        const fetchMethod =
-          'pages' in integrationProvider
-            ? 'pages'
-            : 'companies' in integrationProvider
-            ? 'companies'
-            : null;
-
-        if (fetchMethod) {
-          // @ts-ignore - dynamic method call
-          pages = await integrationProvider[fetchMethod](accessToken);
-        }
-      } catch (err) {
-        console.log('Failed to fetch pages:', err);
-      }
-    }
 
     const webhookUrl = await ioRedis.get(`webhookUrl:${body.state}`);
     if (webhookUrl) {
