@@ -13,6 +13,7 @@ import { Organization } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
 import { CheckPolicies } from '@gitroom/backend/services/auth/permissions/permissions.ability';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import {
   OnlyURL, UpdateDto, WebhooksDto
 } from '@gitroom/nestjs-libraries/dtos/webhooks/webhooks.dto';
@@ -56,15 +57,30 @@ export class WebhookController {
   @Post('/send')
   async sendWebhook(@Body() body: any, @Query() query: OnlyURL) {
     try {
-      await fetch(query.url, {
+      const response = await fetch(query.url, {
         method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
+        // @ts-ignore
+        dispatcher: getSsrfSafeDispatcher(),
       });
-    } catch (err) {
-      /** sent **/
-    }
 
-    return { send: true };
+      if (!response.ok) {
+        let errorDetails = `HTTP ${response.status}`;
+        try {
+          const text = await response.text();
+          if (text) {
+            errorDetails += `: ${text.slice(0, 200)}`;
+          }
+        } catch {
+          // ignore error reading response body
+        }
+        return { send: false, status: response.status, error: errorDetails };
+      }
+
+      return { send: true, status: response.status };
+    } catch (err: any) {
+      return { send: false, error: err?.message || 'Failed to send webhook' };
+    }
   }
 }

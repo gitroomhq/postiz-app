@@ -198,48 +198,67 @@ export const AddOrEditWebhook: FC<{
   );
   const sendTest = useCallback(async () => {
     const url = form.getValues('url');
-    toast.show(t('webhook_sent', 'Webhook send'), 'success');
-    try {
-      await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([
-          {
-            id: 'cm6tcts4f0005qcwit25cis26',
-            content: 'This is the first post to instagram',
-            publishDate: '2025-02-06T13:09:00.000Z',
-            releaseURL: 'https://facebook.com/release/release',
-            state: 'PUBLISHED',
-            integration: {
-              id: 'cm6s4uyou0001i2r47pxix6z1',
-              name: 'test',
-              providerIdentifier: 'instagram',
-              picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
-              type: 'social',
-            },
-          },
-          {
-            id: 'cm6tcts4f0005qcwit25cis26',
-            content: 'This is the second post to facebook',
-            publishDate: '2025-02-06T13:09:00.000Z',
-            releaseURL: 'https://facebook.com/release2/release2',
-            state: 'PUBLISHED',
-            integration: {
-              id: 'cm6s4uyou0001i2r47pxix6z1',
-              name: 'test2',
-              providerIdentifier: 'facebook',
-              picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
-              type: 'social',
-            },
-          },
-        ]),
-      });
-    } catch (e: any) {
-      /** empty **/
+    if (!url) {
+      toast.show(t('url_is_required', 'URL is required'), 'warning');
+      return;
     }
-  }, []);
+    try {
+      const response = await (
+        await fetch(`/webhooks/send?url=${encodeURIComponent(url)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([
+            {
+              id: 'cm6tcts4f0005qcwit25cis26',
+              content: 'This is the first post to instagram',
+              publishDate: '2025-02-06T13:09:00.000Z',
+              releaseURL: 'https://facebook.com/release/release',
+              state: 'PUBLISHED',
+              integration: {
+                id: 'cm6s4uyou0001i2r47pxix6z1',
+                name: 'test',
+                providerIdentifier: 'instagram',
+                picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
+                type: 'social',
+              },
+            },
+            {
+              id: 'cm6tcts4f0005qcwit25cis26',
+              content: 'This is the second post to facebook',
+              publishDate: '2025-02-06T13:09:00.000Z',
+              releaseURL: 'https://facebook.com/release2/release2',
+              state: 'PUBLISHED',
+              integration: {
+                id: 'cm6s4uyou0001i2r47pxix6z1',
+                name: 'test2',
+                providerIdentifier: 'facebook',
+                picture: 'https://uploads.gitroom.com/F6LSCD8wrrQ.jpeg',
+                type: 'social',
+              },
+            },
+          ]),
+        })
+      ).json();
+
+      if (response?.send) {
+        toast.show(t('webhook_sent', 'Webhook sent successfully'), 'success');
+      } else {
+        toast.show(
+          response?.error
+            ? `${t('webhook_failed', 'Failed to send webhook')}: ${response.error}`
+            : t('webhook_failed', 'Failed to send webhook'),
+          'warning'
+        );
+      }
+    } catch (e: any) {
+      toast.show(
+        e?.message || t('webhook_failed', 'Failed to send webhook'),
+        'warning'
+      );
+    }
+  }, [form, fetch, t, toast]);
 
   return (
     <FormProvider {...form}>
