@@ -144,7 +144,11 @@ export const stripHtmlValidation = (
     return val;
   }
 
-  const value = serialize(parseFragment(val));
+  const serialized = serialize(parseFragment(val));
+  const value =
+    type === 'html'
+      ? serialized
+      : serialized.replace(/<br\s*\/?>/gi, '\n');
 
   if (type === 'none') {
     return striptags(value)
@@ -172,6 +176,7 @@ export const stripHtmlValidation = (
       'strong',
       'u',
       'a',
+      'br',
       ...(inlineImages ? ['img'] : []),
       ]
     )
