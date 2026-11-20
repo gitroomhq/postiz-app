@@ -1349,7 +1349,33 @@ export const OnlyEditor = forwardRef<
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
     editorProps: {
-      handlePaste: (view, event, slice) => !!paste?.(event as any, slice),
+      handlePaste: (view, event, slice) => {
+        if (paste?.(event as any, slice)) {
+          return true;
+        }
+        // some apps (like Notion) keep the line breaks only in the plain text
+        // and put bare newlines in the html, which pastes as a single line
+        const text = event.clipboardData?.getData('text/plain') || '';
+        let blocks = 0;
+        let rich = false;
+        slice.content.descendants((node) => {
+          if (node.isTextblock) {
+            blocks++;
+          } else if (!node.isText || node.marks.length) {
+            rich = true;
+          }
+        });
+        if (
+          !event.clipboardData?.files.length &&
+          event.clipboardData?.getData('text/html') &&
+          blocks <= 1 &&
+          !rich &&
+          text.split(/\r\n?|\n/).filter((line) => line.trim()).length > 1
+        ) {
+          return view.pasteText(text, event);
+        }
+        return false;
+      },
       // the default parser merges consecutive newlines, which drops the
       // blank lines of pasted plain text; keep each one as an empty paragraph
       clipboardTextParser: (text, $context, _plain, view) => {
