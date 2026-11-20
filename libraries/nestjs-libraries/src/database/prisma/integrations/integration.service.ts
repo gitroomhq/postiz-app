@@ -637,8 +637,14 @@ export class IntegrationService {
       getIntegration.providerIdentifier
     );
 
+    // A deleted channel is neither refreshed nor called
+    if (getIntegration.deletedAt) {
+      return [];
+    }
+
     if (
-      dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) ||
+      (dayjs(getIntegration?.tokenExpiration).isBefore(dayjs()) &&
+        !integrationProvider.noRefreshBeforeCall) ||
       forceRefresh
     ) {
       const data = await this._refreshIntegrationService.refresh(
