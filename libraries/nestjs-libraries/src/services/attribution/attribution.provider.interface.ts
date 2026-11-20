@@ -1,11 +1,19 @@
 import { Injectable } from '@nestjs/common';
 
-// The new account, as much of it as an attribution tool needs
+// The account, as much of it as an attribution tool needs
 export interface AttributionLead {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
+}
+
+// What the account paid, in a payment provider neutral shape
+export interface AttributionPurchase {
+  // main unit of the currency (29.5, not 2950)
+  value: number;
+  // ISO code, lowercase
+  currency: string;
 }
 
 // Attribution tools (first / last touch) tell which post, ad or campaign
@@ -23,6 +31,15 @@ export abstract class AttributionProviderAbstract {
   // visitor didn't come from one of the tool's links (or signed up on another
   // browser), the tool can still match the account by email.
   abstract lead(lead: AttributionLead, clickId: string): Promise<void>;
+
+  // Called in the background for the first charge of a subscription (a trial
+  // that turned into a paid plan, or a plan paid upfront), never for a
+  // renewal. The click id isn't kept after the sign-up, the tool matches the
+  // purchase to the lead it got then (by email).
+  abstract purchase(
+    lead: AttributionLead,
+    purchase: AttributionPurchase
+  ): Promise<void>;
 }
 
 export interface AttributionProviderParams {
