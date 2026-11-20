@@ -3,35 +3,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { TopTitle } from '@gitroom/frontend/components/launches/helpers/top.title.component';
 import { IntegrationContext } from '@gitroom/frontend/components/launches/helpers/use.integration';
 import dayjs from 'dayjs';
-import useSWR, { useSWRConfig } from 'swr';
+import { useSWRConfig } from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { continueProviderList } from '@gitroom/frontend/components/new-launch/providers/continue-provider/list';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 export const Null: FC<{
   onSave: (data: any) => Promise<void>;
-  existingId: string[];
 }> = () => null;
 export const ContinueProvider: FC = () => {
   const { mutate } = useSWRConfig();
-  const fetch = useFetch();
   const searchParams = useSearchParams();
   const added = searchParams.get('added');
   const continueId = searchParams.get('continue');
   const router = useRouter();
-  const load = useCallback(async (path: string) => {
-    const list = (await (await fetch(path)).json()).integrations;
-    return list;
-  }, []);
-  const { data: integrations } = useSWR('/integrations/list', load, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    revalidateIfStale: false,
-    revalidateOnMount: true,
-    refreshWhenHidden: false,
-    refreshWhenOffline: false,
-    fallbackData: [],
-  });
   const refreshList = useCallback(() => {
     mutate('/integrations/list');
     const url = new URL(window.location.href);
@@ -48,7 +33,7 @@ export const ContinueProvider: FC = () => {
     );
   }, [added]);
 
-  if (!added || !continueId || !integrations) {
+  if (!added || !continueId) {
     return null;
   }
 
@@ -57,7 +42,6 @@ export const ContinueProvider: FC = () => {
       refreshList={refreshList}
       added={added}
       continueId={continueId}
-      integrations={integrations.map((p: any) => p.internalId)}
       provider={Provider}
     />
   );
@@ -68,8 +52,7 @@ const ModalContent: FC<{
   added: any;
   provider: any;
   closeModal: () => void;
-  integrations: string[];
-}> = ({ continueId, added, provider: Provider, closeModal, integrations }) => {
+}> = ({ continueId, added, provider: Provider, closeModal }) => {
   const fetch = useFetch();
 
   const onSave = useCallback(
@@ -109,7 +92,7 @@ const ModalContent: FC<{
         },
       }}
     >
-      <Provider onSave={onSave} existingId={integrations} />
+      <Provider onSave={onSave} />
     </IntegrationContext.Provider>
   );
 };
@@ -118,7 +101,6 @@ const ContinueModal: FC<{
   continueId: string;
   added: any;
   provider: any;
-  integrations: string[];
   refreshList: () => void;
 }> = (props) => {
   const modals = useModals();
