@@ -17,7 +17,10 @@ import { MediaListTool } from '@gitroom/nestjs-libraries/chat/tools/media.list.t
 import { MediaStatusTool } from '@gitroom/nestjs-libraries/chat/tools/media.status.tool';
 import { PostsListTool } from '@gitroom/nestjs-libraries/chat/tools/posts.list.tool';
 import { PostSettingsTool } from '@gitroom/nestjs-libraries/chat/tools/post.settings.tool';
+import { PostAttachmentsTool } from '@gitroom/nestjs-libraries/chat/tools/post.attachments.tool';
 import { DeletePostTool } from '@gitroom/nestjs-libraries/chat/tools/delete.post.tool';
+import { IntegrationAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/integration.analytics.tool';
+import { PostAnalyticsTool } from '@gitroom/nestjs-libraries/chat/tools/post.analytics.tool';
 import { UploadWidgetTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.tool';
 import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.ticket.tool';
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
@@ -31,7 +34,10 @@ export const toolList = [
   IntegrationSchedulePostTool,
   PostsListTool,
   PostSettingsTool,
+  PostAttachmentsTool,
   DeletePostTool,
+  IntegrationAnalyticsTool,
+  PostAnalyticsTool,
   GenerateVideoOptionsTool,
   VideoFunctionTool,
   GenerateVideoTool,

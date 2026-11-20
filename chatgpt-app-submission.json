@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Postiz",
     "subtitle": "Schedule Social Media Posts",
-    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Get a link to connect a new channel\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Review upcoming posts\n- Delete posts.",
+    "description": "Postiz helps users manage social media publishing from ChatGPT.  Users can:\n- Schedule social media posts to 28+ platforms including X, LinkedIn, LinkedIn Pages, Instagram, Facebook, Threads, YouTube, TikTok, Reddit, Pinterest, Bluesky, Mastodon, Google My Business, Discord, Slack, Telegram, Twitch, Kick, Lemmy, Farcaster, Nostr, VK, MeWe, Tumblr, Skool, Whop, Moltbook, Dribbble, Medium, Dev.to, Hashnode, WordPress, and ListMonk\n- List connected channels and groups\n- Get a link to connect a new channel\n- Inspect platform requirements\n- Upload or generate media\n- Turn long YouTube videos into short clips\n- Create drafts or scheduled posts\n- Update provider settings\n- Replace the attachments of a draft or scheduled post\n- Review upcoming posts\n- Delete posts.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -104,6 +104,18 @@
         "destructive_justification": "Overwrites existing provider settings on an unpublished draft or scheduled post, which changes how it will be published; it does not delete posts, change content or dates, or publish immediately."
       }
     },
+    "postAttachmentsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Replaces the attachments of an existing draft or scheduled post.",
+        "open_world_justification": "Only updates the attachments stored on an unpublished Postiz post and does not reach any external or publicly visible system.",
+        "destructive_justification": "Overwrites the existing attachments of an unpublished draft or scheduled post, which changes what it will be published with; it does not delete posts or media files, change content, settings or dates, or publish immediately."
+      }
+    },
     "deletePostTool": {
       "annotations": {
         "readOnlyHint": false,
@@ -114,6 +126,30 @@
         "read_only_justification": "Deletes an existing post and its comments on one channel in Postiz.",
         "open_world_justification": "Only deletes the post inside Postiz; a published post stays live on the social network and no third-party system is changed.",
         "destructive_justification": "Permanently deletes the post (every repetition of a repeating post) and its comments from Postiz, so a scheduled post is no longer published; this cannot be undone."
+      }
+    },
+    "integrationAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving the analytics of one connected channel.",
+        "open_world_justification": "Calls the connected provider API to read the metrics and can update integration auth state for the user's channel.",
+        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
+      }
+    },
+    "postAnalyticsTool": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": true,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Can refresh stored integration tokens and mark channels as needing reconnect while retrieving the analytics of one published post.",
+        "open_world_justification": "Calls the connected provider API to read the metrics and can update integration auth state for the user's channel.",
+        "destructive_justification": "Can overwrite stored integration tokens or mark a channel as needing reconnect if refresh fails."
       }
     },
     "generateVideoOptions": {
@@ -319,6 +355,14 @@
       "expected_output_url": null
     },
     {
+      "description": "Find an existing draft and replace only its attachments.",
+      "user_prompt": "Find my Postiz LinkedIn draft with the text \"Testing the Postiz ChatGPT app\" and replace its attachments with the two most recent images in my media library. Don't change the text or the date.",
+      "file_attachment_urls": null,
+      "tools_triggered": "postsListTool, mediaListTool, postAttachmentsTool",
+      "expected_output": "Calls postsListTool for the coming weeks, picks the matching LinkedIn draft (created by an earlier test case), calls mediaListTool to get the two most recent images, shows which post and which attachments it will have and asks for confirmation. After the user confirms, calls postAttachmentsTool with the post id and the two image paths. Returns the post id and confirms the attachments were replaced while the content, settings and date stayed the same. If no matching draft exists, it says so and does not create one.",
+      "expected_output_url": null
+    },
+    {
       "description": "Generate an image and save it to the media library.",
       "user_prompt": "Generate an image of a sunrise over mountains for a product launch post and save it to my Postiz media library. Don't create a post.",
       "file_attachment_urls": null,
@@ -348,6 +392,22 @@
       "file_attachment_urls": null,
       "tools_triggered": "postsListTool, deletePostTool",
       "expected_output": "Calls postsListTool for the coming weeks, finds the matching LinkedIn draft (created by an earlier test case), shows its channel, date and text, and asks for confirmation. After the user confirms, calls deletePostTool with the post id and confirms it was deleted. Nothing is published or changed on LinkedIn. If no matching draft exists, it says so and deletes nothing.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Show the analytics of a connected channel.",
+      "user_prompt": "Show me the analytics of my Postiz LinkedIn channel for the last 30 days.",
+      "file_attachment_urls": null,
+      "tools_triggered": "integrationList, integrationAnalyticsTool",
+      "expected_output": "Calls integrationList to find the LinkedIn channel, then integrationAnalyticsTool with its id and days = 30, and summarizes the returned metrics. If the platform returns no analytics, it says there is no data to show. Nothing is posted or changed.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Show the analytics of a published post.",
+      "user_prompt": "How did my last published Postiz LinkedIn post perform?",
+      "file_attachment_urls": null,
+      "tools_triggered": "postsListTool, postAnalyticsTool",
+      "expected_output": "Calls postsListTool for the recent weeks, picks the latest published LinkedIn post, then calls postAnalyticsTool with its id and summarizes the returned metrics. If there is no published post or the platform returns no analytics, it says so. Nothing is posted or changed.",
       "expected_output_url": null
     }
   ],

@@ -25,6 +25,7 @@ export class LinkedinPageProvider
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
   override isBetweenSteps = true;
+  pageRequiredToPost = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits
   override scopes = [
@@ -273,6 +274,11 @@ export class LinkedinPageProvider
       picture,
       username: vanityName,
     };
+  }
+
+  // Organization ids are numeric, the member id and its placeholder are not.
+  isPageId(internalId: string) {
+    return /^\d+$/.test(internalId);
   }
 
   // A channel that never finished the page step still carries the member id

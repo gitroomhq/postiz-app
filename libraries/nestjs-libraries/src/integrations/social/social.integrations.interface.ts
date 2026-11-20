@@ -192,6 +192,9 @@ export interface SocialProvider
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;
   refreshCron?: boolean;
+  // The token cannot be refreshed and does not expire on its stored
+  // expiration date, so it is never refreshed before a call
+  noRefreshBeforeCall?: boolean;
   refreshErrorMessage?(err: any): string | undefined;
   dto?: any;
   maxLength: (additionalSettings?: any, settings?: any) => number;
@@ -233,6 +236,8 @@ export interface SocialProvider
   toolTip?: string;
   oneTimeToken?: boolean;
   isBetweenSteps: boolean;
+  pageRequiredToPost?: boolean;
+  isPageId?: (internalId: string) => boolean;
   scopes: string[];
   externalUrl?: (
     url: string

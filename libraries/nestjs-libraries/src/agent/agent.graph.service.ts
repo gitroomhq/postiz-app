@@ -5,7 +5,7 @@ import {
   ToolMessage,
 } from '@langchain/core/messages';
 import { END, START, StateGraph } from '@langchain/langgraph';
-import { ChatOpenAI, DallEAPIWrapper } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { TavilySearch } from '@langchain/tavily';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
@@ -16,6 +16,7 @@ import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/me
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { GeneratorDto } from '@gitroom/nestjs-libraries/dtos/generator/generator.dto';
 import { generationError } from '@gitroom/nestjs-libraries/openai/generation.error';
+import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 
 const tools = !process.env.TAVILY_API_KEY
   ? []
@@ -27,11 +28,6 @@ const model = new ChatOpenAI({
   model: 'gpt-6.2-sol',
   // gpt-6 models only call tools (the research step) through the Responses API
   useResponsesApi: true,
-});
-
-const dalle = new DallEAPIWrapper({
-  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'chatgpt-image-latest',
 });
 
 interface WorkflowChannelsState {
@@ -108,7 +104,8 @@ export class AgentGraphService {
   private storage = UploadFactory.createStorage();
   constructor(
     private _postsService: PostsService,
-    private _mediaService: MediaService
+    private _mediaService: MediaService,
+    private _openaiService: OpenaiService
   ) {}
   static state = () =>
     new StateGraph<WorkflowChannelsState>({
@@ -323,7 +320,11 @@ export class AgentGraphService {
     try {
       const newContent = await Promise.all(
         (state.content || []).map(async (p) => {
-          const image = await dalle.invoke(p.prompt!);
+          // stored right away: the state is streamed to the client on every step
+          const image = await this.storage.uploadSimple(
+            'data:image/png;base64,' +
+              (await this._openaiService.generateImage(p.prompt!))
+          );
           return {
             ...p,
             image,
@@ -343,12 +344,11 @@ export class AgentGraphService {
     const all = await Promise.all(
       (state.content || []).map(async (p) => {
         if (p.image) {
-          const upload = await this.storage.uploadSimple(p.image);
-          const name = upload.split('/').pop()!;
+          const name = p.image.split('/').pop()!;
           const uploadWithId = await this._mediaService.saveFile(
             state.orgId,
             name,
-            upload
+            p.image
           );
 
           return {

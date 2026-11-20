@@ -86,6 +86,10 @@ Clips must not overlap. Write the title and the post in this language, whatever 
       })
     ).data[0];
 
+    if (!generate?.b64_json) {
+      throw new Error('Image generation returned no image data');
+    }
+
     return generate.b64_json;
   }
 
