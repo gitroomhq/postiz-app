@@ -221,7 +221,7 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
       .replace(/<strong>/g, '<b>')
       .replace(/<\/strong>/g, '</b>')
       .replace(/<p>(.*?)<\/p>/g, '$1\n')
-      .replace(/<br\s*\/?>/gi, '\n');
+      .replace(/<br[^>]*>/gi, '\n');
 
     const processedMedia = this.processMedia(mediaFiles);
 

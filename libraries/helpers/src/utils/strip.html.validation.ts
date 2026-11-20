@@ -145,10 +145,15 @@ export const stripHtmlValidation = (
   }
 
   const serialized = serialize(parseFragment(val));
+  // list items are flattened to one line below, so a break inside one is a space
   const value =
     type === 'html'
       ? serialized
-      : serialized.replace(/<br\s*\/?>/gi, '\n');
+      : serialized
+          .replace(/<li[^>]*>[\s\S]*?<\/li>/gi, (match) =>
+            match.replace(/<br[^>]*>/gi, ' ')
+          )
+          .replace(/<br[^>]*>/gi, '\n');
 
   if (type === 'none') {
     return striptags(value)
