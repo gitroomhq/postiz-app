@@ -1,5 +1,6 @@
 import { TemporalModule } from 'nestjs-temporal-core';
 import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { activityLogInterceptor } from '@gitroom/nestjs-libraries/temporal/activity.interceptor';
 import { emailQueues } from '@gitroom/nestjs-libraries/temporal/email.queues';
 
 export const getTemporalModule = (
@@ -35,7 +36,7 @@ export const getTemporalModule = (
       namespace: process.env.TEMPORAL_NAMESPACE || 'default',
     },
     taskQueue: 'main',
-    logLevel: 'error',
+    logLevel: 'warn',
     ...(isWorkers
       ? {
           workers: [
@@ -70,6 +71,7 @@ export const getTemporalModule = (
                   activityClasses: activityClasses!,
                   autoStart: true,
                   workerOptions: {
+                    interceptors: { activity: [activityLogInterceptor] },
                     maxConcurrentActivityTaskExecutions: concurrency || 1000000,
                     // By default the SDK throttles heartbeat sends to 60s, so
                     // against the workflow's heartbeatTimeout one dropped send

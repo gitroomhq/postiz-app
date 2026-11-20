@@ -59,6 +59,7 @@ import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validatio
 import { postContentPlainText } from '@gitroom/helpers/utils/sanitize.post.content';
 import { CreatePublicCommentDto } from '@gitroom/nestjs-libraries/dtos/comments/add.comment.dto';
 import { countLength } from '@gitroom/helpers/utils/count.length';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 
 type PostWithConditionals = Post & {
   integration?: Integration;
@@ -442,7 +443,7 @@ export class PostsService {
             post.integration.id
           );
 
-          if (!integration) {
+          if (!integration || integration.deletedAt) {
             throw new BadRequestException(
               `Integration with id ${post.integration.id} not found`
             );
@@ -767,8 +768,8 @@ export class PostsService {
         }))
       ),
       integrationPicture: posts[0]?.integration?.picture,
-      integration: posts[0].integrationId,
-      settings: JSON.parse(posts[0].settings || '{}'),
+      integration: posts[0]?.integrationId,
+      settings: JSON.parse(posts[0]?.settings || '{}'),
     };
   }
 
@@ -975,9 +976,24 @@ export class PostsService {
           ) {
             await workflow.terminate();
           }
-        } catch (err) {}
+        } catch (err) {
+          logger.warn('workflow_terminate_failed', {
+            workflow_id: executionInfo.workflowId,
+            post_id: postId,
+            org_id: orgId,
+            error_type: errorType(err),
+            error_message: errorMessage(err),
+          });
+        }
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('workflow_list_failed', {
+        post_id: postId,
+        org_id: orgId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     if (state === 'DRAFT') {
       return;
@@ -1008,7 +1024,17 @@ export class PostsService {
             },
           ]),
         });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: postId,
+        org_id: orgId,
+        task_queue: taskQueue,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
   }
 
   /**
@@ -1037,7 +1063,7 @@ export class PostsService {
           post?.integration?.id
         );
 
-        if (!integration) {
+        if (!integration || integration.deletedAt) {
           throw new BadRequestException(
             `Integration with id ${post?.integration?.id} not found`
           );
@@ -1133,6 +1159,24 @@ export class PostsService {
     return '';
   }
 
+  // A schedule-type save carrying a past date would publish within seconds
+  // (the workflow's initial sleep is max(0, publishDate - now)): reject it.
+  // The one-minute grace absorbs clock skew and form latency. The message
+  // doubles as the confirmation dialog for API/MCP automation.
+  private guardAgainstPastSchedule(date: string) {
+    if (!date || dayjs.utc(date).isAfter(dayjs.utc().subtract(1, 'minute'))) {
+      return;
+    }
+
+    throw new BadRequestException(
+      `Publish date ${dayjs
+        .utc(date)
+        .format(
+          'YYYY-MM-DD HH:mm'
+        )} UTC is in the past - saving would publish immediately. Pick a future date, or use type 'now' to intentionally publish right now.`
+    );
+  }
+
   async createPost(
     orgId: string,
     body: CreatePostDto,
@@ -1155,6 +1199,9 @@ export class PostsService {
         ))
       ) {
         throw new NotFoundException('Post not found');
+      }
+      if (body.type === 'schedule') {
+        this.guardAgainstPastSchedule(body.date);
       }
       const provider = this._integrationManager.getSocialIntegration(
         (post.settings as any)?.__type
@@ -1413,6 +1460,12 @@ export class PostsService {
       throw new BadRequestException('Post not found');
     }
 
+    // Queueing a past-dated draft would publish it within seconds, the same
+    // trap createPost and changeDate already guard against.
+    if (status === 'schedule') {
+      this.guardAgainstPastSchedule(getPostById.publishDate.toISOString());
+    }
+
     const state: State = status === 'draft' ? 'DRAFT' : 'QUEUE';
     await this._postRepository.changeState(id, state);
 
@@ -1423,7 +1476,16 @@ export class PostsService {
         orgId,
         state
       );
-    } catch (err) {}
+    } catch (err) {
+      logger.error('workflow_start_failed', {
+        workflow_type: 'postWorkflowV110',
+        post_id: getPostById.id,
+        org_id: orgId,
+        post_state: state,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     return { id, state };
   }
@@ -1435,6 +1497,12 @@ export class PostsService {
     action: 'schedule' | 'update' = 'schedule'
   ) {
     const getPostById = await this._postRepository.getPostById(id, orgId);
+
+    // Drafts stay drafts on a date move, nothing fires - only guard saves
+    // that (re)queue an actual publish.
+    if (action === 'schedule' && getPostById.state !== 'DRAFT') {
+      this.guardAgainstPastSchedule(date);
+    }
 
     // schedule: Set status to QUEUE and change date (reschedule the post)
     // update: Just change the date without changing the status
@@ -1456,7 +1524,16 @@ export class PostsService {
           orgId,
           getPostById.state === 'DRAFT' ? 'DRAFT' : 'QUEUE'
         );
-      } catch (err) {}
+      } catch (err) {
+        logger.error('workflow_start_failed', {
+          workflow_type: 'postWorkflowV110',
+          post_id: getPostById.id,
+          org_id: orgId,
+          post_state: getPostById.state,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
+      }
     }
 
     return newDate;

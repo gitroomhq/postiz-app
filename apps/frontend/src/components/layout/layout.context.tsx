@@ -6,6 +6,15 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
 import { useReturnUrl } from '@gitroom/frontend/app/(app)/auth/return.url.component';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
+import * as Sentry from '@sentry/nextjs';
+
+const logSuspendedFetch = (url: string, response: Response, reason: string) => {
+  Sentry.logger.warn('fetch_suspended', {
+    request_path: url,
+    response_status: response.status,
+    reason,
+  });
+};
 export default function LayoutContext(params: { children: ReactNode }) {
   if (params?.children) {
     // eslint-disable-next-line react/no-children-prop
@@ -83,6 +92,10 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response.status === 401 || response?.headers?.get('logout')) {
+        Sentry.logger.warn('session_terminated', {
+          request_path: url,
+          response_status: response.status,
+        });
         if (!isSecured) {
           setCookie('auth', '', -10);
           setCookie('showorg', '', -10);
@@ -100,8 +113,10 @@ function LayoutContextInner(params: { children: ReactNode }) {
           )
         ) {
           window.open('/billing?finishTrial=true', '_blank');
+          logSuspendedFetch(url, response, 'trial_required');
           return false;
         }
+        logSuspendedFetch(url, response, 'trial_required');
         return false;
       }
 
@@ -121,6 +136,7 @@ function LayoutContextInner(params: { children: ReactNode }) {
         }
         if (await deleteDialog(message, 'Move to billing', 'Payment Required')) {
           window.open('/billing', '_blank');
+          logSuspendedFetch(url, response, 'payment_required');
           return false;
         }
         return true;

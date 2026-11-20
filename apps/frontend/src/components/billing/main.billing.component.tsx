@@ -430,6 +430,7 @@ export const MainBillingComponent: FC<{
   const paymentAction = usePaymentAction();
   const user = useUser();
   const dub = useDubClickId();
+  const events = useFireEvents();
   const [fbc] = useCookie('_fbc', '');
   const [fbp] = useCookie('_fbp', '');
   const events = useFireEvents();
