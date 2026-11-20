@@ -40,7 +40,14 @@ export class TiktokBusinessProvider
   name = 'TikTok';
   isBetweenSteps = false;
   convertToJPEG = true;
-
+  scopes = [
+    'user.info.basic',
+    'user.info.username',
+    'user.info.stats',
+    'video.list',
+    'video.upload',
+    'video.publish',
+  ];
   override maxConcurrentJob = 10000;
   dto = TikTokDto;
   editor = 'normal' as const;
