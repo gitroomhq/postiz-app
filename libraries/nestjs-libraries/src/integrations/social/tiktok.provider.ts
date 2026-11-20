@@ -24,6 +24,18 @@ import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
+
+export interface TikTokCreatorInfo {
+  creator_avatar_url: string;
+  creator_username: string;
+  creator_nickname: string;
+  privacy_level_options: string[];
+  comment_disabled: boolean;
+  duet_disabled: boolean;
+  stitch_disabled: boolean;
+  max_video_post_duration_sec: number;
+}
 
 @Rules(
   [
@@ -419,6 +431,101 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     };
   }
 
+  // TikTok Direct Post UX guidelines: the composer must show the creator and
+  // offer only the privacy options / interactions this creator allows, so the
+  // dashboard loads them right before posting.
+  private async queryCreatorInfo(accessToken: string): Promise<TikTokCreatorInfo> {
+    const { data } = await (
+      await this.fetch(
+        'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+        'tiktok-creator-info'
+      )
+    ).json();
+
+    return {
+      creator_avatar_url: data?.creator_avatar_url || '',
+      creator_username: data?.creator_username || '',
+      creator_nickname: data?.creator_nickname || '',
+      privacy_level_options: data?.privacy_level_options || [],
+      comment_disabled: !!data?.comment_disabled,
+      duet_disabled: !!data?.duet_disabled,
+      stitch_disabled: !!data?.stitch_disabled,
+      max_video_post_duration_sec: Number(
+        data?.max_video_post_duration_sec || 0
+      ),
+    };
+  }
+
+  @DashboardFunction()
+  async creatorInfo(accessToken: string): Promise<TikTokCreatorInfo> {
+    return this.queryCreatorInfo(accessToken);
+  }
+
+  // Server-side guard for every DIRECT_POST (dashboard, public API, MCP):
+  // privacy_level must be set explicitly and allowed for this creator, and the
+  // creator's disabled interactions win over the post settings.
+  private async assertDirectPostAllowed(
+    accessToken: string,
+    firstPost: PostDetails<TikTokDto>
+  ): Promise<TikTokCreatorInfo> {
+    const fail = (message: string): never => {
+      throw new BadBody(
+        'tiktok-error-upload',
+        JSON.stringify({ error: message }),
+        Buffer.from(JSON.stringify({ error: message })),
+        message
+      );
+    };
+
+    const privacy = firstPost?.settings?.privacy_level;
+    if (!privacy) {
+      fail(
+        'TikTok privacy_level is required for a direct post, there is no default: choose who can see this video'
+      );
+    }
+
+    const info = await this.queryCreatorInfo(accessToken);
+    if (
+      info.privacy_level_options.length &&
+      !info.privacy_level_options.includes(privacy)
+    ) {
+      fail(
+        `TikTok privacy_level ${privacy} is not available for this account, allowed: ${info.privacy_level_options.join(
+          ', '
+        )}`
+      );
+    }
+
+    if (
+      firstPost?.settings?.brand_content_toggle === true &&
+      privacy === 'SELF_ONLY'
+    ) {
+      fail('Branded content visibility cannot be set to private (Self only)');
+    }
+
+    const duration = Number(firstPost?.settings?.video_duration_sec || 0);
+    if (
+      duration &&
+      info.max_video_post_duration_sec &&
+      duration > info.max_video_post_duration_sec
+    ) {
+      fail(
+        `This TikTok account can post videos up to ${info.max_video_post_duration_sec} seconds, the video is ${Math.ceil(
+          duration
+        )} seconds`
+      );
+    }
+
+    return info;
+  }
+
   async maxVideoLength(accessToken: string) {
     const {
       data: { max_video_post_duration_sec },
@@ -561,7 +668,10 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     }
   }
 
-  private buildTikokPostInfoBody(firstPost: PostDetails<TikTokDto>) {
+  private buildTikokPostInfoBody(
+    firstPost: PostDetails<TikTokDto>,
+    creator?: TikTokCreatorInfo
+  ) {
     const isPhoto = !hasExtension(firstPost?.media?.[0]?.path, 'mp4');
     const method = this.contentPostingMethod(firstPost);
 
@@ -575,16 +685,24 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             ? { title: firstPost.message }
             : {}),
           ...(isPhoto ? { description: firstPost.message } : {}),
-          privacy_level:
-            firstPost.settings.privacy_level || 'PUBLIC_TO_EVERYONE',
-          ...(isPhoto
-            ? {}
-            : { disable_duet: !this.assetBoolean(firstPost.settings.duet) }),
-          disable_comment: !this.assetBoolean(firstPost.settings.comment),
+          // no fallback: assertDirectPostAllowed rejects a missing value
+          privacy_level: firstPost.settings.privacy_level,
           ...(isPhoto
             ? {}
             : {
-                disable_stitch: !this.assetBoolean(firstPost.settings.stitch),
+                disable_duet:
+                  !!creator?.duet_disabled ||
+                  !this.assetBoolean(firstPost.settings.duet),
+              }),
+          disable_comment:
+            !!creator?.comment_disabled ||
+            !this.assetBoolean(firstPost.settings.comment),
+          ...(isPhoto
+            ? {}
+            : {
+                disable_stitch:
+                  !!creator?.stitch_disabled ||
+                  !this.assetBoolean(firstPost.settings.stitch),
               }),
           ...(isPhoto
             ? {}
@@ -916,6 +1034,11 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
     // For videos we only need the total size up front (HEAD / statSync) so we
     // can init the upload; the bytes themselves are streamed later, never fully
     // loaded into memory.
+    const creator =
+      this.contentPostingMethod(firstPost) === 'DIRECT_POST'
+        ? await this.assertDirectPostAllowed(accessToken, firstPost)
+        : undefined;
+
     const videoSize = isPhoto
       ? undefined
       : await this.mediaSize(videoPath, 'tiktok-error-upload');
@@ -935,7 +1058,7 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
             Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            ...this.buildTikokPostInfoBody(firstPost),
+            ...this.buildTikokPostInfoBody(firstPost, creator),
             ...this.buildTikokSourceInfoBody(firstPost, videoSize),
           }),
         }

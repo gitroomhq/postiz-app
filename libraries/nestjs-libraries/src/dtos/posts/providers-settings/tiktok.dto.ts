@@ -1,8 +1,63 @@
 import {
-  IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional, IsDefined, IsNumber, Min, Max, ValidateNested
+  IsBoolean, ValidateIf, IsIn, IsString, MaxLength, IsOptional, IsDefined, IsNumber, Min, Max, ValidateNested,
+  Validate, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JSONSchema } from 'class-validator-jsonschema';
+
+export const TIKTOK_PRIVACY_LEVELS = [
+  'PUBLIC_TO_EVERYONE',
+  'MUTUAL_FOLLOW_FRIENDS',
+  'FOLLOWER_OF_CREATOR',
+  'SELF_ONLY',
+] as const;
+
+// TikTok Direct Post UX rules that only depend on the settings themselves
+// (https://developers.tiktok.com/doc/content-sharing-guidelines). The rules
+// that depend on the creator (allowed privacy options, disabled interactions,
+// max video duration) are checked against creator_info at publish time.
+@ValidatorConstraint({ name: 'tiktokBrandedContentPrivacy', async: false })
+export class TikTokBrandedContentPrivacy implements ValidatorConstraintInterface {
+  validate(value: any, args: ValidationArguments) {
+    const o = args.object as TikTokDto;
+    return !(o?.brand_content_toggle === true && value === 'SELF_ONLY');
+  }
+  defaultMessage() {
+    return 'Branded content visibility cannot be set to private (Self only)';
+  }
+}
+
+@ValidatorConstraint({ name: 'tiktokDisclosure', async: false })
+export class TikTokDisclosure implements ValidatorConstraintInterface {
+  validate(value: any, args: ValidationArguments) {
+    const o = args.object as TikTokDto;
+    return !(
+      value === true &&
+      o?.brand_organic_toggle !== true &&
+      o?.brand_content_toggle !== true
+    );
+  }
+  defaultMessage() {
+    return 'You need to indicate if your content promotes yourself, a third party, or both';
+  }
+}
+
+@ValidatorConstraint({ name: 'tiktokMaxDuration', async: false })
+export class TikTokMaxDuration implements ValidatorConstraintInterface {
+  validate(value: any, args: ValidationArguments) {
+    const o = args.object as TikTokDto;
+    if (!o?.max_video_post_duration_sec || !value) {
+      return true;
+    }
+    return Number(value) <= Number(o.max_video_post_duration_sec);
+  }
+  defaultMessage(args: ValidationArguments) {
+    const o = args.object as TikTokDto;
+    return `This TikTok account can post videos up to ${o?.max_video_post_duration_sec} seconds, the video is ${Math.ceil(
+      Number(args.value)
+    )} seconds`;
+  }
+}
 
 export class TikTokMusic {
   @IsDefined()
@@ -77,16 +132,19 @@ export class TikTokDto {
   })
   title: string;
 
-  @IsIn([
-    'PUBLIC_TO_EVERYONE',
-    'MUTUAL_FOLLOW_FRIENDS',
-    'FOLLOWER_OF_CREATOR',
-    'SELF_ONLY',
-  ])
-  @IsString()
+  // No default: TikTok requires the user to pick the privacy level, from the
+  // options creator_info returns for the account. Not needed for UPLOAD.
+  @ValidateIf((p) => p.content_posting_method !== 'UPLOAD')
+  @IsIn([...TIKTOK_PRIVACY_LEVELS], {
+    message:
+      'privacy_level is required for a TikTok direct post: choose who can see this video (one of ' +
+      TIKTOK_PRIVACY_LEVELS.join(', ') +
+      ', and allowed by the account privacy_level_options)',
+  })
+  @Validate(TikTokBrandedContentPrivacy)
   @JSONSchema({
     description:
-      'Applied only when content_posting_method=DIRECT_POST. Ignored by TikTok on UPLOAD.',
+      'Required when content_posting_method=DIRECT_POST, there is no default. Must be one of the privacy_level_options TikTok returns for the account (creator_info); the post fails before upload otherwise. Ignored by TikTok on UPLOAD.',
   })
   privacy_level:
     | 'PUBLIC_TO_EVERYONE'
@@ -175,4 +233,32 @@ export class TikTokDto {
       'Only use "UPLOAD" when the user explicitly asks to review or edit the post inside the TikTok app before publishing.',
   })
   content_posting_method: 'DIRECT_POST' | 'UPLOAD';
+
+  @IsOptional()
+  @IsBoolean()
+  @Validate(TikTokDisclosure)
+  @JSONSchema({
+    description:
+      'Commercial content disclosure switch. When true, brand_organic_toggle and/or brand_content_toggle must be true.',
+  })
+  disclose?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Validate(TikTokMaxDuration)
+  @JSONSchema({
+    description:
+      'Optional. Duration of the video in seconds (set by the dashboard). Checked against max_video_post_duration_sec.',
+  })
+  video_duration_sec?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @JSONSchema({
+    description:
+      'Optional. The account max_video_post_duration_sec from creator_info (set by the dashboard).',
+  })
+  max_video_post_duration_sec?: number;
 }
