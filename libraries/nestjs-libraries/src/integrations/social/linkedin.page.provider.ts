@@ -276,6 +276,11 @@ export class LinkedinPageProvider
     };
   }
 
+  // Organization ids are numeric, the member id and its placeholder are not.
+  isPageId(internalId: string) {
+    return /^\d+$/.test(internalId);
+  }
+
   // A channel that never finished the page step still carries the member id
   // (or its placeholder) from authenticate(), not an organization id.
   private checkPageId(id: string, integration: Integration) {

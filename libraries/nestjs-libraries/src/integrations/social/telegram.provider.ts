@@ -217,10 +217,11 @@ export class TelegramProvider extends SocialAbstract implements SocialProvider {
   ): Promise<number | null> {
     let messageId: number | null = null;
     const mediaFiles = message.media || [];
-    const text = striptags(message.message || '', ['u', 'strong', 'p'])
+    const text = striptags(message.message || '', ['u', 'strong', 'p', 'br'])
       .replace(/<strong>/g, '<b>')
       .replace(/<\/strong>/g, '</b>')
-      .replace(/<p>(.*?)<\/p>/g, '$1\n');
+      .replace(/<p>(.*?)<\/p>/g, '$1\n')
+      .replace(/<br[^>]*>/gi, '\n');
 
     const processedMedia = this.processMedia(mediaFiles);
 

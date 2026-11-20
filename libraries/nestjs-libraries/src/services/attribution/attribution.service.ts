@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { uniq } from 'lodash';
 import { AttributionProviderManager } from '@gitroom/nestjs-libraries/services/attribution/attribution.provider.manager';
+import {
+  AttributionLead,
+  AttributionPurchase,
+} from '@gitroom/nestjs-libraries/services/attribution/attribution.provider.interface';
 
 @Injectable()
 export class AttributionService {
@@ -34,13 +38,7 @@ export class AttributionService {
             const clickId = attribution?.[provider.queryParam];
             try {
               await provider.lead(
-                {
-                  id: user.id,
-                  // wallet / farcaster accounts have no email
-                  email: user.email?.includes('@') ? user.email : '',
-                  firstName: user.name || '',
-                  lastName: user.lastName || '',
-                },
+                this.toLead(user),
                 typeof clickId === 'string' && clickId.length <= 500
                   ? clickId
                   : ''
@@ -56,5 +54,47 @@ export class AttributionService {
     } catch (err) {
       console.error(`Attribution failed to report user ${user.id}:`, err);
     }
+  }
+
+  // Reports the first charge of a subscription to every configured tool.
+  // Never throws and never rejects: it is called from a payment webhook, an
+  // attribution outage must not affect billing.
+  async purchase(
+    user: Pick<User, 'id' | 'email' | 'name' | 'lastName'>,
+    purchase: AttributionPurchase
+  ) {
+    try {
+      await Promise.all(
+        this._attributionProviderManager
+          .getProviders()
+          .map(async ({ name, provider }) => {
+            try {
+              await provider.purchase(this.toLead(user), purchase);
+            } catch (err) {
+              console.error(
+                `Attribution provider ${name} failed to report the purchase of user ${user.id}:`,
+                err
+              );
+            }
+          })
+      );
+    } catch (err) {
+      console.error(
+        `Attribution failed to report the purchase of user ${user.id}:`,
+        err
+      );
+    }
+  }
+
+  private toLead(
+    user: Pick<User, 'id' | 'email' | 'name' | 'lastName'>
+  ): AttributionLead {
+    return {
+      id: user.id,
+      // wallet / farcaster accounts have no email
+      email: user.email?.includes('@') ? user.email : '',
+      firstName: user.name || '',
+      lastName: user.lastName || '',
+    };
   }
 }

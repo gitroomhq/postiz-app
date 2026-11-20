@@ -25,8 +25,9 @@ const toolNode = new ToolNode(tools);
 
 const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
-  model: 'gpt-4.1',
-  temperature: 0.7,
+  model: 'gpt-6.2-sol',
+  // gpt-6 models only call tools (the research step) through the Responses API
+  useResponsesApi: true,
 });
 
 interface WorkflowChannelsState {

@@ -29,7 +29,7 @@ const attachmentUrl = z
 
 // Attachments are either a plain URL string or { path, alt?, thumbnail?,
 // thumbnailTimestamp? }, the same per-media fields as the public API.
-const attachment = z.union([
+export const attachment = z.union([
   attachmentUrl,
   z.object({
     path: attachmentUrl,
@@ -39,7 +39,7 @@ const attachment = z.union([
   }),
 ]);
 
-const toMedia = (
+export const toMedia = (
   a:
     | string
     | {

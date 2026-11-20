@@ -82,7 +82,7 @@ export function withContinueProvider<TItem, TSelection>(
       SWR_OPTIONS
     );
 
-    const resolvedData = initialData || data;
+    const resolvedData = initialData || (Array.isArray(data) ? data : []);
 
     const handleSelect = useCallback(
       (item: TItem) => () => {

@@ -13,6 +13,7 @@ import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
 import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
+import { AttributionService } from '@gitroom/nestjs-libraries/services/attribution/attribution.service';
 import {
   PaymentInvoice,
   PaymentPlatform,
@@ -32,7 +33,8 @@ export class StripeService extends PaymentProviderAbstract {
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,
     private _userService: UsersService,
-    private _trackService: TrackService
+    private _trackService: TrackService,
+    private _attributionService: AttributionService
   ) {
     super();
   }
@@ -1325,8 +1327,8 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async paymentSucceeded(event: Stripe.InvoicePaymentSucceededEvent) {
-    // only feeds the Facebook pixel, it runs in the background so it can
-    // never fail or slow down the webhook
+    // only feeds the Facebook pixel and the attribution tools, it runs in the
+    // background so it can never fail or slow down the webhook
     this.trackConversion(event.data.object).catch((err) => {});
     // the first payment of a new subscription makes the unpaid invoices of
     // the cancelled ones obsolete
@@ -1641,15 +1643,19 @@ export class StripeService extends PaymentProviderAbstract {
         return;
       }
 
+      const purchase = {
+        value: invoice.amount_paid / 100,
+        currency: invoice.currency,
+      };
+
       await this.trackSubscription(
         subscription.metadata,
         invoice.id,
         TrackEnum.Purchase,
-        {
-          value: invoice.amount_paid / 100,
-          currency: invoice.currency,
-        }
+        purchase
       );
+
+      await this.attributePurchase(subscription.metadata, invoice.id, purchase);
     } catch (err) {
       console.error(
         'stripe_pixel_conversion_failed',
@@ -1692,6 +1698,35 @@ export class StripeService extends PaymentProviderAbstract {
       console.error(
         'stripe_pixel_event_failed',
         { stripe_object_id: eventId, event: TrackEnum[tt] },
+        err
+      );
+    }
+  }
+
+  // Attribution tools (LeadJourney, ...) got the user who checked out the
+  // subscription as a lead when the account was created.
+  // Never throws, tracking must not affect billing.
+  private async attributePurchase(
+    metadata: Stripe.Metadata,
+    invoiceId: string,
+    purchase: { value: number; currency: string }
+  ) {
+    try {
+      const { userId } = metadata || {};
+      if (!userId) {
+        return;
+      }
+
+      const user = await this._userService.getUserById(userId);
+      if (!user) {
+        return;
+      }
+
+      await this._attributionService.purchase(user, purchase);
+    } catch (err) {
+      console.error(
+        'stripe_attribution_purchase_failed',
+        { stripe_object_id: invoiceId },
         err
       );
     }

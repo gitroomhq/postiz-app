@@ -42,7 +42,7 @@ export class OpenaiService {
     const { clips } = (
       await openai.chat.completions.parse(
         {
-          model: 'gpt-4.1',
+          model: 'gpt-6.2-sol',
           messages: [
             {
               role: 'system',
@@ -97,7 +97,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
     return (
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: 'gpt-6.2-sol',
           messages: [
             {
               role: 'system',
@@ -118,7 +118,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
     return (
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: 'gpt-6.2-sol',
           messages: [
             {
               role: 'system',
@@ -136,41 +136,32 @@ Clips must not overlap. Write the title and the post in this language, whatever 
   }
 
   async generatePosts(content: string) {
+    // gpt-6 models do not accept the `n` parameter, so each of the 5
+    // variations of a prompt is its own request
     const posts = (
-      await Promise.all([
-        openai.chat.completions.create({
-          messages: [
-            {
-              role: 'assistant',
-              content:
-                'Generate a Twitter post from the content without emojis in the following JSON format: { "post": string } put it in an array with one element',
-            },
-            {
-              role: 'user',
-              content: content!,
-            },
-          ],
-          n: 5,
-          temperature: 1,
-          model: 'gpt-4.1',
-        }),
-        openai.chat.completions.create({
-          messages: [
-            {
-              role: 'assistant',
-              content:
-                'Generate a thread for social media in the following JSON format: Array<{ "post": string }> without emojis',
-            },
-            {
-              role: 'user',
-              content: content!,
-            },
-          ],
-          n: 5,
-          temperature: 1,
-          model: 'gpt-4.1',
-        }),
-      ])
+      await Promise.all(
+        [
+          'Generate a Twitter post from the content without emojis in the following JSON format: { "post": string } put it in an array with one element',
+          'Generate a thread for social media in the following JSON format: Array<{ "post": string }> without emojis',
+        ].flatMap((prompt) =>
+          [...new Array(5)].map(() =>
+            openai.chat.completions.create({
+              messages: [
+                {
+                  role: 'assistant',
+                  content: prompt,
+                },
+                {
+                  role: 'user',
+                  content: content!,
+                },
+              ],
+              temperature: 1,
+              model: 'gpt-6.2-sol',
+            })
+          )
+        )
+      )
     ).flatMap((p) => p.choices);
 
     return shuffle(
@@ -206,7 +197,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
           content,
         },
       ],
-      model: 'gpt-4.1',
+      model: 'gpt-6.2-sol',
     });
 
     const { content: articleContent } = websiteContent.choices[0].message;
@@ -226,7 +217,10 @@ Clips must not overlap. Write the title and the post in this language, whatever 
     const posts =
       (
         await openai.chat.completions.parse({
-          model: 'gpt-4.1',
+          model: 'gpt-6.2-sol',
+          // at the default effort the model spends around 40 seconds checking
+          // the lengths, low keeps them right in about a third of the time
+          reasoning_effort: 'low',
           messages: [
             {
               role: 'system',
@@ -259,7 +253,8 @@ Clips must not overlap. Write the title and the post in this language, whatever 
               return (
                 (
                   await openai.chat.completions.parse({
-                    model: 'gpt-4.1',
+                    model: 'gpt-6.2-sol',
+                    reasoning_effort: 'low',
                     messages: [
                       {
                         role: 'system',
@@ -295,7 +290,7 @@ Clips must not overlap. Write the title and the post in this language, whatever 
         const parse =
           (
             await openai.chat.completions.parse({
-              model: 'gpt-4.1',
+              model: 'gpt-6.2-sol',
               messages: [
                 {
                   role: 'system',
