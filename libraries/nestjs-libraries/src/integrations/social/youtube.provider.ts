@@ -854,20 +854,33 @@ export class YoutubeProvider extends SocialAbstract implements SocialProvider {
       const youtubeClient = youtube(client);
 
       try {
-        await this.runInConcurrent(async () =>
-          youtubeClient.thumbnails.set({
-            videoId,
-            media: {
-              body: (
-                await this.getSsrfSafeAxios()({
-                  url: pendingData.thumbnail,
-                  method: 'GET',
-                  responseType: 'stream',
-                })
-              ).data,
-            },
-          })
-        );
+        await this.runInConcurrent(async () => {
+          try {
+            return await youtubeClient.thumbnails.set({
+              videoId,
+              media: {
+                body: (
+                  await this.getSsrfSafeAxios()({
+                    url: pendingData.thumbnail,
+                    method: 'GET',
+                    responseType: 'stream',
+                  })
+                ).data,
+              },
+            });
+          } catch (err: any) {
+            const data = err?.response?.data;
+            console.error(
+              'YouTube thumbnail set failed:',
+              videoId,
+              err?.response?.status,
+              typeof data?.pipe === 'function'
+                ? err?.message
+                : JSON.stringify(data || err?.message || {})
+            );
+            throw err;
+          }
+        });
       } catch (err) {
         // the video is already live: a rejected thumbnail must not lose its id
         // and URL (a token problem is left to the refresh + retry path, the
