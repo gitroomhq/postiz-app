@@ -40,8 +40,8 @@ export class AuthorizeOAuthQueryDto {
   @IsOptional()
   scope?: string;
 
-  // RFC 8707 resource indicator sent by MCP clients, only used to tell if
-  // the connection can be relayed to a self-hosted instance
+  // RFC 8707 resource indicator sent by MCP clients, tells if the connection
+  // can be relayed to a self-hosted instance and, on approve, the iss host
   @IsString()
   @IsOptional()
   resource?: string;
@@ -75,6 +75,10 @@ export class ApproveOAuthDto {
   @IsString()
   @IsOptional()
   code_challenge_method?: string;
+
+  @IsString()
+  @IsOptional()
+  resource?: string;
 }
 
 export class AuthorizeSelfHostedDto {

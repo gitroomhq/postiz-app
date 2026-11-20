@@ -87,6 +87,7 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
               ...(codeChallengeMethod
                 ? { code_challenge_method: codeChallengeMethod }
                 : {}),
+              ...(resource ? { resource } : {}),
             }),
           })
         ).json();
@@ -99,7 +100,14 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
         setSubmitting(false);
       }
     },
-    [clientId, state, redirectUri, codeChallenge, codeChallengeMethod]
+    [
+      clientId,
+      state,
+      redirectUri,
+      codeChallenge,
+      codeChallengeMethod,
+      resource,
+    ]
   );
 
   // Sign in (or sign up) and land back on this same request
