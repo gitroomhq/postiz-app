@@ -114,7 +114,7 @@ export class LoadToolsService {
       )}
 `;
       },
-      model: openai('gpt-5.2'),
+      model: openai('gpt-6.2-sol'),
       tools,
       memory: new Memory({
         storage: pStore,

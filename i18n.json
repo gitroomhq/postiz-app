@@ -2,7 +2,7 @@
   "version": 1.8,
   "provider": {
     "id": "openai",
-    "model": "gpt-4.1",
+    "model": "gpt-6.2-sol",
     "prompt": "Translate accurately from {source} to {target}, maintaining the original meaning.",
     "baseUrl": "https://api.openai.com/v1"
   },
