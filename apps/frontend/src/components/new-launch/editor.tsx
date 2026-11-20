@@ -45,6 +45,7 @@ import Document from '@tiptap/extension-document';
 import Bold from '@tiptap/extension-bold';
 import Text from '@tiptap/extension-text';
 import Paragraph from '@tiptap/extension-paragraph';
+import HardBreak from '@tiptap/extension-hard-break';
 import Underline from '@tiptap/extension-underline';
 import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
 import { History } from '@tiptap/extension-history';
@@ -1206,6 +1207,7 @@ export const OnlyEditor = forwardRef<
         },
       }),
       Text,
+      HardBreak,
       Underline,
       Bold,
       InterceptBoldShortcut,
@@ -1349,6 +1351,12 @@ export const OnlyEditor = forwardRef<
     shouldRerenderOnTransaction: true,
     immediatelyRender: false,
     editorProps: {
+      // a blank line copied from code editors is a <br> between line divs (or
+      // a div holding only a <br>), keep it as one empty paragraph
+      transformPastedHTML: (html) =>
+        html
+          .replace(/<div[^>]*>\s*<br\s*\/?>\s*<\/div>/gi, '<p></p>')
+          .replace(/(<\/div>)\s*<br\s*\/?>\s*(?=<div)/gi, '$1<p></p>'),
       handlePaste: (view, event, slice) => {
         if (paste?.(event as any, slice)) {
           return true;

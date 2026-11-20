@@ -144,7 +144,16 @@ export const stripHtmlValidation = (
     return val;
   }
 
-  const value = serialize(parseFragment(val));
+  const serialized = serialize(parseFragment(val));
+  // list items are flattened to one line below, so a break inside one is a space
+  const value =
+    type === 'html'
+      ? serialized
+      : serialized
+          .replace(/<li[^>]*>[\s\S]*?<\/li>/gi, (match) =>
+            match.replace(/<br[^>]*>/gi, ' ')
+          )
+          .replace(/<br[^>]*>/gi, '\n');
 
   if (type === 'none') {
     return striptags(value)
@@ -172,6 +181,7 @@ export const stripHtmlValidation = (
       'strong',
       'u',
       'a',
+      'br',
       ...(inlineImages ? ['img'] : []),
       ]
     )
@@ -310,7 +320,7 @@ export const convertMention = (
 
 export const convertToAscii = (value: string): string => {
   return value
-    .replace(/<strong>(.+?)<\/strong>/gi, (match, p1) => {
+    .replace(/<strong>([\s\S]+?)<\/strong>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return bold?.[char] || char;
@@ -318,7 +328,7 @@ export const convertToAscii = (value: string): string => {
 
       return match.replace(p1, replacer.join(''));
     })
-    .replace(/<u>(.+?)<\/u>/gi, (match, p1) => {
+    .replace(/<u>([\s\S]+?)<\/u>/gi, (match, p1) => {
       const replacer = p1.split('').map((char: string) => {
         // @ts-ignore
         return underlineMap?.[char] || char;
