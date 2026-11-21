@@ -191,6 +191,12 @@ export const startMcp = async (app: INestApplication) => {
     });
   }
 
+  const publicMcpUrl = (path: string) => {
+    const url = new URL(process.env.NEXT_PUBLIC_BACKEND_URL!);
+    url.pathname = url.pathname.replace(/\/+$/, '') + path;
+    return url.toString();
+  };
+
   // Two RFC 8414 path-based issuers backed by the same endpoints and code.
   // /mcp-oauth-chatgpt is what the ChatGPT app submission points at: it does
   // not advertise a registration_endpoint, so the OpenAI builder defaults to
@@ -204,12 +210,12 @@ export const startMcp = async (app: INestApplication) => {
   // grant, so the root is answered only when that client is configured
   const authorizationServers: Record<string, { issuer: string; registration: boolean; refresh: boolean }> = {
     '/mcp-oauth-chatgpt': {
-      issuer: new URL('/mcp-oauth-chatgpt', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+      issuer: publicMcpUrl('/mcp-oauth-chatgpt'),
       registration: false,
       refresh: false,
     },
     '/mcp-oauth-dynamic': {
-      issuer: new URL('/mcp-oauth-dynamic', process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+      issuer: publicMcpUrl('/mcp-oauth-dynamic'),
       registration: true,
       refresh: false,
     },
@@ -251,7 +257,7 @@ export const startMcp = async (app: INestApplication) => {
   const createResourceMiddleware = (mcpPath: string, authorizationServer: string) =>
     createOAuthMiddleware({
       oauth: {
-        resource: new URL(mcpPath, process.env.NEXT_PUBLIC_BACKEND_URL!).toString(),
+        resource: publicMcpUrl(mcpPath),
         authorizationServers: [authorizationServers[authorizationServer].issuer],
         scopesSupported: oauthScopes,
         validateToken: async (token: string) => {
