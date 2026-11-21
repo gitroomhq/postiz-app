@@ -136,6 +136,17 @@ export class PinterestProvider
       };
     }
     if (
+      body.indexOf('"code":21') > -1 ||
+      body.indexOf('"code": 21') > -1 ||
+      body.indexOf("didn't finish after") > -1
+    ) {
+      return {
+        type: 'retry' as const,
+        value:
+          'Pinterest timed out while creating the pin. Please try posting again.',
+      };
+    }
+    if (
       body.indexOf("does not match '^") > -1 &&
       body.indexOf("d+$'") > -1
     ) {
