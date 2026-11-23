@@ -937,5 +937,8 @@
   "connect_link_expired_description": "Bağlantı linkleri bir saat geçerlidir. Size gönderen kişiden yenisini isteyin.",
   "label_made_with_ai": "Yapay zeka ile oluşturuldu",
   "facebook_made_with_ai": "Yapay zeka ile oluşturuldu (yalnızca metin ve fotoğraf gönderileri için)",
-  "youtube_made_with_ai": "Yapay zeka ile oluşturuldu (gerçekçi, değiştirilmiş veya sentetik içerik)"
+  "youtube_made_with_ai": "Yapay zeka ile oluşturuldu (gerçekçi, değiştirilmiş veya sentetik içerik)",
+  "back_to_postiz": "Postiz’e dön",
+  "not_selectable_page_not_granted_to_postiz": "Seçilemiyor: Postiz’e bu Sayfaya erişim izni verilmedi",
+  "you_did_not_grant_postiz_access_to_this_page": "Facebook iletişim kutusunda Postiz’e bu Sayfaya erişim izni vermediniz.\nKanalı yeniden bağlayın, Facebook ekranında “Ayarları düzenle”ye tıklayın, yalnızca mevcut Sayfalara erişim izni vermeyi seçin ve bu Sayfayı diğer bağlı Sayfalarınızla birlikte işaretleyin."
 }

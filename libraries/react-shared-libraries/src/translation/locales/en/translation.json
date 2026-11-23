@@ -939,5 +939,8 @@
   "connect_link_expired_description": "Connection links work for one hour. Ask whoever sent it to you for a new one.",
   "label_made_with_ai": "Made with AI",
   "facebook_made_with_ai": "Made with AI (only for text and photo posts)",
-  "youtube_made_with_ai": "Made with AI (realistic altered or synthetic content)"
+  "youtube_made_with_ai": "Made with AI (realistic altered or synthetic content)",
+  "back_to_postiz": "Back to Postiz",
+  "not_selectable_page_not_granted_to_postiz": "Not selectable: page not granted to Postiz",
+  "you_did_not_grant_postiz_access_to_this_page": "You did not grant Postiz access to this Page in the Facebook dialog.\nReconnect the channel, click Edit settings on the Facebook screen, choose to opt in to current Pages only, and tick this Page together with your other connected Pages."
 }

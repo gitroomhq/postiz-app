@@ -937,5 +937,8 @@
   "connect_link_expired_description": "接続リンクの有効期限は1時間です。送信者に新しいリンクを依頼してください。",
   "label_made_with_ai": "AIで作成",
   "facebook_made_with_ai": "AIで作成（テキストと写真の投稿のみ）",
-  "youtube_made_with_ai": "AIで作成（リアルな改変または合成コンテンツ）"
+  "youtube_made_with_ai": "AIで作成（リアルな改変または合成コンテンツ）",
+  "back_to_postiz": "Postizに戻る",
+  "not_selectable_page_not_granted_to_postiz": "選択できません：Postizにこのページへのアクセスが許可されていません",
+  "you_did_not_grant_postiz_access_to_this_page": "Facebookのダイアログで、Postizにこのページへのアクセスを許可していません。\nチャンネルを再接続し、Facebookの画面で「設定を編集」をクリックしてください。現在のページのみを許可するオプションを選び、このページと、すでに接続されている他のページにチェックを入れてください。"
 }

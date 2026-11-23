@@ -937,5 +937,8 @@
   "connect_link_expired_description": "连接链接的有效期为一小时。请向发送链接的人索取新的链接。",
   "label_made_with_ai": "由AI制作",
   "facebook_made_with_ai": "由AI制作（仅适用于文字和图片帖子）",
-  "youtube_made_with_ai": "由AI制作（逼真的修改或合成内容）"
+  "youtube_made_with_ai": "由AI制作（逼真的修改或合成内容）",
+  "back_to_postiz": "返回 Postiz",
+  "not_selectable_page_not_granted_to_postiz": "无法选择：尚未授权 Postiz 访问此公共主页",
+  "you_did_not_grant_postiz_access_to_this_page": "您未在 Facebook 对话框中授权 Postiz 访问此公共主页。\n请重新连接该渠道，在 Facebook 界面上点击“编辑设置”，选择“仅授权访问当前的公共主页”，然后勾选此公共主页以及您已连接的其他公共主页。"
 }

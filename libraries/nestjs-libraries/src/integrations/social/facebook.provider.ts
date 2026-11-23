@@ -460,7 +460,12 @@ export class FacebookProvider extends SocialAbstract implements SocialProvider {
       // Business Manager API not available for all users
     }
 
-    return allPages;
+    // Pages listed without an access_token were never granted to the app in
+    // the Facebook dialog, so no page token can be issued for them
+    return allPages.map((p: any) => ({
+      ...p,
+      disabledReason: !p.access_token ? 'not_granted' : undefined,
+    }));
   }
 
   async fetchPageInformation(accessToken: string, data: { page: string }) {
