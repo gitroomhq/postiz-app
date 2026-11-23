@@ -113,3 +113,15 @@ export function getSsrfSafeDispatcher(): Agent | undefined {
 export function getSsrfSafeAxios(): AxiosInstance {
   return process.env.DISABLE_SSRF_PROTECTION === 'true' ? axios : ssrfSafeAxios;
 }
+
+// For SDKs that take a `fetch` implementation instead of a URL (e.g. the
+// Bluesky agent), so every request they make, redirects included, goes
+// through the same dispatcher.
+export function getSsrfSafeFetch(): typeof fetch {
+  return (input, init) =>
+    fetch(input, {
+      ...init,
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
+    });
+}

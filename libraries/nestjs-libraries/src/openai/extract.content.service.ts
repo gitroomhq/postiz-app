@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 
 function findDepth(element: Element) {
   let depth = 0;
@@ -15,7 +16,12 @@ function findDepth(element: Element) {
 @Injectable()
 export class ExtractContentService {
   async extractContent(url: string) {
-    const load = await (await fetch(url)).text();
+    const load = await (
+      await fetch(url, {
+        // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+        dispatcher: getSsrfSafeDispatcher(),
+      })
+    ).text();
     const dom = new JSDOM(load);
 
     // only element that has a title

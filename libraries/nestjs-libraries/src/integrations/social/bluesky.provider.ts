@@ -28,6 +28,7 @@ import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/we
 import {
   getSsrfSafeAxios,
   getSsrfSafeDispatcher,
+  getSsrfSafeFetch,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
 import { Plug } from '@gitroom/helpers/decorators/plug.decorator';
@@ -317,9 +318,10 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     const body = JSON.parse(Buffer.from(params.code, 'base64').toString());
 
     // Bluesky talks to a user-supplied service URL via BskyAgent (not our
-    // `this.fetch`), so the undici SSRF dispatcher can't intercept it. Validate
-    // the URL here — the connection chokepoint — so an internal/private address
-    // can never be saved as an integration. Opt-out matches the dispatcher env.
+    // `this.fetch`). Every agent gets `getSsrfSafeFetch()` so its requests,
+    // redirects and the PDS from the DID document included, are checked at
+    // connect time; this check also stops an internal address from being saved
+    // as an integration. Opt-out matches the dispatcher env.
     if (
       process.env.DISABLE_SSRF_PROTECTION !== 'true' &&
       !(await isSafePublicHttpsUrl(body.service))
@@ -330,6 +332,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     try {
       const agent = new BskyAgent({
         service: body.service,
+        fetch: getSsrfSafeFetch(),
       });
 
       const {
@@ -377,6 +380,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     );
     const agent = new BskyAgent({
       service: body.service,
+      fetch: getSsrfSafeFetch(),
     });
 
     try {
@@ -872,6 +876,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     );
     const agent = new BskyAgent({
       service: body.service,
+      fetch: getSsrfSafeFetch(),
     });
 
     await agent.login({
@@ -933,6 +938,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     );
     const agent = new BskyAgent({
       service: body.service,
+      fetch: getSsrfSafeFetch(),
     });
 
     await agent.login({
@@ -989,6 +995,7 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
 
     const agent = new BskyAgent({
       service: body.service,
+      fetch: getSsrfSafeFetch(),
     });
 
     await agent.login({
