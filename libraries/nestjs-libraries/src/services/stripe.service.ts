@@ -2135,14 +2135,17 @@ export class StripeService extends PaymentProviderAbstract {
 
     const org = await this._organizationService.getOrgById(organizationId);
 
-    await stripe.refunds.create({
-      charge: preview.chargeId,
-      amount: Math.round(preview.amount * 100),
-      metadata: {
-        reason: 'chatbase_refund',
-        organizationId,
+    await stripe.refunds.create(
+      {
+        charge: preview.chargeId,
+        amount: Math.round(preview.amount * 100),
+        metadata: {
+          reason: 'chatbase_refund',
+          organizationId,
+        },
       },
-    });
+      { idempotencyKey: `chatbase_refund_${preview.chargeId}` }
+    );
 
     for (const subscriptionId of preview.subscriptionIds) {
       await stripe.subscriptions.cancel(subscriptionId);
