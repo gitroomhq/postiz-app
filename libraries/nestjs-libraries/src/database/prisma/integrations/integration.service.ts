@@ -118,7 +118,9 @@ export class IntegrationService {
     isBetweenSteps = false,
     refresh?: string,
     timezone?: number,
-    customInstanceDetails?: string
+    customInstanceDetails?: string,
+    rootInternalId?: string,
+    expectedRootInternalId?: string | null
   ) {
     const uploadedPicture = picture
       ? picture?.indexOf('imagedelivery.net') > -1
@@ -145,7 +147,9 @@ export class IntegrationService {
       isBetweenSteps,
       refresh,
       timezone,
-      customInstanceDetails
+      customInstanceDetails,
+      rootInternalId,
+      expectedRootInternalId
     );
   }
 
@@ -398,7 +402,15 @@ export class IntegrationService {
         integration.providerIdentifier,
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
+        undefined,
+        false,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        // stored only if no reconnect moved the channel meanwhile
+        integration.rootInternalId
       );
     }
   }
@@ -476,15 +488,23 @@ export class IntegrationService {
       org,
       String(getIntegrationInformation.id)
     );
-    await this._integrationRepository.updateIntegration(id, {
-      picture: getIntegrationInformation.picture,
-      internalId: String(getIntegrationInformation.id),
-      organizationId: org,
-      name: getIntegrationInformation.name,
-      inBetweenSteps: false,
-      token: getIntegrationInformation.access_token,
-      profile: getIntegrationInformation.username,
-    });
+    const saved = await this._integrationRepository.updateIntegration(
+      id,
+      {
+        picture: getIntegrationInformation.picture,
+        internalId: String(getIntegrationInformation.id),
+        organizationId: org,
+        name: getIntegrationInformation.name,
+        inBetweenSteps: false,
+        token: getIntegrationInformation.access_token,
+        profile: getIntegrationInformation.username,
+      },
+      getIntegration
+    );
+
+    if (!saved) {
+      throw new HttpException('Invalid request', HttpStatus.BAD_REQUEST);
+    }
 
     return { success: true };
   }

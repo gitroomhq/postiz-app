@@ -39,7 +39,15 @@ export class RefreshIntegrationService {
       integration.providerIdentifier,
       refresh.accessToken,
       refresh.refreshToken,
-      refresh.expiresIn
+      refresh.expiresIn,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      // stored only if no reconnect moved the channel meanwhile
+      integration.rootInternalId
     );
 
     return refresh;

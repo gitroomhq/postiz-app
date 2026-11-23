@@ -190,6 +190,11 @@ export class LinkedinPageProvider
 
   async fetchPageInformation(accessToken: string, params: { page: string }) {
     const pageId = params.page;
+    // it goes into the url path: anything but an organization id (e.g.
+    // "../me") makes LinkedIn answer with another kind of id
+    if (!this.isPageId(String(pageId))) {
+      throw new Error('Invalid LinkedIn page');
+    }
     const data = await (
       await fetch(
         `https://api.linkedin.com/v2/organizations/${pageId}?projection=(id,localizedName,vanityName,logoV2(original~:playableStreams))`,
@@ -262,6 +267,12 @@ export class LinkedinPageProvider
         },
       })
     ).json();
+
+    // without the member id every failed lookup would share one placeholder,
+    // and with it the tokens of every channel connected that way
+    if (!id) {
+      throw new Error('Could not load the LinkedIn profile');
+    }
 
     return {
       // namespaced placeholder so the in-between row never collides with the
