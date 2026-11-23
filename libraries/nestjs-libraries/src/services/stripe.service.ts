@@ -2004,6 +2004,7 @@ export class StripeService extends PaymentProviderAbstract {
       await stripe.subscriptions.list({
         customer,
         status: 'all',
+        limit: 100,
       })
     ).data.filter((f) => f.status !== 'canceled');
 
@@ -2035,13 +2036,36 @@ export class StripeService extends PaymentProviderAbstract {
       undefined;
 
     for (const charge of charges) {
-      const invoiceId = (charge as any).invoice;
-      if (!invoiceId || typeof invoiceId !== 'string') {
+      const paymentIntentId =
+        typeof charge.payment_intent === 'string'
+          ? charge.payment_intent
+          : charge.payment_intent?.id;
+      if (!paymentIntentId) {
         continue;
       }
 
       try {
-        const invoice = await stripe.invoices.retrieve(invoiceId);
+        const invoicePayments = await stripe.invoicePayments.list({
+          payment: { type: 'payment_intent', payment_intent: paymentIntentId },
+          status: 'paid',
+          limit: 2,
+        });
+        if (invoicePayments.data.length !== 1) {
+          continue;
+        }
+
+        const paidInvoice = invoicePayments.data[0].invoice;
+        const invoice = await stripe.invoices.retrieve(
+          typeof paidInvoice === 'string' ? paidInvoice : paidInvoice.id
+        );
+        const invoiceCustomer =
+          typeof invoice.customer === 'string'
+            ? invoice.customer
+            : invoice.customer?.id;
+        if (invoiceCustomer !== customer) {
+          continue;
+        }
+
         const invoiceSubscription =
           invoice.parent?.subscription_details?.subscription;
         const subscriptionId =
@@ -2111,14 +2135,17 @@ export class StripeService extends PaymentProviderAbstract {
 
     const org = await this._organizationService.getOrgById(organizationId);
 
-    await stripe.refunds.create({
-      charge: preview.chargeId,
-      amount: Math.round(preview.amount * 100),
-      metadata: {
-        reason: 'chatbase_refund',
-        organizationId,
+    await stripe.refunds.create(
+      {
+        charge: preview.chargeId,
+        amount: Math.round(preview.amount * 100),
+        metadata: {
+          reason: 'chatbase_refund',
+          organizationId,
+        },
       },
-    });
+      { idempotencyKey: `chatbase_refund_${preview.chargeId}` }
+    );
 
     for (const subscriptionId of preview.subscriptionIds) {
       await stripe.subscriptions.cancel(subscriptionId);
