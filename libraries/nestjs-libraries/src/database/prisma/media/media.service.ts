@@ -21,7 +21,7 @@ import { MediaProcessorJob } from '@gitroom/nestjs-libraries/upload/media.proces
 import { extname } from 'path';
 import { randomBytes } from 'crypto';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
-import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
+import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import {
   getMaxSize,
   uploadStreamToStorage,
@@ -134,7 +134,7 @@ export class MediaService {
     try {
       response = await fetch(url, {
         // @ts-ignore — undici option, not in lib.dom fetch types
-        dispatcher: ssrfSafeDispatcher,
+        dispatcher: getSsrfSafeDispatcher(),
       });
     } catch (err) {
       // Network-level failure (DNS, connection refused, SSRF block, etc.) —
