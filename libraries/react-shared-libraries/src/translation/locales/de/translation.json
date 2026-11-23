@@ -937,5 +937,8 @@
   "connect_link_expired_description": "Verbindungslinks sind eine Stunde lang gültig. Bitten Sie die Person, die ihn Ihnen geschickt hat, um einen neuen.",
   "label_made_with_ai": "Mit KI erstellt",
   "facebook_made_with_ai": "Mit KI erstellt (nur für Text- und Foto-Beiträge)",
-  "youtube_made_with_ai": "Mit KI erstellt (realistische veränderte oder synthetische Inhalte)"
+  "youtube_made_with_ai": "Mit KI erstellt (realistische veränderte oder synthetische Inhalte)",
+  "back_to_postiz": "Zurück zu Postiz",
+  "not_selectable_page_not_granted_to_postiz": "Nicht auswählbar: Postiz hat keinen Zugriff auf diese Seite",
+  "you_did_not_grant_postiz_access_to_this_page": "Du hast Postiz im Facebook-Dialog keinen Zugriff auf diese Seite gewährt.\nVerbinde den Kanal erneut, klicke bei Facebook auf „Einstellungen bearbeiten“, wähle die Option, den Zugriff nur für aktuelle Seiten zu erlauben, und setze ein Häkchen bei dieser Seite sowie bei deinen anderen verbundenen Seiten."
 }

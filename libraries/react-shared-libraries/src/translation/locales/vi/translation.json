@@ -937,5 +937,8 @@
   "connect_link_expired_description": "Liên kết kết nối có hiệu lực trong một giờ. Hãy yêu cầu người gửi cấp liên kết mới.",
   "label_made_with_ai": "Được tạo bằng AI",
   "facebook_made_with_ai": "Được tạo bằng AI (chỉ dành cho bài đăng văn bản và ảnh)",
-  "youtube_made_with_ai": "Được tạo bằng AI (nội dung chỉnh sửa hoặc tổng hợp trông như thật)"
+  "youtube_made_with_ai": "Được tạo bằng AI (nội dung chỉnh sửa hoặc tổng hợp trông như thật)",
+  "back_to_postiz": "Quay lại Postiz",
+  "not_selectable_page_not_granted_to_postiz": "Không thể chọn: Postiz chưa được cấp quyền truy cập Trang này",
+  "you_did_not_grant_postiz_access_to_this_page": "Bạn chưa cấp cho Postiz quyền truy cập Trang này trong hộp thoại của Facebook.\nHãy kết nối lại kênh, nhấp vào Chỉnh sửa cài đặt trên màn hình Facebook, chọn tùy chọn chỉ cấp quyền cho các Trang hiện có, rồi đánh dấu chọn Trang này cùng với các Trang khác mà bạn đã kết nối."
 }

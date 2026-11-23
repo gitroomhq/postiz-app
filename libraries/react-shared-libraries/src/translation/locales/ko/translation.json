@@ -937,5 +937,8 @@
   "connect_link_expired_description": "연결 링크는 1시간 동안 유효합니다. 링크를 보낸 사람에게 새 링크를 요청하세요.",
   "label_made_with_ai": "AI로 제작됨",
   "facebook_made_with_ai": "AI로 제작됨 (텍스트 및 사진 게시물만 해당)",
-  "youtube_made_with_ai": "AI로 제작됨 (사실적인 변경 또는 합성 콘텐츠)"
+  "youtube_made_with_ai": "AI로 제작됨 (사실적인 변경 또는 합성 콘텐츠)",
+  "back_to_postiz": "Postiz로 돌아가기",
+  "not_selectable_page_not_granted_to_postiz": "선택할 수 없음: Postiz에 이 페이지에 대한 접근 권한이 부여되지 않았습니다",
+  "you_did_not_grant_postiz_access_to_this_page": "Facebook 대화 상자에서 Postiz에 이 페이지에 대한 접근 권한을 부여하지 않았습니다.\n채널을 다시 연결한 뒤 Facebook 화면에서 ‘설정 수정’을 클릭하고, 현재 페이지에만 접근을 허용하는 옵션을 선택한 다음, 이미 연결된 다른 페이지와 함께 이 페이지에도 체크 표시를 하세요."
 }

@@ -937,5 +937,8 @@
   "connect_link_expired_description": "Los enlaces de conexión funcionan durante una hora. Pide uno nuevo a quien te lo envió.",
   "label_made_with_ai": "Hecho con IA",
   "facebook_made_with_ai": "Hecho con IA (solo para publicaciones de texto y fotos)",
-  "youtube_made_with_ai": "Hecho con IA (contenido alterado o sintético realista)"
+  "youtube_made_with_ai": "Hecho con IA (contenido alterado o sintético realista)",
+  "back_to_postiz": "Volver a Postiz",
+  "not_selectable_page_not_granted_to_postiz": "No se puede seleccionar: Postiz no tiene acceso a la página",
+  "you_did_not_grant_postiz_access_to_this_page": "No le diste a Postiz acceso a esta página en el cuadro de diálogo de Facebook.\nVuelve a conectar el canal, haz clic en «Editar configuración» en la pantalla de Facebook, elige la opción de dar acceso solo a las páginas actuales y marca esta página junto con las demás que ya tienes conectadas."
 }
