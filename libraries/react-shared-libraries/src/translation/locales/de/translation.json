@@ -940,5 +940,13 @@
   "youtube_made_with_ai": "Mit KI erstellt (realistische veränderte oder synthetische Inhalte)",
   "back_to_postiz": "Zurück zu Postiz",
   "not_selectable_page_not_granted_to_postiz": "Nicht auswählbar: Postiz hat keinen Zugriff auf diese Seite",
-  "you_did_not_grant_postiz_access_to_this_page": "Du hast Postiz im Facebook-Dialog keinen Zugriff auf diese Seite gewährt.\nVerbinde den Kanal erneut, klicke bei Facebook auf „Einstellungen bearbeiten“, wähle die Option, den Zugriff nur für aktuelle Seiten zu erlauben, und setze ein Häkchen bei dieser Seite sowie bei deinen anderen verbundenen Seiten."
+  "you_did_not_grant_postiz_access_to_this_page": "Du hast Postiz im Facebook-Dialog keinen Zugriff auf diese Seite gewährt.\nVerbinde den Kanal erneut, klicke bei Facebook auf „Einstellungen bearbeiten“, wähle die Option, den Zugriff nur für aktuelle Seiten zu erlauben, und setze ein Häkchen bei dieser Seite sowie bei deinen anderen verbundenen Seiten.",
+  "ai_credits": "KI-Guthaben",
+  "add_credits": "Guthaben hinzufügen",
+  "add_video_credits": "Video-Guthaben hinzufügen",
+  "add_image_credits": "Bild-Guthaben hinzufügen",
+  "granted_video_credits": "In diesem Zeitraum gewährtes Video-Guthaben:",
+  "granted_image_credits": "In diesem Zeitraum gewährtes Bild-Guthaben:",
+  "credits_granted": "Guthaben hinzugefügt",
+  "could_not_grant_credits": "Das Guthaben konnte nicht hinzugefügt werden"
 }

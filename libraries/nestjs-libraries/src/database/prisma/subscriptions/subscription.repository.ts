@@ -331,6 +331,44 @@ export class SubscriptionRepository {
     });
   }
 
+  // A grant is a negative usage row, so past usage rows stay untouched
+  grantCredits(
+    organizationId: string,
+    grants: { type: string; credits: number }[]
+  ) {
+    return this._credits.model.credits.createMany({
+      data: grants.map((grant) => ({
+        organizationId,
+        type: grant.type,
+        credits: -grant.credits,
+      })),
+    });
+  }
+
+  async getGrantedCreditsFrom(
+    organizationId: string,
+    from: dayjs.Dayjs,
+    type: string
+  ) {
+    const load = await this._credits.model.credits.aggregate({
+      where: {
+        organizationId,
+        type,
+        credits: {
+          lt: 0,
+        },
+        createdAt: {
+          gte: from.toDate(),
+        },
+      },
+      _sum: {
+        credits: true,
+      },
+    });
+
+    return -(load?._sum?.credits || 0);
+  }
+
   deleteCreditsFrom(organizationId: string, from: dayjs.Dayjs, type: string) {
     return this._credits.model.credits.deleteMany({
       where: {

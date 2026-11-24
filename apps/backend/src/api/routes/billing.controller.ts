@@ -12,6 +12,7 @@ import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.reque
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
 import { AdminApplyCouponDto } from '@gitroom/nestjs-libraries/dtos/billing/admin.apply.coupon.dto';
+import { AdminGrantCreditsDto } from '@gitroom/nestjs-libraries/dtos/billing/admin.grant.credits.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
@@ -255,6 +256,36 @@ export class BillingController {
     }
 
     return (await this.provider(org)).getCharges(org.id);
+  }
+
+  @Get('/granted-credits')
+  async getGrantedCredits(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    return this._subscriptionService.getGrantedCredits(org.id);
+  }
+
+  @Post('/grant-credits')
+  async grantCredits(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: AdminGrantCreditsDto
+  ) {
+    if (!user.isSuperAdmin) {
+      throw new HttpException('Unauthorized', 400);
+    }
+
+    const granted = await this._subscriptionService.grantCredits(org.id, body);
+    if (!granted) {
+      throw new HttpException('No subscription found', 404);
+    }
+
+    return granted;
   }
 
   @Post('/refund-charges')
