@@ -6,6 +6,8 @@ import {
   VideoAbstract,
 } from '@gitroom/nestjs-libraries/videos/video.interface';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
+import { MediaProcessorStatus } from '@gitroom/nestjs-libraries/upload/media.processor.interface';
+import { SlideshowResult } from '@gitroom/nestjs-libraries/upload/slideshow.processor.interface';
 import { Readable } from 'stream';
 import { parseBuffer } from 'music-metadata';
 import { timer } from '@gitroom/helpers/utils/timer';
@@ -26,6 +28,8 @@ const TRANSITION_SECONDS = 0.5;
 const POLL_INTERVAL = 5000;
 // inside the 40 minute generateVideo activity, with room for the slides and voices
 const RENDER_TIMEOUT = 30 * 60 * 1000;
+// the activity is not retried, so a few failed status checks in a row are tolerated
+const MAX_STATUS_ERRORS = 5;
 
 // ElevenLabs reports quota and permission problems as 401 with the reason in
 // the body, as either { detail: { status, message } } or { detail: 'text' }
@@ -210,10 +214,25 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
     });
 
     const deadline = Date.now() + RENDER_TIMEOUT;
+    let statusErrors = 0;
     while (Date.now() < deadline) {
       await timer(POLL_INTERVAL);
 
-      const job = await this.slideshow.status(jobId);
+      let job: MediaProcessorStatus<SlideshowResult>;
+      try {
+        job = await this.slideshow.status(jobId);
+        statusErrors = 0;
+      } catch (err) {
+        if (++statusErrors >= MAX_STATUS_ERRORS) {
+          throw err;
+        }
+        console.error(
+          `Slideshow status check ${statusErrors} failed for ${jobId}:`,
+          err
+        );
+        continue;
+      }
+
       if (job.status === 'pending') {
         continue;
       }
@@ -229,7 +248,7 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
 
       if (result?.status !== 'failed') {
         throw new Error(
-          `Unexpected processor result: ${JSON.stringify(result).slice(0, 500)}`
+          `Unexpected processor result: ${JSON.stringify(result ?? null).slice(0, 500)}`
         );
       }
 
