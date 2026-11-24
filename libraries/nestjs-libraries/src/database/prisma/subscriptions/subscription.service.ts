@@ -397,6 +397,55 @@ export class SubscriptionService {
     return { deleted: count };
   }
 
+  async grantCredits(
+    organizationId: string,
+    credits: { ai_images: number; ai_videos: number }
+  ) {
+    const subscription = await this._subscriptionRepository.getSubscription(
+      organizationId
+    );
+
+    if (!subscription) {
+      return null;
+    }
+
+    const grants = (['ai_images', 'ai_videos'] as const)
+      .filter((type) => credits[type] > 0)
+      .map((type) => ({ type, credits: credits[type] }));
+
+    if (grants.length) {
+      await this._subscriptionRepository.grantCredits(organizationId, grants);
+    }
+
+    return this.getGrantedCredits(organizationId);
+  }
+
+  async getGrantedCredits(organizationId: string) {
+    const subscription = await this._subscriptionRepository.getSubscription(
+      organizationId
+    );
+
+    if (!subscription) {
+      return { ai_images: 0, ai_videos: 0 };
+    }
+
+    const from = this.currentPeriodStart(subscription.createdAt);
+    const [ai_images, ai_videos] = await Promise.all([
+      this._subscriptionRepository.getGrantedCreditsFrom(
+        organizationId,
+        from,
+        'ai_images'
+      ),
+      this._subscriptionRepository.getGrantedCreditsFrom(
+        organizationId,
+        from,
+        'ai_videos'
+      ),
+    ]);
+
+    return { ai_images, ai_videos };
+  }
+
   async checkCredits(organization: Organization, checkType = 'ai_images') {
     // @ts-ignore
     const type = organization?.subscription?.subscriptionTier || 'FREE';

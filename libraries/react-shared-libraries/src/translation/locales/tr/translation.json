@@ -940,5 +940,13 @@
   "youtube_made_with_ai": "Yapay zeka ile oluşturuldu (gerçekçi, değiştirilmiş veya sentetik içerik)",
   "back_to_postiz": "Postiz’e dön",
   "not_selectable_page_not_granted_to_postiz": "Seçilemiyor: Postiz’e bu Sayfaya erişim izni verilmedi",
-  "you_did_not_grant_postiz_access_to_this_page": "Facebook iletişim kutusunda Postiz’e bu Sayfaya erişim izni vermediniz.\nKanalı yeniden bağlayın, Facebook ekranında “Ayarları düzenle”ye tıklayın, yalnızca mevcut Sayfalara erişim izni vermeyi seçin ve bu Sayfayı diğer bağlı Sayfalarınızla birlikte işaretleyin."
+  "you_did_not_grant_postiz_access_to_this_page": "Facebook iletişim kutusunda Postiz’e bu Sayfaya erişim izni vermediniz.\nKanalı yeniden bağlayın, Facebook ekranında “Ayarları düzenle”ye tıklayın, yalnızca mevcut Sayfalara erişim izni vermeyi seçin ve bu Sayfayı diğer bağlı Sayfalarınızla birlikte işaretleyin.",
+  "ai_credits": "Yapay Zekâ Kredileri",
+  "add_credits": "Kredi Ekle",
+  "add_video_credits": "Video kredisi ekle",
+  "add_image_credits": "Görsel kredisi ekle",
+  "granted_video_credits": "Bu dönemde verilen video kredileri:",
+  "granted_image_credits": "Bu dönemde verilen görsel kredileri:",
+  "credits_granted": "Krediler eklendi",
+  "could_not_grant_credits": "Krediler eklenemedi"
 }

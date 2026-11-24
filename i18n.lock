@@ -945,3 +945,11 @@ checksums:
     back_to_postiz: 2c345531696b5e9868c6598c769b275b
     not_selectable_page_not_granted_to_postiz: b316de8fbb94acdaae87f8d5f2f78a13
     you_did_not_grant_postiz_access_to_this_page: bb465ef213e8166bc985c26577132356
+    ai_credits: ea56f3352f61c2649103e19b90b95788
+    add_credits: 4f41271560c633b040c2f754b22be11b
+    add_video_credits: 051c96371969fc62ddf546f0905ba112
+    add_image_credits: 973280f2be8e97e5f1431dba442d13dd
+    granted_video_credits: e30175eb049bbc3906e073fa165b9ea0
+    granted_image_credits: 8aea5270bc9948fdcf611f99e451c1da
+    credits_granted: 94844dce7b706482a265f84741b48728
+    could_not_grant_credits: 7f2eadc7c6e0690e23cb0f00e4ee8b6c

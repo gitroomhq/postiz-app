@@ -940,5 +940,13 @@
   "youtube_made_with_ai": "Realizzato con l'IA (contenuti alterati o sintetici realistici)",
   "back_to_postiz": "Torna a Postiz",
   "not_selectable_page_not_granted_to_postiz": "Non selezionabile: Postiz non ha accesso alla Pagina",
-  "you_did_not_grant_postiz_access_to_this_page": "Non hai concesso a Postiz l’accesso a questa Pagina nella finestra di dialogo di Facebook.\nRicollega il canale, fai clic su «Modifica impostazioni» nella schermata di Facebook, scegli di concedere l’accesso solo alle Pagine attuali e seleziona questa Pagina insieme alle altre Pagine già collegate."
+  "you_did_not_grant_postiz_access_to_this_page": "Non hai concesso a Postiz l’accesso a questa Pagina nella finestra di dialogo di Facebook.\nRicollega il canale, fai clic su «Modifica impostazioni» nella schermata di Facebook, scegli di concedere l’accesso solo alle Pagine attuali e seleziona questa Pagina insieme alle altre Pagine già collegate.",
+  "ai_credits": "Crediti IA",
+  "add_credits": "Aggiungi crediti",
+  "add_video_credits": "Aggiungi crediti per i video",
+  "add_image_credits": "Aggiungi crediti per le immagini",
+  "granted_video_credits": "Crediti per i video assegnati in questo periodo:",
+  "granted_image_credits": "Crediti per le immagini assegnati in questo periodo:",
+  "credits_granted": "Crediti aggiunti",
+  "could_not_grant_credits": "Impossibile aggiungere i crediti"
 }

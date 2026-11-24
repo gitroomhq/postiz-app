@@ -823,6 +823,177 @@ const AddTeamMember = () => {
   );
 };
 
+const useImpersonatedCredits = (type: 'ai_images' | 'ai_videos') => {
+  const fetch = useFetch();
+  return useSWR<{ credits: number }>(
+    `/copilot/credits?type=${type}`,
+    async () => {
+      return (await fetch(`/copilot/credits?type=${type}`)).json();
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    }
+  );
+};
+
+const useGrantedCredits = () => {
+  const fetch = useFetch();
+  return useSWR<{ ai_images: number; ai_videos: number }>(
+    '/billing/granted-credits',
+    async () => {
+      return (await fetch('/billing/granted-credits')).json();
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    }
+  );
+};
+
+const GrantCreditsModal: FC = () => {
+  const fetch = useFetch();
+  const toast = useToaster();
+  const t = useT();
+  const user = useUser();
+  const { data: images, mutate: mutateImages } =
+    useImpersonatedCredits('ai_images');
+  const { data: videos, mutate: mutateVideos } =
+    useImpersonatedCredits('ai_videos');
+  const { data: granted, mutate: mutateGranted } = useGrantedCredits();
+  const [addImages, setAddImages] = useState('0');
+  const [addVideos, setAddVideos] = useState('0');
+  const [saving, setSaving] = useState(false);
+
+  const tier = pricing[user?.tier?.current || 'FREE'];
+  const toCount = (value: string) => Math.max(parseInt(value, 10) || 0, 0);
+
+  const submit = useCallback(async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/billing/grant-credits', {
+        method: 'POST',
+        body: JSON.stringify({
+          ai_images: toCount(addImages),
+          ai_videos: toCount(addVideos),
+        }),
+      });
+      if (!response.ok) {
+        toast.show(
+          (await response.json()).message ||
+            t('could_not_grant_credits', 'Could not add the credits'),
+          'warning'
+        );
+        return;
+      }
+      toast.show(t('credits_granted', 'Credits added'));
+      setAddImages('0');
+      setAddVideos('0');
+      await Promise.all([mutateImages(), mutateVideos(), mutateGranted()]);
+    } finally {
+      setSaving(false);
+    }
+  }, [addImages, addVideos]);
+
+  return (
+    <div className="flex flex-col gap-[16px] min-w-[400px]">
+      <div className="flex gap-[8px]">
+        {[
+          {
+            label: t('billing_ai_images', 'AI images'),
+            left: images?.credits,
+            total: tier?.image_generation_count,
+          },
+          {
+            label: t('billing_ai_videos', 'AI videos'),
+            left: videos?.credits,
+            total: tier?.generate_videos,
+          },
+        ].map((p) => (
+          <div
+            key={p.label}
+            className="flex-1 flex flex-col gap-[2px] rounded-[8px] border border-newTableBorder px-[16px] py-[10px]"
+          >
+            <div className="text-[12px] text-textItemBlur">{p.label}</div>
+            <div className="text-[16px] font-[600]">
+              {typeof p.left === 'number' ? Math.max(p.left, 0) : '-'}
+              <span className="text-[14px] font-[400] text-textItemBlur">
+                {' / '}
+                {p.total ?? 0}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-[4px] text-[14px]">
+        <div>
+          {t('granted_video_credits', 'Video credits granted this period:')}{' '}
+          <span className="font-[600]">{granted?.ai_videos ?? '-'}</span>
+        </div>
+        <div>
+          {t('granted_image_credits', 'Image credits granted this period:')}{' '}
+          <span className="font-[600]">{granted?.ai_images ?? '-'}</span>
+        </div>
+      </div>
+      <div className="flex gap-[10px]">
+        <div className="flex-1">
+          <Input
+            label={t('add_image_credits', 'Add image credits')}
+            name="ai_images"
+            type="number"
+            min={0}
+            disableForm={true}
+            value={addImages}
+            onChange={(e) => setAddImages(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <Input
+            label={t('add_video_credits', 'Add video credits')}
+            name="ai_videos"
+            type="number"
+            min={0}
+            disableForm={true}
+            value={addVideos}
+            onChange={(e) => setAddVideos(e.target.value)}
+          />
+        </div>
+      </div>
+      <Button
+        onClick={submit}
+        loading={saving}
+        disabled={!toCount(addImages) && !toCount(addVideos)}
+        className="rounded-[4px]"
+      >
+        {t('add_credits', 'Add Credits')}
+      </Button>
+    </div>
+  );
+};
+
+const GrantCredits = () => {
+  const { openModal } = useModals();
+  const t = useT();
+
+  const handleClick = useCallback(() => {
+    openModal({
+      title: t('ai_credits', 'AI Credits'),
+      children: () => <GrantCreditsModal />,
+    });
+  }, []);
+
+  return (
+    <div
+      className="px-[10px] rounded-[4px] bg-blue-600 text-white cursor-pointer whitespace-nowrap"
+      onClick={handleClick}
+    >
+      {t('ai_credits', 'AI Credits')}
+    </div>
+  );
+};
+
 const ViewErrors = () => {
   const t = useT();
   const handleClick = useCallback(() => {
@@ -1120,6 +1291,7 @@ export const Impersonate = () => {
                 {user?.tier?.current === 'FREE' && <Subscription />}
                 {user?.tier?.team_members && <AddTeamMember />}
                 {billingEnabled && <ManageBilling />}
+                {billingEnabled && <GrantCredits />}
                 <SwitchUser />
               </div>
             ) : (

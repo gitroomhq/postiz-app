@@ -940,5 +940,13 @@
   "youtube_made_with_ai": "AIで作成（リアルな改変または合成コンテンツ）",
   "back_to_postiz": "Postizに戻る",
   "not_selectable_page_not_granted_to_postiz": "選択できません：Postizにこのページへのアクセスが許可されていません",
-  "you_did_not_grant_postiz_access_to_this_page": "Facebookのダイアログで、Postizにこのページへのアクセスを許可していません。\nチャンネルを再接続し、Facebookの画面で「設定を編集」をクリックしてください。現在のページのみを許可するオプションを選び、このページと、すでに接続されている他のページにチェックを入れてください。"
+  "you_did_not_grant_postiz_access_to_this_page": "Facebookのダイアログで、Postizにこのページへのアクセスを許可していません。\nチャンネルを再接続し、Facebookの画面で「設定を編集」をクリックしてください。現在のページのみを許可するオプションを選び、このページと、すでに接続されている他のページにチェックを入れてください。",
+  "ai_credits": "AIクレジット",
+  "add_credits": "クレジットを追加",
+  "add_video_credits": "動画クレジットを追加",
+  "add_image_credits": "画像クレジットを追加",
+  "granted_video_credits": "今期に付与された動画クレジット：",
+  "granted_image_credits": "今期に付与された画像クレジット：",
+  "credits_granted": "クレジットを追加しました",
+  "could_not_grant_credits": "クレジットを追加できませんでした"
 }
