@@ -9,6 +9,7 @@ import {
   IngestJob,
   IngestResult,
 } from './clipping.processor.interface';
+import { SlideshowJob, SlideshowResult } from './slideshow.processor.interface';
 
 export class UploadFactory {
   static createStorage(): IUploadProvider {
@@ -46,6 +47,22 @@ export class UploadFactory {
     }
 
     return new RunPodMediaProcessor(
+      process.env.RUNPOD_API_KEY!,
+      process.env.RUNPOD_ENDPOINT_ID!
+    );
+  }
+
+  // Slideshows (the Image Text Slides video generator) run on the normalization
+  // endpoint, so they need exactly what normalization needs
+  static createSlideshowProcessor(): IMediaProcessor<
+    SlideshowJob,
+    SlideshowResult
+  > | null {
+    if (!UploadFactory.processorEnabled()) {
+      return null;
+    }
+
+    return new RunPodMediaProcessor<SlideshowJob, SlideshowResult>(
       process.env.RUNPOD_API_KEY!,
       process.env.RUNPOD_ENDPOINT_ID!
     );

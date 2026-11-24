@@ -15,7 +15,6 @@ import Compressor from '@uppy/compressor';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
-import { uniqBy } from 'lodash';
 
 export class CompressionWrapper<M = any, B = any> extends Compressor<any, any> {
   override async prepareUpload(fileIDs: string[]) {
@@ -52,7 +51,6 @@ export function useUppyUploader(props: {
     storageProvider,
     backendUrl,
     disableImageCompression,
-    transloadit,
     mediaProcessing,
   } = useVariables();
   const { onUploadSuccess, allowedFileTypes } = props;
@@ -96,9 +94,6 @@ export function useUppyUploader(props: {
           // the normalizer turns QuickTime into mp4, nothing else is accepted by the bucket
           if (type === 'video/mp4' && mediaProcessing) {
             return ['video/mp4', 'video/quicktime'];
-          }
-          if (type === 'video/mp4' && transloadit && transloadit.length > 0) {
-            return ['video/mp4', 'video/mpeg', 'video/quicktime'];
           }
           return [type];
         });
@@ -180,20 +175,16 @@ export function useUppyUploader(props: {
       });
     });
 
-    // The normalizer takes precedence over Transloadit, so both can stay
-    // configured and turning the normalizer off falls back to Transloadit
-    const useTransloadit = !mediaProcessing && transloadit.length > 0;
     const { plugin, options } = getUppyUploadPlugin(
-      useTransloadit ? 'transloadit' : storageProvider,
+      storageProvider,
       fetch,
-      backendUrl,
-      transloadit
+      backendUrl
     );
 
     uppy2.use(plugin, options);
     // installed whenever the record can come back "processing", so the backend
     // decides; it passes files through untouched when the row is already ready
-    if (storageProvider === 'cloudflare' && !useTransloadit) {
+    if (storageProvider === 'cloudflare') {
       uppy2.use(WaitForMediaProcessing, {
         fetch,
         processingMessage: t('processing', 'Processing...'),
@@ -262,48 +253,6 @@ export function useUppyUploader(props: {
         setLocked(false);
         fileOrderIndex = 0;
         onUploadSuccess(sortedSuccessful.map((p) => p.response.body));
-        return;
-      }
-
-      if (useTransloadit) {
-        // @ts-ignore
-        const allRes = result.transloadit[0].results;
-        const toSave = uniqBy<{ name: string; originalName: string; order: number }>(
-          // @ts-ignore
-          Object.values(allRes).flatMap((p: any[]) => {
-            return p.flatMap((item) => ({
-              name: item.url.split('/').pop(),
-              originalName: item.name || '',
-              order: +item.user_meta.addedOrder,
-            }));
-          }),
-          (item) => item.name
-        );
-
-        const loadAllMedia = (
-          await Promise.all(
-            toSave.map(async ({ name, originalName, order }) => ({
-              file: await (
-                await fetch('/media/save-media', {
-                  method: 'POST',
-                  body: JSON.stringify({
-                    name,
-                    originalName,
-                  }),
-                })
-              ).json(),
-              order,
-            }))
-          )
-        )
-          .sort((a, b) => {
-            return a.order - b.order;
-          })
-          .map((p) => p.file);
-
-        setLocked(false);
-        fileOrderIndex = 0;
-        onUploadSuccess(loadAllMedia);
         return;
       }
 
