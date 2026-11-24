@@ -30,7 +30,10 @@ export class RefreshIntegrationService {
 
     await this._integrationService.createOrUpdateIntegration(
       undefined,
-      !!socialProvider.oneTimeToken,
+      // a root that is a page id (older channels) names no login: other
+      // organizations' channels of that page can belong to other logins
+      !!socialProvider.oneTimeToken &&
+        !socialProvider.isPageId?.(integration.rootInternalId || ''),
       integration.organizationId,
       integration.name,
       integration.picture!,

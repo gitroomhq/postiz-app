@@ -393,7 +393,10 @@ export class IntegrationService {
 
       await this.createOrUpdateIntegration(
         undefined,
-        !!provider.oneTimeToken,
+        // a root that is a page id (older channels) names no login: other
+        // organizations' channels of that page can belong to other logins
+        !!provider.oneTimeToken &&
+          !provider.isPageId?.(integration.rootInternalId || ''),
         integration.organizationId,
         integration.name,
         undefined,
