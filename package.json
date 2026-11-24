@@ -175,7 +175,7 @@
     "nestjs-command": "^3.1.4",
     "nestjs-real-ip": "^3.0.1",
     "nestjs-temporal-core": "^3.2.0",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "next-plausible": "^3.12.0",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.66.0",
@@ -259,7 +259,7 @@
     "babel-jest": "29.7.0",
     "cross-env": "^10.0.0",
     "eslint": "8.57.0",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "jest": "29.7.0",
     "jest-environment-jsdom": "29.7.0",
     "jest-environment-node": "^29.4.1",
@@ -286,7 +286,7 @@
   "pnpm": {
     "overrides": {
       "multer": "^2.5.0",
-      "next": "16.4.2",
+      "next": "16.4.6",
       "react": "19.2.4",
       "react-dom": "19.2.4",
       "@types/react": "19.1.8",
