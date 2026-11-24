@@ -6,6 +6,7 @@ interface FacebookItem {
   id: string;
   username: string;
   name: string;
+  disabledReason?: 'not_granted';
   picture: {
     data: {
       url: string;
@@ -32,6 +33,19 @@ export const FacebookContinue = withContinueProvider<FacebookItem, string>({
       text: 'Please close this dialog, delete your integration and add a new channel again.',
     },
   ],
+  getDisabledMessage: (item) =>
+    item.disabledReason === 'not_granted'
+      ? {
+          caption: {
+            key: 'not_selectable_page_not_granted_to_postiz',
+            text: 'Not selectable: page not granted to Postiz',
+          },
+          tooltip: {
+            key: 'you_did_not_grant_postiz_access_to_this_page',
+            text: 'You did not grant Postiz access to this Page in the Facebook dialog.\nReconnect the channel, click Edit settings on the Facebook screen, choose to opt in to current Pages only, and tick this Page together with your other connected Pages.',
+          },
+        }
+      : undefined,
   getItemId: (item) => item.id,
   getSelectionValue: (item) => item.id,
   transformSaveData: (selection) => ({ page: selection }),

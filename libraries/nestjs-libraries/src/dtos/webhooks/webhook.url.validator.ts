@@ -35,7 +35,11 @@ for (const [address, prefix] of blockedIPv4Ranges) {
   const low = ((c << 8) | d).toString(16);
   blockedIps.addSubnet(`64:ff9b::${high}:${low}`, 96 + prefix, 'ipv6');
   blockedIps.addSubnet(`2002:${high}:${low}::`, 16 + prefix, 'ipv6');
+  // and in IPv4-translated form (::ffff:0:0/96, SIIT)
+  blockedIps.addSubnet(`::ffff:0:${high}:${low}`, 96 + prefix, 'ipv6');
 }
+
+blockedIps.addSubnet('64:ff9b:1::', 48, 'ipv6'); // local-use NAT64 (RFC 8215)
 
 blockedIps.addSubnet('::', 96, 'ipv6'); // unspecified, loopback, IPv4-compatible
 blockedIps.addSubnet('fe80::', 10, 'ipv6'); // link-local

@@ -31,7 +31,10 @@ export class RefreshIntegrationService {
 
     await this._integrationService.createOrUpdateIntegration(
       undefined,
-      !!socialProvider.oneTimeToken,
+      // a root that is a page id (older channels) names no login: other
+      // organizations' channels of that page can belong to other logins
+      !!socialProvider.oneTimeToken &&
+        !socialProvider.isPageId?.(integration.rootInternalId || ''),
       integration.organizationId,
       integration.name,
       integration.picture!,
@@ -40,7 +43,15 @@ export class RefreshIntegrationService {
       integration.providerIdentifier,
       refresh.accessToken,
       refresh.refreshToken,
-      refresh.expiresIn
+      refresh.expiresIn,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      // stored only if no reconnect moved the channel meanwhile
+      integration.rootInternalId
     );
 
     return refresh;
