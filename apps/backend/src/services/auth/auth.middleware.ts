@@ -25,6 +25,25 @@ export const removeAuth = (res: Response) => {
   res.header('logout', 'true');
 };
 
+// the selected org or impersonated user is gone: refuse the request instead
+// of running it elsewhere, and let the app reload without the stale cookie
+const refuseStaleSelection = (res: Response, cookie: string) => {
+  res.cookie(cookie, '', {
+    domain: getCookieUrlFromDomain(process.env.FRONTEND_URL!),
+    ...(!process.env.NOT_SECURED
+      ? {
+          secure: true,
+          httpOnly: true,
+          sameSite: 'none',
+        }
+      : {}),
+    expires: new Date(0),
+    maxAge: -1,
+  });
+  res.header('reload', 'true');
+  res.status(403).send();
+};
+
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   constructor(
@@ -90,18 +109,30 @@ export class AuthMiddleware implements NestMiddleware {
           next();
           return;
         }
+
+        refuseStaleSelection(res, 'impersonate');
+        return;
       }
 
       delete user.password;
       const organization = (
         await this._organizationService.getOrgsByUserId(user.id)
       ).filter((f) => !f.users[0].disabled);
+      const selectedOrg = orgHeader
+        ? organization.find((org) => org.id === orgHeader)
+        : undefined;
+
+      if (orgHeader && !selectedOrg) {
+        refuseStaleSelection(res, 'showorg');
+        return;
+      }
+
       const setOrg =
-        organization.find((org) => org.id === orgHeader) ||
+        selectedOrg ||
         organization.find((org) => org.subscription) ||
         organization[0];
 
-      if (!organization) {
+      if (!setOrg) {
         throw new HttpForbiddenException();
       }
 
