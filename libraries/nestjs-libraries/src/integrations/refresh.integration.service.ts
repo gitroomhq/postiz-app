@@ -98,11 +98,16 @@ export class RefreshIntegrationService {
         integration.id
       );
 
-      await this._integrationService.informAboutRefreshError(
-        integration.organizationId,
-        integration,
-        socialProvider.refreshErrorMessage?.(refreshError) || cause
-      );
+      // The channel already waits for a reconnect and the user was told when
+      // it first failed. Every later post, preview or analytics call retries
+      // the dead token, so only the first failure sends an email.
+      if (!integration.refreshNeeded) {
+        await this._integrationService.informAboutRefreshError(
+          integration.organizationId,
+          integration,
+          socialProvider.refreshErrorMessage?.(refreshError) || cause
+        );
+      }
 
       return false;
     }
