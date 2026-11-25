@@ -24,6 +24,7 @@ import { createReadStream } from 'fs';
 import { getSsrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { Integration } from '@prisma/client';
 import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorator';
+import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 
 @Rules(
   [
@@ -437,6 +438,46 @@ export class TiktokProvider extends SocialAbstract implements SocialProvider {
 
     return {
       maxDurationSeconds: max_video_post_duration_sec,
+    };
+  }
+
+  // TikTok's Content Sharing Guidelines ask the posting screen to query creator
+  // info each time it renders: the nickname, the privacy levels the creator may
+  // use, whether comment / duet / stitch are turned off, the longest video, and
+  // whether the creator can post right now. Exposed as a tool so API clients
+  // that build their own Direct Post screen can read it without the token.
+  @Tool({
+    description:
+      "TikTok creator info for the posting screen: creator_nickname, creator_username, privacy_level_options, comment_disabled, duet_disabled, stitch_disabled, max_video_post_duration_sec, and error.code other than 'ok' when the creator can't post now",
+    dataSchema: [],
+  })
+  async creatorInfo(accessToken: string) {
+    const response = await fetch(
+      'https://open.tiktokapis.com/v2/post/publish/creator_info/query/',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    const { data, error } = await response.json();
+    if (response.status === 401 || error?.code === 'access_token_invalid') {
+      throw new RefreshToken('tiktok', JSON.stringify(error), '' as any);
+    }
+    return {
+      data: {
+        creator_avatar_url: data?.creator_avatar_url,
+        creator_nickname: data?.creator_nickname,
+        creator_username: data?.creator_username,
+        privacy_level_options: data?.privacy_level_options || [],
+        comment_disabled: !!data?.comment_disabled,
+        duet_disabled: !!data?.duet_disabled,
+        stitch_disabled: !!data?.stitch_disabled,
+        max_video_post_duration_sec: data?.max_video_post_duration_sec,
+      },
+      error: { code: error?.code || 'ok', message: error?.message || '' },
     };
   }
 
