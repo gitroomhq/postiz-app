@@ -310,6 +310,8 @@ Clips must not overlap. Write the title and the post in this language, whatever 
                         voiceText: z.string(),
                       })
                     )
+                    .min(3)
+                    .max(5)
                     .describe('an array of slides'),
                 }),
                 'slides'
