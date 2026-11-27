@@ -105,6 +105,10 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
       customParams.prompt
     );
 
+    if (!list.length) {
+      throw new Error('No slides could be generated from the prompt');
+    }
+
     // Plain async calls so a failed image or voice request rejects Promise.all
     // and fails the job, instead of a promise that never settles and a job that
     // hangs until the workflow times out
@@ -183,7 +187,14 @@ export class ImagesSlides extends VideoAbstract<ImagesSlidesParams> {
           .reduce((all, previous) => all + previous.duration, 0) -
         TRANSITION_SECONDS * index;
 
-      return { start, end: start + slide.duration, text: slide.text };
+      // a cue ends where the next begins: overlapping cues are stacked by
+      // libass and the later one keeps its shifted position
+      const end =
+        index < slides.length - 1
+          ? start + slide.duration - TRANSITION_SECONDS
+          : start + slide.duration;
+
+      return { start, end, text: slide.text };
     });
 
     const outputKey = `${makeId(10)}.mp4`;
