@@ -953,3 +953,7 @@ checksums:
     granted_image_credits: 8aea5270bc9948fdcf611f99e451c1da
     credits_granted: 94844dce7b706482a265f84741b48728
     could_not_grant_credits: 7f2eadc7c6e0690e23cb0f00e4ee8b6c
+    add_clipping_minutes: 54dac224d916cbe5be039b8dfde56625
+    current_period_started_on: c825a0d5bcf7053661fa9f827a41f0bf
+    granted_clipping_minutes: 6c386089bf8c492524d4d9a738dab54a
+    granted_credits_one_off: 5d707a47d94db767aeb6690f2945baab

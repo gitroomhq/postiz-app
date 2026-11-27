@@ -948,5 +948,9 @@
   "granted_video_credits": "Bu dönemde verilen video kredileri:",
   "granted_image_credits": "Bu dönemde verilen görsel kredileri:",
   "credits_granted": "Krediler eklendi",
-  "could_not_grant_credits": "Krediler eklenemedi"
+  "could_not_grant_credits": "Krediler eklenemedi",
+  "add_clipping_minutes": "Klip oluşturma dakikası ekle",
+  "current_period_started_on": "Mevcut dönemin başlangıç tarihi:",
+  "granted_clipping_minutes": "Bu dönemde verilen klip oluşturma dakikaları:",
+  "granted_credits_one_off": "Verilen krediler tek seferliktir: yalnızca mevcut fatura döneminde geçerlidir.\nBir sonraki dönem başladığında kullanılmayan krediler geçerliliğini yitirir ve yalnızca plan kapsamındaki krediler yenilenir."
 }
