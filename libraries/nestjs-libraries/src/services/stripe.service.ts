@@ -12,6 +12,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { logger, errorType, errorMessage } from '@gitroom/nestjs-libraries/sentry/logger';
 import { AttributionService } from '@gitroom/nestjs-libraries/services/attribution/attribution.service';
 import {
   PaymentInvoice,
@@ -53,6 +54,11 @@ export class StripeService extends PaymentProviderAbstract {
   }
 
   async processWebhook(event: Stripe.Event) {
+    logger.info('stripe_webhook_received', {
+      stripe_event_type: event.type,
+      stripe_event_id: event.id,
+    });
+
     // Maybe it comes from another stripe webhook
     if (
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -60,6 +66,11 @@ export class StripeService extends PaymentProviderAbstract {
       event?.data?.object?.metadata?.service !== 'gitroom' &&
       event.type !== 'invoice.payment_succeeded'
     ) {
+      logger.info('stripe_webhook_ignored', {
+        stripe_event_type: event.type,
+        stripe_event_id: event.id,
+        reason: 'not_addressed_to_this_service',
+      });
       return { ok: true };
     }
 
@@ -138,14 +149,13 @@ export class StripeService extends PaymentProviderAbstract {
         stripe_payment_intent_status: paymentIntent.status,
       });
     } catch (err) {
-      console.error(
-        'stripe_card_check_failed',
-        {
-          stripe_event_id: event.id,
-          stripe_subscription_id: event.data.object.id,
-        },
-        err
-      );
+      logger.error('stripe_operation_failed', {
+        operation: 'check_valid_card',
+        stripe_event_id: event.id,
+        stripe_subscription_id: event.data.object.id,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
     }
 
     try {
@@ -212,6 +222,11 @@ export class StripeService extends PaymentProviderAbstract {
         return { ok: false };
       }
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_subscription',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { ok: false };
     }
 
@@ -412,7 +427,14 @@ export class StripeService extends PaymentProviderAbstract {
           .update(customerId, {
             email: email.indexOf('@') > -1 ? email : `${email}@postiz.com`,
           })
-          .catch(() => {})
+          .catch((err) => {
+            logger.error('stripe_operation_failed', {
+              operation: 'update_customer_email',
+              stripe_customer_id: customerId,
+              error_type: errorType(err),
+              error_message: errorMessage(err),
+            });
+          })
       )
     );
   }
@@ -539,7 +561,11 @@ export class StripeService extends PaymentProviderAbstract {
         price: price?.amount_due ? price?.amount_due / 100 : 0,
       };
     } catch (err) {
-      console.error('Error calculating proration:', err);
+      logger.error('stripe_operation_failed', {
+        operation: 'prorate_preview',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return { price: 0 };
     }
   }
@@ -579,6 +605,10 @@ export class StripeService extends PaymentProviderAbstract {
     const subscriptions = await this.getLiveSubscriptions(customer);
 
     const sub = subscriptions[0];
+
+    if (!sub) {
+      throw new BadRequestException('No active subscription found');
+    }
 
     if (!sub) {
       throw new BadRequestException('No active subscription found');
@@ -776,7 +806,13 @@ export class StripeService extends PaymentProviderAbstract {
             }
           : {}),
       });
-    } catch (err) {}
+    } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'create_embedded_checkout',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
+    }
 
     // Check for auto-apply promotion code (only for monthly plans)
     let autoApplyPromoCode: string | null = null;
@@ -1276,6 +1312,13 @@ export class StripeService extends PaymentProviderAbstract {
 
       return { id };
     } catch (err) {
+      logger.error('stripe_operation_failed', {
+        operation: 'subscribe',
+        stripe_customer_id: customer,
+        outcome: 'fallback_billing_portal',
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       const { url } = await this.createBillingPortalLink(customer);
       return {
         portal: url,
@@ -1780,11 +1823,13 @@ export class StripeService extends PaymentProviderAbstract {
         await stripe.refunds.create({ charge: chargeId });
         refunded.push(chargeId);
       } catch (err) {
-        console.error(
-          'stripe_refund_charge_failed',
-          { organization_id: organizationId, stripe_charge_id: chargeId },
-          err
-        );
+        logger.error('stripe_operation_failed', {
+          operation: 'refund_charge',
+          organization_id: organizationId,
+          stripe_charge_id: chargeId,
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
         failed.push(chargeId);
         reason = reason || (err as any)?.message;
       }
@@ -1886,7 +1931,11 @@ export class StripeService extends PaymentProviderAbstract {
         });
         nextPayment = preview.total / 100;
       } catch (err) {
-        /* no upcoming invoice */
+        logger.warn('stripe_operation_failed', {
+          operation: 'preview_upcoming_invoice',
+          error_type: errorType(err),
+          error_message: errorMessage(err),
+        });
       }
     }
 
@@ -2206,7 +2255,12 @@ export class StripeService extends PaymentProviderAbstract {
         success: true,
       };
     } catch (err) {
-      console.log(err);
+      logger.error('stripe_operation_failed', {
+        operation: 'modify_subscription',
+        org_id: organizationId,
+        error_type: errorType(err),
+        error_message: errorMessage(err),
+      });
       return {
         success: false,
       };

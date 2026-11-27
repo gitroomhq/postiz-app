@@ -1,0 +1,310 @@
+name: Test
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_OPTIONS: --max-old-space-size=6144
+  TZ: UTC
+  # ReportPortal is optional. Without RP_API_KEY - which fork pull requests
+  # never receive - every reporter simply skips itself.
+  RP_ENABLE: ${{ vars.RP_ENABLE }}
+  RP_ENDPOINT: ${{ vars.RP_ENDPOINT }}
+  RP_PROJECT: ${{ vars.RP_PROJECT }}
+  RP_LAUNCH: ${{ vars.RP_LAUNCH }}
+  RP_API_KEY: ${{ secrets.RP_API_KEY }}
+
+jobs:
+  # Integration and E2E need service containers and secrets, so they only run
+  # for branches in this repository. Fork pull requests still get unit and
+  # workflow coverage.
+  meta:
+    name: Resolve run scope
+    runs-on: ubuntu-latest
+    outputs:
+      trusted: ${{ steps.scope.outputs.trusted }}
+    steps:
+      - id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          if [ "$EVENT" != "pull_request" ] || [ "$HEAD_REPO" = "$THIS_REPO" ]; then
+            echo "trusted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "trusted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  rp-start:
+    name: ReportPortal · open launch
+    runs-on: ubuntu-latest
+    # An unreachable ReportPortal must never block the test matrix.
+    continue-on-error: true
+    outputs:
+      launch_id: ${{ steps.start.outputs.launch_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          # This job never installs dependencies and has no pnpm on PATH, so
+          # the automatic packageManager-driven cache has nothing to cache.
+          package-manager-cache: false
+      # launch.mjs uses plain fetch, so no dependency install is needed - which
+      # also keeps the rest of the matrix from queueing behind one small script.
+      - id: start
+        run: echo "launch_id=$(node tools/reportportal/launch.mjs start)" >> "$GITHUB_OUTPUT"
+
+  typecheck:
+    name: Typecheck (tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Nothing else type-checks the test tree: the app build configs exclude
+      # *.spec.ts, so these files would otherwise only fail in an editor.
+      - run: pnpm run typecheck:tests
+
+  unit:
+    name: Unit
+    runs-on: ubuntu-latest
+    needs: [rp-start]
+    if: ${{ !cancelled() }}
+    env:
+      RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm run test:unit:coverage
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-unit
+          path: reports/junit-*.xml
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-unit
+          path: coverage/
+          if-no-files-found: warn
+
+  workflows:
+    name: Temporal workflows
+    runs-on: ubuntu-latest
+    needs: [rp-start]
+    if: ${{ !cancelled() }}
+    env:
+      RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # createTimeSkipping() downloads a native test-server binary on first use.
+      - uses: actions/cache@v6
+        with:
+          path: .cache/temporal-test-server
+          key: ${{ runner.os }}-temporal-test-server-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm run test:workflows
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-workflows
+          path: reports/junit-*.xml
+          if-no-files-found: warn
+
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    needs: [meta, rp-start]
+    if: ${{ !cancelled() && needs.meta.outputs.trusted == 'true' }}
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postiz
+          POSTGRES_PASSWORD: postiz
+          POSTGRES_DB: postiz_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postiz -d postiz_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
+      # The database name must contain "test": the integration setup refuses to
+      # run otherwise, because schema setup uses `prisma db push
+      # --accept-data-loss`.
+      DATABASE_URL: postgresql://postiz:postiz@localhost:5432/postiz_test
+      JWT_SECRET: ci-jwt-secret-not-a-real-secret
+      FRONTEND_URL: http://localhost:4200
+      NOT_SECURED: 'true'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Apply the schema
+        run: >-
+          pnpm exec prisma db push --accept-data-loss --skip-generate
+          --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma
+      - run: pnpm run test:integration
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-integration
+          path: reports/junit-*.xml
+          if-no-files-found: warn
+
+  e2e:
+    name: E2E (full stack)
+    runs-on: ubuntu-latest
+    needs: [meta, rp-start]
+    if: ${{ !cancelled() && needs.meta.outputs.trusted == 'true' }}
+    # Advisory until the suite has proven stable in CI, then flip to blocking.
+    continue-on-error: true
+    timeout-minutes: 40
+    env:
+      RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
+      DATABASE_URL: postgresql://postiz-local:postiz-local-pwd@localhost:5432/postiz-db-local-test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-jwt-secret-not-a-real-secret
+      FRONTEND_URL: http://localhost:4200
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:3000
+      BACKEND_INTERNAL_URL: http://localhost:3000
+      MAIN_URL: http://localhost:4200
+      STORAGE_PROVIDER: local
+      UPLOAD_DIRECTORY: /tmp/postiz-uploads
+      NEXT_PUBLIC_UPLOAD_STATIC_DIRECTORY: /tmp/postiz-uploads
+      IS_GENERAL: 'true'
+      # Makes the auth cookie a plain, non-httpOnly cookie the fixtures can seed.
+      NOT_SECURED: 'true'
+      TEMPORAL_ADDRESS: localhost:7233
+      TEMPORAL_NAMESPACE: default
+      ORCHESTRATOR_PORT: '3002'
+      API_LIMIT: '100000'
+      # The fake Mastodon instance. Every call site in mastodon.provider.ts
+      # reads MASTODON_URL, so no process patching is needed.
+      MASTODON_URL: http://127.0.0.1:4600
+      MOCK_MASTODON_URL: http://127.0.0.1:4600
+      MASTODON_CLIENT_ID: e2e-client-id
+      MASTODON_CLIENT_SECRET: e2e-client-secret
+      # ssrfSafeLookup blocks 127.0.0.1, which is where the mock lives.
+      DISABLE_SSRF_PROTECTION: 'true'
+      # STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY are deliberately unset:
+      # the first makes PermissionsService enforce billing limits against the
+      # seeded org, the second makes PostActivity demand a subscription.
+      # e2e/global.setup.ts asserts all three of these conditions.
+    steps:
+      - uses: actions/checkout@v7
+
+      # Started first so its startup overlaps install and build. A `services:`
+      # block cannot be used here: service containers are created before
+      # actions/checkout runs, so Temporal's ./dynamicconfig mount would not
+      # exist yet - and that config is what forces the search-attribute cache
+      # to refresh on read.
+      - name: Start Postgres, Redis and Temporal
+        run: |
+          docker compose -f docker-compose.dev.yaml up -d --wait \
+            postiz-postgres postiz-redis temporal temporal-admin-tools
+
+      - uses: ./.github/actions/setup
+
+      - run: mkdir -p /tmp/postiz-uploads
+
+      - name: Cache the Next build
+        uses: actions/cache@v6
+        with:
+          path: apps/frontend/.next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-next-${{ hashFiles('pnpm-lock.yaml') }}-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Create the E2E database and apply the schema
+        run: |
+          for i in $(seq 1 60); do
+            docker compose -f docker-compose.dev.yaml exec -T postiz-postgres \
+              pg_isready -U postiz-local -d postiz-db-local >/dev/null 2>&1 && break
+            sleep 2
+          done
+          docker compose -f docker-compose.dev.yaml exec -T postiz-postgres \
+            psql -U postiz-local -d postiz-db-local \
+            -c 'CREATE DATABASE "postiz-db-local-test"' 2>&1 | tee /tmp/createdb.log \
+            || grep -q "already exists" /tmp/createdb.log
+          pnpm exec prisma db push --accept-data-loss --skip-generate \
+            --schema ./libraries/nestjs-libraries/src/database/prisma/schema.prisma
+
+      - name: Wait for Temporal and register search attributes
+        run: |
+          for i in $(seq 1 60); do
+            docker compose -f docker-compose.dev.yaml exec -T temporal-admin-tools \
+              temporal operator namespace describe default >/dev/null 2>&1 && break
+            sleep 2
+          done
+          docker compose -f docker-compose.dev.yaml exec -T temporal-admin-tools \
+            temporal operator search-attribute create \
+              --name postId --type Text --name organizationId --type Text \
+              --namespace default || true
+          # PostsService.startWorkflow passes these as typed search attributes
+          # and swallows any failure in a bare try/catch, so an unregistered
+          # attribute would leave posts stuck in QUEUE with no error at all.
+          # Failing loudly here turns a ten-minute mystery into a clear failure.
+          docker compose -f docker-compose.dev.yaml exec -T temporal-admin-tools \
+            temporal operator search-attribute list --namespace default \
+            | tee /dev/stderr | grep -q postId
+
+      - name: Build
+        run: pnpm run build
+
+      # Playwright starts the mock provider, backend, orchestrator and frontend
+      # itself, so this behaves identically on a laptop.
+      - run: pnpm run test:e2e
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.dev.yaml logs --tail=400
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: junit-e2e
+          path: reports/junit-*.xml
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: warn
+
+  rp-finish:
+    name: ReportPortal · close launch
+    runs-on: ubuntu-latest
+    needs: [rp-start, unit, workflows, integration, e2e]
+    if: ${{ !cancelled() && needs.rp-start.outputs.launch_id != '' }}
+    continue-on-error: true
+    env:
+      RP_LAUNCH_ID: ${{ needs.rp-start.outputs.launch_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          # This job never installs dependencies and has no pnpm on PATH, so
+          # the automatic packageManager-driven cache has nothing to cache.
+          package-manager-cache: false
+      - run: node tools/reportportal/launch.mjs finish
