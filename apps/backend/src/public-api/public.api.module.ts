@@ -1,3 +1,4 @@
+import { PublicPrivacyController } from './routes/v1/public.privacy.controller';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
@@ -12,7 +13,7 @@ import { PublicIntegrationsController } from '@gitroom/backend/public-api/routes
 import { PublicAuthMiddleware } from '@gitroom/backend/services/auth/public.auth.middleware';
 import { SuperAdminGuard } from '@gitroom/backend/services/auth/super.admin.guard';
 
-const authenticatedController = [PublicIntegrationsController];
+const authenticatedController = [PublicIntegrationsController, PublicPrivacyController];
 @Module({
   imports: [UploadModule],
   controllers: process.env.MCP_ONLY ? [] : [...authenticatedController],
