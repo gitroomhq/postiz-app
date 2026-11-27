@@ -17,10 +17,13 @@ import {
   BskyAgent,
   RichText,
   AppBskyEmbedVideo,
+  AppBskyEmbedExternal,
+  AppBskyRichtextFacet,
   AppBskyVideoDefs,
   AtpAgent,
   BlobRef,
 } from '@atproto/api';
+import { JSDOM } from 'jsdom';
 import dayjs from 'dayjs';
 import { Integration } from '@prisma/client';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
@@ -70,6 +73,80 @@ async function reduceImageBySize(url: string, maxSizeKB = 976) {
     console.error('Error processing image:', error);
     throw error;
   }
+}
+
+// Builds the website card (app.bsky.embed.external) the Bluesky app shows when
+// a link is pasted: Open Graph title, description and image of the page, with
+// the <title> tag as fallback. Never throws - a page that can't be read or has
+// no metadata just means the post goes out without a card, like before.
+async function buildLinkCard(
+  agent: BskyAgent,
+  url: string
+): Promise<AppBskyEmbedExternal.Main | null> {
+  try {
+    setHeartbeatDetails('bluesky: link card');
+    const response = await fetch(url, {
+      headers: { accept: 'text/html' },
+      signal: AbortSignal.timeout(10000),
+      // @ts-ignore - undici-only option; blocks SSRF to internal IPs
+      dispatcher: getSsrfSafeDispatcher(),
+    });
+    if (
+      !response.ok ||
+      !(response.headers.get('content-type') || '').includes('text/html')
+    ) {
+      return null;
+    }
+
+    const { document } = new JSDOM(await response.text()).window;
+    const meta = (name: string) =>
+      document
+        .querySelector(`meta[property="${name}"], meta[name="${name}"]`)
+        ?.getAttribute('content')
+        ?.trim() || '';
+
+    const title =
+      meta('og:title') || document.querySelector('title')?.textContent?.trim();
+    if (!title) {
+      return null;
+    }
+
+    const description = meta('og:description') || meta('description');
+    const imageUrl = meta('og:image');
+
+    let thumb: BlobRef | undefined;
+    if (imageUrl) {
+      try {
+        const { buffer } = await reduceImageBySize(
+          new URL(imageUrl, response.url || url).toString()
+        );
+        setHeartbeatDetails('bluesky: upload blob');
+        thumb = (await agent.uploadBlob(new Blob([buffer]))).data.blob;
+      } catch (err) {
+        // a broken preview image is no reason to drop the card
+      }
+    }
+
+    return {
+      $type: 'app.bsky.embed.external',
+      external: {
+        uri: url,
+        title,
+        description,
+        ...(thumb ? { thumb } : {}),
+      },
+    } satisfies AppBskyEmbedExternal.Main;
+  } catch (err) {
+    console.log('Could not build Bluesky link card', url, err);
+    return null;
+  }
+}
+
+// First link of the post text, as detected by RichText.detectFacets.
+function firstLink(rt: RichText): string | undefined {
+  return rt.facets
+    ?.flatMap((facet) => facet.features)
+    .find(AppBskyRichtextFacet.isLink)?.uri;
 }
 
 // Streams the video bytes to the Bluesky video service and returns the job
@@ -631,6 +708,12 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
       });
 
       await rt.detectFacets(agent);
+
+      // No media: show a website card for the first link, like the app does.
+      const link = !Object.keys(embed).length && firstLink(rt);
+      if (link) {
+        embed = (await buildLinkCard(agent, link)) || {};
+      }
     } catch (err) {
       // Explicit verdicts keep their meaning: a failed video job fails the
       // post, an invalid login goes through the refresh-token flow.
@@ -794,13 +877,18 @@ export class BlueskyProvider extends SocialAbstract implements SocialProvider {
     const agent = await this.getAgent(integration);
     const [commentPost] = postDetails;
 
-    const { embed } = await this.uploadMediaForPost(agent, commentPost);
+    let { embed } = await this.uploadMediaForPost(agent, commentPost);
 
     const rt = new RichText({
       text: commentPost.message,
     });
 
     await rt.detectFacets(agent);
+
+    const link = !Object.keys(embed).length && firstLink(rt);
+    if (link) {
+      embed = (await buildLinkCard(agent, link)) || {};
+    }
 
     // Get the parent post info to get its CID
     const parentUri = lastCommentId || postId;
