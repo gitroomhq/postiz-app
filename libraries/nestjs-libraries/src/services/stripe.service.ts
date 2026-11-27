@@ -22,7 +22,9 @@ import {
 
 import { STRIPE_PROVIDER } from '@gitroom/nestjs-libraries/services/payment/payment.providers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing', {
+  apiVersion: '2026-02-25.clover',
+});
 
 @PaymentProvider({ provider: STRIPE_PROVIDER })
 export class StripeService extends PaymentProviderAbstract {
@@ -315,9 +317,7 @@ export class StripeService extends PaymentProviderAbstract {
       });
       return (invoice.payments?.data || [])
         .map((p) => p.payment.payment_intent)
-        .filter(
-          (p): p is Stripe.PaymentIntent => typeof p === 'object' && !!p
-        );
+        .filter((p): p is Stripe.PaymentIntent => typeof p === 'object' && !!p);
     } catch (err) {
       console.error(
         'stripe_invoice_payment_intents_failed',
