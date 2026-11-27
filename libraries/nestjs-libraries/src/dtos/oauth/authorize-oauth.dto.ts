@@ -61,6 +61,11 @@ export class ApproveOAuthDto {
   @IsIn(['approve', 'deny'])
   action: 'approve' | 'deny';
 
+  // the organization shown on the consent screen
+  @IsString()
+  @IsOptional()
+  organization_id?: string;
+
   @IsString()
   @IsOptional()
   redirect_uri?: string;

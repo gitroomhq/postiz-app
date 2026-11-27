@@ -231,6 +231,13 @@ export class OAuthAuthorizedController {
       return { redirect: redirectUrl.toString() };
     }
 
+    if (body.organization_id && body.organization_id !== org.id) {
+      throw new HttpException(
+        'The selected organization changed, reload the page and try again',
+        HttpStatus.CONFLICT
+      );
+    }
+
     const code = await this._oauthService.createAuthorizationCode(
       app.id,
       user.id,

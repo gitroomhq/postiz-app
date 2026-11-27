@@ -5,6 +5,23 @@ import { useSearchParams } from 'next/navigation';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { Logo } from '@gitroom/frontend/components/new-layout/logo';
 import { OAuthSelfHosted } from '@gitroom/frontend/components/oauth/self.hosted.component';
+import useSWR from 'swr';
+
+const useCurrentUser = (logged: boolean) => {
+  const fetch = useFetch();
+  const load = useCallback(async () => {
+    return await (await fetch('/user/self')).json();
+  }, []);
+  return useSWR(logged ? '/user/self' : null, load);
+};
+
+const useOrganizations = (logged: boolean) => {
+  const fetch = useFetch();
+  const load = useCallback(async () => {
+    return await (await fetch('/user/organizations')).json();
+  }, []);
+  return useSWR(logged ? 'organizations' : null, load);
+};
 
 export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
   const searchParams = useSearchParams();
@@ -22,6 +39,12 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
   const codeChallenge = searchParams.get('code_challenge');
   const codeChallengeMethod = searchParams.get('code_challenge_method');
   const resource = searchParams.get('resource');
+
+  const { data: user } = useCurrentUser(logged);
+  const { data: organizations } = useOrganizations(logged);
+  const organization = organizations?.find?.(
+    (org: { id: string }) => org.id === user?.orgId
+  );
 
   useEffect(() => {
     if (!clientId || !responseType) {
@@ -82,6 +105,7 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
               client_id: clientId,
               state,
               action,
+              ...(organization ? { organization_id: organization.id } : {}),
               ...(redirectUri ? { redirect_uri: redirectUri } : {}),
               ...(codeChallenge ? { code_challenge: codeChallenge } : {}),
               ...(codeChallengeMethod
@@ -93,13 +117,22 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
 
         if (result.redirect) {
           window.location.href = result.redirect;
+        } else {
+          setError(result.message || 'Failed to process authorization');
         }
       } catch {
         setError('Failed to process authorization');
         setSubmitting(false);
       }
     },
-    [clientId, state, redirectUri, codeChallenge, codeChallengeMethod]
+    [
+      clientId,
+      state,
+      redirectUri,
+      codeChallenge,
+      codeChallengeMethod,
+      organization,
+    ]
   );
 
   // Sign in (or sign up) and land back on this same request
@@ -233,11 +266,20 @@ export const OAuthAuthorize: FC<{ logged: boolean }> = ({ logged }) => {
                 </ul>
               </div>
 
+              {logged && (
+                <div className="text-[14px] text-gray-400">
+                  Access will be granted to the organization{' '}
+                  <span className="text-white font-semibold">
+                    {organization?.name || '...'}
+                  </span>
+                </div>
+              )}
+
               {logged ? (
                 <div className="flex gap-[12px]">
                   <button
                     onClick={() => handleAction('approve')}
-                    disabled={submitting}
+                    disabled={submitting || !organization}
                     className="flex-1 bg-[#612BD3] hover:bg-[#7B3FF2] disabled:opacity-50 text-white rounded-[8px] py-[10px] px-[16px] text-[14px] font-semibold transition-colors"
                   >
                     Authorize
