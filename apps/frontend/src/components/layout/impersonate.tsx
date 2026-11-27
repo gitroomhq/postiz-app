@@ -9,6 +9,7 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { setCookie } from '@gitroom/frontend/components/layout/layout.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { fromUtc } from '@gitroom/frontend/components/layout/set.timezone';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { Button } from '@gitroom/react/form/button';
@@ -823,7 +824,9 @@ const AddTeamMember = () => {
   );
 };
 
-const useImpersonatedCredits = (type: 'ai_images' | 'ai_videos') => {
+const useImpersonatedCredits = (
+  type: 'ai_images' | 'ai_videos' | 'clipping_minutes'
+) => {
   const fetch = useFetch();
   return useSWR<{ credits: number }>(
     `/copilot/credits?type=${type}`,
@@ -840,7 +843,12 @@ const useImpersonatedCredits = (type: 'ai_images' | 'ai_videos') => {
 
 const useGrantedCredits = () => {
   const fetch = useFetch();
-  return useSWR<{ ai_images: number; ai_videos: number }>(
+  return useSWR<{
+    ai_images: number;
+    ai_videos: number;
+    clipping_minutes: number;
+    periodStart: string | null;
+  }>(
     '/billing/granted-credits',
     async () => {
       return (await fetch('/billing/granted-credits')).json();
@@ -862,9 +870,12 @@ const GrantCreditsModal: FC = () => {
     useImpersonatedCredits('ai_images');
   const { data: videos, mutate: mutateVideos } =
     useImpersonatedCredits('ai_videos');
+  const { data: clipping, mutate: mutateClipping } =
+    useImpersonatedCredits('clipping_minutes');
   const { data: granted, mutate: mutateGranted } = useGrantedCredits();
   const [addImages, setAddImages] = useState('0');
   const [addVideos, setAddVideos] = useState('0');
+  const [addClipping, setAddClipping] = useState('0');
   const [saving, setSaving] = useState(false);
 
   const tier = pricing[user?.tier?.current || 'FREE'];
@@ -878,6 +889,7 @@ const GrantCreditsModal: FC = () => {
         body: JSON.stringify({
           ai_images: toCount(addImages),
           ai_videos: toCount(addVideos),
+          clipping_minutes: toCount(addClipping),
         }),
       });
       if (!response.ok) {
@@ -891,29 +903,54 @@ const GrantCreditsModal: FC = () => {
       toast.show(t('credits_granted', 'Credits added'));
       setAddImages('0');
       setAddVideos('0');
-      await Promise.all([mutateImages(), mutateVideos(), mutateGranted()]);
+      setAddClipping('0');
+      await Promise.all([
+        mutateImages(),
+        mutateVideos(),
+        mutateClipping(),
+        mutateGranted(),
+      ]);
     } finally {
       setSaving(false);
     }
-  }, [addImages, addVideos]);
+  }, [addImages, addVideos, addClipping]);
+
+  const columns = [
+    {
+      label: t('billing_ai_images', 'AI images'),
+      left: images?.credits,
+      total: tier?.image_generation_count,
+      inputLabel: t('add_image_credits', 'Add image credits'),
+      name: 'ai_images',
+      value: addImages,
+      setValue: setAddImages,
+    },
+    {
+      label: t('billing_ai_videos', 'AI videos'),
+      left: videos?.credits,
+      total: tier?.generate_videos,
+      inputLabel: t('add_video_credits', 'Add video credits'),
+      name: 'ai_videos',
+      value: addVideos,
+      setValue: setAddVideos,
+    },
+    {
+      label: t('billing_clipping_minutes', 'Clipping minutes'),
+      left: clipping?.credits,
+      total: tier?.clipping_minutes,
+      inputLabel: t('add_clipping_minutes', 'Add clipping minutes'),
+      name: 'clipping_minutes',
+      value: addClipping,
+      setValue: setAddClipping,
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-[16px] min-w-[400px]">
+    <div className="flex flex-col gap-[16px] min-w-[560px]">
       <div className="flex gap-[8px]">
-        {[
-          {
-            label: t('billing_ai_images', 'AI images'),
-            left: images?.credits,
-            total: tier?.image_generation_count,
-          },
-          {
-            label: t('billing_ai_videos', 'AI videos'),
-            left: videos?.credits,
-            total: tier?.generate_videos,
-          },
-        ].map((p) => (
+        {columns.map((p) => (
           <div
-            key={p.label}
+            key={p.name}
             className="flex-1 flex flex-col gap-[2px] rounded-[8px] border border-newTableBorder px-[16px] py-[10px]"
           >
             <div className="text-[12px] text-textItemBlur">{p.label}</div>
@@ -929,42 +966,50 @@ const GrantCreditsModal: FC = () => {
       </div>
       <div className="flex flex-col gap-[4px] text-[14px]">
         <div>
-          {t('granted_video_credits', 'Video credits granted this period:')}{' '}
-          <span className="font-[600]">{granted?.ai_videos ?? '-'}</span>
+          {t('current_period_started_on', 'Current period started on:')}{' '}
+          <span className="font-[600]">
+            {granted?.periodStart
+              ? fromUtc(granted.periodStart).format('D MMM, YYYY')
+              : '-'}
+          </span>
         </div>
         <div>
           {t('granted_image_credits', 'Image credits granted this period:')}{' '}
           <span className="font-[600]">{granted?.ai_images ?? '-'}</span>
         </div>
+        <div>
+          {t('granted_video_credits', 'Video credits granted this period:')}{' '}
+          <span className="font-[600]">{granted?.ai_videos ?? '-'}</span>
+        </div>
+        <div>
+          {t(
+            'granted_clipping_minutes',
+            'Clipping minutes granted this period:'
+          )}{' '}
+          <span className="font-[600]">
+            {granted?.clipping_minutes ?? '-'}
+          </span>
+        </div>
       </div>
-      <div className="flex gap-[10px]">
-        <div className="flex-1">
-          <Input
-            label={t('add_image_credits', 'Add image credits')}
-            name="ai_images"
-            type="number"
-            min={0}
-            disableForm={true}
-            value={addImages}
-            onChange={(e) => setAddImages(e.target.value)}
-          />
-        </div>
-        <div className="flex-1">
-          <Input
-            label={t('add_video_credits', 'Add video credits')}
-            name="ai_videos"
-            type="number"
-            min={0}
-            disableForm={true}
-            value={addVideos}
-            onChange={(e) => setAddVideos(e.target.value)}
-          />
-        </div>
+      <div className="flex gap-[8px]">
+        {columns.map((p) => (
+          <div key={p.name} className="flex-1">
+            <Input
+              label={p.inputLabel}
+              name={p.name}
+              type="number"
+              min={0}
+              disableForm={true}
+              value={p.value}
+              onChange={(e) => p.setValue(e.target.value)}
+            />
+          </div>
+        ))}
       </div>
       <Button
         onClick={submit}
         loading={saving}
-        disabled={!toCount(addImages) && !toCount(addVideos)}
+        disabled={columns.every((p) => !toCount(p.value))}
         className="rounded-[4px]"
       >
         {t('add_credits', 'Add Credits')}
@@ -979,7 +1024,34 @@ const GrantCredits = () => {
 
   const handleClick = useCallback(() => {
     openModal({
-      title: t('ai_credits', 'AI Credits'),
+      title: (
+        <div className="flex items-center gap-[8px]">
+          {t('ai_credits', 'AI Credits')}
+          <div
+            data-tooltip-id="tooltip"
+            data-tooltip-content={t(
+              'granted_credits_one_off',
+              'Granted credits are one-off: they count only in the current billing period.\nWhatever is unused stops counting when the next period starts, and only the plan credits renew.'
+            )}
+            className="cursor-help text-textItemBlur"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+          </div>
+        </div>
+      ),
       children: () => <GrantCreditsModal />,
     });
   }, []);

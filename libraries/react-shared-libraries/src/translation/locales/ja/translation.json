@@ -948,5 +948,9 @@
   "granted_video_credits": "今期に付与された動画クレジット：",
   "granted_image_credits": "今期に付与された画像クレジット：",
   "credits_granted": "クレジットを追加しました",
-  "could_not_grant_credits": "クレジットを追加できませんでした"
+  "could_not_grant_credits": "クレジットを追加できませんでした",
+  "add_clipping_minutes": "クリップ作成時間を追加",
+  "current_period_started_on": "現在の請求期間の開始日：",
+  "granted_clipping_minutes": "今期に付与されたクリップ作成時間：",
+  "granted_credits_one_off": "付与されたクレジットは一度限りで、現在の請求期間中のみ有効です。\n次の請求期間が始まると未使用分は失効し、更新されるのはプランに含まれるクレジットのみです。"
 }

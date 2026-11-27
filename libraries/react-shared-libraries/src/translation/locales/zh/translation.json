@@ -948,5 +948,9 @@
   "granted_video_credits": "本期发放的视频点数：",
   "granted_image_credits": "本期发放的图像点数：",
   "credits_granted": "点数已添加",
-  "could_not_grant_credits": "未能添加点数"
+  "could_not_grant_credits": "未能添加点数",
+  "add_clipping_minutes": "添加剪辑分钟数",
+  "current_period_started_on": "当前计费周期开始日期：",
+  "granted_clipping_minutes": "本计费周期发放的剪辑分钟数：",
+  "granted_credits_one_off": "赠送额度为一次性额度，仅在当前计费周期内有效。\n下一个计费周期开始时，未用完的赠送额度将失效，只有套餐额度会续发。"
 }

@@ -948,5 +948,9 @@
   "granted_video_credits": "Crédits vidéo accordés pour cette période :",
   "granted_image_credits": "Crédits image accordés pour cette période :",
   "credits_granted": "Crédits ajoutés",
-  "could_not_grant_credits": "Impossible d’ajouter les crédits"
+  "could_not_grant_credits": "Impossible d’ajouter les crédits",
+  "add_clipping_minutes": "Ajouter des minutes de création d’extraits",
+  "current_period_started_on": "La période en cours a débuté le :",
+  "granted_clipping_minutes": "Minutes de création d’extraits accordées pour cette période :",
+  "granted_credits_one_off": "Les crédits accordés sont ponctuels : ils ne sont valables que pendant la période de facturation en cours.\nLes crédits inutilisés expirent au début de la période suivante, et seuls les crédits inclus dans le forfait sont renouvelés."
 }
