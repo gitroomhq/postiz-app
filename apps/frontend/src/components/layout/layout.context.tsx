@@ -78,6 +78,12 @@ function LayoutContextInner(params: { children: ReactNode }) {
       }
 
       if (response?.headers?.get('reload')) {
+        // a stale org or impersonation was refused, the backend can't clear
+        // cookies set here
+        if (response.status === 403 && !isSecured) {
+          setCookie('showorg', '', -10);
+          setCookie('impersonate', '', -10);
+        }
         window.location.reload();
         return true;
       }
