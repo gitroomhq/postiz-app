@@ -950,5 +950,9 @@
   "granted_video_credits": "Video credits granted this period:",
   "granted_image_credits": "Image credits granted this period:",
   "credits_granted": "Credits added",
-  "could_not_grant_credits": "Could not add the credits"
+  "could_not_grant_credits": "Could not add the credits",
+  "add_clipping_minutes": "Add clipping minutes",
+  "current_period_started_on": "Current period started on:",
+  "granted_clipping_minutes": "Clipping minutes granted this period:",
+  "granted_credits_one_off": "Granted credits are one-off: they count only in the current billing period.\nWhatever is unused stops counting when the next period starts, and only the plan credits renew."
 }

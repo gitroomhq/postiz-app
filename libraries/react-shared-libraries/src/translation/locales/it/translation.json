@@ -948,5 +948,9 @@
   "granted_video_credits": "Crediti per i video assegnati in questo periodo:",
   "granted_image_credits": "Crediti per le immagini assegnati in questo periodo:",
   "credits_granted": "Crediti aggiunti",
-  "could_not_grant_credits": "Impossibile aggiungere i crediti"
+  "could_not_grant_credits": "Impossibile aggiungere i crediti",
+  "add_clipping_minutes": "Aggiungi minuti per la creazione di clip",
+  "current_period_started_on": "Il periodo di fatturazione in corso è iniziato il:",
+  "granted_clipping_minutes": "Minuti per la creazione di clip assegnati in questo periodo:",
+  "granted_credits_one_off": "I crediti concessi sono una tantum: valgono solo per il periodo di fatturazione in corso.\nI crediti non utilizzati scadono all’inizio del periodo successivo e si rinnovano solo i crediti inclusi nel piano."
 }

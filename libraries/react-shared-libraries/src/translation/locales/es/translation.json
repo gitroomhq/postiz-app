@@ -948,5 +948,9 @@
   "granted_video_credits": "Créditos de vídeo otorgados en este periodo:",
   "granted_image_credits": "Créditos de imagen otorgados en este periodo:",
   "credits_granted": "Créditos añadidos",
-  "could_not_grant_credits": "No se pudieron añadir los créditos"
+  "could_not_grant_credits": "No se pudieron añadir los créditos",
+  "add_clipping_minutes": "Añadir minutos de recorte",
+  "current_period_started_on": "El período actual comenzó el:",
+  "granted_clipping_minutes": "Minutos de recorte concedidos en este período:",
+  "granted_credits_one_off": "Los créditos otorgados se conceden una sola vez y solo son válidos durante el período de facturación actual.\nLos créditos no utilizados caducan al comenzar el siguiente período y solo se renuevan los créditos del plan."
 }

@@ -144,6 +144,9 @@ export async function proxy(request: NextRequest) {
             org,
           }),
           method: 'POST',
+          // joining doesn't depend on the selected org, and a stale one
+          // would be refused
+          headers: { showorg: '' },
         })
       ).json();
       const redirect = NextResponse.redirect(

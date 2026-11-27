@@ -948,5 +948,9 @@
   "granted_video_credits": "In diesem Zeitraum gewährtes Video-Guthaben:",
   "granted_image_credits": "In diesem Zeitraum gewährtes Bild-Guthaben:",
   "credits_granted": "Guthaben hinzugefügt",
-  "could_not_grant_credits": "Das Guthaben konnte nicht hinzugefügt werden"
+  "could_not_grant_credits": "Das Guthaben konnte nicht hinzugefügt werden",
+  "add_clipping_minutes": "Clipping-Minuten hinzufügen",
+  "current_period_started_on": "Beginn des aktuellen Abrechnungszeitraums:",
+  "granted_clipping_minutes": "Für diesen Abrechnungszeitraum gewährte Clipping-Minuten:",
+  "granted_credits_one_off": "Gewährte Guthaben werden einmalig vergeben und gelten nur im aktuellen Abrechnungszeitraum.\nNicht genutztes Guthaben verfällt mit Beginn des nächsten Abrechnungszeitraums. Nur das im Tarif enthaltene Guthaben wird erneuert."
 }

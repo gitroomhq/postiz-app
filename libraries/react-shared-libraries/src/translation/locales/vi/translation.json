@@ -948,5 +948,9 @@
   "granted_video_credits": "Tín dụng video được cấp trong kỳ này:",
   "granted_image_credits": "Tín dụng hình ảnh được cấp trong kỳ này:",
   "credits_granted": "Đã thêm tín dụng",
-  "could_not_grant_credits": "Không thể thêm tín dụng"
+  "could_not_grant_credits": "Không thể thêm tín dụng",
+  "add_clipping_minutes": "Thêm phút cắt clip",
+  "current_period_started_on": "Kỳ hiện tại bắt đầu vào:",
+  "granted_clipping_minutes": "Số phút cắt clip được cấp trong kỳ này:",
+  "granted_credits_one_off": "Tín dụng được cấp là tín dụng một lần: chúng chỉ có hiệu lực trong kỳ thanh toán hiện tại.\nKhi kỳ thanh toán tiếp theo bắt đầu, số tín dụng chưa sử dụng sẽ hết hiệu lực và chỉ tín dụng đi kèm gói được cấp lại."
 }
