@@ -63,15 +63,16 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
   oneTimeToken = true;
 
   isBetweenSteps = false;
-  scopes = [
-    'openid',
-    'profile',
-    'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
-  ];
+  // Personal profiles post with the member's own token, so this provider
+  // only asks for the scopes a standard LinkedIn app can grant on its own:
+  // "Sign In with LinkedIn using OpenID Connect" (openid, profile) and
+  // "Share on LinkedIn" (w_member_social). The organization scopes require
+  // the review-gated Community Management API product - which cannot
+  // coexist with those two products on the same app - so requesting them
+  // here makes LinkedIn answer `unauthorized_scope_error` and personal
+  // profiles can never connect. The Page provider overrides `scopes` with
+  // the full set, organization scopes included.
+  scopes = ['openid', 'profile', 'w_member_social'];
   override maxConcurrentJob = 8; // LinkedIn limits are daily budgets
   refreshWait = true;
   refreshRepeat = true;
