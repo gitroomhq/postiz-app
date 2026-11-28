@@ -58,14 +58,16 @@ const MetricComponent = () => {
   );
   return (
     <div className="my-[16px] mt-[16px] bg-sixth border-fifth border rounded-[4px] p-[24px] flex flex-col gap-[24px]">
-      <div className="mt-[4px]">Date Metrics</div>
+      <div className="mt-[4px]">{t('date_metrics', 'Date Metrics')}</div>
       <Select name="metric" disableForm={true} label="" onChange={changeMetric} value={currentMetric ? 'US' : 'GLOBAL'}>
         {dateMetrics.map((metric) => (
           <option
             key={metric.value}
             value={metric.value}
           >
-            {metric.label}
+            {metric.value === 'US'
+              ? t('time_format_ampm', 'AM:PM')
+              : t('time_format_24h', '24 hours')}
           </option>
         ))}
       </Select>
