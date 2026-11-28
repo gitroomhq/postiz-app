@@ -56,6 +56,8 @@ import { FarcasterProvider } from '@gitroom/backend/services/auth/providers/farc
 import { WalletProvider } from '@gitroom/backend/services/auth/providers/wallet.provider';
 import { OauthProvider } from '@gitroom/backend/services/auth/providers/oauth.provider';
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
+import { PlatformCredentialsService } from '@gitroom/nestjs-libraries/services/platform.credentials.service';
+import { NextFunction, Request, Response } from 'express';
 
 const authenticatedController = [
   UsersController,
@@ -125,6 +127,7 @@ const authenticatedController = [
     FarcasterProvider,
     WalletProvider,
     OauthProvider,
+    PlatformCredentialsService,
   ],
   get exports() {
     return [...this.imports, ...this.providers];
@@ -137,5 +140,24 @@ export class ApiModule implements NestModule {
     consumer
       .apply(ClippingWidgetAuthMiddleware)
       .forRoutes(ClippingWidgetController);
+    consumer
+      .apply((req: Request, res: Response, next: NextFunction) => {
+        if (req.method === 'GET') {
+          const match = req.path.match(/\/integrations\/social\/([^/?#]+)/);
+          const provider = match?.[1];
+          if (
+            provider &&
+            !PlatformCredentialsService.isProviderConfigured(provider)
+          ) {
+            return res.status(200).json({
+              err: true,
+              message:
+                'Platform API credentials are not configured. Configure them in Settings -> Platform API Keys.',
+            });
+          }
+        }
+        next();
+      })
+      .forRoutes(IntegrationsController);
   }
 }

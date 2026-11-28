@@ -33,6 +33,7 @@ import { GmbProvider } from '@gitroom/nestjs-libraries/integrations/social/gmb.p
 import { KickProvider } from '@gitroom/nestjs-libraries/integrations/social/kick.provider';
 import { TwitchProvider } from '@gitroom/nestjs-libraries/integrations/social/twitch.provider';
 import { SocialAbstract } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { PlatformCredentialsService } from '@gitroom/nestjs-libraries/services/platform.credentials.service';
 import { MoltbookProvider } from '@gitroom/nestjs-libraries/integrations/social/moltbook.provider';
 import { SkoolProvider } from '@gitroom/nestjs-libraries/integrations/social/skool.provider';
 import { WhopProvider } from '@gitroom/nestjs-libraries/integrations/social/whop.provider';
@@ -138,6 +139,9 @@ export class IntegrationManager {
             isExternal: !!p.externalUrl,
             isWeb3: !!p.isWeb3,
             isChromeExtension: !!p.isChromeExtension,
+            configured: PlatformCredentialsService.isProviderConfigured(
+              p.identifier
+            ),
             ...(p.extensionCookies
               ? { extensionCookies: p.extensionCookies }
               : {}),

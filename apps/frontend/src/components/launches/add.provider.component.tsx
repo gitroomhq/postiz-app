@@ -490,6 +490,7 @@ export const AddProviderComponent: FC<{
     isExternal: boolean;
     isWeb3: boolean;
     isChromeExtension?: boolean;
+    configured?: boolean;
     extensionCookies?: Array<{
       name: string;
       domain: string;
@@ -531,9 +532,20 @@ export const AddProviderComponent: FC<{
           defaultValue?: string;
           type: 'text' | 'password';
           hint?: string;
-        }>
+        }>,
+        configured?: boolean
       ) =>
       async () => {
+        if (configured === false) {
+          toaster.show(
+            t(
+              'platform_credentials_not_configured',
+              'API credentials not configured. Set them in Settings -> Platform API Keys.'
+            ),
+            'warning'
+          );
+          return;
+        }
         const onboardingParam = onboarding ? 'onboarding=true' : '';
         const openWeb3 = async () => {
           const { component: Web3Providers } = web3List.find(
@@ -592,13 +604,14 @@ export const AddProviderComponent: FC<{
           if (response.status === 402) {
             return;
           }
-          const { url, err } = await response.json();
+          const { url, err, message } = await response.json();
           if (err) {
             toaster.show(
-              t(
-                'could_not_connect_to_platform',
-                'Could not connect to the platform'
-              ),
+              message ||
+                t(
+                  'could_not_connect_to_platform',
+                  'Could not connect to the platform'
+                ),
               'warning'
             );
             return;
@@ -736,7 +749,8 @@ export const AddProviderComponent: FC<{
                   item.isExternal,
                   item.isWeb3,
                   item.isChromeExtension,
-                  item.customFields
+                  item.customFields,
+                  item.configured
                 )}
                 {...(!!item.toolTip
                   ? {
@@ -748,9 +762,15 @@ export const AddProviderComponent: FC<{
                   isMobile
                     ? 'flex-row h-[72px] p-[16px]'
                     : 'flex-col p-[10px] h-[100px] justify-center mobile:text-[13px] mobile:leading-[1.2]',
-                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
+                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer',
+                  item.configured === false && 'opacity-70'
                 )}
               >
+                {item.configured === false && (
+                  <span className="absolute top-[6px] start-[6px] px-[6px] py-[2px] rounded-[4px] bg-amber-500/20 text-amber-300 text-[9px] font-[600] leading-none">
+                    Setup Needed
+                  </span>
+                )}
                 <div>
                   <PlatformIcon
                     identifier={item.identifier}

@@ -34,6 +34,7 @@ import { GlobalSettings } from '@gitroom/frontend/components/settings/global.set
 import { AppsComponent } from '@gitroom/frontend/components/settings/apps.component';
 import { ThirdPartyComponent } from '@gitroom/frontend/components/third-parties/third-party.component';
 import { Plugs } from '@gitroom/frontend/components/plugs/plugs';
+import { PlatformCredentialsComponent } from '@gitroom/frontend/components/settings/platform.credentials.component';
 export const SettingsPopup: FC<{
   getRef?: Ref<any>;
 }> = (props) => {
@@ -93,6 +94,12 @@ export const SettingsPopup: FC<{
     }
     if (user?.tier?.team_members && isGeneral && user?.role !== 'USER') {
       arr.push({ tab: 'teams', label: t('teams', 'Teams') });
+    }
+    if (isGeneral && user?.role !== 'USER') {
+      arr.push({
+        tab: 'platform_credentials',
+        label: t('platform_api_keys', 'Platform API Keys'),
+      });
     }
     if (user?.tier?.webhooks) {
       arr.push({ tab: 'webhooks', label: t('webhooks_1', 'Webhooks') });
@@ -180,6 +187,14 @@ export const SettingsPopup: FC<{
                 user?.role !== 'USER' && (
                   <div>
                     <TeamsComponent />
+                  </div>
+                )}
+
+              {tab === 'platform_credentials' &&
+                isGeneral &&
+                user?.role !== 'USER' && (
+                  <div>
+                    <PlatformCredentialsComponent />
                   </div>
                 )}
 

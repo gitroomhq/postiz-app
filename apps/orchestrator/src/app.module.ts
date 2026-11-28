@@ -10,6 +10,7 @@ import { MediaActivity } from '@gitroom/orchestrator/activities/media.activity';
 import { ClippingActivity } from '@gitroom/orchestrator/activities/clipping.activity';
 import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
 import { HealthController } from '@gitroom/orchestrator/health.controller';
+import { PlatformCredentialsService } from '@gitroom/nestjs-libraries/services/platform.credentials.service';
 
 const activities = [
   PostActivity,
@@ -27,7 +28,7 @@ const activities = [
     getTemporalModule(true, require.resolve('./workflows'), activities),
   ],
   controllers: [HealthController],
-  providers: [...activities],
+  providers: [...activities, PlatformCredentialsService],
   get exports() {
     return [...this.providers, ...this.imports];
   },

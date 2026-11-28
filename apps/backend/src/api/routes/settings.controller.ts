@@ -6,6 +6,7 @@ import {
   HttpException,
   Param,
   Post,
+  Put,
 } from '@nestjs/common';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.request';
@@ -17,13 +18,22 @@ import { AdminAddTeamMemberDto } from '@gitroom/nestjs-libraries/dtos/settings/a
 import { ShortlinkPreferenceDto } from '@gitroom/nestjs-libraries/dtos/settings/shortlink-preference.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthorizationActions, Sections } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
+import { PlatformCredentialsService } from '@gitroom/nestjs-libraries/services/platform.credentials.service';
 
 @ApiTags('Settings')
 @Controller('/settings')
 export class SettingsController {
   constructor(
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _platformCredentialsService: PlatformCredentialsService
   ) {}
+
+  private assertPlatformAdmin(user: User, org: Organization & { users?: Array<{ role: string }> }) {
+    const role = org?.users?.[0]?.role;
+    if (!user?.isSuperAdmin && role !== 'SUPERADMIN' && role !== 'ADMIN') {
+      throw new HttpException('Forbidden', 403);
+    }
+  }
 
   @Get('/team')
   @CheckPolicies(
@@ -87,5 +97,57 @@ export class SettingsController {
       org.id,
       body.shortlink
     );
+  }
+
+  @Get('/platform-credentials')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  getPlatformCredentials(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization
+  ) {
+    this.assertPlatformAdmin(user, org as any);
+    return {
+      platforms: this._platformCredentialsService.getStatuses(),
+    };
+  }
+
+  @Put('/platform-credentials')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async updatePlatformCredentials(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: { platformId: string; values: Record<string, string> }
+  ) {
+    this.assertPlatformAdmin(user, org as any);
+    return {
+      platforms: await this._platformCredentialsService.updatePlatformCredentials(
+        body?.platformId,
+        body?.values || {}
+      ),
+    };
+  }
+
+  @Delete('/platform-credentials/:platformId')
+  @CheckPolicies(
+    [AuthorizationActions.Create, Sections.TEAM_MEMBERS],
+    [AuthorizationActions.Create, Sections.ADMIN]
+  )
+  async clearPlatformCredentials(
+    @GetUserFromRequest() user: User,
+    @GetOrgFromRequest() org: Organization,
+    @Param('platformId') platformId: string
+  ) {
+    this.assertPlatformAdmin(user, org as any);
+    return {
+      platforms: await this._platformCredentialsService.clearPlatformCredentials(
+        platformId
+      ),
+    };
   }
 }
