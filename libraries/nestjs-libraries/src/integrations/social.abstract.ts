@@ -11,8 +11,8 @@ import {
   getSsrfSafeDispatcher,
 } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import sharp from 'sharp';
-import { createReadStream, readFileSync, statSync } from 'fs';
-import { resolve, sep } from 'path';
+import { createReadStream, existsSync, readFileSync, statSync } from 'fs';
+import { join, resolve, sep } from 'path';
 import { Readable } from 'stream';
 import { DashboardFunction } from '@gitroom/nestjs-libraries/integrations/dashboard.function.decorator';
 
@@ -285,12 +285,53 @@ export abstract class SocialAbstract {
     return { width, height };
   }
 
+  protected resolveLocalUploadPath(
+    path: string,
+    identifier = ''
+  ): string | null {
+    if (!process.env.UPLOAD_DIRECTORY || path.indexOf('http') !== 0) {
+      return null;
+    }
+    try {
+      const parsed = new URL(path);
+      const frontendOrigin = process.env.FRONTEND_URL
+        ? new URL(process.env.FRONTEND_URL).origin
+        : '';
+      const mainOrigin = process.env.MAIN_URL
+        ? new URL(process.env.MAIN_URL).origin
+        : '';
+      const isLocalOrigin =
+        parsed.origin === frontendOrigin ||
+        parsed.origin === mainOrigin ||
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1';
+      const uploadPrefix = (
+        process.env.NEXT_PUBLIC_UPLOAD_DIRECTORY || '/uploads'
+      ).replace(/\/+$/, '');
+      if (!isLocalOrigin || !parsed.pathname.startsWith(uploadPrefix + '/')) {
+        return null;
+      }
+      const relativePart = parsed.pathname.slice(uploadPrefix.length + 1);
+      const candidate = this.localMediaPath(
+        join(process.env.UPLOAD_DIRECTORY, relativePart),
+        identifier
+      );
+      return existsSync(candidate) ? candidate : null;
+    } catch {
+      return null;
+    }
+  }
+
   // Reads the whole media into memory: used for images, which the providers
   // hand straight to sharp. Lives here rather than in a helper so it can
   // classify a stall like the ranged reads below do.
   protected async readOrFetch(path: string, retried = false): Promise<Buffer> {
     if (path.indexOf('http') !== 0) {
       return readFileSync(this.localMediaPath(path));
+    }
+    const localUpload = this.resolveLocalUploadPath(path);
+    if (localUpload) {
+      return readFileSync(localUpload);
     }
 
     try {
@@ -331,6 +372,10 @@ export abstract class SocialAbstract {
   // a HEAD request for remote URLs, statSync for local files.
   protected async mediaSize(path: string, identifier = ''): Promise<number> {
     if (path.indexOf('http') === 0) {
+      const localUpload = this.resolveLocalUploadPath(path, identifier);
+      if (localUpload) {
+        return statSync(localUpload).size;
+      }
       // the media path is user-influenced, keep the SSRF-safe dispatcher that
       // this.fetch applies to every other outbound request. identity encoding
       // so content-length matches the bytes a later GET actually streams
@@ -390,6 +435,16 @@ export abstract class SocialAbstract {
     retried = false
   ): Promise<Buffer> {
     if (path.indexOf('http') === 0) {
+      const localUpload = this.resolveLocalUploadPath(path, identifier);
+      if (localUpload) {
+        return new Promise<Buffer>((resolvePromise, reject) => {
+          const chunks: Buffer[] = [];
+          const stream = createReadStream(localUpload, { start, end });
+          stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+          stream.on('end', () => resolvePromise(Buffer.concat(chunks)));
+          stream.on('error', reject);
+        });
+      }
       setHeartbeatDetails(
         `media chunk ${start}-${end} ${stripQuery(path)}`
       );
