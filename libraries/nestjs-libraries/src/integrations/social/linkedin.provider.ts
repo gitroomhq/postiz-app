@@ -67,10 +67,6 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
     'openid',
     'profile',
     'w_member_social',
-    'r_basicprofile',
-    'rw_organization_admin',
-    'w_organization_social',
-    'r_organization_social',
   ];
   override maxConcurrentJob = 8; // LinkedIn limits are daily budgets
   refreshWait = true;
@@ -155,7 +151,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           Authorization: `Bearer ${accessToken}`,
         },
       })
-    ).json();
+    )
+      .json()
+      .catch(() => ({} as { vanityName?: string }));
 
     const {
       name,
@@ -176,7 +174,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       expiresIn: expires_in,
       name,
       picture: picture || '',
-      username: vanityName,
+      username: vanityName || name || id,
     };
   }
 
@@ -247,7 +245,9 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
           Authorization: `Bearer ${accessToken}`,
         },
       })
-    ).json();
+    )
+      .json()
+      .catch(() => ({} as { vanityName?: string }));
 
     return {
       id,
@@ -256,7 +256,7 @@ export class LinkedinProvider extends SocialAbstract implements SocialProvider {
       expiresIn,
       name,
       picture,
-      username: vanityName,
+      username: vanityName || name || id,
     };
   }
 
